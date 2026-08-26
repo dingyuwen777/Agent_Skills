@@ -61,7 +61,7 @@ class PortabilityTest(unittest.TestCase):
             self.assertEqual(CODING.change_root_relative(root), ".agents/changes")
 
     def test_existing_current_top_level_changes_is_respected(self) -> None:
-        """只有已存在当前 schema 的顶层 changes 才认定为受支持 Coding carrier。"""
+        """只有已存在且全部使用当前 schema 的顶层 changes 才认定为受支持 Coding carrier。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             path = root / "changes/active/CHG-20260826-existing/CHANGE.md"
@@ -89,6 +89,20 @@ class PortabilityTest(unittest.TestCase):
             path = root / "changes/active/CHG-20260826-foreign/CHANGE.md"
             path.parent.mkdir(parents=True)
             path.write_text("---\nschema: foreign-change/v1\n---\n", encoding="utf-8")
+            self.assertEqual(CODING.resolve_change_root(root), root / ".agents/changes")
+            with self.assertRaisesRegex(ValueError, "没有证据表明它是当前 coding-change/v1 carrier"):
+                CODING.resolve_change_root(root, for_create=True)
+
+    def test_mixed_top_level_change_schemas_block_implicit_coding_creation(self) -> None:
+        """顶层 changes 混用当前与外部 schema 时必须整体视为未确认治理，禁止继续写入。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            current = root / "changes/active/CHG-20260826-current/CHANGE.md"
+            current.parent.mkdir(parents=True)
+            current.write_text("---\nschema: coding-change/v1\n---\n", encoding="utf-8")
+            foreign = root / "changes/active/CHG-20260826-foreign/CHANGE.md"
+            foreign.parent.mkdir(parents=True)
+            foreign.write_text("---\nschema: foreign-change/v1\n---\n", encoding="utf-8")
             self.assertEqual(CODING.resolve_change_root(root), root / ".agents/changes")
             with self.assertRaisesRegex(ValueError, "没有证据表明它是当前 coding-change/v1 carrier"):
                 CODING.resolve_change_root(root, for_create=True)
