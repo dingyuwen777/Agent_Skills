@@ -292,10 +292,8 @@ def _safe_project_file(root: Path, relative_path: str) -> Path | None:
 
 
 def _is_change_management_path(relative_path: str) -> bool:
-    """判断路径是否位于 Coding Change carrier 中，避免把治理记录混入项目事实缓存。"""
+    """只排除 Coding 自有 `.agents/changes`，避免把项目其他 `changes` 治理从事实发现中隐藏。"""
     parts = [part.casefold() for part in Path(relative_path).parts]
-    if parts and parts[0] == "changes":
-        return True
     return len(parts) >= 2 and parts[0] == ".agents" and parts[1] == "changes"
 
 
@@ -358,7 +356,7 @@ def _walk_files(root: Path) -> list[str]:
         directory_names[:] = sorted(
             name
             for name in directory_names
-            if name.casefold() not in EXCLUDED_DIRECTORIES and name.casefold() != "changes"
+            if name.casefold() not in EXCLUDED_DIRECTORIES
         )
         current_path = Path(current_root)
         for file_name in sorted(file_names):
@@ -722,28 +720,66 @@ def _yaml_list(name: str, values: Sequence[str]) -> list[str]:
 
 
 def _has_coding_change_layout(root: Path, relative_root: Path) -> bool:
-    """判断给定相对目录是否已经具有 Coding Change 的 active/archive 布局。"""
+    """判断专用 Coding 目录是否已经具有 active/archive 布局。"""
     candidate = root / relative_root
     return (candidate / "active").is_dir() or (candidate / "archive").is_dir()
 
 
+def _raw_change_schema(path: Path) -> str | None:
+    """只读取 CHANGE.md frontmatter 的 schema，用于识别顶层 changes 是否真是当前 Coding carrier。"""
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+    if not lines or lines[0].strip() != "---":
+        return None
+    for line in lines[1:]:
+        if line.strip() == "---":
+            return None
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        if key.strip() == "schema":
+            return value.strip().strip("\"'") or None
+    return None
+
+
+def _top_level_change_documents(root: Path) -> list[Path]:
+    """返回顶层 changes/active 与 archive 下现有 CHANGE.md。"""
+    change_root = root / TOP_LEVEL_CHANGE_DIRECTORY
+    return [
+        *sorted((change_root / "active").glob("*/CHANGE.md")),
+        *sorted((change_root / "archive").glob("*/*/CHANGE.md")),
+    ]
+
+
+def _has_current_top_level_coding_carrier(root: Path) -> bool:
+    """只有顶层 changes 中已存在当前 `coding-change/v1` 才把它认作受支持 Coding carrier。"""
+    documents = _top_level_change_documents(root)
+    return any(_raw_change_schema(path) == CHANGE_SCHEMA for path in documents)
+
+
 def _has_foreign_change_governance(root: Path) -> bool:
-    """检测已知的不同变更治理入口；这里只用于阻止静默创建平行 Coding Change。"""
-    return (root / "openspec").exists()
+    """检测已知外部治理或未被当前 schema 证明为 Coding carrier 的顶层 changes。"""
+    if (root / "openspec").exists():
+        return True
+    top_level = root / TOP_LEVEL_CHANGE_DIRECTORY
+    return top_level.exists() and not _has_current_top_level_coding_carrier(root)
 
 
 def resolve_change_root(root: str | Path, *, for_create: bool = False) -> Path:
-    """解析当前 Coding Change carrier；创建时遇到 OpenSpec 等外部治理则拒绝静默造平行目录。"""
+    """解析当前 Coding Change carrier；创建时遇到外部/未确认治理则拒绝静默写入。"""
     project_root = Path(root).resolve()
     if _has_coding_change_layout(project_root, DEFAULT_CHANGE_DIRECTORY):
         return project_root / DEFAULT_CHANGE_DIRECTORY
-    if _has_coding_change_layout(project_root, TOP_LEVEL_CHANGE_DIRECTORY):
+    if _has_current_top_level_coding_carrier(project_root):
         return project_root / TOP_LEVEL_CHANGE_DIRECTORY
     if for_create and _has_foreign_change_governance(project_root):
         raise ValueError(
-            "检测到项目已有 OpenSpec 治理，但未发现已确认的 Coding Change carrier；"
+            "检测到项目已有 OpenSpec、顶层 changes 或其他未确认治理，"
+            "但没有证据表明它是当前 coding-change/v1 carrier；"
             "请先按项目规则确定 Requirement Traceability / Validation Matrix / Completion Audit 的承载方式，"
-            "Coding 不会静默创建平行 Change。"
+            "Coding 不会静默创建或污染平行 Change。"
         )
     return project_root / DEFAULT_CHANGE_DIRECTORY
 
