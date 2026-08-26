@@ -754,9 +754,11 @@ def _top_level_change_documents(root: Path) -> list[Path]:
 
 
 def _has_current_top_level_coding_carrier(root: Path) -> bool:
-    """只有顶层 changes 中已存在当前 `coding-change/v1` 才把它认作受支持 Coding carrier。"""
+    """只有顶层 changes 中存在记录且全部为当前 schema，才认作受支持 Coding carrier。"""
     documents = _top_level_change_documents(root)
-    return any(_raw_change_schema(path) == CHANGE_SCHEMA for path in documents)
+    return bool(documents) and all(
+        _raw_change_schema(path) == CHANGE_SCHEMA for path in documents
+    )
 
 
 def _has_foreign_change_governance(root: Path) -> bool:
