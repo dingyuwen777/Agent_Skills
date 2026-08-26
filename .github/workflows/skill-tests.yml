@@ -49,6 +49,7 @@ jobs:
           scripts/install.py
           scripts/build_runtime.py
           scripts/install_runtime.py
+          scripts/install_runtime_target.py
           scripts/runtime_mcp_smoke.py
           runtime/agent_skills_runtime/catalog.py
           runtime/agent_skills_runtime/crypto.py
@@ -61,6 +62,7 @@ jobs:
           python3 scripts/install.py --help
           python3 scripts/build_runtime.py --help
           python3 scripts/install_runtime.py --help
+          python3 scripts/install_runtime_target.py --help
           python3 scripts/runtime_mcp_smoke.py --help
 
       - name: Run self-contained tests
@@ -75,6 +77,7 @@ jobs:
           python3 scripts/build_runtime.py --output-dir .runtime-dist --json
           .runtime-dist/agent-skills-mcp status --json
           .runtime-dist/agent-skills-mcp self-test --json
+          test -f .runtime-dist/agent-skills-mcp-runtime-kit.zip
 
       - name: Verify real stdio MCP contract
         run: >-
@@ -105,6 +108,23 @@ jobs:
           grep -q "agent_skills_load_context" "${target}/.agents/skills/coding/references/02_跨项目研发任务路由.md"
           test ! -f "${target}/.agents/skills/coding/README.md"
 
+      - name: Verify extracted Runtime Kit without source repository
+        run: |
+          extract_root="${RUNNER_TEMP}/agent-skills-kit-extracted"
+          target="${RUNNER_TEMP}/agent-skills-kit-target"
+          mkdir -p "${extract_root}" "${target}"
+          python3 -m zipfile -e .runtime-dist/agent-skills-mcp-runtime-kit.zip "${extract_root}"
+          kit="${extract_root}/agent-skills-mcp-runtime-kit"
+          test -f "${kit}/agent-skills-runtime-kit.json"
+          test -f "${kit}/install_runtime_target.py"
+          cd "${RUNNER_TEMP}"
+          python3 "${kit}/install_runtime_target.py" \
+            --runtime-command "${RUNNER_TEMP}/agent-skills-runtime-bin/agent-skills-mcp" \
+            --target "${target}" \
+            --json
+          test -f "${target}/AGENTS.md"
+          grep -q "agent_skills_load_context" "${target}/.agents/skills/docs/references/01_事实源与同步判断.md"
+
       - name: Verify active Coding Change
         run: >-
           python3 .agents/skills/coding/scripts/ready_check.py
@@ -133,6 +153,7 @@ jobs:
           .\.runtime-dist\agent-skills-mcp.exe status --json
           .\.runtime-dist\agent-skills-mcp.exe self-test --json
           python scripts/runtime_mcp_smoke.py --artifact .\.runtime-dist\agent-skills-mcp.exe --json
+          if (-not (Test-Path .\.runtime-dist\agent-skills-mcp-runtime-kit.zip)) { throw "缺少 Windows Runtime Distribution Kit" }
 
       - name: Verify Windows user-level Runtime installation
         shell: pwsh
@@ -163,3 +184,26 @@ jobs:
           if (-not (Test-Path $skill)) { throw "Runtime 模式缺少 Coding Core SKILL.md" }
           if (-not (Select-String -Path $stub -Pattern "agent_skills_load_context" -Quiet)) { throw "Runtime Stub 未接入 MCP" }
           if (Test-Path $readme) { throw "Runtime 模式不应分发 Coding README.md" }
+
+      - name: Verify extracted Windows Runtime Kit without source repository
+        shell: pwsh
+        run: |
+          $extractRoot = Join-Path $env:RUNNER_TEMP "agent-skills-kit-extracted"
+          $target = Join-Path $env:RUNNER_TEMP "agent-skills-kit-target"
+          Expand-Archive -Path .\.runtime-dist\agent-skills-mcp-runtime-kit.zip -DestinationPath $extractRoot -Force
+          $kit = Join-Path $extractRoot "agent-skills-mcp-runtime-kit"
+          $runtime = Join-Path $env:RUNNER_TEMP "agent-skills-runtime-bin\agent-skills-mcp.exe"
+          New-Item -ItemType Directory -Force -Path $target | Out-Null
+          Push-Location $env:RUNNER_TEMP
+          try {
+            python (Join-Path $kit "install_runtime_target.py") `
+              --runtime-command $runtime `
+              --target $target `
+              --json
+          } finally {
+            Pop-Location
+          }
+          $agents = Join-Path $target "AGENTS.md"
+          $stub = Join-Path $target ".agents\skills\docs\references\01_事实源与同步判断.md"
+          if (-not (Test-Path $agents)) { throw "Runtime Kit 未生成目标 AGENTS.md" }
+          if (-not (Select-String -Path $stub -Pattern "agent_skills_load_context" -Quiet)) { throw "Runtime Kit Stub 未接入 MCP" }
