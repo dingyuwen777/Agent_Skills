@@ -42,16 +42,19 @@ def _iter_reference_files(source_root: Path) -> Iterable[tuple[str, Path]]:
 
 
 def _source_digest(entries: Iterable[Mapping[str, Any]]) -> str:
-    """根据 Reference 身份、路径、内容摘要和大小计算确定性源摘要。"""
-    material = [
-        {
-            "id": str(entry["id"]),
-            "source_path": str(entry["source_path"]),
-            "sha256": str(entry["sha256"]),
-            "size": int(entry["size"]),
-        }
-        for entry in entries
-    ]
+    """按 Reference ID 排序后，根据身份、路径、内容摘要和大小计算确定性源摘要。"""
+    material = sorted(
+        (
+            {
+                "id": str(entry["id"]),
+                "source_path": str(entry["source_path"]),
+                "sha256": str(entry["sha256"]),
+                "size": int(entry["size"]),
+            }
+            for entry in entries
+        ),
+        key=lambda entry: entry["id"],
+    )
     payload = json.dumps(material, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return _sha256_bytes(payload)
 
