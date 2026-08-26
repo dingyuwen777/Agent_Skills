@@ -74,6 +74,8 @@ def install_runtime(artifact: str | Path, install_dir: str | Path | None = None)
     destination = destination_dir / _target_filename(source)
     if destination.is_symlink():
         raise ValueError(f"Runtime 目标不能是符号链接：{destination}")
+    if destination.exists() and not destination.is_file():
+        raise ValueError(f"Runtime 目标已存在且不是普通文件，拒绝覆盖：{destination}")
 
     with tempfile.TemporaryDirectory(prefix=".agent-skills-runtime-install-", dir=destination_dir) as temp_name:
         temp_root = Path(temp_name)
