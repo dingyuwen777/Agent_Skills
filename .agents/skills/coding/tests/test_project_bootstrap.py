@@ -28,7 +28,7 @@ class ProjectBootstrapTest(unittest.TestCase):
     """验证目标项目 AGENTS Overlay 与本地缓存忽略规则的安全、幂等行为。"""
 
     def test_bootstrap_creates_agents_for_greenfield_without_inventing_stack(self) -> None:
-        """空项目应创建可用 AGENTS 初版，但不得猜测具体框架、数据库或架构。"""
+        """空项目应创建可用 AGENTS 初版，并明确禁止把技术示例反推成项目事实。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             skill = root / ".agents/skills/coding"
@@ -43,10 +43,12 @@ class ProjectBootstrapTest(unittest.TestCase):
             self.assertIn(".agents/skills/coding/SKILL.md", content)
             self.assertIn(".agents/skills/review/SKILL.md", content)
             self.assertIn(".agents/skills/docs/SKILL.md", content)
-            self.assertNotIn("FastAPI", content)
-            self.assertNotIn("PostgreSQL", content)
-            self.assertNotIn("React", content)
-            self.assertNotIn("Vue", content)
+            self.assertIn("不能单凭文件名推出 React、FastAPI、PostgreSQL", content)
+            self.assertNotIn("本项目使用 FastAPI", content)
+            self.assertNotIn("数据库：PostgreSQL", content)
+            self.assertNotIn("前端框架：React", content)
+            self.assertNotIn("前端框架：Vue", content)
+            self.assertIn("初始化扫描未发现可稳定列出的项目规则", content)
             self.assertIn(".agents/project-context.json", (root / ".gitignore").read_text(encoding="utf-8"))
 
     def test_bootstrap_preserves_existing_agents_bytes_outside_managed_block(self) -> None:
