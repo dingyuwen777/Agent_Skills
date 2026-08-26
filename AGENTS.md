@@ -150,3 +150,19 @@ Coding 的 Requirement Traceability、Validation Matrix、Completion Audit 是�
 - Git 分支、提交、PR、CI、合并和归档状态。
 
 禁止只回复“已完成”或“测试通过”。
+
+## 8. 本地 MCP Runtime 维护边界
+
+当任务涉及 `runtime/`、`scripts/build_runtime.py`、`scripts/install_runtime.py`、`scripts/runtime_mcp_smoke.py`、`scripts/install.py --mode runtime`、Reference Stub、Bundle/加密格式或 MCP Tool Contract 时，在 Coding 主规则和直接相关开发/验证规则之外，还必须读取 `.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md`。
+
+Runtime 是三个正式 Skill 的**可选分发通道**，不是第四个 Skill，也不是第二套研发规则源。维护时必须保持：
+
+- 源仓库 `coding/review/docs` 的 `SKILL.md` 与 canonical `references/*.md` 仍是唯一完整自然语言规则事实源；
+- Runtime 不把复杂 Reference 自动摘要、重写成 Guidance、Policy DSL 或布尔判断；
+- `full` 安装模式继续保持现有完整 Markdown 分发语义；
+- `runtime` 模式保留 Native Core `SKILL.md`，详细 Reference 只分发同名 stub，并由本地 MCP `agent_skills_load_context` 返回 canonical 原文；
+- Source Reference bytes → Bundle hash/content → 解密结果 → MCP `canonical_text` 必须有逐字守恒证据；
+- Bundle 加密/onefile 只作为普通防浏览/复制能力，不宣称能够抵御机器 Owner、调试器、内存转储或专业逆向；
+- Runtime/source digest 不匹配时必须在修改目标项目之前失败，不能制造旧 Runtime 与新 Stub 的混装状态；
+- Runtime build 必须验证最终平台 artifact，而不只验证 Python 模块；永久 CI 至少覆盖 onefile `status/self-test`、真实 stdio MCP `tools/list`/`tools/call` 和 runtime-mode 临时目标项目安装；
+- Windows `.exe`、Linux、macOS artifact 分别在对应目标平台构建/验证，不把 PyInstaller onefile 当作跨平台产物。
