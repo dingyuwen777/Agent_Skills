@@ -68,27 +68,6 @@ def _remove_path(path: Path) -> None:
         path.unlink()
 
 
-def _swap_skills(staging_root: Path, target_skills: Path, backup_root: Path) -> list[str]:
-    """逐个切换已暂存 Skill；单个切换失败时立即恢复该项，并返回已完成项供上层统一回滚。"""
-    swapped: list[str] = []
-    for skill in MANAGED_SKILLS:
-        target = target_skills / skill
-        backup = backup_root / skill
-        staged = staging_root / skill
-        moved_existing = False
-        if target.exists():
-            target.rename(backup)
-            moved_existing = True
-        try:
-            staged.rename(target)
-        except Exception:
-            if moved_existing and backup.exists() and not target.exists():
-                backup.rename(target)
-            raise
-        swapped.append(skill)
-    return swapped
-
-
 def _rollback_skills(target_skills: Path, backup_root: Path, swapped: Sequence[str]) -> None:
     """安装或 Bootstrap 失败时恢复本次已经成功切换的受管 Skill 目录。"""
     for skill in reversed(swapped):
@@ -97,6 +76,31 @@ def _rollback_skills(target_skills: Path, backup_root: Path, swapped: Sequence[s
         _remove_path(target)
         if backup.exists():
             backup.rename(target)
+
+
+def _swap_skills(staging_root: Path, target_skills: Path, backup_root: Path) -> list[str]:
+    """逐个切换已暂存 Skill；任一切换失败时恢复当前项和此前所有已切换项。"""
+    swapped: list[str] = []
+    try:
+        for skill in MANAGED_SKILLS:
+            target = target_skills / skill
+            backup = backup_root / skill
+            staged = staging_root / skill
+            moved_existing = False
+            if target.exists():
+                target.rename(backup)
+                moved_existing = True
+            try:
+                staged.rename(target)
+            except Exception:
+                if moved_existing and backup.exists() and not target.exists():
+                    backup.rename(target)
+                raise
+            swapped.append(skill)
+    except Exception:
+        _rollback_skills(target_skills, backup_root, swapped)
+        raise
+    return swapped
 
 
 def _run_bootstrap(target_root: Path) -> dict[str, Any]:
