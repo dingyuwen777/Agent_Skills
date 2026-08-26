@@ -6,13 +6,13 @@
 
 | Skill | 作用 |
 | --- | --- |
-| `coding` | 仓库事实恢复、需求/设计、功能开发、Bug 修复、重构、验证、CI、Git、Release 与交付 |
+| `coding` | Greenfield/仓库事实恢复、需求/设计、功能开发、Bug 修复、重构、验证、CI、Git、Release 与交付 |
 | `review` | 独立 Code Review、Findings、测试充分性审查和 re-review |
 | `docs` | 技术文档事实同步、审查、编写、更新和可读性治理 |
 
 ## 1. 适用范围
 
-Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按当前仓库事实识别项目形态和真实工具链，可用于：
+Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按当前仓库事实识别项目形态和真实工具链，也支持尚未建立完整工程事实的 Greenfield 项目，可用于：
 
 - Library / SDK；
 - CLI / Developer Tool；
@@ -24,7 +24,7 @@ Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按
 - Embedded / Systems；
 - Infra / IaC / Build / Release Tooling；
 - Monorepo / Polyglot；
-- Greenfield / Repository Bootstrap；
+- Greenfield / Repository Bootstrap / Prototype / Feasibility；
 - Documentation / Configuration / Migration-only 任务。
 
 语言 profile 已覆盖常见 Python、JavaScript/TypeScript、Go、Rust、Java/Kotlin、.NET、C/C++、Swift、Dart/Flutter、PHP、Ruby、Elixir、Container/IaC；未列出的语言继续使用同一套 Runtime/Compiler → Manifest → Lock → Build/Test → Package/Runtime → CI/Release 事实发现算法。
@@ -43,12 +43,12 @@ Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按
         └── docs/
 ```
 
-项目自己的 `AGENTS.md` 是 Overlay：它可以规定实际语言、版本、架构、数据库、目录、业务 Contract、CI、部署方式和项目特殊约束。
+项目自己的 `AGENTS.md` 是 Overlay：它可以规定实际语言、版本、架构、数据库/持久化、目录、业务 Contract、CI、部署方式和项目特殊约束。
 
 `Agent_Skills` 的通用规则负责：
 
 ```text
-先恢复项目事实
+先恢复项目事实 / Greenfield 约束
 → 判断项目形态 / 研发阶段 / 真实工具链 / L1-L3 风险
 → 选择最少但充分流程
 → 最小兼容实现
@@ -59,7 +59,7 @@ Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按
 
 不要把本仓库根 `AGENTS.md` 复制到目标项目覆盖其已有项目规则；根 `AGENTS.md` 只用于维护 Agent_Skills 自身。需要分发的是 `.agents/skills/` 下的 Skill 内容。
 
-## 3. 安装/接入
+## 3. 安装 / 接入
 
 最直接的方式是把需要的 Skill 复制或同步到目标仓库：
 
@@ -69,13 +69,19 @@ Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按
 .agents/skills/docs/
 ```
 
-三个 Skill 可以一起使用；Coding 会在适用时自动路由 Review 和 Docs。也可以只安装单个 Skill，但功能边界会相应降级：
+三个 Skill 可以一起使用；Coding 会在适用时路由 Review 和 Docs。也可以只安装单个 Skill，但功能边界会相应降级：
 
 - 没有 Review Skill：Coding 继续执行自身完成前 Review；
 - 没有 Docs Skill：Coding 继续执行自身文档影响判断与同步规则；
 - Review 单独使用时，如果同仓存在 Coding，Review 会先读取 Coding 作为研发规范源；不存在时则只依据项目本地规则和 Review 方法。
 
 不要假设所有宿主工具都自动扫描同一路径；宿主若要求显式注册 Skill，应按该宿主当前官方能力把这个目录配置为可读 Skill。无论宿主如何加载，项目事实仍来自目标仓库本身。
+
+目标项目还应忽略本地缓存：
+
+```gitignore
+.agents/project-context.json
+```
 
 ## 4. 怎么用 Coding
 
@@ -98,6 +104,8 @@ Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按
 对真正影响接口、数据、兼容、部署和长期维护的技术选择比较可行方案，关键决策确认后建立最小工程基线；
 不要假装已有项目事实，也不要为了显得完整一次性创建未来可能用不到的框架、数据库、服务或 CI 层。
 ```
+
+Prototype / Spike 也必须明确探索范围、验证方式以及哪些安全/数据边界不能因为“只是原型”而放宽。
 
 ### Bug
 
@@ -142,7 +150,7 @@ Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按
 - `L2`：新功能、行为变化、重要 Bug、多文件修改、多人并行或需要正式追踪；
 - `L3`：public API/ABI/CLI/格式、Schema/Migration、跨模块 Contract、架构、认证授权、安全、部署恢复、重大依赖、不可逆数据行为或破坏性兼容变化。
 
-代码行数少不等于 L1。
+代码行数少不等于 L1。Greenfield 中会长期锁定公共接口、核心数据模型、主要架构或运行/部署方式的选择也可能是 L3。
 
 ## 8. Change 与 Completion Gate
 
@@ -152,7 +160,7 @@ Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按
 coding-change/v1
 ```
 
-不兼容任何历史 Change schema；只接受当前 `coding-change/v1`。
+**不兼容、不读取、不迁移任何历史 Change schema。** 如果目标项目仍保存旧格式，必须由该项目显式决定归档、转换或删除；Coding 工具不会静默接受。
 
 重要工作保留这些语义：
 
@@ -167,7 +175,9 @@ coding-change/v1
 → Ready / Delivery
 ```
 
-**载体不是固定项目架构。** 目标项目已有正式 Change/RFC/Spec/OpenSpec/Issue 机制时优先复用；Coding CLI 不会擅自改写未知第三方格式。需要 Coding 自带载体时默认使用：
+**载体不是固定项目架构。** 目标项目已有正式 Change/RFC/ADR/Spec/OpenSpec/Issue 机制时优先复用，只要能承载这些语义；Coding CLI 不会擅自改写未知第三方格式。
+
+需要 Coding 自带载体时默认使用：
 
 ```text
 .agents/changes/
@@ -175,7 +185,7 @@ coding-change/v1
 └── archive/
 ```
 
-目标项目已经使用受支持的顶层 `changes/active` / `changes/archive` 时可继续沿用。必要时 CLI/Ready Check 提供 `--change-root` 显式选择。
+目标项目已经正式使用顶层 `changes/active` / `changes/archive` 承载同类 Coding Change 时可继续沿用。检测到 OpenSpec 等不同治理体系、但没有已确认 Coding carrier 时，`new-change` 会拒绝静默创建平行 Change。
 
 ## 9. `project-context.json`
 
@@ -189,7 +199,7 @@ coding-change/v1
 - 不复制需求正文，不保存架构结论；
 - `cache_hit` 不表示普通源码没变化；
 - 当前代码和实际运行结果始终优先；
-- 该文件不提交 Git，应加入目标项目 `.gitignore`；
+- 该文件不提交 Git，应加入目标项目 `.gitignore`、本地 exclude 或等价忽略机制；
 - 生成时间使用带 `+08:00` 偏移的北京时间。
 
 刷新：
@@ -222,7 +232,7 @@ python .agents/skills/coding/scripts/coding.py new-change --help
 python .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready
 ```
 
-CLI 是工作流辅助工具，不替代 Agent 对需求完整性、测试充分性和业务语义的判断。
+CLI 是工作流辅助工具，不替代 Agent 对需求完整性、测试充分性和业务语义的判断。`status` 会显示实际使用的 Coding Change carrier。
 
 ## 12. 维护原则
 
@@ -237,4 +247,14 @@ CLI 是工作流辅助工具，不替代 Agent 对需求完整性、测试充分
 - 兼容与迁移要求；
 - 权限和 Git 边界。
 
+`12_规则保留映射.md` 已按当前治理决定删除，不再维护独立映射文档。后续规则重组应在当前 Change/Review 中记录受影响高价值规则，并通过 portability/preservation 回归、旧入口反向检查和人工语义 Review 证明内容守恒。
+
 任何自动测试只能防止明显回归，不能替代人工逐节检查规则语义是否仍完整。
+
+## 13. 进一步阅读
+
+- [`.agents` 总说明](.agents/README.md)
+- [Coding 使用说明](.agents/skills/coding/README.md)
+- [Coding 正式规则](.agents/skills/coding/SKILL.md)
+- [Review 使用说明](.agents/skills/review/README.md)
+- [Docs 使用说明](.agents/skills/docs/README.md)

@@ -22,12 +22,14 @@ class ReviewSkillIntegrationTest(unittest.TestCase):
         self.assertIn(".agents/skills/review/SKILL.md", coding)
         self.assertIn("re-review", coding)
 
-    def test_review_testing_reference_uses_generic_persistence_language(self) -> None:
-        """测试专家策略以真实 Persistence/Runtime 为准，不固定某种数据库。"""
+    def test_review_testing_reference_keeps_project_specific_persistence_conditional(self) -> None:
+        """Review 测试策略必须明确项目不是 PostgreSQL 时不机械要求 PostgreSQL。"""
         testing = self._read(".agents/skills/review/references/03_测试专家审查方法.md")
-        self.assertIn("Backend / API / Persistence Integration", testing)
-        self.assertIn("项目实际使用什么 persistence 就验证什么", testing)
-        self.assertIn("External Dependency / Provider Probe", testing)
+        self.assertIn("Backend / API / PostgreSQL Integration", testing)
+        self.assertIn("项目实际不使用 PostgreSQL 时，不机械要求 PostgreSQL", testing)
+        self.assertIn("Real Provider Probe", testing)
+        self.assertIn("Library / SDK", testing)
+        self.assertIn("Infra / IaC / Release", testing)
 
 
 if __name__ == "__main__":

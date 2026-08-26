@@ -28,7 +28,7 @@ class LocalCacheAndDocsGovernanceTest(unittest.TestCase):
         readme = self._read(".agents/skills/docs/README.md")
         for text in ("not_applicable", "targeted", "full"):
             self.assertIn(text, readme)
-        self.assertIn("不是扫描所有 Markdown", readme)
+        self.assertIn("不是全文库扫描", readme)
 
     def test_repository_rules_require_self_contained_skill_tests(self) -> None:
         """根维护规范必须明确 Skill 测试不能依赖另一个业务仓库的文件树。"""
