@@ -24,10 +24,10 @@ INSTALL = _load_installer()
 
 
 class InstallerRollbackTest(unittest.TestCase):
-    """验证受管 Skill 在切换中途失败时不会丢失当前正在替换的旧目录。"""
+    """验证受管 Skill 在切换中途失败时完整恢复当前项和此前已切换项。"""
 
-    def test_swap_restores_current_skill_when_staged_directory_is_missing(self) -> None:
-        """旧目录已移到 backup 后若新目录切换失败，应立即恢复该旧目录再向上抛错。"""
+    def test_swap_restores_all_changed_skills_when_staged_directory_is_missing(self) -> None:
+        """第二项切换失败时，应同时恢复当前旧目录和第一项已经被新版本替换的旧目录。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             staging = root / "staging"
@@ -41,6 +41,9 @@ class InstallerRollbackTest(unittest.TestCase):
             staged_coding.mkdir()
             (staged_coding / "new.txt").write_text("new coding\n", encoding="utf-8")
 
+            old_coding = target / "coding"
+            old_coding.mkdir()
+            (old_coding / "old.txt").write_text("old coding\n", encoding="utf-8")
             old_review = target / "review"
             old_review.mkdir()
             (old_review / "old.txt").write_text("old review\n", encoding="utf-8")
@@ -48,9 +51,14 @@ class InstallerRollbackTest(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 INSTALL._swap_skills(staging, target, backup)
 
-            restored = target / "review/old.txt"
-            self.assertTrue(restored.is_file())
-            self.assertEqual(restored.read_text(encoding="utf-8"), "old review\n")
+            restored_coding = target / "coding/old.txt"
+            restored_review = target / "review/old.txt"
+            self.assertTrue(restored_coding.is_file())
+            self.assertEqual(restored_coding.read_text(encoding="utf-8"), "old coding\n")
+            self.assertTrue(restored_review.is_file())
+            self.assertEqual(restored_review.read_text(encoding="utf-8"), "old review\n")
+            self.assertFalse((target / "coding/new.txt").exists())
+            self.assertFalse((backup / "coding").exists())
             self.assertFalse((backup / "review").exists())
 
 
