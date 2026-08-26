@@ -178,13 +178,13 @@ marker 后原文：逐字保留
 2. 每个研发任务先读适用项目规则；
 3. 随后必须读取 `.agents/skills/coding/SKILL.md`；
 4. Coding 命中的 reference 必须按触发条件读取；
-5. 只读取当前任务直接相关事实；
-6. Coding 要求 Review 且 Review Skill 存在时读取 `.agents/skills/review/SKILL.md`；
-7. Coding 判断文档影响且 Docs Skill 存在时读取 `.agents/skills/docs/SKILL.md`；
-8. Skill 缺失、不可读或规则冲突时明确报告，不假装遵守；
-9. 不绕过目标项目已有 CI、Branch Protection、PR、Release、Migration、安全或其他门禁；
-10. 语言、框架、数据库、架构、Contract、Schema、CI、部署等项目事实必须来自当前目标项目；
-11. 安装、升级或修复 Overlay 时读取本 reference，而不是自由重写 `AGENTS.md`。
+5. 安装、升级、创建/补充项目 `AGENTS.md` 或修复 managed block 时读取本 reference；
+6. 只读取当前任务直接相关事实；
+7. Coding 要求 Review 且 Review Skill 存在时读取 `.agents/skills/review/SKILL.md`；
+8. Coding 判断文档影响且 Docs Skill 存在时读取 `.agents/skills/docs/SKILL.md`；
+9. Skill 缺失、不可读或规则冲突时明确报告，不假装遵守；
+10. 不绕过目标项目已有 CI、Branch Protection、PR、Release、Migration、安全或其他门禁；
+11. 语言、框架、数据库、架构、Contract、Schema、CI、部署等项目事实必须来自当前目标项目。
 
 不要为了缩短 managed block 删除这些可执行语义；需要改模板时同时更新本 reference、测试和 README，并做内容守恒 Review。
 
@@ -213,8 +213,9 @@ Bootstrap 不尝试实现完整 Git ignore 语义解析；它只保证项目文�
 - 目标受管 Skill 目录为符号链接时拒绝；
 - 目标 `AGENTS.md` / `.gitignore` 为符号链接时拒绝；
 - Skill 必须先完整暂存，再替换现有受管目录；
-- 切换过程中失败时恢复已经切换的受管 Skill；
-- Bootstrap 在任何写入前先验证已有 `AGENTS.md` marker 和文本编码；
+- 任一 Skill 切换失败时恢复当前项和此前已经切换的受管 Skill；
+- Skill 已全部切换但 Bootstrap 失败时恢复本次安装前的三个受管 Skill；
+- Bootstrap 在任何写入前先验证已有 `AGENTS.md` marker、AGENTS 文本编码和 `.gitignore` 文本编码；
 - 单文件写入使用同目录临时文件 + 原子替换；
 - 不使用 `git reset --hard`、`git clean`、强制推送或其他破坏性方式实现安装。
 
@@ -242,22 +243,50 @@ Greenfield / 空仓库：
 
 Bootstrap 不是“自动架构设计器”。即使目标项目已经很复杂，也不把一次文件扫描结果自动写成权威架构结论。
 
-## 11. 验证
+## 11. Coding Agent 的项目 Overlay 语义补全
+
+确定性 Bootstrap 的职责是保证**第一次接入一定安全、可重复、不会猜项目事实**。它生成的是可以立即工作的初版 Overlay，不代表项目语义已经被完整整理。
+
+如果当前任务本身就是“安装 / 初始化 Agent_Skills、创建或完善目标项目 `AGENTS.md`”，并且用户已经授权修改项目规则，则执行该任务的 Coding Agent 在 Bootstrap 后还必须判断目标项目 Overlay 是否需要**有证据的语义补全**：
+
+1. 重新读取 Bootstrap 后的目标项目 `AGENTS.md`，不要从模板反推项目事实；
+2. 按项目发现规则只读取与长期研发导航直接相关的最少充分事实源，例如现有 `CONTRIBUTING`、根 README、Manifest/lock、版本文件、CI、正式架构/Spec/Contract/Schema/Migration 入口和真实代码目录；
+3. 能从当前仓库直接确认的长期事实，可以在 **managed block 之外的项目自有区域**增量补充，例如真实 Runtime/包管理器入口、正式测试/构建入口、关键文档导航或项目已经明确的特殊约束；
+4. 已有 `AGENTS.md` 已经清楚表达的内容不重复、不改写措辞，不为了统一风格重排原文；新增内容只补真实缺口；
+5. 不能仅凭文件名、目录名或常见实践写入框架、数据库、架构、模块职责、Owner、Contract、CI 语义或部署结论；需要读内容和必要调用链才能确认；
+6. 发现多个事实源互相矛盾时，不把某一个猜成正确答案；记录冲突并按 Coding 的事实优先级继续核实，只有需要 Owner/用户作出的真实上游决策才提请确认；
+7. 语义补全不得修改 `<!-- agent-skills:managed:start -->` 与 `<!-- agent-skills:managed:end -->` 内的受管文本；该区域只由当前模板/Bootstrap 更新；
+8. 后续普通 Agent_Skills 升级只更新三个受管 Skill 和 managed block，**不会自动覆盖这部分项目自有语义**。项目事实变化后，应由项目维护任务依据新事实正常更新，而不是由安装器静默重写。
+
+如果用户只是自己在终端运行 `scripts/install.py`，没有一个具备项目语义理解能力的 Agent 正在执行初始化任务，则停在确定性初版是正确行为；不能让普通 Python 脚本伪装成已经完成项目架构理解。
+
+因此完整链路是：
+
+```text
+确定性 install.py
+→ 确定性 coding.py bootstrap
+→ 目标项目拥有安全可用的 AGENTS 初版/managed block
+→ 若当前由 Coding Agent 执行且有写权限：基于真实证据补项目自有 Overlay 缺口
+→ 后续每个研发任务从 AGENTS → Coding → references / Review / Docs
+```
+
+## 12. 验证
 
 修改安装器、Bootstrap、managed block 或模板时至少验证：
 
 - Greenfield 无 `AGENTS.md` 可创建；
 - 已有 `AGENTS.md` marker 外原文字节保持；
-- CRLF/LF 不因增量接入被整份归一化；
+- CRLF/LF 不因确定性 Bootstrap 被整份归一化；
 - 完整 managed block 可升级；
 - 重复执行幂等；
 - 坏 marker 拒绝且原文件不变；
 - `.gitignore` 增量与幂等；
 - 缺少 Coding Skill 时拒绝生成指向不存在入口的 AGENTS；
 - 安装器只替换 `coding/review/docs`，保留 `.agents/changes`、项目自有 Skill 和其他 `.agents` 内容；
+- 任一 Skill 切换中途失败可恢复当前项和此前项；
 - 安装器重复运行可作为升级；
-- 非 Python、多语言和空项目不会出现 FastAPI/PostgreSQL/React/Vue 等未经确认的推断；
+- 非 Python、多语言和空项目只列真实事实入口，不产生未经确认的 FastAPI/PostgreSQL/React/Vue 等项目断言；
 - `coding.py bootstrap --help`、`scripts/install.py --help`、`py_compile` 和完整自包含测试通过；
-- CI 的 paths 与 compile 命令真实覆盖根 `scripts/install.py`。
+- CI 的 paths 与 compile/smoke 命令真实覆盖根 `scripts/install.py` 和 `bootstrap` CLI。
 
 完成结论仍遵守 Coding 的 Validation Matrix、Completion Audit、独立 Review 和新鲜证据门禁。
