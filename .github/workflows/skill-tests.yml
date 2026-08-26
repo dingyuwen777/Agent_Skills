@@ -7,6 +7,7 @@ on:
       - "README.md"
       - ".gitignore"
       - ".agents/**"
+      - "scripts/**"
       - ".github/workflows/skill-tests.yml"
   push:
     branches:
@@ -16,6 +17,7 @@ on:
       - "README.md"
       - ".gitignore"
       - ".agents/**"
+      - "scripts/**"
       - ".github/workflows/skill-tests.yml"
 
 permissions:
@@ -39,6 +41,7 @@ jobs:
           python3 -m py_compile
           .agents/skills/coding/scripts/coding.py
           .agents/skills/coding/scripts/ready_check.py
+          scripts/install.py
 
       - name: Run self-contained tests
         run: >-
