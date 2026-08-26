@@ -247,15 +247,15 @@ Windows CPython 通常没有系统 IANA 时区数据库，而既有 Coding Boots
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | 保持现有完整 Skill 对 Codex 推理的效果，复杂 Reference 不压缩成布尔或摘要 | user:execution-effect-first | verified | canonical Reference bytes 直接进入 Bundle；`RuntimeStore.load_context`/真实 stdio MCP smoke 将 `canonical_text` 与源 Reference 原文逐字比较；ref14 明确禁止自动摘要/DSL |
-| R2 | 本地分发时不在目标项目明文放置完整 Reference，但不要求对机器 Owner 强保密 | user:local-mcp-protection-boundary | verified | AES-256-GCM onefile Runtime + Runtime Stub；`test_runtime_distribution` 与 Kit 测试断言目标/Kit stub 不含 canonical body；文档明确本地逆向边界 |
-| R3 | 保留 Native Core Skill，让现有触发/路由继续指导 Agent，而不是纯 MCP 替代 Skill | user:native-core-plus-mcp | verified | runtime/source/Kit 两条目标安装链均原样复制 Core `SKILL.md`，Reference 保持同名 stub，managed block 要求 Core 命中 stub 后加载 canonical context |
-| R4 | MCP 必须能把命中 Reference 原文传给本地 Codex 上下文 | user:read-skill-context-equivalence | verified | `agent_skills_load_context` 返回 exact `canonical_text` + SHA256；run `32971575613`、`32971926415` 的 Linux/Windows 真实 stdio `tools/list`/`tools/call` smoke 均通过 |
-| R5 | 告诉用户如何打包、安装、配置和升级 | user:package-and-use | verified | `runtime/README.md`、`runtime/DISTRIBUTION.md`、根 README、`.agents/README.md`、ref13/ref14 已覆盖 Windows/POSIX 构建、Runtime 安装、Codex/Cursor/Claude 注册、项目接入、升级、回滚与安全边界；所有公开 CLI `--help` 进入 CI |
-| R6 | 现有 full 安装方式和目标项目保护边界不得被静默破坏 | existing:reference-13 | verified | `install.py` 默认仍为 full；既有 Bootstrap/rollback 测试继续通过；runtime digest mismatch 在创建目标 `.agents` 前失败；`.agents/changes`/自有 Skill/marker 外规则保持 |
-| R7 | 原始 Skill/reference 高价值语义不得因本功能被总结、重写或丢失 | AGENTS.md:content-preservation | verified | canonical `references/*.md` 未迁移或重写；Bundle content 由原始 UTF-8 bytes decode；exact-text/hash 单测 + 真实 MCP smoke；Stub 明确不能替代 canonical_text；Review ID `5030751931` 完成内容守恒 A1/A2 检查 |
-| R8 | 代码、Git、时间、日志与交付遵守 Agent_Skills 全局硬规则及 CI/PR 门禁 | AGENTS.md | verified | 新增/修改函数均有中文函数级 docstring，feature commits 使用中文；Windows 时区依赖保持 `Asia/Shanghai`；没有绕过 CI/PR/Ready Gate；run `32971926415` 证明实现链全绿且 Ready Check 因本 Change 尚为 in_progress 正常阻断，现已完成 Review 后转 ready_for_review |
-| R9 | 部门成员只拿构建产物即可安装/升级 Runtime 和新目标项目，不需要私有 canonical Agent_Skills 源仓库 | user:package-and-use | verified | `agent-skills-mcp-runtime-kit.zip` + 独立 `install_runtime_target.py`；Verify Red run `32970949023` 的 2 个新 Kit 用例仅因实现不存在失败；Green run `32971575613` 在 Linux/Windows 均从解压 Kit、切换到源仓库外目录后成功安装全新目标项目 |
+| R1 | 保持现有完整 Skill 对 Codex 推理的效果，复杂 Reference 不压缩成布尔或摘要 | user:execution-effect-first | satisfied | canonical Reference bytes 直接进入 Bundle；`RuntimeStore.load_context`/真实 stdio MCP smoke 将 `canonical_text` 与源 Reference 原文逐字比较；ref14 明确禁止自动摘要/DSL |
+| R2 | 本地分发时不在目标项目明文放置完整 Reference，但不要求对机器 Owner 强保密 | user:local-mcp-protection-boundary | satisfied | AES-256-GCM onefile Runtime + Runtime Stub；`test_runtime_distribution` 与 Kit 测试断言目标/Kit stub 不含 canonical body；文档明确本地逆向边界 |
+| R3 | 保留 Native Core Skill，让现有触发/路由继续指导 Agent，而不是纯 MCP 替代 Skill | user:native-core-plus-mcp | satisfied | runtime/source/Kit 两条目标安装链均原样复制 Core `SKILL.md`，Reference 保持同名 stub，managed block 要求 Core 命中 stub 后加载 canonical context |
+| R4 | MCP 必须能把命中 Reference 原文传给本地 Codex 上下文 | user:read-skill-context-equivalence | satisfied | `agent_skills_load_context` 返回 exact `canonical_text` + SHA256；run `32971575613`、`32971926415` 的 Linux/Windows 真实 stdio `tools/list`/`tools/call` smoke 均通过 |
+| R5 | 告诉用户如何打包、安装、配置和升级 | user:package-and-use | satisfied | `runtime/README.md`、`runtime/DISTRIBUTION.md`、根 README、`.agents/README.md`、ref13/ref14 已覆盖 Windows/POSIX 构建、Runtime 安装、Codex/Cursor/Claude 注册、项目接入、升级、回滚与安全边界；所有公开 CLI `--help` 进入 CI |
+| R6 | 现有 full 安装方式和目标项目保护边界不得被静默破坏 | existing:reference-13 | satisfied | `install.py` 默认仍为 full；既有 Bootstrap/rollback 测试继续通过；runtime digest mismatch 在创建目标 `.agents` 前失败；`.agents/changes`/自有 Skill/marker 外规则保持 |
+| R7 | 原始 Skill/reference 高价值语义不得因本功能被总结、重写或丢失 | AGENTS.md:content-preservation | satisfied | canonical `references/*.md` 未迁移或重写；Bundle content 由原始 UTF-8 bytes decode；exact-text/hash 单测 + 真实 MCP smoke；Stub 明确不能替代 canonical_text；Review ID `5030751931` 完成内容守恒 A1/A2 检查 |
+| R8 | 代码、Git、时间、日志与交付遵守 Agent_Skills 全局硬规则及 CI/PR 门禁 | AGENTS.md | satisfied | 新增/修改函数均有中文函数级 docstring，feature commits 使用中文；Windows 时区依赖保持 `Asia/Shanghai`；没有绕过 CI/PR/Ready Gate；run `32971926415` 证明实现链全绿且 Ready Check 因本 Change 尚为 in_progress 正常阻断，现已完成 Review 后转 ready_for_review |
+| R9 | 部门成员只拿构建产物即可安装/升级 Runtime 和新目标项目，不需要私有 canonical Agent_Skills 源仓库 | user:package-and-use | satisfied | `agent-skills-mcp-runtime-kit.zip` + 独立 `install_runtime_target.py`；Verify Red run `32970949023` 的 2 个新 Kit 用例仅因实现不存在失败；Green run `32971575613` 在 Linux/Windows 均从解压 Kit、切换到源仓库外目录后成功安装全新目标项目 |
 
 # Validation Matrix
 
