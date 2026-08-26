@@ -1,0 +1,54 @@
+name: Skill Tests
+
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "README.md"
+      - ".gitignore"
+      - ".agents/**"
+      - ".github/workflows/skill-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "AGENTS.md"
+      - "README.md"
+      - ".gitignore"
+      - ".agents/**"
+      - ".github/workflows/skill-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  skill-tests:
+    name: Skill Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Python version
+        run: python3 --version
+
+      - name: Compile helper scripts
+        run: >-
+          python3 -m py_compile
+          .agents/skills/coding/scripts/coding.py
+          .agents/skills/coding/scripts/ready_check.py
+
+      - name: Run self-contained tests
+        run: >-
+          python3 -m unittest discover
+          -s .agents/skills/coding/tests
+          -p 'test_*.py'
+          -v
+
+      - name: Verify active Coding Change
+        run: >-
+          python3 .agents/skills/coding/scripts/ready_check.py
+          --root .
+          --require-active-ready
