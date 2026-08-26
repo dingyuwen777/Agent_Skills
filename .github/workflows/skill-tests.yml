@@ -82,13 +82,23 @@ jobs:
           --artifact .runtime-dist/agent-skills-mcp
           --json
 
+      - name: Verify user-level Runtime installation
+        run: |
+          runtime_dir="${RUNNER_TEMP}/agent-skills-runtime-bin"
+          python3 scripts/install_runtime.py \
+            --artifact .runtime-dist/agent-skills-mcp \
+            --install-dir "${runtime_dir}" \
+            --json
+          "${runtime_dir}/agent-skills-mcp" status --json
+          "${runtime_dir}/agent-skills-mcp" self-test --json
+
       - name: Verify runtime-mode target installation
         run: |
           target="${RUNNER_TEMP}/agent-skills-runtime-target"
           mkdir -p "${target}"
           python3 scripts/install.py \
             --mode runtime \
-            --runtime-command "${GITHUB_WORKSPACE}/.runtime-dist/agent-skills-mcp" \
+            --runtime-command "${RUNNER_TEMP}/agent-skills-runtime-bin/agent-skills-mcp" \
             --target "${target}" \
             --json
           test -f "${target}/.agents/skills/coding/SKILL.md"
@@ -100,3 +110,56 @@ jobs:
           python3 .agents/skills/coding/scripts/ready_check.py
           --root .
           --require-active-ready
+
+  runtime-windows-package:
+    name: Runtime Windows Package
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Python version
+        run: python --version
+
+      - name: Install Runtime build dependencies
+        run: python -m pip install -r runtime/requirements-build.txt
+
+      - name: Build and self-test Windows onefile Runtime
+        shell: pwsh
+        run: |
+          python scripts/build_runtime.py --output-dir .runtime-dist --json
+          .\.runtime-dist\agent-skills-mcp.exe status --json
+          .\.runtime-dist\agent-skills-mcp.exe self-test --json
+          python scripts/runtime_mcp_smoke.py --artifact .\.runtime-dist\agent-skills-mcp.exe --json
+
+      - name: Verify Windows user-level Runtime installation
+        shell: pwsh
+        run: |
+          $runtimeDir = Join-Path $env:RUNNER_TEMP "agent-skills-runtime-bin"
+          python scripts/install_runtime.py `
+            --artifact .\.runtime-dist\agent-skills-mcp.exe `
+            --install-dir $runtimeDir `
+            --json
+          $runtime = Join-Path $runtimeDir "agent-skills-mcp.exe"
+          & $runtime status --json
+          & $runtime self-test --json
+
+      - name: Verify Windows runtime-mode target installation
+        shell: pwsh
+        run: |
+          $runtime = Join-Path $env:RUNNER_TEMP "agent-skills-runtime-bin\agent-skills-mcp.exe"
+          $target = Join-Path $env:RUNNER_TEMP "agent-skills-runtime-target"
+          New-Item -ItemType Directory -Force -Path $target | Out-Null
+          python scripts/install.py `
+            --mode runtime `
+            --runtime-command $runtime `
+            --target $target `
+            --json
+          $skill = Join-Path $target ".agents\skills\coding\SKILL.md"
+          $stub = Join-Path $target ".agents\skills\coding\references\02_跨项目研发任务路由.md"
+          $readme = Join-Path $target ".agents\skills\coding\README.md"
+          if (-not (Test-Path $skill)) { throw "Runtime 模式缺少 Coding Core SKILL.md" }
+          if (-not (Select-String -Path $stub -Pattern "agent_skills_load_context" -Quiet)) { throw "Runtime Stub 未接入 MCP" }
+          if (Test-Path $readme) { throw "Runtime 模式不应分发 Coding README.md" }
