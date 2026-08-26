@@ -69,21 +69,28 @@ def _remove_path(path: Path) -> None:
 
 
 def _swap_skills(staging_root: Path, target_skills: Path, backup_root: Path) -> list[str]:
-    """把已经完整暂存的 Skill 逐个切换到目标，并记录已切换项供失败回滚。"""
+    """逐个切换已暂存 Skill；单个切换失败时立即恢复该项，并返回已完成项供上层统一回滚。"""
     swapped: list[str] = []
     for skill in MANAGED_SKILLS:
         target = target_skills / skill
         backup = backup_root / skill
         staged = staging_root / skill
+        moved_existing = False
         if target.exists():
             target.rename(backup)
-        staged.rename(target)
+            moved_existing = True
+        try:
+            staged.rename(target)
+        except Exception:
+            if moved_existing and backup.exists() and not target.exists():
+                backup.rename(target)
+            raise
         swapped.append(skill)
     return swapped
 
 
 def _rollback_skills(target_skills: Path, backup_root: Path, swapped: Sequence[str]) -> None:
-    """安装或 Bootstrap 失败时恢复本次切换前的受管 Skill 目录。"""
+    """安装或 Bootstrap 失败时恢复本次已经成功切换的受管 Skill 目录。"""
     for skill in reversed(swapped):
         target = target_skills / skill
         backup = backup_root / skill
