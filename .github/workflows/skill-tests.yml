@@ -43,6 +43,11 @@ jobs:
           .agents/skills/coding/scripts/ready_check.py
           scripts/install.py
 
+      - name: Smoke public CLI entrypoints
+        run: |
+          python3 .agents/skills/coding/scripts/coding.py bootstrap --help
+          python3 scripts/install.py --help
+
       - name: Run self-contained tests
         run: >-
           python3 -m unittest discover
