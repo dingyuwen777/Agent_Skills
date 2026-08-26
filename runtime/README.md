@@ -47,6 +47,8 @@ runtime/requirements.txt
 runtime/requirements-build.txt
 ```
 
+`requirements-build.txt` 还固定包含 `tzdata`。这是因为 Windows CPython 通常没有系统 IANA 时区数据库，而 Coding Bootstrap 的北京时间硬规则使用 `Asia/Shanghai`；后续在 Windows 执行目标项目 Runtime 安装时应继续使用这个虚拟环境的 Python，不要换回没有 `tzdata` 的裸系统 Python。
+
 ### Windows PowerShell
 
 ```powershell
@@ -100,7 +102,7 @@ canonical References
 ```powershell
 .\dist\agent-skills-mcp.exe status --json
 .\dist\agent-skills-mcp.exe self-test --json
-python scripts\runtime_mcp_smoke.py --artifact .\dist\agent-skills-mcp.exe --json
+.\.venv-runtime\Scripts\python.exe scripts\runtime_mcp_smoke.py --artifact .\dist\agent-skills-mcp.exe --json
 ```
 
 POSIX：
@@ -108,7 +110,7 @@ POSIX：
 ```bash
 ./dist/agent-skills-mcp status --json
 ./dist/agent-skills-mcp self-test --json
-python3 scripts/runtime_mcp_smoke.py --artifact ./dist/agent-skills-mcp --json
+./.venv-runtime/bin/python scripts/runtime_mcp_smoke.py --artifact ./dist/agent-skills-mcp --json
 ```
 
 `runtime_mcp_smoke.py` 会真正通过 stdio MCP 建立 Client/Server 会话，检查五个 Tool、读取一个 Reference，并把返回的 `canonical_text` / SHA256 与源仓库 canonical Reference 对比。
@@ -118,7 +120,7 @@ python3 scripts/runtime_mcp_smoke.py --artifact ./dist/agent-skills-mcp --json
 ### Windows
 
 ```powershell
-py -3.12 scripts\install_runtime.py --artifact .\dist\agent-skills-mcp.exe --json
+.\.venv-runtime\Scripts\python.exe scripts\install_runtime.py --artifact .\dist\agent-skills-mcp.exe --json
 ```
 
 默认安装到：
@@ -130,7 +132,7 @@ py -3.12 scripts\install_runtime.py --artifact .\dist\agent-skills-mcp.exe --jso
 ### Linux / macOS
 
 ```bash
-python3 scripts/install_runtime.py --artifact ./dist/agent-skills-mcp --json
+./.venv-runtime/bin/python scripts/install_runtime.py --artifact ./dist/agent-skills-mcp --json
 ```
 
 默认安装到：
@@ -214,7 +216,7 @@ claude mcp get agent-skills
 ### Windows
 
 ```powershell
-py -3.12 scripts\install.py `
+.\.venv-runtime\Scripts\python.exe scripts\install.py `
   --mode runtime `
   --runtime-command "$env:LOCALAPPDATA\AgentSkills\bin\agent-skills-mcp.exe" `
   --target "D:\work\MyProject" `
@@ -224,7 +226,7 @@ py -3.12 scripts\install.py `
 ### Linux / macOS
 
 ```bash
-python3 scripts/install.py \
+./.venv-runtime/bin/python scripts/install.py \
   --mode runtime \
   --runtime-command "$HOME/.local/share/agent-skills/bin/agent-skills-mcp" \
   --target /work/MyProject \
