@@ -41,6 +41,8 @@ Docs
 
 Review 不维护第二套 Coding 规范；Docs 不复制 Coding 的研发规则。Coding 在适用时负责路由到 Review/Docs。
 
+目标项目正式分发边界仍然只有上述三个 Skill。根 `scripts/install.py` 是 Agent_Skills 源仓库的分发/升级入口，不意味着目标项目应复制本仓库根 `AGENTS.md`、`.agents/changes/` 或其他仓库维护状态。目标项目 Overlay 的安装与 `AGENTS.md` Bootstrap 规则由 `.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md` 和对应 assets 定义。
+
 ## 3. 通用核心与项目 Overlay
 
 通用 Skill 可以强制跨项目工作方式，但不能伪造项目事实。
@@ -86,6 +88,8 @@ Review 不维护第二套 Coding 规范；Docs 不复制 Coding 的研发规则�
 
 这些事实只能来自目标仓库当前 `AGENTS.md`、`CONTRIBUTING`、README、Spec/ADR、Manifest、locks、Contract/Schema/Migration、代码、测试和 CI。
 
+目标项目没有 `AGENTS.md` 时，可以通过当前安装器/Bootstrap 建立项目 Overlay 初版；已有 `AGENTS.md` 时只能在稳定 managed markers 内增量接入 Agent Skills，marker 外项目原文必须保持。Bootstrap 只可以记录实际发现的事实入口作为导航，不能把文件名推断成框架、数据库或架构事实。
+
 ## 4. Change 与治理载体
 
 本仓库当前 Coding Change schema 为：
@@ -109,13 +113,16 @@ Coding 的 Requirement Traceability、Validation Matrix、Completion Audit 是�
 本仓库的 Skill 修改本身至少要验证：
 
 - 所有 Markdown/YAML/Python 文件可读；
-- Coding CLI 的 `discover/status/conflicts/new-change` 入口可运行；
+- Coding CLI 的 `bootstrap/discover/status/conflicts/new-change` 入口可运行；
+- `scripts/install.py` 可在临时目标项目完成三个受管 Skill 的首次安装和重复升级，且不删除目标项目 `.agents/changes/`、项目自有 Skill 或其他 `.agents` 内容；
+- Bootstrap 在无 `AGENTS.md`、已有 `AGENTS.md`、已有 managed block、坏 marker、LF/CRLF 和 `.gitignore` 幂等场景都保留用户内容并按 Contract 工作；
 - `ready_check.py` 的 schema、Traceability、Completion Audit 和 Change root 行为正确；
 - portability 测试证明不同语言/项目形态不会被反向推断成固定 Web/Python/PostgreSQL 项目；
 - 任一业务项目名称、业务源码路径、具体 Provider/平台或项目级 Blueprint/Stage 事实不出现在通用 live 规则或自包含测试中；
 - 用户定义的五项全局工程硬规则仍可从 Coding 主规则和完成前 Review 到达；
 - 删除/改名 reference 后没有 live 引用残留；
-- README 使用方式与实际文件路径、CLI 和缓存策略一致。
+- README 使用方式与实际文件路径、CLI、安装/Bootstrap 和缓存策略一致；
+- CI 的 path filters 和编译/测试命令真实覆盖根 `scripts/install.py`，不能出现安装器只在本地存在而不进永久门禁。
 
 测试必须自包含。禁止让 Agent_Skills 自己的单元测试依赖另一个业务仓库才存在的 Blueprint、backend、workflow 或脚本。
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Coding Skill 的项目发现缓存与并行变更检查工具。"""
+"""Coding Skill 的项目发现缓存、目标项目 Bootstrap 与并行变更检查工具。"""
 
 from __future__ import annotations
 
@@ -21,12 +21,17 @@ from zoneinfo import ZoneInfo
 
 CONTEXT_SCHEMA = "coding-project-context/v1"
 CHANGE_SCHEMA = "coding-change/v1"
-GENERATOR_VERSION = "0.3.0"
+GENERATOR_VERSION = "0.4.0"
 CONTEXT_DIRECTORY = ".agents"
 CONTEXT_FILENAME = "project-context.json"
 DEFAULT_CHANGE_DIRECTORY = Path(".agents") / "changes"
 TOP_LEVEL_CHANGE_DIRECTORY = Path("changes")
 BEIJING_TIMEZONE = ZoneInfo("Asia/Shanghai")
+AGENTS_FILENAME = "AGENTS.md"
+GITIGNORE_FILENAME = ".gitignore"
+AGENTS_MANAGED_START = "<!-- agent-skills:managed:start -->"
+AGENTS_MANAGED_END = "<!-- agent-skills:managed:end -->"
+CACHE_IGNORE_RULE = ".agents/project-context.json"
 CHANGE_ID_PATTERN = re.compile(r"^CHG-\d{8}-[a-z0-9]+(?:-[a-z0-9]+)*$")
 CHANGE_STATUSES = {
     "approved",
@@ -698,6 +703,223 @@ def ensure_project_context(
     return context, "refreshed" if existing is not None else "created"
 
 
+def _asset_text(name: str) -> str:
+    """读取 Coding Skill 自带 UTF-8 文本模板。"""
+    path = Path(__file__).resolve().parents[1] / "assets" / name
+    return path.read_text(encoding="utf-8")
+
+
+def _detect_newline(content: bytes) -> bytes:
+    """从已有文件选择主换行符，避免增量修改无意义改写整份文本。"""
+    if b"\r\n" in content:
+        return b"\r\n"
+    if b"\r" in content and b"\n" not in content:
+        return b"\r"
+    return b"\n"
+
+
+def _render_with_newline(text: str, newline: bytes) -> bytes:
+    """把模板统一为已有文件的换行风格后编码为 UTF-8。"""
+    normalised = text.replace("\r\n", "\n").replace("\r", "\n").rstrip("\n")
+    return normalised.replace("\n", newline.decode("ascii")).encode("utf-8")
+
+
+def _markdown_safe_text(value: str) -> str:
+    """把仓库派生文本转成安全单行 Markdown 显示，避免名称改变 AGENTS 指令结构。"""
+    escaped: list[str] = []
+    for character in value:
+        codepoint = ord(character)
+        if character == "\\":
+            escaped.append("\\\\")
+        elif character == "\n":
+            escaped.append("\\n")
+        elif character == "\r":
+            escaped.append("\\r")
+        elif character == "\t":
+            escaped.append("\\t")
+        elif character in {"`", "<", ">"}:
+            escaped.append(f"\\u{codepoint:04x}")
+        elif codepoint < 0x20 or codepoint == 0x7F or character in {"\u0085", "\u2028", "\u2029"}:
+            escaped.append(f"\\u{codepoint:04x}")
+        else:
+            escaped.append(character)
+    return "".join(escaped)
+
+
+def _bootstrap_fact_sources(root: Path) -> str:
+    """列出初始化时真实存在的高价值事实入口，只提供导航而不推断技术栈。"""
+    context = scan_project(root)
+    grouped: dict[str, list[str]] = {}
+    for item in context.get("documents", []):
+        if not isinstance(item, dict):
+            continue
+        path = item.get("path")
+        kind = item.get("kind")
+        if not isinstance(path, str) or not isinstance(kind, str):
+            continue
+        normalised = _normalise_relative_path(path)
+        if normalised == AGENTS_FILENAME:
+            continue
+        if normalised.startswith(".agents/skills/") or normalised.startswith(".agents/changes/"):
+            continue
+        grouped.setdefault(kind, []).append(normalised)
+    if not grouped:
+        return "- 初始化扫描未发现可稳定列出的项目规则、Manifest、需求、Contract、Migration 或文档入口；后续任务按实际新增文件继续恢复事实。"
+    labels = {
+        "instructions": "项目规则",
+        "manifest": "Manifest / Lock / Build",
+        "requirements": "需求 / Spec / Roadmap",
+        "contract": "Contract / Schema",
+        "migration": "Migration",
+        "documentation": "README / Architecture / Documentation",
+    }
+    lines: list[str] = []
+    for kind in ("instructions", "manifest", "requirements", "contract", "migration", "documentation"):
+        paths = sorted(set(grouped.get(kind, [])))
+        if not paths:
+            continue
+        lines.append(f"- {labels[kind]}：")
+        lines.extend(f"  - `{_markdown_safe_text(path)}`" for path in paths)
+    return "\n".join(lines)
+
+
+def _managed_block(newline: bytes) -> bytes:
+    """渲染固定 Agent Skills managed block，并适配目标文件原有换行风格。"""
+    return _render_with_newline(_asset_text("AGENTS.managed.md"), newline)
+
+
+def _validate_managed_markers(content: bytes) -> tuple[int, int] | None:
+    """校验 managed marker 唯一、成对且顺序正确；无 marker 时返回空值。"""
+    start = AGENTS_MANAGED_START.encode("utf-8")
+    end = AGENTS_MANAGED_END.encode("utf-8")
+    start_count = content.count(start)
+    end_count = content.count(end)
+    if start_count == 0 and end_count == 0:
+        return None
+    if start_count != 1 or end_count != 1:
+        raise ValueError("AGENTS.md 的 Agent Skills managed marker 不完整或重复，拒绝猜测性覆盖")
+    start_index = content.find(start)
+    end_index = content.find(end)
+    if start_index < 0 or end_index < start_index:
+        raise ValueError("AGENTS.md 的 Agent Skills managed marker 顺序错误，拒绝猜测性覆盖")
+    return start_index, end_index + len(end)
+
+
+def _updated_agents_content(root: Path, existing: bytes | None) -> bytes:
+    """生成目标 AGENTS.md 内容；已有文件只追加或替换 managed block，其他字节保持不变。"""
+    if existing is None:
+        newline = b"\n"
+        template = Template(_asset_text("AGENTS.template.md"))
+        rendered = template.substitute(
+            project_name=_markdown_safe_text(root.name or "Project"),
+            managed_block=_asset_text("AGENTS.managed.md").rstrip("\r\n"),
+            fact_sources=_bootstrap_fact_sources(root),
+        )
+        return _render_with_newline(rendered, newline) + newline
+
+    try:
+        existing.decode("utf-8-sig")
+    except UnicodeDecodeError as error:
+        raise ValueError("AGENTS.md 必须是 UTF-8 文本，无法安全增量修改") from error
+    newline = _detect_newline(existing)
+    block = _managed_block(newline)
+    marker_range = _validate_managed_markers(existing)
+    if marker_range is not None:
+        start, end = marker_range
+        return existing[:start] + block + existing[end:]
+    if not existing:
+        return block + newline
+    if existing.endswith(newline + newline):
+        separator = b""
+    elif existing.endswith(newline):
+        separator = newline
+    else:
+        separator = newline + newline
+    return existing + separator + block + newline
+
+
+def _gitignore_has_cache_rule(content: bytes) -> bool:
+    """判断 .gitignore 是否已经显式忽略本地 project-context 缓存。"""
+    try:
+        text = content.decode("utf-8-sig")
+    except UnicodeDecodeError as error:
+        raise ValueError(".gitignore 必须是 UTF-8 文本，无法安全增量修改") from error
+    accepted = {CACHE_IGNORE_RULE, "/" + CACHE_IGNORE_RULE}
+    return any(line.strip() in accepted for line in text.splitlines())
+
+
+def _updated_gitignore_content(existing: bytes | None) -> bytes:
+    """增量补充本地缓存 ignore；已有规则和字节保持原样且重复执行幂等。"""
+    if existing is not None and _gitignore_has_cache_rule(existing):
+        return existing
+    content = existing or b""
+    newline = _detect_newline(content)
+    entry = _render_with_newline(
+        "# Agent local disposable cache\n" + CACHE_IGNORE_RULE,
+        newline,
+    )
+    if not content:
+        return entry + newline
+    if content.endswith(newline + newline):
+        separator = b""
+    elif content.endswith(newline):
+        separator = newline
+    else:
+        separator = newline + newline
+    return content + separator + entry + newline
+
+
+def _atomic_write_bytes(path: Path, content: bytes) -> None:
+    """在同目录写临时文件后原子替换目标，尽量保留已有普通文件权限。"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    previous_mode = path.stat().st_mode if path.exists() else None
+    with tempfile.NamedTemporaryFile("wb", dir=path.parent, prefix=path.name + ".", delete=False) as stream:
+        stream.write(content)
+        temporary = Path(stream.name)
+    try:
+        if previous_mode is not None:
+            os.chmod(temporary, previous_mode)
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def bootstrap_project(root: str | Path) -> dict[str, str]:
+    """创建或安全增量更新目标项目 AGENTS Overlay 和本地缓存 ignore，不生成项目语义猜测。"""
+    project_root = Path(root).resolve()
+    if not project_root.is_dir():
+        raise NotADirectoryError(project_root)
+    coding_skill = project_root / ".agents/skills/coding/SKILL.md"
+    if coding_skill.is_symlink() or not coding_skill.is_file():
+        raise FileNotFoundError(f"目标项目缺少已安装的 .agents/skills/coding/SKILL.md：{coding_skill}")
+
+    agents_path = project_root / AGENTS_FILENAME
+    gitignore_path = project_root / GITIGNORE_FILENAME
+    for path in (agents_path, gitignore_path):
+        if path.is_symlink():
+            raise ValueError(f"Bootstrap 不修改符号链接文件：{path}")
+        if path.exists() and not path.is_file():
+            raise ValueError(f"Bootstrap 目标必须是普通文件：{path}")
+
+    existing_agents = agents_path.read_bytes() if agents_path.exists() else None
+    existing_gitignore = gitignore_path.read_bytes() if gitignore_path.exists() else None
+    next_agents = _updated_agents_content(project_root, existing_agents)
+    next_gitignore = _updated_gitignore_content(existing_gitignore)
+
+    agents_mode = "created" if existing_agents is None else "unchanged"
+    gitignore_mode = "created" if existing_gitignore is None else "unchanged"
+    if existing_agents != next_agents:
+        _atomic_write_bytes(agents_path, next_agents)
+        if existing_agents is not None:
+            agents_mode = "updated"
+    if existing_gitignore != next_gitignore:
+        _atomic_write_bytes(gitignore_path, next_gitignore)
+        if existing_gitignore is not None:
+            gitignore_mode = "updated"
+    return {"agents": agents_mode, "gitignore": gitignore_mode}
+
+
 def _validate_change_id(change_id: str) -> None:
     """校验 Coding Change ID 使用固定可排序格式。"""
     if not CHANGE_ID_PATTERN.fullmatch(change_id):
@@ -1046,11 +1268,15 @@ def _json_print(payload: Any) -> None:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """构造项目发现、Change 创建和冲突检查 CLI。"""
+    """构造项目 Bootstrap、事实发现、Change 创建和冲突检查 CLI。"""
     parser = argparse.ArgumentParser(
-        description="发现项目事实入口，并检查 Coding Change 的显式冲突。"
+        description="初始化项目 Agent Overlay、发现项目事实入口，并检查 Coding Change 的显式冲突。"
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    bootstrap = subparsers.add_parser("bootstrap", help="创建或安全增量更新目标项目 AGENTS.md 与缓存 ignore")
+    bootstrap.add_argument("--root", default=".")
+    bootstrap.add_argument("--json", action="store_true")
 
     discover = subparsers.add_parser("discover", help="创建或刷新本地项目发现缓存")
     discover.add_argument("--root", default=".")
@@ -1086,6 +1312,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     arguments = parser.parse_args(argv)
     root = Path(arguments.root).resolve()
     try:
+        if arguments.command == "bootstrap":
+            result = bootstrap_project(root)
+            if arguments.json:
+                _json_print(result)
+            else:
+                print(f"AGENTS.md={result['agents']}；.gitignore={result['gitignore']}")
+            return 0
         if arguments.command == "discover":
             context, mode = ensure_project_context(root, force=arguments.force)
             if arguments.json:

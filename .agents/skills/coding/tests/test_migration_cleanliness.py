@@ -32,12 +32,19 @@ class UniversalizationCleanlinessTest(unittest.TestCase):
         self.assertIn("coding-change/v1", combined)
         self.assertNotIn("rvc-" + "change/v1", combined)
 
-    def test_numbered_reference_sequence_stops_at_eleven(self) -> None:
-        """已删除的第 12 个 reference 不应继续存在或被 live 路径引用。"""
+    def test_deleted_reference_twelve_does_not_return(self) -> None:
+        """已删除的第 12 个 reference 不应重新出现或被 live 路径引用。"""
         references = ROOT / ".agents/skills/coding/references"
         self.assertFalse(any(path.name.startswith("12_") for path in references.glob("*.md")))
         combined = self._combined_live_text()
         self.assertNotIn("references/12_", combined)
+
+    def test_project_bootstrap_reference_is_live(self) -> None:
+        """目标项目安装与 AGENTS Bootstrap 的第 13 个 reference 必须作为正式 live 规则存在。"""
+        reference = ROOT / ".agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md"
+        self.assertTrue(reference.is_file())
+        combined = self._combined_live_text()
+        self.assertIn("13_目标项目安装与AGENTS_Bootstrap.md", combined)
 
     def test_live_universal_rules_do_not_depend_on_aima_product_paths(self) -> None:
         """通用 live 规则不能继续把 AIMA、TikHub 或业务源码路径作为默认事实。"""
@@ -69,6 +76,8 @@ class UniversalizationCleanlinessTest(unittest.TestCase):
             "Greenfield",
             "coding-change/v1",
             "本地可失效导航缓存",
+            "scripts/install.py",
+            "13_目标项目安装与AGENTS_Bootstrap.md",
         ):
             self.assertIn(marker, readme)
 
