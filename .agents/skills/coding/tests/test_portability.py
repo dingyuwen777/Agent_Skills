@@ -60,20 +60,56 @@ class PortabilityTest(unittest.TestCase):
             self.assertEqual(CODING.resolve_change_root(root), root / ".agents/changes")
             self.assertEqual(CODING.change_root_relative(root), ".agents/changes")
 
-    def test_existing_top_level_changes_is_respected(self) -> None:
-        """项目已有受支持顶层 changes 结构时不强行迁到 `.agents/changes`。"""
+    def test_existing_current_top_level_changes_is_respected(self) -> None:
+        """只有已存在当前 schema 的顶层 changes 才认定为受支持 Coding carrier。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            path = root / "changes/active/CHG-20260826-existing/CHANGE.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "---\nschema: coding-change/v1\nid: CHG-20260826-existing\n---\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(CODING.resolve_change_root(root), root / "changes")
+            self.assertEqual(CODING.change_root_relative(root), "changes")
+
+    def test_empty_top_level_changes_blocks_implicit_coding_creation(self) -> None:
+        """空的顶层 changes 没有 schema 证据，不得被 Coding 静默认领。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             (root / "changes/active").mkdir(parents=True)
-            self.assertEqual(CODING.resolve_change_root(root), root / "changes")
-            self.assertEqual(CODING.change_root_relative(root), "changes")
+            self.assertEqual(CODING.resolve_change_root(root), root / ".agents/changes")
+            with self.assertRaisesRegex(ValueError, "没有证据表明它是当前 coding-change/v1 carrier"):
+                CODING.resolve_change_root(root, for_create=True)
+
+    def test_foreign_top_level_change_blocks_implicit_coding_creation(self) -> None:
+        """其他 schema 的顶层 Change 必须视为外部治理，不能被当前 Coding 工具污染。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            path = root / "changes/active/CHG-20260826-foreign/CHANGE.md"
+            path.parent.mkdir(parents=True)
+            path.write_text("---\nschema: foreign-change/v1\n---\n", encoding="utf-8")
+            self.assertEqual(CODING.resolve_change_root(root), root / ".agents/changes")
+            with self.assertRaisesRegex(ValueError, "没有证据表明它是当前 coding-change/v1 carrier"):
+                CODING.resolve_change_root(root, for_create=True)
+
+    def test_foreign_top_level_changes_remain_discoverable(self) -> None:
+        """项目自己的顶层 changes 不应被项目事实缓存无条件隐藏。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "changes/requirements.md"
+            path.parent.mkdir(parents=True)
+            path.write_text("# Requirements\n", encoding="utf-8")
+            context = CODING.scan_project(root)
+            paths = {item["path"] for item in context["documents"]}
+            self.assertIn("changes/requirements.md", paths)
 
     def test_openspec_blocks_implicit_parallel_change_creation(self) -> None:
         """发现 OpenSpec 时 new-change 默认不得静默创建平行 Coding carrier。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             (root / "openspec").mkdir()
-            with self.assertRaisesRegex(ValueError, "不会静默创建平行 Change"):
+            with self.assertRaisesRegex(ValueError, "不会静默创建"):
                 CODING.resolve_change_root(root, for_create=True)
             self.assertEqual(CODING.resolve_change_root(root), root / ".agents/changes")
 
