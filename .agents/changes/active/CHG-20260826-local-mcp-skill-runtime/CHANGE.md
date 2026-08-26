@@ -25,6 +25,7 @@ affected_paths:
   - ".agents/skills/coding/assets/AGENTS.managed.md"
   - ".agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md"
   - ".agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md"
+  - ".agents/skills/coding/scripts/tzdata"
   - ".agents/skills/coding/tests"
   - "runtime/"
   - "runtime/DISTRIBUTION.md"
@@ -84,14 +85,14 @@ data_changes: []
 - [x] `agent_skills_load_context` 返回命中 Reference 的 canonical 原文和 hash，不做 LLM 总结、改写或规则抽取；Runtime manifest 不泄露正文。
 - [x] Runtime 维护当前 task/phase 已加载 Reference 状态，`checkpoint` 能明确报告 required / loaded / missing，阶段切换可继续加载规则但不替代 Codex 的自然语言路由判断。
 - [x] `scripts/build_runtime.py` 可使用当前仓库 canonical References 构建当前平台单文件可执行产物，并在构建完成后运行 `status` / `self-test` 验证 bundle 与当前 source digest 一致。
-- [x] `scripts/install_runtime.py` 可把构建好的 Runtime 原子安装/升级到用户级目录，安装后执行 `status` / `self-test`；失败恢复旧版本。
+- [x] `scripts/install_runtime.py` 可把构建好的 Runtime 原子安装/升级到用户级目录，安装后执行 `status` / `self-test`；失败恢复旧版本；目标稳定文件名被目录或其他非普通文件占用时在切换前拒绝，避免误删用户数据。
 - [x] `scripts/install.py` 保持现有 `python scripts/install.py --target ...` 行为兼容，默认仍为 `full`；新增显式 `--mode runtime`，只有 Runtime 自检和 source digest 匹配后才修改目标项目。
 - [x] Runtime 模式安装仍保留 Core `SKILL.md`、必要 assets/agents/scripts，并为每个 canonical Reference 生成同名 stub；目标项目中不出现 Reference 原始正文，现有 `SKILL.md` 相对链接仍能命中 stub。
 - [x] Stub 包含稳定 Runtime ID 和 expected SHA256，并明确要求在执行该 Reference 对应动作前调用 `agent_skills_load_context`；MCP 不可用、Reference 不存在或 hash 不一致时不得凭印象继续。
 - [x] 目标项目已有 `.agents/changes/`、项目自有 Skill、AGENTS marker 外内容和其他 `.agents` 内容继续受到现有安装/回滚保护。
 - [x] 构建输出 `agent-skills-mcp-runtime-kit.zip`；Kit 只包含平台 Runtime、manifest、Core/Stub payload、独立安装器和使用资料，不含 canonical Reference 正文；解压后可以在不访问私有 Agent_Skills 源仓库的条件下给新目标项目完成安装。
 - [x] README、`.agents/README.md`、`runtime/README.md`、`runtime/DISTRIBUTION.md`、reference 13/14 和 AGENTS managed block 清楚说明如何构建、安装 Runtime、配置 MCP、首次接入目标项目、重复升级、full/runtime 两种模式和真实安全边界。
-- [x] CI 对 Runtime 源码、Bundle/crypto/store、Runtime 模式安装、原文守恒、CLI smoke、PyInstaller package、真实 stdio MCP、用户级安装、Distribution Kit 无源仓库安装提供新鲜证据；现有 Bootstrap/Change/Review/Docs/portability 测试不回归。
+- [x] CI 对 Runtime 源码、Bundle/crypto/store、Runtime 模式安装、原文守恒、CLI smoke、PyInstaller package、真实 stdio MCP、用户级安装、Distribution Kit 无源仓库安装提供新鲜证据；Windows/Linux/macOS 平台产物分别验证，现有 Bootstrap/Change/Review/Docs/portability 测试不回归。
 
 # 范围
 
@@ -102,7 +103,7 @@ data_changes: []
 - 新增 source-independent Runtime Distribution Kit，以及 Kit 内独立 `install_runtime_target.py`，让使用者不需要私有源仓库即可把 Core/Stub 安装到目标项目。
 - 新增 Kit payload 文件集合、path、size、SHA256 完整性验证，拒绝 symlink/path traversal 和未声明 payload 文件。
 - 只对 Core Skill、managed block、安装 reference、README、Runtime 分发文档、CI 做实现 Runtime 所需的增量规则补充。
-- 新增自包含单元/集成测试、真实 stdio MCP smoke 和 Linux/Windows package smoke。
+- 新增自包含单元/集成测试、真实 stdio MCP smoke 和 Linux/Windows/macOS package smoke。
 
 # 非目标
 
@@ -233,12 +234,14 @@ Distribution Kit 包含平台 Runtime、manifest、`install_runtime.py`、`insta
 
 Runtime 是平台相关可执行文件；Windows 必须在 Windows 上构建 `.exe`，Linux/macOS 同理。用户级 Runtime 安装路径与目标项目解耦。Reference/Core 变化后，使用者应使用同一新版 Kit 先升级用户级 Runtime，再对每个目标项目重新运行 Kit 的目标安装器；禁止只升级一侧长期制造旧 Runtime/新 Stub 或新 Runtime/旧 Stub 混装。
 
-Windows CPython 通常没有系统 IANA 时区数据库，而既有 Coding Bootstrap 使用 `ZoneInfo("Asia/Shanghai")`。因此 Runtime build/tools 环境固定 `tzdata==2026.3`；Windows 使用者按 `runtime/DISTRIBUTION.md` 建立工具 venv，并用该 Python 执行 Kit 的安装脚本，从而保持北京时间硬规则而不改写既有 Coding Bootstrap 语义。
+Windows CPython 通常没有系统 IANA 时区数据库，而既有 Coding Bootstrap 使用 `ZoneInfo("Asia/Shanghai")`。Runtime build/tools 环境仍固定 `tzdata==2026.3` 以保持构建环境明确；同时目标项目分发的 Coding Core 自带最小 `tzdata/zoneinfo/Asia/Shanghai` fallback，只在宿主没有系统 IANA tzdb / site-packages 时由标准库 `zoneinfo` 使用。回归测试通过 `python -S` + 空 `PYTHONTZPATH` 验证独立目标 Coding CLI 仍输出 `+08:00`，因此普通目标项目不需要为了 Agent_Skills 额外修改自己的 Python 依赖。
+
+macOS Hosted Runner 的 Homebrew Python 受 PEP 668 externally-managed 保护；永久 CI 不使用 `--break-system-packages` 绕过系统保护，而是在 `.venv-runtime` 中安装 build requirements 后再执行 macOS onefile/MCP/安装链。
 
 ## 回滚
 
 - Runtime Build 不修改 canonical References。
-- `install_runtime.py` 在替换用户级 Runtime 前保留旧版本；新版本 `status` / `self-test` 失败时恢复旧文件。
+- `install_runtime.py` 在替换用户级 Runtime 前保留旧版本；新版本 `status` / `self-test` 失败时恢复旧文件；稳定目标名若被目录或其他非普通文件占用则在切换前拒绝，不把用户目录当备份删除。
 - `install.py --mode runtime` 在修改目标项目之前先验证 Runtime；Skill 切换和 Bootstrap 失败继续沿用现有多目录 rollback。
 - Kit 的 `install_runtime_target.py` 同样先验证 metadata/payload/Runtime digest，再暂存三个 Skill；切换或 Bootstrap 失败时恢复本轮已切换 Skill。
 - 回滚到旧 Runtime 时，必须同时使用与该 Runtime `source_digest` 匹配的 Agent_Skills source/stub 版本；部门使用者最安全的方式是使用对应旧 Kit 同时恢复 Runtime 与目标项目 Core/Stub，digest 不一致时安装器拒绝制造混合状态。
@@ -250,40 +253,44 @@ Windows CPython 通常没有系统 IANA 时区数据库，而既有 Coding Boots
 | R1 | 保持现有完整 Skill 对 Codex 推理的效果，复杂 Reference 不压缩成布尔或摘要 | user:execution-effect-first | satisfied | canonical Reference bytes 直接进入 Bundle；`RuntimeStore.load_context`/真实 stdio MCP smoke 将 `canonical_text` 与源 Reference 原文逐字比较；ref14 明确禁止自动摘要/DSL |
 | R2 | 本地分发时不在目标项目明文放置完整 Reference，但不要求对机器 Owner 强保密 | user:local-mcp-protection-boundary | satisfied | AES-256-GCM onefile Runtime + Runtime Stub；`test_runtime_distribution` 与 Kit 测试断言目标/Kit stub 不含 canonical body；文档明确本地逆向边界 |
 | R3 | 保留 Native Core Skill，让现有触发/路由继续指导 Agent，而不是纯 MCP 替代 Skill | user:native-core-plus-mcp | satisfied | runtime/source/Kit 两条目标安装链均原样复制 Core `SKILL.md`，Reference 保持同名 stub，managed block 要求 Core 命中 stub 后加载 canonical context |
-| R4 | MCP 必须能把命中 Reference 原文传给本地 Codex 上下文 | user:read-skill-context-equivalence | satisfied | `agent_skills_load_context` 返回 exact `canonical_text` + SHA256；run `32971575613`、`32971926415` 的 Linux/Windows 真实 stdio `tools/list`/`tools/call` smoke 均通过 |
+| R4 | MCP 必须能把命中 Reference 原文传给本地 Codex 上下文 | user:read-skill-context-equivalence | satisfied | `agent_skills_load_context` 返回 exact `canonical_text` + SHA256；Linux/Windows/macOS 的真实 stdio `tools/list`/`tools/call` smoke 均通过 |
 | R5 | 告诉用户如何打包、安装、配置和升级 | user:package-and-use | satisfied | `runtime/README.md`、`runtime/DISTRIBUTION.md`、根 README、`.agents/README.md`、ref13/ref14 已覆盖 Windows/POSIX 构建、Runtime 安装、Codex/Cursor/Claude 注册、项目接入、升级、回滚与安全边界；所有公开 CLI `--help` 进入 CI |
 | R6 | 现有 full 安装方式和目标项目保护边界不得被静默破坏 | .agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md | satisfied | `install.py` 默认仍为 full；既有 Bootstrap/rollback 测试继续通过；runtime digest mismatch 在创建目标 `.agents` 前失败；`.agents/changes`/自有 Skill/marker 外规则保持 |
 | R7 | 原始 Skill/reference 高价值语义不得因本功能被总结、重写或丢失 | AGENTS.md | satisfied | canonical `references/*.md` 未迁移或重写；Bundle content 由原始 UTF-8 bytes decode；exact-text/hash 单测 + 真实 MCP smoke；Stub 明确不能替代 canonical_text；Review ID `5030751931` 完成内容守恒 A1/A2 检查 |
-| R8 | 代码、Git、时间、日志与交付遵守 Agent_Skills 全局硬规则及 CI/PR 门禁 | AGENTS.md | satisfied | 新增/修改函数均有中文函数级 docstring，feature commits 使用中文；Windows 时区依赖保持 `Asia/Shanghai`；没有绕过 CI/PR/Ready Gate；run `32971926415` 证明实现链全绿且 Ready Check 因本 Change 尚为 in_progress 正常阻断，现已完成 Review 后转 ready_for_review |
-| R9 | 部门成员只拿构建产物即可安装/升级 Runtime 和新目标项目，不需要私有 canonical Agent_Skills 源仓库 | user:package-and-use | satisfied | `agent-skills-mcp-runtime-kit.zip` + 独立 `install_runtime_target.py`；Verify Red run `32970949023` 的 2 个新 Kit 用例仅因实现不存在失败；Green run `32971575613` 在 Linux/Windows 均从解压 Kit、切换到源仓库外目录后成功安装全新目标项目 |
+| R8 | 代码、Git、时间、日志与交付遵守 Agent_Skills 全局硬规则及 CI/PR 门禁 | AGENTS.md | satisfied | 新增/修改函数均有中文函数级 docstring，feature commits 使用中文；北京时间硬规则在无系统 tzdb/site-packages 场景有独立回归；没有绕过 CI/PR/Ready Gate；run `32972612021` 的产品/三平台链均通过，Ready Check 只因本 Change 的 R6/R7 Source 不是仓库路径而阻断，现已修正为真实路径 |
+| R9 | 部门成员只拿构建产物即可安装/升级 Runtime 和新目标项目，不需要私有 canonical Agent_Skills 源仓库 | user:package-and-use | satisfied | `agent-skills-mcp-runtime-kit.zip` + 独立 `install_runtime_target.py`；Verify Red run `32970949023` 的 2 个新 Kit 用例仅因实现不存在失败；Green 后 Linux/Windows/macOS 均从解压 Kit、切换到源仓库外目录后成功安装全新目标项目 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | `test_runtime_bundle.py` 覆盖 ID/hash/digest、exact text、AES-GCM roundtrip/tamper、manifest 不泄露；`test_runtime_distribution.py` 覆盖 stub/full 兼容与 digest preflight；`test_runtime_installer.py` 覆盖用户级 Runtime 最终自检失败 rollback；Kit tests 覆盖 no-source payload/安装；run `32971575613`/`32971926415` 70/70 自包含测试通过 |
-| 接口 / Contract | required | MCP 五个稳定 Tool 名称/参数/返回结构、Bundle/Manifest/Kit schema、Runtime stub、build/install/install-target/runtime-mode CLI；`runtime_mcp_smoke.py` 对最终 onefile 做真实 `tools/list` 与 `tools/call` |
-| 集成 / Persistence / Runtime Dependency | required | 临时真实文件系统执行 Runtime 安装/backup/rollback、源 runtime-mode 目标安装、解压 Kit 无源目标安装；真实 subprocess `status/self-test`，不用 Mock 冒充 filesystem/process |
-| 用户 / Workflow Acceptance | required | canonical source → build bundle → onefile → user install → host stdio MCP → source runtime-mode 或 source-independent Kit target install 的可重复命令已固化；`runtime/DISTRIBUTION.md` 提供部门使用路径 |
-| 跨组件 Golden Path | required | Source Reference → encrypted embedded bundle → onefile Runtime → true stdio MCP `load_context` → exact canonical text/SHA → target same-name stub；Linux/Windows 均有 runner 证据 |
+| 行为 / Unit / Component | required | `test_runtime_bundle.py` 覆盖 ID/hash/digest、exact text、AES-GCM roundtrip/tamper、manifest 不泄露；`test_runtime_distribution.py` 覆盖 stub/full 兼容与 digest preflight；`test_runtime_installer.py` 覆盖用户级 Runtime 最终自检失败 rollback；Kit tests 覆盖 no-source payload/安装；`test_runtime_install_target_type.py` 覆盖意外目录目标保护；`test_beijing_timezone_portability.py` 覆盖无系统 tzdb/site-packages；run `32972612021` Linux `Ran 72 tests ... OK` |
+| 接口 / Contract | required | MCP 五个稳定 Tool 名称/参数/返回结构、Bundle/Manifest/Kit schema、Runtime stub、build/install/install-target/runtime-mode CLI；`runtime_mcp_smoke.py` 对最终 onefile 做真实 `tools/list` 与 `tools/call`，Linux/Windows/macOS 均通过 |
+| 集成 / Persistence / Runtime Dependency | required | 临时真实文件系统执行 Runtime 安装/backup/rollback、源 runtime-mode 目标安装、解压 Kit 无源目标安装；真实 subprocess `status/self-test`；Windows 真实目标 Bootstrap 与无 tzdb fallback、macOS venv 构建均有证据，不用 Mock 冒充 filesystem/process |
+| 用户 / Workflow Acceptance | required | canonical source → build bundle → onefile → user install → host stdio MCP → source runtime-mode 或 source-independent Kit target install 的可重复命令已固化；`runtime/DISTRIBUTION.md` 提供部门使用路径；三平台 Runner 完成对应安装链 |
+| 跨组件 Golden Path | required | Source Reference → encrypted embedded bundle → onefile Runtime → true stdio MCP `load_context` → exact canonical text/SHA → target same-name stub；Windows/Linux/macOS 均有 runner 证据 |
 | 外部依赖 Probe | not_applicable | Runtime 为本地 stdio MCP，无付费 Provider、远端 API、生产资源或真实外部系统；PyPI build/tool 依赖属于 Build 依赖，不是产品外部运行边界 |
-| Build / Package / Runtime | required | run `32971575613` 与 `32971926415`：Ubuntu onefile + Runtime Kit + status/self-test + MCP + user install + target install；Windows `.exe` Job 全绿并完成同等链路；PyInstaller 不以 Linux artifact 冒充 Windows 证据 |
-| Docs / Governance / Other | required | AGENTS/managed block、ref13/ref14、README、`.agents/README.md`、`runtime/README.md`、`runtime/DISTRIBUTION.md`、Change Traceability/Completion Audit 与 CI path/compile/package smoke 同步；PR Review `5030751931` 无 blocker |
+| Build / Package / Runtime | required | run `32972469737` 已证明 Ubuntu/Linux onefile、真实 MCP、user install、source target、Kit target 均通过，Windows Package 与 macOS 15 Package 两个独立 Job 均整体 success；run `32972612021` 在 ready_for_review HEAD 上再次证明 Windows/macOS jobs success，Linux 产品步骤全绿，仅 Ready Source 路径校验失败 |
+| Docs / Governance / Other | required | AGENTS/managed block、ref13/ref14、README、`.agents/README.md`、`runtime/README.md`、`runtime/DISTRIBUTION.md`、Change Traceability/Completion Audit 与 CI path/compile/package smoke 同步；PR Review `5030751931` 完成；本轮 re-review 发现的 macOS 证据、managed ref14 路径、Runtime 目标类型和 Windows 独立时区可移植性缺口均已修复并进入永久 CI |
 
 ## 关键 Red / Green 证据
 
 - 初始 Runtime package Red：PR Runner 在 PyInstaller `--collect-all mcp` 阶段因扫描未使用的 `mcp.cli` 可选 `typer` 失败；修复没有引入无关 `typer`，而是收窄为 Runtime 真实静态 import，随后 Linux/Windows onefile 与真实 MCP smoke 通过。
-- Windows Runtime target Red：run `32969775531` 已证明 `.exe`/MCP/用户级安装成功，但目标 Bootstrap 因 Windows 缺 IANA `Asia/Shanghai` 数据失败；固定 build/tools `tzdata==2026.3` 并要求使用该工具 Python 后，后续 Windows target install 全绿。
+- Windows Runtime target Red：run `32969775531` 已证明 `.exe`/MCP/用户级安装成功，但目标 Bootstrap 因 Windows 缺 IANA `Asia/Shanghai` 数据失败；先在工具环境固定 `tzdata==2026.3` 后恢复 Windows target install，随后又增加目标 Coding Core 自带最小 `Asia/Shanghai` fallback，并用 `python -S` + 空 `PYTHONTZPATH` 回归证明目标项目不依赖外部 site-packages。
 - Distribution Kit Verify Red：run `32970949023` 共 70 个测试，仅新增的 2 个 Kit 测试因为 `build_distribution_kit` 尚不存在而失败；其余旧测试和 Windows Runtime 通过，证明失败确实来自新能力未实现。
 - Distribution Kit Green：run `32971575613` 70/70 测试通过；Linux 从构建、MCP、用户级安装到解压 Kit 无源目标安装全部通过，唯一失败为 Change 仍 `in_progress` 的预期 Ready Gate；Windows Job 整体 success。
-- 最新 pre-ready 证据：run `32971926415` 在显式 Reference-ID digest 排序修复后，Linux build/MCP/user install/source target/Kit target 全部通过，只在 Change `in_progress` Ready Gate 失败；Windows Job整体 success。
+- `source_digest` 合同修复：Review 发现 Contract 要求按 Reference ID 排序，而早期实现依赖固定枚举顺序；已改成显式按 ID 排序，后续 package/MCP/Kit 链继续通过。
+- macOS Verify Red/Green：run `32972289662` 首次 macOS 15 Job 在 Homebrew Python 的 PEP 668 externally-managed pip 边界失败，没有绕过系统保护；改为 `.venv-runtime` 后，run `32972469737` 的 macOS Package 从构建、自检、stdio MCP、用户级安装、runtime target 到 no-source Kit target 全部 success。
+- 三平台 pre-ready：run `32972469737` 中 macOS/Windows 独立 Package Jobs success，Linux 72 个测试及全部 Runtime/Kit 产品步骤 success，Linux 唯一失败是当时 Change `in_progress` 的预期 Ready Gate。
+- ready_for_review 验证：run `32972612021` 中 Windows/macOS Jobs success，Linux 72 个测试及 Runtime/Kit 产品链 success；Ready Check 仅指出 R6/R7 Requirement Source 使用了非路径语义标签，随后已改为 `.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md` 与 `AGENTS.md` 真实仓库路径。
+- Runner 调度异常：run `32973835211` 在三个 job 上均表现为 `runner_id=0`、`steps=[]`，没有任何 Runner step 或可下载 job log；该 run 不作为产品失败证据，也不替代后续必须取得的新鲜全绿 Ready CI。
 
 # Completion Audit
 
 - [x] upstream_re_read：完成前重新读取本轮用户“效果优先、允许本地 MCP、复杂规则必须原文进入 Codex Context、需要打包与使用方式”的决定，以及根 `AGENTS.md`、Coding 主规则、ref13/ref14、Docs/Review 规则和受影响 Runtime/安装/README 事实源；没有用历史假设替代当前仓库。
 - [x] change_coverage：逐条对照 R1-R9。除原始 R1-R8 外，A1 反向审计发现“部门成员仍需私有源仓库才能给新项目安装”的遗漏并新增 R9；已经用 source-independent Runtime Kit 补齐，没有为了加密牺牲 Native Core、原文守恒、full 兼容、目标项目保护或使用/升级能力。
-- [x] reverse_audit：完成 Source Reference → catalog/hash → AES-GCM → onefile → status/self-test → stdio MCP → canonical_text/SHA → Reference Stub → target AGENTS/Core，以及 Distribution Kit → payload file manifest → independent target installer → Bootstrap/rollback 两条正反链；同时从 Existing Full Install → Upgrade/Bootstrap/rollback 反向确认旧行为仍存在。
-- [x] unresolved_cleared：R1-R9 均有实现与新鲜证据；Review `5030751931` 无 blocker。Kit metadata 公钥签名、多任务持久状态属于明确非目标且与当前威胁模型/权威门禁边界一致，不存在未说明的 not_satisfied/TODO/TBD。
+- [x] reverse_audit：完成 Source Reference → catalog/hash → AES-GCM → onefile → status/self-test → stdio MCP → canonical_text/SHA → Reference Stub → target AGENTS/Core，以及 Distribution Kit → payload file manifest → independent target installer → Bootstrap/rollback 两条正反链；同时从 Existing Full Install → Upgrade/Bootstrap/rollback 反向确认旧行为仍存在；Windows/Linux/macOS 三平台产物与目标安装路径分别验证。
+- [x] unresolved_cleared：R1-R9 均有实现与新鲜证据；Review `5030751931` 无原始 blocker。后续 re-review 发现的 macOS 永久证据、managed ref14 完整路径、Runtime 目标类型保护和目标 Coding 无 tzdb 可移植性缺口均已修复并取得对应测试/Runner 证据。Kit metadata 公钥签名、多任务持久状态属于明确非目标且与当前威胁模型/权威门禁边界一致，不存在未说明的 not_satisfied/TODO/TBD。
 
 # 实施任务
 
@@ -297,8 +304,9 @@ Windows CPython 通常没有系统 IANA 时区数据库，而既有 Coding Boots
 8. 更新 CI paths/compile/CLI smoke/package smoke；运行完整自包含测试、真实 PyInstaller package 和真实 stdio MCP 验证。
 9. Completion Audit 发现 source-independent 分发缺口后，先增加 2 个 Kit Red 用例，再实现 Distribution Kit、独立目标安装器和 Linux/Windows no-source CI。
 10. 执行 A1/A2 和独立 Review；修复 PyInstaller 依赖边界、Windows tzdata、Distribution Kit、digest 显式排序 Finding，Review `5030751931` 无 blocker。
-11. 当前 Change 已进入 `ready_for_review`；必须由这一 HEAD 触发的新鲜 Linux + Windows CI 全绿后才能把 PR #5 从 Draft 转 Ready。
-12. 正常 PR 合并到 `main`，确认 main 新鲜 CI 后通过独立归档 PR 将本 Change 标记 `done` 并移入 archive。
+11. Re-review 继续发现并修复 macOS artifact 永久验证、managed block ref14 路径、Runtime 安装目标类型保护和目标 Coding CLI 无系统 tzdb 可移植性；永久 CI 已覆盖 Linux/Windows/macOS。
+12. 当前 Change 已进入 `ready_for_review`；必须由本提交触发的新鲜三平台 CI 全绿后才能把 PR #5 从 Draft 转 Ready。
+13. 正常 PR 合并到 `main`，确认 main 新鲜 CI 后通过独立归档 PR 将本 Change 标记 `done` 并移入 archive。
 
 # 文档影响
 
@@ -314,9 +322,11 @@ Windows CPython 通常没有系统 IANA 时区数据库，而既有 Coding Boots
 
 - Implementation Branch：`feature/local-mcp-skill-runtime`。
 - Draft PR：`#5 增加本地 MCP 加密 Reference Runtime`。
-- Independent Review：PR review `5030751931`，当前 HEAD 无阻断 Finding。
-- Pre-ready CI：run `32971926415` 的 Linux 实现链与 Windows Job均通过；Linux 仅因当时 Change 仍为 `in_progress` 被 Ready Gate 正常阻断。
-- Ready：本 Change 现已 `ready_for_review`，等待当前 HEAD 的新鲜永久 CI；全绿后才将 PR #5 转 Ready。
-- Merge：未授权绕过 PR/CI；只在全绿和 Review 完成后正常合并。
+- Independent Review：PR review `5030751931`；后续 re-review Findings 已修复，等待最终 Ready HEAD 复核。
+- Pre-ready CI：run `32972469737` 的 Linux 产品链与 Windows/macOS Package Jobs 均通过；Linux 仅因当时 Change 仍为 `in_progress` 被 Ready Gate 正常阻断。
+- Ready-for-review CI：run `32972612021` 三平台产品链均通过；Linux Ready Check 仅因 R6/R7 Source 不是仓库路径失败，随后已修正这两条事实源路径。
+- Infrastructure retry：run `32973835211` 未分配任何 Runner、三个 job 均无 steps；不作为实现结论，等待当前 HEAD 的新鲜三平台 CI。
+- Ready：本 Change 为 `ready_for_review`；必须等待当前 HEAD 的新鲜 Linux/Windows/macOS 永久 CI 全绿后再将 PR #5 从 Draft 转 Ready。
+- Merge：未授权绕过 PR/CI；只在全绿和 re-review 完成后正常合并。
 - Change Archive：实现合并且 main 新鲜 CI 成功后使用独立归档 PR，完整保留本 Change 详细内容并将状态改为 `done`。
-- Release：本任务提供可构建且已在 Linux/Windows Runner 验证的 Runtime artifact/Distribution Kit；是否创建正式 GitHub Release 不属于本轮成功标准，除非后续用户另行要求。
+- Release：本任务提供可构建且已在 Linux/Windows/macOS Runner 验证的 Runtime artifact/Distribution Kit；是否创建正式 GitHub Release 不属于本轮成功标准，除非后续用户另行要求。
