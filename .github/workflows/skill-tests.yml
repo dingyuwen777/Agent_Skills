@@ -49,6 +49,7 @@ jobs:
           scripts/install.py
           scripts/build_runtime.py
           scripts/install_runtime.py
+          scripts/runtime_mcp_smoke.py
           runtime/agent_skills_runtime/catalog.py
           runtime/agent_skills_runtime/crypto.py
           runtime/agent_skills_runtime/runtime.py
@@ -60,6 +61,7 @@ jobs:
           python3 scripts/install.py --help
           python3 scripts/build_runtime.py --help
           python3 scripts/install_runtime.py --help
+          python3 scripts/runtime_mcp_smoke.py --help
 
       - name: Run self-contained tests
         run: >-
@@ -73,6 +75,12 @@ jobs:
           python3 scripts/build_runtime.py --output-dir .runtime-dist --json
           .runtime-dist/agent-skills-mcp status --json
           .runtime-dist/agent-skills-mcp self-test --json
+
+      - name: Verify real stdio MCP contract
+        run: >-
+          python3 scripts/runtime_mcp_smoke.py
+          --artifact .runtime-dist/agent-skills-mcp
+          --json
 
       - name: Verify runtime-mode target installation
         run: |
