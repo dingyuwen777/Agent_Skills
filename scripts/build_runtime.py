@@ -121,12 +121,6 @@ def build_runtime(
             str(spec_path),
             "--paths",
             str(source_copy),
-            "--collect-all",
-            "mcp",
-            "--collect-all",
-            "mcp_types",
-            "--collect-all",
-            "cryptography",
             str(entrypoint),
         ]
         result = subprocess.run(
