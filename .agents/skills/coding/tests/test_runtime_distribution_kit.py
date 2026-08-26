@@ -132,7 +132,7 @@ class RuntimeDistributionKitTest(unittest.TestCase):
         install_result = target_installer.install_target(
             kit_root,
             target,
-            runtime_command=[str(kit_root / artifact.name)],
+            runtime_command=[sys.executable, str(kit_root / artifact.name)],
         )
 
         self.assertEqual(install_result["source_digest"], bundle["source_digest"])
