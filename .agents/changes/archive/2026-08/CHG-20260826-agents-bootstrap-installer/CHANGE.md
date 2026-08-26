@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: "CHG-20260826-agents-bootstrap-installer"
 title: "目标项目 AGENTS Bootstrap 与 Agent Skills 安装升级入口"
 level: L3
-status: ready_for_review
+status: done
 owner: "ChatGPT"
 branch: "feature/agents-bootstrap-installer"
 created: 2026-08-26
@@ -188,24 +188,24 @@ data_changes: []
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | 没有 `AGENTS.md` 时根据目标项目接入需要创建初版 | user:current-request | satisfied | `assets/AGENTS.template.md` + `bootstrap_project()`；`test_bootstrap_creates_agents_for_greenfield_without_inventing_stack`、`test_polyglot_manifests_are_listed_without_affirmative_framework_inference`；Runner 32955916054 通过 |
-| R2 | 已有 `AGENTS.md` 时在原文基础上补充而不是覆盖 | user:current-request | satisfied | managed marker 增量算法；CRLF/前后字节保留、managed block 更新、幂等与坏 marker 回归测试；Runner 32955916054 通过 |
+| R1 | 没有 `AGENTS.md` 时根据目标项目接入需要创建初版 | user:current-request | satisfied | `assets/AGENTS.template.md` + `bootstrap_project()`；`test_bootstrap_creates_agents_for_greenfield_without_inventing_stack`、`test_polyglot_manifests_are_listed_without_affirmative_framework_inference`；Runner 32956230348 通过 |
+| R2 | 已有 `AGENTS.md` 时在原文基础上补充而不是覆盖 | user:current-request | satisfied | managed marker 增量算法；CRLF/前后字节保留、managed block 更新、幂等与坏 marker 回归测试；Runner 32956230348 通过 |
 | R3 | 创建或修改后的 `AGENTS.md` 必须明确研发过程使用 `.agents/skills/coding/SKILL.md`，并由 Coding 路由 Review/Docs | user:current-request | satisfied | `.agents/skills/coding/assets/AGENTS.managed.md` 明确 Coding/reference/Review/Docs 路由；安装/升级另指向 reference 13 |
-| R4 | 接入流程可以由代码/Skill 自动完成，而不是每个项目手工维护 | user:current-request | satisfied | `scripts/install.py --target` + `coding.py bootstrap`；真实文件系统首次安装/升级/回滚/Bootstrap 失败链测试和 CLI smoke 通过 |
+| R4 | 接入流程可以由代码/Skill 自动完成，而不是每个项目手工维护 | user:current-request | satisfied | `scripts/install.py --target` + `coding.py bootstrap`；真实文件系统首次安装/升级/回滚/Bootstrap 失败链测试、CLI smoke 与 main CI 32956464603 通过 |
 | R5 | 不得因实现本功能而过度总结、压缩或丢失现有 Skill/reference 原文规则信息 | user:preserve-original-detail | satisfied | PR #3 changed-files/compare 证明 `.agents/skills/coding/SKILL.md` 与 references 01–11 未被修改；新增规则独立放在 reference 13；独立 Review #5029100108 无阻塞 Finding |
-| R6 | 所有 Agent_Skills 仓库开发、验证、Git 和交付遵守当前根 `AGENTS.md` | AGENTS.md | satisfied | 从最新 main 建专用分支与 L3 Change；中文提交；未绕过 PR/CI/Ready；Runner 32955916054 的 compile/CLI smoke/59 tests 通过，Ready 在 `in_progress` 时按设计阻塞；独立 Review 已完成 |
+| R6 | 所有 Agent_Skills 仓库开发、验证、Git 和交付遵守当前根 `AGENTS.md` | AGENTS.md | satisfied | 从最新 main 建专用分支与 L3 Change；中文提交；未绕过 PR/CI/Ready；PR #3 正常合并为 main `580b5b07da301ca2996f7196d11e3b0483a04273`；main push CI 32956464603 成功 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | managed block、AGENTS 创建/更新、marker 错误、gitignore、安装目录同步、事实入口转义等由 59 个完整自包含测试中的目标测试覆盖；Runner 32955916054 `Ran 59 tests ... OK` |
-| 接口 / Contract | required | `coding.py bootstrap` 与 `scripts/install.py --target` 公开 CLI 已进入永久 CI smoke；managed marker 与生成文件 Contract 有直接断言；Runner 32955916054 smoke 成功 |
+| 行为 / Unit / Component | required | managed block、AGENTS 创建/更新、marker 错误、gitignore、安装目录同步、事实入口转义等由 59 个完整自包含测试中的目标测试覆盖；Runner 32956230348 `Ran 59 tests in 0.943s`、`OK` |
+| 接口 / Contract | required | `coding.py bootstrap` 与 `scripts/install.py --target` 公开 CLI 已进入永久 CI smoke；managed marker 与生成文件 Contract 有直接断言；Runner 32956230348 和 main CI 32956464603 成功 |
 | 集成 / Persistence / Runtime Dependency | required | 使用真实临时文件系统执行 copy/rename/backup/rollback/subprocess Bootstrap/AGENTS/.gitignore，不以 Mock 冒充文件系统；安装中途失败和 Bootstrap 失败均有回归测试 |
 | 用户 / Workflow Acceptance | required | `InstallerTest` 从源 Agent_Skills 到临时目标项目执行真实安装链，检查三个 Skill、AGENTS、gitignore、自有 `.agents` 保留和重复升级结果 |
 | 跨组件 Golden Path | required | `scripts/install.py` → 复制后的目标 `coding.py` 子进程 → `bootstrap --json` → 最终 AGENTS/.gitignore 的真实链路由首次安装与升级测试覆盖 |
 | External Dependency / Provider Probe | not_applicable | 本功能不依赖第三方 API、远端环境、付费 Provider 或真实外部服务；GitHub Runner 仅用于当前仓库 CI 证据，不属于产品外部依赖行为 |
-| Build / Package / Runtime | required | Runner 32955916054：Python 3.12.3；`py_compile coding.py ready_check.py scripts/install.py` 成功；两个 CLI `--help` smoke 成功 |
+| Build / Package / Runtime | required | Runner 32956230348：Ubuntu 24.04.4 / Python 3.12.3；`py_compile coding.py ready_check.py scripts/install.py` 成功；两个 CLI `--help` smoke 成功；main push CI 32956464603 再次成功 |
 | Docs / Governance / Other | required | 根 README、`.agents/README.md`、根维护 AGENTS、reference 13、assets、CI paths/compile/smoke 与实现一致；`test_migration_cleanliness` 锁住 ref12 不回归/ref13 live/通用规则与五项硬规则；独立 Review 确认未压缩旧规则 |
 
 # Completion Audit
@@ -230,9 +230,9 @@ data_changes: []
 - [x] 增加真实文件系统安装中途回滚、Bootstrap 失败回滚和仓库派生 Markdown 转义测试。
 - [x] 执行本轮完整自包含测试、py_compile、CLI smoke 和临时项目安装 Golden Path。
 - [x] 执行 Requirement A1/A2、Completion Audit 与独立 Review；Review #5029100108 当前无阻塞 Finding。
-- [ ] PR #3 从 Draft 转为 Ready，并取得 `ready_for_review` Change 下的全绿 CI。
-- [ ] 按仓库保护正常合并到 `main`，确认 main 新鲜 CI。
-- [ ] 在实现合并与 main CI 成功后，通过独立归档 PR 将本 Change 移至 archive 并标记 `done`。
+- [x] PR #3 从 Draft 转为 Ready，并取得 `ready_for_review` Change 下的全绿 CI run 32956230348。
+- [x] PR #3 按正常 PR 流程合并到 `main`，merge commit `580b5b07da301ca2996f7196d11e3b0483a04273`；main push CI 32956464603 成功。
+- [x] 在实现合并与 main CI 成功后，从该 main 基线创建独立归档分支并将本 Change 标记 `done`、移动到 archive；归档 PR 仍需通过 CI 后合并。
 
 # 验证
 
@@ -250,7 +250,10 @@ data_changes: []
 - GitHub Actions `Skill Tests` run `32954008175`：第一轮 `py_compile` 成功；单元测试因测试自身错误使用 `assertNotIn("FastAPI")` 失败。实现实际保留的是“不能单凭文件名推出 React/FastAPI/PostgreSQL”的安全规则；已修正测试，不删除该规则。
 - 后续 Review 发现并修复安装器多 Skill 部分切换回滚缺口、永久 CLI smoke 缺口、Bootstrap 失败恢复测试缺口、reference 测试命名失真、Coding Agent 语义补全规则缺口和仓库派生文本进入 AGENTS Markdown 的结构注入风险。
 - GitHub Actions `Skill Tests` run `32955916054`，head `68bf6323be814e768c5bb41726b7aaa2897ba366`：Ubuntu 24.04.4 / Python 3.12.3；`py_compile` 成功；`coding.py bootstrap --help` 与 `scripts/install.py --help` 成功；完整自包含测试 `Ran 59 tests in 0.954s`、`OK`。当时唯一失败是 Active Change 状态仍为 `in_progress`，Ready Check 按设计返回 `状态必须为 ready_for_review`，证明门禁未被绕过。
-- PR #3 独立 Review `5029100108`：A1/A2 与代码质量复核完成，当前无阻塞 Finding；Review 中发现的问题均在当前实现中修复并由回归测试覆盖。
+- GitHub Actions `Skill Tests` run `32956230348`，feature head `5d9bf1773f8a6a0623c0ddb4fc0b96410e851033`：Ubuntu 24.04.4 / Python 3.12.3；`py_compile` 成功；两个 CLI smoke 成功；`Ran 59 tests in 0.943s`、`OK`；Ready Check `carrier=.agents/changes，gated=2，strict=2` 通过；整项 Job conclusion `success`。
+- PR #3 独立 Review `5029100108`：A1/A2 与代码质量复核完成，当前无阻塞 Finding；Review 中发现的问题均在最终实现中修复并由回归测试覆盖。
+- PR #3 已合并：merge commit `580b5b07da301ca2996f7196d11e3b0483a04273`，合并后 `main` 与该提交一致。
+- `main` push GitHub Actions `Skill Tests` run `32956464603`：head `580b5b07da301ca2996f7196d11e3b0483a04273`，event `push`，`status=completed`、`conclusion=success`。
 
 # 文档影响
 
@@ -262,9 +265,11 @@ data_changes: []
 
 # 交付
 
-- Branch：`feature/agents-bootstrap-installer`。
-- PR：#3 `增加目标项目 AGENTS Bootstrap 与一键安装升级`，当前 Draft，等待本次 `ready_for_review` Change 更新后的全绿 CI 后转为 Ready。
-- 独立 Review：#5029100108，无当前阻塞 Finding。
-- Merge：尚未执行，不绕过 CI/PR/Branch Protection。
-- Change Archive：必须在实现合并到 `main` 且 main 新鲜 CI 成功后，通过独立归档 PR 完成。
-- Release：本仓库当前没有要求额外 Release；本任务以合并至 `main`、主分支 CI 与 Change 归档闭环为完成标准。
+- Implementation Branch：`feature/agents-bootstrap-installer`。
+- Implementation PR：#3 `增加目标项目 AGENTS Bootstrap 与一键安装升级`，已合并。
+- Implementation Merge：`580b5b07da301ca2996f7196d11e3b0483a04273`。
+- Main Validation：GitHub Actions `Skill Tests` run `32956464603`，completed / success。
+- 独立 Review：#5029100108，无阻塞 Finding。
+- Archive Branch：`archive/chg-20260826-agents-bootstrap-installer`，从已验证 main `580b5b07da301ca2996f7196d11e3b0483a04273` 创建。
+- Change Archive：本文件为 `.agents/changes/archive/2026-08/CHG-20260826-agents-bootstrap-installer/CHANGE.md`，状态 `done`；归档 PR 合并后 active 路径应不存在。
+- Release：本仓库当前没有要求额外 Release；本任务以实现合并、主分支新鲜 CI 与独立 Change 归档 PR 全绿并合并为完成标准。
