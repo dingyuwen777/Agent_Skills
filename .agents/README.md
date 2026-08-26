@@ -1,15 +1,15 @@
 # `.agents` 使用说明
 
-`.agents/` 用来保存**仓库内 AI / Coding Agent 的辅助能力和导航信息**。它不是产品代码目录，也不是另一套项目架构文档。
+`.agents/` 用来保存**仓库内 AI / Coding Agent 的辅助能力和本地导航信息**。它不是产品代码目录，也不是另一套项目架构文档。
 
-如果在 AIMA_UGC 中处理分析、设计、开发、Review、文档、PR、CI 或交付任务，统一入口仍然是仓库根目录的 [`AGENTS.md`](../AGENTS.md)。本 README 只帮助人快速判断“这里有哪些能力、什么时候用哪个 Skill”，**不能替代 `AGENTS.md` 或各 Skill 的 `SKILL.md` 正式规则**。
+在任意目标项目中处理分析、设计、开发、Review、文档、PR、CI 或交付任务时，先遵守目标项目自己的 `AGENTS.md`、`CONTRIBUTING` 或同等上位规则，再加载本目录对应 Skill。目标项目规则负责“这个项目具体是什么”，这里的通用 Skill 负责“怎样可靠工作”。本 README 只帮助人快速判断“这里有哪些能力、什么时候用哪个 Skill”，**不能替代项目规则或各 Skill 的 `SKILL.md` 正式规则**。
 
 ## 1. 这个目录为什么存在
 
 项目里的 AI Agent 需要两类东西：
 
 1. **可执行的工作规则**：例如怎样可靠开发、怎样独立审查代码、怎样检查文档；
-2. **可失效的导航信息**：例如当前仓库有哪些事实入口，帮助 Agent 少走弯路。
+2. **可失效的本地导航信息**：例如当前仓库有哪些事实入口，帮助 Agent 少走弯路。
 
 把它们放在 `.agents/` 下，可以和产品代码、正式架构文档分开，避免把 Agent 工作流混入业务实现。
 
@@ -18,7 +18,8 @@
 ```text
 .agents/
 ├── README.md
-├── project-context.json
+├── project-context.json       # 本地生成，必须忽略，不提交 Git
+├── changes/                   # 项目无既有治理且采用 Coding fallback 时使用
 └── skills/
     ├── coding/
     │   ├── README.md
@@ -40,11 +41,13 @@
         └── references/
 ```
 
+`.agents/changes/` 不是每个项目都必须出现。目标项目已有 OpenSpec、RFC/ADR、Issue/PR 或其他正式治理，并且能承载 Requirement Traceability、Validation Matrix、Completion Audit 等语义时，优先复用项目已有载体，不创建平行制度。
+
 ### `project-context.json`
 
-这是 Coding Skill 生成或刷新的**项目发现缓存**，主要用于快速定位规则、Manifest、锁文件、文档和其他事实入口。
+这是 Coding Skill 生成或刷新的**本地项目发现缓存**，主要用于快速定位规则、Manifest、锁文件、文档和其他事实入口。
 
-它只是导航缓存，不是当前实现的事实源。缓存可能过期；真正的事实仍然要回到当前代码、Contract、Migration、测试、锁文件和项目正式文档确认。
+它只是导航缓存，不是当前实现的事实源。缓存可能过期；真正的事实仍然要回到当前代码、Contract、Schema/Migration、测试、锁文件和项目正式文档确认。
 
 从仓库根目录刷新：
 
@@ -52,13 +55,13 @@
 python .agents/skills/coding/scripts/coding.py discover --root .
 ```
 
-不要因为缓存里写了某个结论，就跳过当前仓库事实检查。
+这个文件**不提交 Git**。目标项目应把 `.agents/project-context.json` 放进 `.gitignore`、本地 exclude 或等价忽略机制。不要因为缓存里写了某个路径，就跳过当前仓库事实检查。
 
 ## 2. `coding`、`review` 和 `docs` 分别解决什么问题
 
 | Skill | 主要解决的问题 | 常见任务 |
 | --- | --- | --- |
-| [`coding`](skills/coding/README.md) | 怎样可靠完成软件研发、验证和交付 | 仓库分析、方案设计、功能开发、Bug 修复、重构、PR、CI、Release，以及 Review 前的仓库事实与风险路由 |
+| [`coding`](skills/coding/README.md) | 怎样可靠完成软件研发、验证和交付 | Greenfield、仓库分析、方案设计、功能开发、Bug 修复、重构、PR、CI、Release，以及 Review 前的仓库事实与风险路由 |
 | [`review`](skills/review/README.md) | 怎样以独立审查者和测试专家视角检查实现、测试充分性和交付证据 | Code Review、PR Review、代码质量/安全/兼容审计、测试充分性分析、Review 驱动的补测试与修复闭环 |
 | [`docs`](skills/docs/README.md) | 怎样保证技术文档与正确事实同步，并让人真正看懂 | 文档 Review、文档修复、README/架构/API/运维文档编写与更新、代码与文档一致性检查 |
 
@@ -69,8 +72,11 @@ python .agents/skills/coding/scripts/coding.py discover --root .
 → 用 Coding
 → 完成前如果存在 Review Skill，Coding 会强制路由 Review
 
+仓库还是空的、需要从需求建立工程基线？
+→ 用 Coding 的 Greenfield / Repository Bootstrap 路由
+
 主要任务就是 Code Review / Audit？
-→ 仍从 Coding 恢复仓库事实和任务边界
+→ 先按项目规则和 Coding 恢复事实/风险边界
 → 然后进入 Review
 
 主要任务是在检查、编写或更新技术文档？
@@ -88,12 +94,12 @@ Docs 检查时发现其实是代码错了？
 
 `review` 不维护第二套 Coding 规范。它在同仓存在 Coding 时读取 Coding，把 Coding 作为研发规则事实源，只增加独立审查、Findings、测试专家方法和 re-review。
 
-## 3. 在 AIMA_UGC 中怎样进入这三个 Skill
+## 3. 在任意项目中怎样进入这三个 Skill
 
 ### 普通研发任务
 
 ```text
-AGENTS.md
+项目 AGENTS.md / CONTRIBUTING / 同等规则
 → Coding
 → 按任务读取最少充分代码 / Contract / Migration / 测试 / 文档
 → 实现与验证
@@ -112,10 +118,24 @@ Review
 → Review re-review
 ```
 
+### Greenfield / Repository Bootstrap
+
+```text
+用户目标 / 正式需求 / 运行环境 / 硬约束
+→ Coding Greenfield 路由
+→ 区分已决定与待决定技术边界
+→ 关键长期选择按风险比较方案
+→ 建立最小 Manifest / Lock / Build / Test / Package / Run 基线
+→ 新鲜验证
+→ Docs / Review / Delivery
+```
+
+Greenfield 不表示可以让 Agent 自由猜技术栈。没有现成项目事实时，用户已确认决定、目标环境和正式约束就是上游事实；只有真正影响结果的关键未决项才提请决策。
+
 ### 显式 Code Review / Audit
 
 ```text
-AGENTS.md
+项目规则
 → Coding 完成仓库事实恢复、四维任务路由、工具链/风险/权限确认
 → Review 成为主要审查工作流
 → 独立重建需求、审查 diff/调用链/测试充分性
@@ -126,11 +146,11 @@ Review 默认只报告，不因为“做 Review”自动获得修改、提交或
 
 ### 单独做文档任务
 
-Docs 可以独立承担文档工作，但 AIMA_UGC 的仓库规则要求所有仓库任务先经过统一入口：
+Docs 可以独立承担文档工作。如果目标项目通过 `AGENTS.md` 或其他上位规则要求所有仓库任务先经过统一研发入口，则实际链路是：
 
 ```text
-AGENTS.md
-→ Coding 完成仓库级事实恢复、风险和 Git/权限路由
+项目规则
+→ Coding 只完成仓库级事实恢复、风险和 Git/权限路由
 → Docs 成为本任务的主要工作流
 → Review Only / Review + Fix / Write / Update
 ```
@@ -145,27 +165,34 @@ AGENTS.md
 
 ```text
 使用 coding，基于当前仓库真实实现完成这个功能。
-先恢复事实和判断风险等级，再按适用规则开发、测试、文档影响检查，并在完成前进入 review，最后完成 PR/CI 交付。
+先恢复事实和判断风险等级，再按适用规则开发、测试、文档影响检查，并在完成前进入 review，最后按项目现有 PR/CI 门禁交付。
+```
+
+### 从零建立项目
+
+```text
+使用 coding 的 Greenfield 模式，从当前正式需求建立最小可维护工程基线。
+不要预设编程语言或框架；先确认目标环境和硬约束，关键长期决策比较方案后再建立代码、依赖、build/test/package/run 闭环。
 ```
 
 ### 做 Code Review
 
 ```text
-使用 coding 审查当前实现，只 Review，不修改代码。
-先恢复当前仓库事实和任务边界；如果仓库存在 review Skill，按 Coding 路由进入 review，从独立审查和测试充分性角度给出 Findings、证据和风险。
+使用 coding + review 审查当前实现，只 Review，不修改代码。
+先恢复当前仓库事实和任务边界；由 review 从独立审查和测试充分性角度给出 Findings、证据和风险。
 ```
 
 ### 从测试专家角度审查
 
 ```text
 使用 review-and-test 审查这个功能的测试充分性。
-从需求和失败风险反推应有证据；对 Web/Full-stack 按真实边界区分 Browser Mock、Backend/API/Persistence、Contract、Real Full-stack 和外部 Probe，不用 Mock 冒充实链。
+从需求和失败风险反推应有证据；按真实边界区分 Mock、Backend/API/Persistence、Contract、Real Cross-component 和 External Probe，不用较弱层冒充未运行边界。
 ```
 
 ### 用 Docs 只检查文档
 
 ```text
-使用 docs 检查当前技术文档是否和实际代码、Contract、Migration、配置、测试一致。
+使用 docs 检查当前技术文档是否和实际代码、Contract、Schema/Migration、配置、测试一致。
 只 Review，不修改文件。
 ```
 
@@ -185,13 +212,42 @@ AGENTS.md
 不要复制完整 Schema 或代码形成第二套事实。
 ```
 
-## 5. 哪些文件才是正式规则
+## 5. Coding Change 与项目治理
+
+Coding 的通用语义是：
+
+```text
+Requirement Traceability
+Validation Matrix
+Completion Audit
+新鲜验证
+Ready / Delivery
+```
+
+Coding 自带 schema 当前只支持：
+
+```text
+coding-change/v1
+```
+
+不兼容旧 Change schema。
+
+项目没有可复用正式治理时，默认 carrier 为：
+
+```text
+.agents/changes/active/
+.agents/changes/archive/
+```
+
+如果项目已经正式使用顶层 `changes/active` / `changes/archive` 承载同类 Coding Change，可以继续沿用。项目已有 OpenSpec 等不同治理体系时，不要直接运行 `new-change` 造平行制度；先按项目规则确定这些通用语义应该由谁承载。
+
+## 6. 哪些文件才是正式规则
 
 请区分“使用说明”和“执行规则”：
 
 ```text
-仓库级规则
-→ ../AGENTS.md
+项目级规则
+→ 目标项目自己的 AGENTS.md / CONTRIBUTING / 同等规则
 
 Coding 正式规则
 → skills/coding/SKILL.md
@@ -211,13 +267,13 @@ Docs 正式规则
 → skills/review/README.md
 → skills/docs/README.md
 
-可失效导航缓存
-→ project-context.json
+本地可失效导航缓存
+→ project-context.json（不提交 Git）
 ```
 
 README 可以解释“怎么用”，但不应复制所有详细规则。README 与 `SKILL.md` 冲突时，以当前适用的上位项目规则和 `SKILL.md` 为准。
 
-## 6. 进一步阅读
+## 7. 进一步阅读
 
 - [Coding Skill 使用说明](skills/coding/README.md)
 - [Coding 正式规则](skills/coding/SKILL.md)
@@ -225,4 +281,4 @@ README 可以解释“怎么用”，但不应复制所有详细规则。README 
 - [Review 正式规则](skills/review/SKILL.md)
 - [Docs Skill 使用说明](skills/docs/README.md)
 - [Docs 正式规则](skills/docs/SKILL.md)
-- [AIMA_UGC Agent 统一入口](../AGENTS.md)
+- [仓库根使用说明](../README.md)

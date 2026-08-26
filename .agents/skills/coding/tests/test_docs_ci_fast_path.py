@@ -1,93 +1,40 @@
 from __future__ import annotations
 
-import importlib.util
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[4]
-CLASSIFIER_PATH = ROOT / "scripts" / "quality" / "classify_ci_scope.py"
 
 
-class DocsCiFastPathTest(unittest.TestCase):
+class LocalCacheAndDocsGovernanceTest(unittest.TestCase):
+    """验证 Agent_Skills 自身不再依赖业务仓库 CI，并保持轻量文档治理语义。"""
+
     def _read(self, path: str) -> str:
+        """读取规则或 README 文本。"""
         return (ROOT / path).read_text(encoding="utf-8")
 
-    def _load_classifier(self):
-        self.assertTrue(CLASSIFIER_PATH.exists(), "缺少 CI changed-scope classifier")
-        spec = importlib.util.spec_from_file_location("classify_ci_scope", CLASSIFIER_PATH)
-        self.assertIsNotNone(spec)
-        self.assertIsNotNone(spec.loader)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
+    def test_project_context_is_local_and_gitignored(self) -> None:
+        """project-context.json 必须明确是本地可失效缓存且不提交 Git。"""
+        gitignore = self._read(".gitignore")
+        root_readme = self._read("README.md")
+        cache_rule = self._read(".agents/skills/coding/references/01_项目发现与可失效缓存.md")
+        self.assertIn(".agents/project-context.json", gitignore)
+        self.assertIn("本地可失效导航缓存", root_readme)
+        self.assertIn("不提交 Git", cache_rule)
 
-    def test_coding_skill_requires_documentation_governance_fast_path(self) -> None:
-        skill = self._read(".agents/skills/coding/SKILL.md")
-        validation = self._read(".agents/skills/coding/references/07_通用验证与证据策略.md")
+    def test_docs_scope_stays_targeted_by_default(self) -> None:
+        """Docs 必须继续支持 not_applicable/targeted/full，full 不是全仓 Markdown 扫描。"""
+        readme = self._read(".agents/skills/docs/README.md")
+        for text in ("not_applicable", "targeted", "full"):
+            self.assertIn(text, readme)
+        self.assertIn("不是全文库扫描", readme)
 
-        self.assertIn("永久 CI/Workflow 优化必须证据守恒", skill)
-        self.assertIn("07_通用验证与证据策略.md", skill)
-        self.assertIn("Documentation / Governance Fast Path", validation)
-        self.assertIn("纯文档", validation)
-        self.assertIn("不得为了形式机械运行完整产品 CI", validation)
-        self.assertIn("Prompt", validation)
-        self.assertIn("未知路径", validation)
-        self.assertIn("docs_only", validation)
-        self.assertIn("governance_only", validation)
-        self.assertIn("full", validation)
-
-    def test_scope_classifier_is_conservative(self) -> None:
-        classifier = self._load_classifier()
-
-        self.assertEqual(classifier.classify_paths(["docs/blueprint/README.md"]), "docs_only")
-        self.assertEqual(classifier.classify_paths(["docs/assets/architecture.svg"]), "docs_only")
-        self.assertEqual(classifier.classify_paths(["README.md", "backend/src/aima_ugc/modules/system/README.md"]), "docs_only")
-        self.assertEqual(classifier.classify_paths(["changes/archive/2026-08/example/CHANGE.md"]), "governance_only")
-        self.assertEqual(classifier.classify_paths(["AGENTS.md", ".agents/skills/coding/README.md"]), "governance_only")
-        self.assertEqual(classifier.classify_paths(["docs/AGENTS.md"]), "governance_only")
-        self.assertEqual(classifier.classify_paths(["docs/generated-policy.json"]), "full")
-        self.assertEqual(
-            classifier.classify_paths(["backend/src/aima_ugc/modules/analysis/prompts/content_labeling_v3.md"]),
-            "full",
-        )
-        self.assertEqual(classifier.classify_paths(["backend/src/aima_ugc/modules/analysis/service.py"]), "full")
-        self.assertEqual(classifier.classify_paths(["unknown-notes.md"]), "full")
-        self.assertEqual(classifier.classify_paths([]), "full")
-
-    def test_ci_keeps_ci_gate_and_routes_lightweight_profiles(self) -> None:
-        ci = self._read(".github/workflows/ci.yml")
-
-        self.assertIn("name: CI Scope", ci)
-        self.assertIn("classify_ci_scope.py", ci)
-        self.assertIn("name: Docs and Governance", ci)
-        self.assertIn("needs.scope.outputs.profile != 'full'", ci)
-        self.assertIn("needs.scope.outputs.profile == 'full'", ci)
-        self.assertIn("name: Repository Quality", ci)
-        self.assertIn("name: PostgreSQL Integration", ci)
-        self.assertIn("name: CI Gate", ci)
-        self.assertIn("if: always()", ci)
-        self.assertIn("check_docs.py", ci)
-        self.assertIn("scan_secrets.py", ci)
-
-    def test_fullstack_and_blueprint_follow_same_fast_path_boundary(self) -> None:
-        fullstack = self._read(".github/workflows/fullstack.yml")
-        blueprint = self._read("docs/blueprint/06_开发约束与分阶段实施.md")
-
-        self.assertIn('      - ".agents/**"', fullstack)
-        self.assertIn('      - "AGENTS.md"', fullstack)
-        self.assertIn('      - "README.md"', fullstack)
-        self.assertIn('      - "**/README.md"', fullstack)
-        self.assertNotIn("prompts/**", fullstack)
-
-        self.assertIn("风险相关 required CI profile", blueprint)
-        self.assertIn("docs_only", blueprint)
-        self.assertIn("governance_only", blueprint)
-        self.assertIn("Prompt", blueprint)
-
-    def test_governance_secret_scan_covers_agents(self) -> None:
-        secret_scan = self._read("scripts/quality/scan_secrets.py")
-        self.assertIn('ROOT / ".agents"', secret_scan)
+    def test_repository_rules_require_self_contained_skill_tests(self) -> None:
+        """根维护规范必须明确 Skill 测试不能依赖另一个业务仓库的文件树。"""
+        agents = self._read("AGENTS.md")
+        self.assertIn("测试必须自包含", agents)
+        self.assertIn("另一个业务仓库", agents)
 
 
 if __name__ == "__main__":

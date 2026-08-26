@@ -13,8 +13,6 @@ import sys
 from typing import Any, Sequence
 
 
-COMPLETION_GATE_FIELD = "completion_gate"
-COMPLETION_GATE_REQUIRED = "required"
 TRACEABILITY_HEADING = "# Requirement Traceability"
 COMPLETION_AUDIT_HEADING = "# Completion Audit"
 TRACEABILITY_COLUMNS = ("ID", "Requirement", "Source", "Status", "Evidence")
@@ -61,6 +59,7 @@ CODING = _load_coding_module()
 
 
 def _normalise_relative_path(value: str | Path) -> str:
+    """把路径规范成仓库相对的正斜杠形式。"""
     path = str(value).replace("\\", "/").strip()
     while path.startswith("./"):
         path = path[2:]
@@ -68,6 +67,7 @@ def _normalise_relative_path(value: str | Path) -> str:
 
 
 def _is_safe_relative_path(value: str) -> bool:
+    """判断 Requirement Source 是否为不逃逸仓库的安全相对路径。"""
     path = Path(value)
     return (
         bool(value)
@@ -78,28 +78,13 @@ def _is_safe_relative_path(value: str) -> bool:
 
 
 def _is_placeholder(value: str) -> bool:
+    """判断文本是否为空或仍是 Ready 阶段禁止保留的占位值。"""
     normalised = value.strip().strip("`").casefold()
     return not normalised or normalised in PLACEHOLDERS
 
 
-def _raw_gate_required(path: Path) -> bool:
-    """只识别新门禁 marker；legacy Change 不要求先通过新版 parser。"""
-    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-    if not lines or lines[0].strip() != "---":
-        return False
-    for line in lines[1:]:
-        if line.strip() == "---":
-            return False
-        if ":" not in line:
-            continue
-        key, value = line.split(":", 1)
-        if key.strip() != COMPLETION_GATE_FIELD:
-            continue
-        return value.strip().strip("\"'").casefold() == COMPLETION_GATE_REQUIRED
-    return False
-
-
 def _body_after_frontmatter(path: Path) -> str:
+    """返回 CHANGE.md frontmatter 之后的正文。"""
     lines = path.read_text(encoding="utf-8").splitlines()
     if not lines or lines[0].strip() != "---":
         raise ValueError("缺少 Change frontmatter")
@@ -110,6 +95,7 @@ def _body_after_frontmatter(path: Path) -> str:
 
 
 def _section(body: str, heading: str) -> str | None:
+    """从 Change 正文中提取一级标题对应的内容。"""
     lines = body.splitlines()
     try:
         start = next(index for index, line in enumerate(lines) if line.strip() == heading)
@@ -124,6 +110,7 @@ def _section(body: str, heading: str) -> str | None:
 
 
 def _table_cells(line: str) -> list[str]:
+    """解析简单 Markdown 表格行并返回单元格。"""
     stripped = line.strip()
     if stripped.startswith("|"):
         stripped = stripped[1:]
@@ -133,10 +120,12 @@ def _table_cells(line: str) -> list[str]:
 
 
 def _is_separator(cells: Sequence[str]) -> bool:
+    """判断单元格是否组成合法 Markdown 表格分隔行。"""
     return bool(cells) and all(re.fullmatch(r":?-{3,}:?", cell) for cell in cells)
 
 
 def _parse_traceability(section: str) -> tuple[list[dict[str, str]], list[str]]:
+    """解析 Requirement Traceability 表并返回行数据和结构错误。"""
     errors: list[str] = []
     table_lines = [line for line in section.splitlines() if line.strip().startswith("|")]
     if len(table_lines) < 3:
@@ -163,6 +152,7 @@ def _parse_traceability(section: str) -> tuple[list[dict[str, str]], list[str]]:
 
 
 def _validate_source(root: Path, change_path: Path, source: str) -> str | None:
+    """校验 Requirement Source 可识别且不会引用当前 Change 自身。"""
     value = source.strip().strip("`")
     if _is_placeholder(value):
         return f"Requirement Source 不能是占位值：{source}"
@@ -189,6 +179,7 @@ def _validate_source(root: Path, change_path: Path, source: str) -> str | None:
 
 
 def _validate_traceability(root: Path, change_path: Path, body: str) -> list[str]:
+    """校验 Requirement Traceability 的 ID、状态、来源和 Evidence。"""
     section = _section(body, TRACEABILITY_HEADING)
     if section is None:
         return [f"缺少 {TRACEABILITY_HEADING}"]
@@ -226,6 +217,7 @@ def _validate_traceability(root: Path, change_path: Path, body: str) -> list[str
 
 
 def _validate_completion_audit(body: str) -> list[str]:
+    """校验 Completion Audit 四项均有有效说明并已勾选。"""
     section = _section(body, COMPLETION_AUDIT_HEADING)
     if section is None:
         return [f"缺少 {COMPLETION_AUDIT_HEADING}"]
@@ -253,11 +245,12 @@ def _validate_completion_audit(body: str) -> list[str]:
 
 
 def _metadata(path: Path) -> dict[str, Any]:
-    """复用 Coding CLI 的 Change frontmatter 解析规则。"""
+    """复用 Coding CLI 的当前 `coding-change/v1` frontmatter 解析规则。"""
     return CODING.read_change_metadata(path)
 
 
 def _validate_ready_document(root: Path, path: Path) -> list[str]:
+    """校验一个 Ready/Archive Change 的追溯表和 Completion Audit 正文。"""
     body = _body_after_frontmatter(path)
     return [
         *_validate_traceability(root, path, body),
@@ -265,15 +258,14 @@ def _validate_ready_document(root: Path, path: Path) -> list[str]:
     ]
 
 
-def _active_paths(root: Path) -> list[Path]:
-    return sorted((root / "changes" / "active").glob("*/CHANGE.md"))
-
-
-def _archive_paths(root: Path) -> list[Path]:
-    return sorted((root / "changes" / "archive").glob("*/*/CHANGE.md"))
+def _change_root_relative(root: Path) -> str:
+    """返回当前 Coding Change carrier 的仓库相对路径。"""
+    return CODING.change_root_relative(root)
 
 
 def _git_diff_paths(root: Path, base: str, *, diff_filter: str) -> set[str]:
+    """返回 base 到 HEAD 之间当前 Coding carrier 内符合过滤条件的变更路径。"""
+    change_root = _change_root_relative(root)
     result = subprocess.run(
         [
             "git",
@@ -284,8 +276,8 @@ def _git_diff_paths(root: Path, base: str, *, diff_filter: str) -> set[str]:
             f"--diff-filter={diff_filter}",
             f"{base}...HEAD",
             "--",
-            "changes/active",
-            "changes/archive",
+            f"{change_root}/active",
+            f"{change_root}/archive",
         ],
         check=False,
         capture_output=True,
@@ -300,14 +292,26 @@ def _git_diff_paths(root: Path, base: str, *, diff_filter: str) -> set[str]:
     return {_normalise_relative_path(line) for line in result.stdout.splitlines() if line.strip()}
 
 
+def _is_archived(root: Path, path: Path) -> bool:
+    """判断 Change 路径是否位于当前 carrier 的 archive 目录。"""
+    relative = path.relative_to(CODING.resolve_change_root(root))
+    return bool(relative.parts and relative.parts[0] == "archive")
+
+
+def _is_active(root: Path, path: Path) -> bool:
+    """判断 Change 路径是否位于当前 carrier 的 active 目录。"""
+    relative = path.relative_to(CODING.resolve_change_root(root))
+    return bool(relative.parts and relative.parts[0] == "active")
+
+
 def check_repository(
     root: Path,
     *,
     require_active_ready: bool = False,
     changed_since: str | None = None,
 ) -> dict[str, Any]:
+    """检查当前 Coding carrier 中全部 Change 的 schema、状态和 Ready 语义门禁。"""
     errors: list[dict[str, str]] = []
-    legacy = 0
     gated = 0
     strict = 0
     changed = (
@@ -315,27 +319,11 @@ def check_repository(
         if changed_since
         else set()
     )
-    added = _git_diff_paths(root, changed_since, diff_filter="A") if changed_since else set()
 
-    for path in [*_active_paths(root), *_archive_paths(root)]:
+    active_paths = CODING.active_change_paths(root)
+    archive_paths = CODING.archive_change_paths(root)
+    for path in [*active_paths, *archive_paths]:
         relative = _normalise_relative_path(path.relative_to(root))
-        try:
-            gate_required = _raw_gate_required(path)
-        except OSError as exc:
-            errors.append({"path": relative, "message": str(exc)})
-            continue
-        if not gate_required:
-            if relative in added and relative.startswith("changes/active/"):
-                errors.append(
-                    {
-                        "path": relative,
-                        "message": "本 PR 新增的 Active Change 必须包含 completion_gate: required",
-                    }
-                )
-            else:
-                legacy += 1
-            continue
-
         gated += 1
         try:
             metadata = _metadata(path)
@@ -343,22 +331,26 @@ def check_repository(
             errors.append({"path": relative, "message": str(exc)})
             continue
 
-        archived = relative.startswith("changes/archive/")
+        archived = _is_archived(root, path)
+        active = _is_active(root, path)
         status = str(metadata.get("status", "")).casefold()
-        is_changed_active = relative in changed and relative.startswith("changes/active/")
+        is_changed_active = relative in changed and active
         must_be_ready = require_active_ready or is_changed_active
 
         if archived:
             if status != "done":
                 errors.append(
-                    {"path": relative, "message": "启用 Completion Gate 的归档 Change 必须为 done"}
+                    {"path": relative, "message": "归档 Coding Change 必须为 done"}
                 )
                 continue
             must_validate = True
         else:
+            if not active:
+                errors.append({"path": relative, "message": "Change 不位于 active 或 archive 目录"})
+                continue
             if status == "done":
                 errors.append(
-                    {"path": relative, "message": "done Change 不得继续留在 changes/active/"}
+                    {"path": relative, "message": "done Change 不得继续留在 active/"}
                 )
                 continue
             if must_be_ready and status != "ready_for_review":
@@ -384,7 +376,7 @@ def check_repository(
 
     return {
         "ok": not errors,
-        "legacy": legacy,
+        "change_root": _change_root_relative(root),
         "gated": gated,
         "strict_checked": strict,
         "errors": errors,
@@ -394,23 +386,24 @@ def check_repository(
 def _build_parser() -> argparse.ArgumentParser:
     """构造 Coding Completion Gate 的命令行参数解析器。"""
     parser = argparse.ArgumentParser(
-        description="检查 Coding Requirement Traceability / Completion Audit Ready 门禁。"
+        description="检查 coding-change/v1 Requirement Traceability / Completion Audit Ready 门禁。"
     )
     parser.add_argument("--root", default=".")
     parser.add_argument(
         "--require-active-ready",
         action="store_true",
-        help="要求所有启用 Completion Gate 的 Active Change 都已 ready_for_review。",
+        help="要求当前 Coding carrier 的所有 Active Change 都已 ready_for_review。",
     )
     parser.add_argument(
         "--changed-since",
-        help="只要求从给定 Git base 到 HEAD 发生变化的 gated Active Change 已 Ready。",
+        help="只额外要求从给定 Git base 到 HEAD 发生变化的 Active Change 已 Ready。",
     )
     parser.add_argument("--json", action="store_true")
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """运行 Coding Ready Check CLI 并按检查结果返回退出码。"""
     arguments = _build_parser().parse_args(argv)
     root = Path(arguments.root).resolve()
     if not root.is_dir():
@@ -431,15 +424,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     elif result["ok"]:
         print(
             "Ready Check 通过："
-            f"gated={result['gated']}，strict={result['strict_checked']}，"
-            f"legacy={result['legacy']}。"
+            f"carrier={result['change_root']}，gated={result['gated']}，"
+            f"strict={result['strict_checked']}。"
         )
     else:
         for error in result["errors"]:
             print(f"ERROR {error['path']}: {error['message']}", file=sys.stderr)
         print(
             "Ready Check 失败："
-            f"{len(result['errors'])} 个问题；legacy={result['legacy']}。",
+            f"carrier={result['change_root']}，{len(result['errors'])} 个问题。",
             file=sys.stderr,
         )
     return 0 if result["ok"] else 1

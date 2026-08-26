@@ -11,11 +11,12 @@
 以下任务适合直接使用 Docs：
 
 - 检查技术文档和当前代码是否一致；
-- 检查 README、Blueprint、Architecture、API Guide、运维/调试文档是否过期；
+- 检查 README、Architecture/Blueprint、API Guide、运维/调试文档是否过期；
 - 只做文档 Review，不修改文件；
 - Review 后修正确认有问题的文档；
 - 新写模块 README；
 - 更新架构说明、API 使用说明、调试指南、部署/运维说明；
+- Greenfield 项目补充工程基线、架构边界和使用说明；
 - 检查文档是否堆术语、缺少因果、对基础读者不友好；
 - 检查文档是否手抄 Schema、API、类、函数或依赖版本，形成第二套事实；
 - 在 Coding 完成代码变化后，按 Docs Impact 做针对性文档同步。
@@ -51,12 +52,12 @@ Docs 优先帮助读者回答：
 应该先让读者知道：
 
 ```text
-不同平台和 Excel 的原始字段不一样。
-如果后续分析代码分别理解每种来源，所有模块都会和外部格式耦合。
-所以系统先把不同来源转换成统一内部结构，后面的入库和分析只依赖这一种结构。
+不同外部来源的原始字段和协议可能不一样。
+如果后续业务代码分别理解每种来源格式，多个模块都会和外部格式耦合。
+所以项目在真实需要时先把外部输入转换成统一内部结构，后面的持久化和业务处理只依赖这一种结构。
 ```
 
-读者理解这个问题后，再解释 `Canonical`、`Repository` 等术语在当前项目里实际代表什么。
+读者理解这个问题后，再解释 `Canonical`、`Repository` 等术语在当前项目里实际代表什么。项目实际没有这些概念时，不为了文档“专业”而引入。
 
 ## 3. 三种工作模式
 
@@ -124,6 +125,8 @@ Review 不只是检查错别字或 Markdown 格式，还会检查：
 哪些精确机器事实只应该链接，而不应该手抄？
 ```
 
+Greenfield 文档还要区分“已经建立并验证的当前事实”和“已经批准但尚未实现的目标设计”，不能提前把后者写成当前能力。
+
 ## 4. `not_applicable`、`targeted`、`full` 怎么选
 
 这三个词描述的是**文档影响范围**，不是文档质量等级。
@@ -153,7 +156,7 @@ Review 不只是检查错别字或 Markdown 格式，还会检查：
 → 审查或更新
 ```
 
-只读取和当前变化直接相关的内容，不因为仓库里还有 TikHub、Scheduler、Word Report 等其他模块就全部扫描。
+只读取和当前变化直接相关的内容，不因为仓库还有其他 Provider、调度、报告、移动端、CLI 或独立模块就全部扫描。
 
 ### `full`
 
@@ -163,28 +166,29 @@ Review 不只是检查错别字或 Markdown 格式，还会检查：
 - 主数据/调用链整体重构；
 - 多模块公共 Contract 体系变化；
 - 部署、恢复或运行模型系统变化；
+- Greenfield 工程基线整体建立；
 - 大规模文档治理本身。
 
 `full` 的意思是“完整覆盖受影响文档域”，**不是全文库扫描**。
 
 详细判断见 [`references/01_事实源与同步判断.md`](references/01_事实源与同步判断.md)。
 
-## 5. 在 AIMA_UGC 中能不能单独用 Docs
+## 5. 在任意项目中能不能单独用 Docs
 
 可以。
 
-Docs 本身支持独立 Review / Fix / Write / Update。但 AIMA_UGC 的仓库级规则规定，所有仓库任务先从根 [`AGENTS.md`](../../../AGENTS.md) 进入。
+Docs 本身支持独立 Review / Fix / Write / Update。项目如果有根 `AGENTS.md`、`CONTRIBUTING` 或其他上位规则，仍必须先遵守这些项目规则。
 
-所以单独做文档任务时，实际链路是：
+如果目标项目规定所有仓库任务先经过 Coding 的事实恢复、风险、权限和 Git 路由，则单独做文档任务时实际链路是：
 
 ```text
-AGENTS.md
+项目规则
 → Coding 只完成仓库级事实恢复、风险、权限和 Git 路由
 → Docs 成为当前任务的主要工作流
 → Review Only / Review + Fix / Write / Update
 ```
 
-这不是让 Coding 代替 Docs 写文档，而是保留 AIMA_UGC 的统一仓库门禁。
+这不是让 Coding 代替 Docs 写文档，而是保留项目统一门禁。没有这种项目规则时，Docs 可以直接从文档事实恢复开始。
 
 ## 6. 最常用的请求方式
 
@@ -192,15 +196,15 @@ AGENTS.md
 
 ```text
 使用 docs 检查 docs/xxx.md。
-以当前仓库代码、Contract、Migration、配置和测试为事实源；只 Review，不修改。
+以当前仓库代码、Contract、Schema/Migration、配置和测试为事实源；只 Review，不修改。
 检查事实正确性、关键遗漏、第一性原理解释、术语、第二套事实风险和实用性。
 ```
 
 ### 6.2 检查并修复某个文档域
 
 ```text
-使用 docs targeted 检查并修复 Excel 导入相关文档。
-只读取与 Excel 导入真实数据流直接相关的代码、Contract、测试和当前文档，不扫描无关专题。
+使用 docs targeted 检查并修复数据导入相关文档。
+只读取与这条真实数据流直接相关的代码、Contract、测试和当前文档，不扫描无关专题。
 ```
 
 ### 6.3 做一次较大的文档审计
@@ -220,8 +224,16 @@ AGENTS.md
 ### 6.5 新增模块 README
 
 ```text
-使用 docs 为 backend/src/... 模块补 README。
+使用 docs 为目标模块补 README。
 先读取真实入口和调用链；README 面向基础较弱的新开发者，说明职责、边界、输入输出、主要流动、实现位置、使用/调试方式和当前限制。
+```
+
+### 6.6 Greenfield 工程说明
+
+```text
+使用 docs 为新项目建立第一版 README/架构导航。
+以已经确认并实际建立的 Manifest、lock、build/test/package/run 入口为当前事实；
+把仍待实现的能力明确标为待实现，不要提前写成当前支持。
 ```
 
 ## 7. 什么叫“不要制造第二套事实”
@@ -230,11 +242,11 @@ AGENTS.md
 
 例如已有：
 
-- OpenAPI / JSON Schema；
-- Pydantic Contract；
-- Alembic Migration；
-- 数据库表定义；
-- generated client；
+- OpenAPI / JSON Schema / protobuf / GraphQL schema；
+- Pydantic/DTO/IDL 或项目其他正式 Contract；
+- Alembic/Flyway/Liquibase/其他 Migration；
+- 数据库表定义或文件/消息 Schema；
+- generated client/code；
 - 锁文件；
 - 完整函数签名或枚举。
 
@@ -248,7 +260,7 @@ Docs 更应该解释：
 最新精确定义在哪里
 ```
 
-例如，不需要把 80 个 API 字段再手抄成 README 表格；可以解释这个接口的业务目的、分页/状态/身份语义，并链接当前 OpenAPI 机器定义。
+例如，不需要把 80 个 API 字段再手抄成 README 表格；可以解释这个接口的业务目的、分页/状态/身份语义，并链接当前机器 Contract。
 
 详细规则见 [`references/01_事实源与同步判断.md`](references/01_事实源与同步判断.md)。
 
@@ -310,7 +322,7 @@ Coding 新鲜验证通过
 
 Docs 的主要入口是 Agent 读取 [`SKILL.md`](SKILL.md) 并按当前任务执行。不要自行假设存在 `docs.py` 或其他命令。
 
-需要项目发现、Active Change、冲突或 Ready Check 等研发辅助命令时，使用 Coding 自带的 [`../coding/scripts/`](../coding/scripts/) 工具，并遵守 Coding 规则。
+需要项目发现、Coding Change、冲突或 Ready Check 等研发辅助命令时，使用 Coding 自带的 [`../coding/scripts/`](../coding/scripts/) 工具，并遵守 Coding 规则。项目使用外部治理体系时，仍用项目自己的工具处理相应治理状态。
 
 ## 11. 一个好的 Docs 结果通常应该包含什么
 
@@ -361,4 +373,4 @@ docs/
 - [与 Coding 协作](references/04_与Coding协作.md)
 - [Coding Skill 使用说明](../coding/README.md)
 - [`.agents` 总说明](../../README.md)
-- [AIMA_UGC Agent 统一入口](../../../AGENTS.md)
+- [仓库根使用说明](../../../README.md)

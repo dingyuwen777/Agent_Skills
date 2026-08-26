@@ -7,42 +7,40 @@ import unittest
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-READY_CHECK = REPO_ROOT / ".agents/skills/coding/scripts/ready_check.py"
-TEMPLATE = REPO_ROOT / ".agents/skills/coding/assets/CHANGE.template.md"
+ROOT = Path(__file__).resolve().parents[4]
+READY_CHECK = ROOT / ".agents/skills/coding/scripts/ready_check.py"
+TEMPLATE = ROOT / ".agents/skills/coding/assets/CHANGE.template.md"
 
 
 def _change_document(
     *,
+    schema: str = "coding-change/v1",
     status: str = "ready_for_review",
     requirement_status: str = "satisfied",
     source: str = "AGENTS.md",
     evidence: str = "tests: ready-check",
     audit_checked: bool = True,
-    completion_gate: bool = True,
+    completion_gate: str = "required",
 ) -> str:
-    gate = "completion_gate: required\n" if completion_gate else ""
+    """生成用于 Ready Check 单元测试的最小 Coding Change。"""
     checked = "x" if audit_checked else " "
     return f"""---
-schema: rvc-change/v1
-id: CHG-20260823-ready-check-fixture
+schema: {schema}
+id: CHG-20260826-ready-check-fixture
 title: Ready Check Fixture
 level: L2
 status: {status}
 owner: test
 branch: test/ready-check
-created: 2026-08-23
-updated: 2026-08-23
-{gate}depends_on: []
+created: 2026-08-26
+updated: 2026-08-26
+completion_gate: {completion_gate}
+depends_on: []
 affected_areas: []
 affected_paths: []
 contracts: []
 data_changes: []
 ---
-
-# 目标
-
-测试 Completion Gate。
 
 # Requirement Traceability
 
@@ -52,15 +50,18 @@ data_changes: []
 
 # Completion Audit
 
-- [{checked}] upstream_re_read：已重新读取所有上游正式事实源，并从它们独立重建完成定义。
-- [{checked}] change_coverage：已确认当前 Change 覆盖全部上游要求，没有把 Change 自身当作需求全集。
-- [{checked}] reverse_audit：已执行适用的反向能力/边界审计；不适用项已有明确依据。
-- [{checked}] unresolved_cleared：所有 not_satisfied 已清零；延期/不适用项均有正式依据。
+- [{checked}] upstream_re_read：已重新读取所有上游正式事实源并独立重建完成定义。
+- [{checked}] change_coverage：已确认当前 Change 覆盖全部上游要求。
+- [{checked}] reverse_audit：已执行适用反向审计并复核 Validation Matrix。
+- [{checked}] unresolved_cleared：所有 not_satisfied 已清零并有依据。
 """
 
 
 class ReadyCheckTest(unittest.TestCase):
+    """验证当前 coding-change/v1 的 Ready/Archive 机器门禁。"""
+
     def _run(self, root: Path, *extra: str) -> subprocess.CompletedProcess[str]:
+        """运行 Ready Check 并捕获完整输出。"""
         return subprocess.run(
             [sys.executable, str(READY_CHECK), "--root", str(root), *extra],
             check=False,
@@ -71,19 +72,18 @@ class ReadyCheckTest(unittest.TestCase):
 
     @staticmethod
     def _write_change(root: Path, document: str, *, archive: bool = False) -> Path:
+        """把测试 Change 写入默认 `.agents/changes` carrier。"""
         if archive:
-            path = (
-                root
-                / "changes/archive/2026-08/CHG-20260823-ready-check-fixture/CHANGE.md"
-            )
+            path = root / ".agents/changes/archive/2026-08/CHG-20260826-ready-check-fixture/CHANGE.md"
         else:
-            path = root / "changes/active/CHG-20260823-ready-check-fixture/CHANGE.md"
+            path = root / ".agents/changes/active/CHG-20260826-ready-check-fixture/CHANGE.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(document, encoding="utf-8")
         return path
 
     @staticmethod
     def _git(root: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
+        """在临时仓库中运行测试需要的 Git 命令。"""
         return subprocess.run(
             ["git", "-C", str(root), *arguments],
             check=True,
@@ -92,58 +92,47 @@ class ReadyCheckTest(unittest.TestCase):
             encoding="utf-8",
         )
 
-    def test_template_enables_completion_gate(self) -> None:
+    def test_template_enables_current_schema_and_completion_gate(self) -> None:
+        """Change 模板必须只生成当前 schema 并默认启用 Completion Gate。"""
         content = TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn("schema: coding-change/v1", content)
         self.assertIn("completion_gate: required", content)
         self.assertIn("# Requirement Traceability", content)
+        self.assertIn("# Validation Matrix", content)
         self.assertIn("# Completion Audit", content)
 
     def test_complete_ready_change_passes(self) -> None:
+        """完整 ready Change 应通过当前门禁。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "AGENTS.md").write_text("# Rules\n", encoding="utf-8")
             self._write_change(root, _change_document())
             result = self._run(root, "--require-active-ready")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("carrier=.agents/changes", result.stdout)
 
-    def test_legacy_change_remains_compatible(self) -> None:
+    def test_rvc_schema_is_rejected_without_compatibility(self) -> None:
+        """明确拒绝历史 rvc-change/v1，不保留兼容读取路径。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            self._write_change(root, _change_document(completion_gate=False))
+            (root / "AGENTS.md").write_text("# Rules\n", encoding="utf-8")
+            self._write_change(root, _change_document(schema="rvc-change/v1"))
             result = self._run(root, "--require-active-ready")
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn("legacy", result.stdout.casefold())
-
-    def test_malformed_legacy_change_is_ignored(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            self._write_change(
-                root,
-                "---\nid: CHG-20260823-ready-check-fixture\nstatus: done\n---\nlegacy\n",
-                archive=True,
-            )
-            result = self._run(root)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn("legacy=1", result.stdout)
-
-    def test_new_active_change_without_gate_is_rejected(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            self._git(root, "init", "-b", "main")
-            self._git(root, "config", "user.name", "ready-check")
-            self._git(root, "config", "user.email", "ready-check@example.invalid")
-            (root / "README.md").write_text("baseline\n", encoding="utf-8")
-            self._git(root, "add", "README.md")
-            self._git(root, "commit", "-m", "建立测试基线")
-            base = self._git(root, "rev-parse", "HEAD").stdout.strip()
-            self._write_change(root, _change_document(completion_gate=False))
-            self._git(root, "add", "changes")
-            self._git(root, "commit", "-m", "新增无门禁测试变更")
-            result = self._run(root, "--changed-since", base)
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("completion_gate: required", result.stdout + result.stderr)
+            self.assertIn("不支持的 Change schema", result.stdout + result.stderr)
+
+    def test_missing_completion_gate_is_rejected(self) -> None:
+        """当前 schema 不允许通过弱化或删除 Completion Gate 绕过 Ready。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "AGENTS.md").write_text("# Rules\n", encoding="utf-8")
+            self._write_change(root, _change_document(completion_gate="optional"))
+            result = self._run(root, "--require-active-ready")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("completion_gate 必须为 required", result.stdout + result.stderr)
 
     def test_not_satisfied_blocks_ready(self) -> None:
+        """未满足 Requirement 不能进入 Ready。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "AGENTS.md").write_text("# Rules\n", encoding="utf-8")
@@ -153,6 +142,7 @@ class ReadyCheckTest(unittest.TestCase):
             self.assertIn("not_satisfied", result.stdout + result.stderr)
 
     def test_unchecked_completion_audit_blocks_ready(self) -> None:
+        """Completion Audit 未勾选时必须阻止 Ready。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "AGENTS.md").write_text("# Rules\n", encoding="utf-8")
@@ -161,7 +151,8 @@ class ReadyCheckTest(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("Completion Audit", result.stdout + result.stderr)
 
-    def test_missing_repository_requirement_source_blocks_ready(self) -> None:
+    def test_missing_requirement_source_blocks_ready(self) -> None:
+        """仓库 Requirement Source 不存在时必须失败。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._write_change(root, _change_document(source="docs/missing.md"))
@@ -169,16 +160,18 @@ class ReadyCheckTest(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("docs/missing.md", result.stdout + result.stderr)
 
-    def test_current_change_cannot_be_its_own_requirement_source(self) -> None:
+    def test_current_change_cannot_source_itself(self) -> None:
+        """当前 Change 不能把自身当作 Requirement Source。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source = "changes/active/CHG-20260823-ready-check-fixture/CHANGE.md"
+            source = ".agents/changes/active/CHG-20260826-ready-check-fixture/CHANGE.md"
             self._write_change(root, _change_document(source=source))
             result = self._run(root, "--require-active-ready")
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("不能把自身作为 Requirement Source", result.stdout + result.stderr)
 
     def test_placeholder_evidence_blocks_ready(self) -> None:
+        """Ready Requirement Evidence 不允许保留占位值。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "AGENTS.md").write_text("# Rules\n", encoding="utf-8")
@@ -187,7 +180,8 @@ class ReadyCheckTest(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("TBD", result.stdout + result.stderr)
 
-    def test_archived_completion_gate_requires_done(self) -> None:
+    def test_archive_requires_done(self) -> None:
+        """归档 Change 必须处于 done。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "AGENTS.md").write_text("# Rules\n", encoding="utf-8")
@@ -195,6 +189,47 @@ class ReadyCheckTest(unittest.TestCase):
             result = self._run(root)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("done", result.stdout + result.stderr)
+
+    def test_done_change_cannot_remain_active(self) -> None:
+        """done Change 不能继续留在 active。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "AGENTS.md").write_text("# Rules\n", encoding="utf-8")
+            self._write_change(root, _change_document(status="done"))
+            result = self._run(root)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("不得继续留在 active", result.stdout + result.stderr)
+
+    def test_changed_since_requires_changed_active_change_ready(self) -> None:
+        """changed-since 只对当前 diff 中变动的 Active Change 强制 Ready。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._git(root, "init", "-b", "main")
+            self._git(root, "config", "user.name", "ready-check")
+            self._git(root, "config", "user.email", "ready-check@example.invalid")
+            (root / "README.md").write_text("baseline\n", encoding="utf-8")
+            self._git(root, "add", "README.md")
+            self._git(root, "commit", "-m", "建立测试基线")
+            base = self._git(root, "rev-parse", "HEAD").stdout.strip()
+            (root / "AGENTS.md").write_text("# Rules\n", encoding="utf-8")
+            self._write_change(root, _change_document(status="in_progress"))
+            self._git(root, "add", ".agents/changes", "AGENTS.md")
+            self._git(root, "commit", "-m", "新增测试变更")
+            result = self._run(root, "--changed-since", base)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("ready_for_review", result.stdout + result.stderr)
+
+    def test_existing_top_level_carrier_is_checked(self) -> None:
+        """仓库已有顶层 changes carrier 时 Ready Check 必须沿用而不是只看 `.agents/changes`。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "AGENTS.md").write_text("# Rules\n", encoding="utf-8")
+            path = root / "changes/active/CHG-20260826-ready-check-fixture/CHANGE.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(_change_document(), encoding="utf-8")
+            result = self._run(root, "--require-active-ready")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("carrier=changes", result.stdout)
 
 
 if __name__ == "__main__":

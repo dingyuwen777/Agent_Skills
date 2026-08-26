@@ -1,5 +1,5 @@
 ---
-schema: rvc-change/v1
+schema: coding-change/v1
 id: $change_id
 title: $title
 level: $level
@@ -34,15 +34,15 @@ $data_changes
 
 # 必须保持不变
 
-- 列出需要兼容的接口、数据、配置和既有合法行为。
+- 列出需要兼容的接口、数据、配置和既有合法行为；Greenfield 没有旧行为时写已确认的硬约束、平台边界和必须保持的用户决定。
 
 # 关键决策
 
-记录已经确认的取舍、依据和影响；L3 变更还应覆盖迁移、部署与回滚。
+记录已经确认的取舍、依据和影响；L3 变更还应覆盖迁移、部署与回滚。Greenfield 的长期技术路线、公共 Contract、数据模型或运行方式选择也在这里记录。
 
 # Requirement Traceability
 
-从用户已确认决定、正式 Roadmap/Spec/Stage 完成定义或其他上游事实源独立提取要求。**当前 Change 不能把自身作为 Requirement Source，也不能把本表当作上游需求全集。**
+从用户已确认决定、正式 Roadmap/Spec/Stage/Feature 完成定义、Greenfield 正式需求/约束或其他上游事实源独立提取要求。**当前 Change 不能把自身作为 Requirement Source，也不能把本表当作上游需求全集。**
 
 状态只允许：
 
@@ -51,7 +51,7 @@ $data_changes
 - `not_applicable`：有明确事实证明不适用；
 - `not_satisfied`：尚未满足，进入 `ready_for_review` 前必须清零。
 
-`Source` 优先写仓库相对事实源路径；本轮用户明确决定可写 `user:<简短标识>`。`Evidence` 必须写实际实现、测试、运行或正式延期/不适用依据，Ready 时不得保留占位内容。
+`Source` 优先写仓库相对事实源路径；本轮用户明确决定可写 `user:<简短标识>`；外部正式资料可写 `external:<可识别来源>` 或 URL。`Evidence` 必须写实际实现、测试、运行或正式延期/不适用依据，Ready 时不得保留占位内容。
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
@@ -76,26 +76,26 @@ $data_changes
 
 通用规则见 `.agents/skills/coding/references/07_通用验证与证据策略.md`。
 
-项目存在专项 profile 时在保持语义责任不变的前提下使用更具体层名。例如 Web/API/PostgreSQL/Provider 项目继续按 `.agents/skills/coding/references/08_分层测试与验收策略.md` 使用：
+项目存在 UI/API/Persistence/External Dependency 专项边界时，在保持语义责任不变的前提下按 `.agents/skills/coding/references/08_分层测试与验收策略.md` 映射为更具体层名，例如：
 
 ```text
 用户 / Workflow Acceptance
-→ Browser Mock Acceptance
+→ Browser / UI Mock Acceptance
 
 集成 / Persistence / Runtime Dependency
-→ Backend/API/PostgreSQL Integration
+→ Backend / API / Persistence Integration
 
 接口 / Contract
-→ Contract / Generated Client
+→ Contract / Generated Consumer
 
 跨组件 Golden Path
-→ Real Full-stack Golden Path
+→ Real Cross-component Golden Path
 
 External Dependency / Provider Probe
-→ Real Provider Probe
+→ External Dependency / Provider Probe
 ```
 
-Browser Mock 不能冒充真实 Backend/DB；一条 Full-stack 不能冒充全部状态；真实 Provider Probe 默认有界且不进普通 CI。
+项目实际使用 PostgreSQL、MySQL、SQL Server、SQLite、文件系统、DynamoDB 等具体 Persistence 时，Integration 必须证明对应真实语义；Browser/UI Mock 不能冒充真实 Backend/Persistence；一条 Golden Path 不能冒充全部状态；真实 External Probe 默认有界且不进普通 CI。
 
 # Completion Audit
 
@@ -109,7 +109,8 @@ Browser Mock 不能冒充真实 Backend/DB；一条 Full-stack 不能冒充全�
 - 异步：请求 → 状态 → 错误/恢复 → 最终结果；
 - Schema/Migration：writer → migration → reader/consumer；
 - Package/Release：source → build artifact → install/startup；
-- Infra：config → plan/render → runtime/deploy boundary（在授权范围内）。
+- Infra：config → plan/render → runtime/deploy boundary（在授权范围内）；
+- Greenfield：目标/硬约束 → 工程基线 → build/test/package/startup → 最小真实用户/consumer 结果。
 
 同时复核 Validation Matrix：每个 `required` 都有足够的新鲜证据，每个 `not_applicable` 都有真实依据。
 
@@ -120,7 +121,7 @@ Browser Mock 不能冒充真实 Backend/DB；一条 Full-stack 不能冒充全�
 
 # 任务
 
-- [ ] 调查当前实现和事实源
+- [ ] 调查当前实现和事实源；Greenfield 则确认现有资料、目标和硬约束
 - [ ] 建立四维任务路由：项目形态 / 研发阶段 / 语言工具链 / 风险等级
 - [ ] 建立失败测试或说明测试例外
 - [ ] 建立并维护 Validation Matrix
@@ -137,7 +138,7 @@ Browser Mock 不能冒充真实 Backend/DB；一条 Full-stack 不能冒充全�
 - 目标测试：
 - 相关测试：
 - 静态检查/构建：
-- Ready Check：`python .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready`
+- Ready Check：使用 Coding 自带 `coding-change/v1` 时运行 `python .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready`
 
 ## 新鲜证据
 
