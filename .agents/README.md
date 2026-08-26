@@ -96,6 +96,56 @@ Docs 检查时发现其实是代码错了？
 
 ## 3. 在任意项目中怎样进入这三个 Skill
 
+### 首次接入 / 升级 Agent_Skills
+
+目标项目只有 `.agents/skills/` 但没有明确项目入口时，不同宿主 Agent 未必会自动知道应该先读取哪个 Skill。因此正式接入不仅是复制目录，还需要目标项目自己的根 `AGENTS.md` Overlay。
+
+推荐从 Agent_Skills 源仓库执行：
+
+```bash
+python scripts/install.py --target <目标项目根目录>
+```
+
+安装器只同步：
+
+```text
+.agents/skills/coding/
+.agents/skills/review/
+.agents/skills/docs/
+```
+
+它不复制 Agent_Skills 源仓库自己的根 `AGENTS.md`，也不复制 `.agents/changes/` 或 `project-context.json`。目标项目已有 `.agents/changes/`、项目自有 Skill 和其他 `.agents` 内容不属于清理范围。
+
+随后安装器自动调用：
+
+```bash
+python .agents/skills/coding/scripts/coding.py bootstrap --root .
+```
+
+Bootstrap 的目标不是自动设计项目，而是建立稳定入口：
+
+```text
+目标项目 AGENTS.md
+→ 先读取项目本地规则
+→ 必须读取 .agents/skills/coding/SKILL.md
+→ Coding 按真实任务加载 references
+→ 适用时进入 review / docs
+```
+
+如果目标项目没有 `AGENTS.md`，Bootstrap 使用 Coding 自带模板创建项目 Overlay 初版，并只列出当前真实存在的高价值事实入口作为导航；不会根据 Manifest 文件名猜测框架、数据库或架构。
+
+如果目标项目已有 `AGENTS.md`，Bootstrap 不重写原文，只通过下面的 managed block 边界追加或升级 Agent Skills 自管内容：
+
+```text
+<!-- agent-skills:managed:start -->
+...
+<!-- agent-skills:managed:end -->
+```
+
+marker 外原文字节保持不变。只有 start/end 不完整、重复或顺序错误时会拒绝修改，避免猜错边界后删除用户规则。
+
+安装、升级、创建/补充 `AGENTS.md` 或修复 managed block 的完整规则见 [`13_目标项目安装与AGENTS_Bootstrap.md`](skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md)。
+
 ### 普通研发任务
 
 ```text
@@ -129,6 +179,8 @@ Review
 → 新鲜验证
 → Docs / Review / Delivery
 ```
+
+这里的 Greenfield / Repository Bootstrap 是**工程基线建立流程**；前面的 Agent Skills Bootstrap 是**研发规则接入流程**。二者不要混为一件事：安装脚本不会替用户决定 Greenfield 项目的技术路线。
 
 Greenfield 不表示可以让 Agent 自由猜技术栈。没有现成项目事实时，用户已确认决定、目标环境和正式约束就是上游事实；只有真正影响结果的关键未决项才提请决策。
 
@@ -249,6 +301,11 @@ coding-change/v1
 项目级规则
 → 目标项目自己的 AGENTS.md / CONTRIBUTING / 同等规则
 
+Agent Skills 安装 / AGENTS Overlay 正式规则
+→ skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md
+→ skills/coding/assets/AGENTS.managed.md
+→ skills/coding/assets/AGENTS.template.md
+
 Coding 正式规则
 → skills/coding/SKILL.md
 → skills/coding/references/
@@ -271,12 +328,13 @@ Docs 正式规则
 → project-context.json（不提交 Git）
 ```
 
-README 可以解释“怎么用”，但不应复制所有详细规则。README 与 `SKILL.md` 冲突时，以当前适用的上位项目规则和 `SKILL.md` 为准。
+README 可以解释“怎么用”，但不应复制所有详细规则。README 与 `SKILL.md` 冲突时，以当前适用的上位项目规则和 `SKILL.md` 为准；安装/Overlay 边界还必须同时满足上述专用 reference 与模板 Contract。
 
 ## 7. 进一步阅读
 
 - [Coding Skill 使用说明](skills/coding/README.md)
 - [Coding 正式规则](skills/coding/SKILL.md)
+- [目标项目安装与 AGENTS Bootstrap](skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md)
 - [Review Skill 使用说明](skills/review/README.md)
 - [Review 正式规则](skills/review/SKILL.md)
 - [Docs Skill 使用说明](skills/docs/README.md)
