@@ -221,7 +221,10 @@ jobs:
         run: python3 --version
 
       - name: Install Runtime build dependencies
-        run: python3 -m pip install -r runtime/requirements-build.txt
+        run: |
+          python3 -m venv .venv-runtime
+          .venv-runtime/bin/python -m pip install -r runtime/requirements-build.txt
+          echo "${GITHUB_WORKSPACE}/.venv-runtime/bin" >> "${GITHUB_PATH}"
 
       - name: Build and self-test macOS onefile Runtime
         run: |
