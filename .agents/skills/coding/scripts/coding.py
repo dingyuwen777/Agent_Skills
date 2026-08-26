@@ -724,6 +724,28 @@ def _render_with_newline(text: str, newline: bytes) -> bytes:
     return normalised.replace("\n", newline.decode("ascii")).encode("utf-8")
 
 
+def _markdown_safe_text(value: str) -> str:
+    """把仓库派生文本转成安全单行 Markdown 显示，避免名称改变 AGENTS 指令结构。"""
+    escaped: list[str] = []
+    for character in value:
+        codepoint = ord(character)
+        if character == "\\":
+            escaped.append("\\\\")
+        elif character == "\n":
+            escaped.append("\\n")
+        elif character == "\r":
+            escaped.append("\\r")
+        elif character == "\t":
+            escaped.append("\\t")
+        elif character in {"`", "<", ">"}:
+            escaped.append(f"\\u{codepoint:04x}")
+        elif codepoint < 0x20 or codepoint == 0x7F or character in {"\u0085", "\u2028", "\u2029"}:
+            escaped.append(f"\\u{codepoint:04x}")
+        else:
+            escaped.append(character)
+    return "".join(escaped)
+
+
 def _bootstrap_fact_sources(root: Path) -> str:
     """列出初始化时真实存在的高价值事实入口，只提供导航而不推断技术栈。"""
     context = scan_project(root)
@@ -757,7 +779,7 @@ def _bootstrap_fact_sources(root: Path) -> str:
         if not paths:
             continue
         lines.append(f"- {labels[kind]}：")
-        lines.extend(f"  - `{path}`" for path in paths)
+        lines.extend(f"  - `{_markdown_safe_text(path)}`" for path in paths)
     return "\n".join(lines)
 
 
@@ -789,7 +811,7 @@ def _updated_agents_content(root: Path, existing: bytes | None) -> bytes:
         newline = b"\n"
         template = Template(_asset_text("AGENTS.template.md"))
         rendered = template.substitute(
-            project_name=root.name or "Project",
+            project_name=_markdown_safe_text(root.name or "Project"),
             managed_block=_asset_text("AGENTS.managed.md").rstrip("\r\n"),
             fact_sources=_bootstrap_fact_sources(root),
         )
