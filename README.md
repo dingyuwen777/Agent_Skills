@@ -61,7 +61,61 @@ Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按
 
 ## 3. 安装 / 接入
 
-最直接的方式是把需要的 Skill 复制或同步到目标仓库：
+### 3.1 推荐：一键安装 / 升级
+
+从 `Agent_Skills` 源仓库执行：
+
+```bash
+python scripts/install.py --target <目标项目根目录>
+```
+
+例如：
+
+```bash
+python scripts/install.py --target D:\work\MyProject
+```
+
+安装器只管理：
+
+```text
+.agents/skills/coding/
+.agents/skills/review/
+.agents/skills/docs/
+```
+
+它不会把本仓库根 `AGENTS.md`、`.agents/changes/` 或 `project-context.json` 复制到目标项目，也不会删除目标项目已有 `.agents/changes/`、项目自有 Skill 或其他 `.agents` 内容。
+
+三个受管 Skill 会先复制到目标项目 `.agents` 下的暂存区，完整暂存后再切换。切换完成后，安装器调用目标项目中刚安装的 Coding CLI：
+
+```bash
+python .agents/skills/coding/scripts/coding.py bootstrap --root .
+```
+
+Bootstrap 负责建立目标项目自己的 `AGENTS.md` Overlay：
+
+- 目标项目没有 `AGENTS.md`：根据当前实际可见的项目事实入口创建初版；
+- 已有 `AGENTS.md`：保留原文，只追加 Agent Skills managed block；
+- 已有完整 managed block：只更新 managed block，marker 外原文字节保持不变；
+- managed marker 缺失、重复或顺序错误：拒绝猜测性覆盖，原文件保持不变；
+- `.gitignore` 中没有 `.agents/project-context.json`：增量补充；已有明确等价规则时不重复写入。
+
+managed block 使用固定边界：
+
+```text
+<!-- agent-skills:managed:start -->
+...
+<!-- agent-skills:managed:end -->
+```
+
+managed block 会明确要求后续研发任务先读取项目规则，再必须读取 `.agents/skills/coding/SKILL.md`；Coding 按实际任务继续路由 `references/`、Review 和 Docs。安装/升级、创建/补充项目 `AGENTS.md` 或修复 managed block 时，还要求读取 `.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md`。
+
+Bootstrap 只把扫描结果作为事实入口导航，不根据 `package.json`、`pyproject.toml`、`Cargo.toml`、`go.mod` 等文件名猜测 React、FastAPI、PostgreSQL 或其他具体技术路线。项目语义仍由 Coding 在后续任务中依据当前真实文件、调用链、Contract、Schema/Migration、测试和运行结果确认。
+
+同一个安装命令可以重复执行用于升级：受管三个 Skill 更新到当前 Agent_Skills 版本，目标项目 `AGENTS.md` 的 managed block 同步更新，项目自己维护的 marker 外内容保留。
+
+### 3.2 手工安装仍然支持
+
+最直接的方式仍然可以把需要的 Skill 复制或同步到目标仓库：
 
 ```text
 .agents/skills/coding/
@@ -75,6 +129,14 @@ Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按
 - 没有 Docs Skill：Coding 继续执行自身文档影响判断与同步规则；
 - Review 单独使用时，如果同仓存在 Coding，Review 会先读取 Coding 作为研发规范源；不存在时则只依据项目本地规则和 Review 方法。
 
+如果手工复制三个 Skill，建议复制完成后在目标项目执行：
+
+```bash
+python .agents/skills/coding/scripts/coding.py bootstrap --root .
+```
+
+这样可以建立或增量补充项目 `AGENTS.md`，避免只有 `.agents/skills/` 但新的 Coding Agent 不知道应该从哪里进入通用 Skill。
+
 不要假设所有宿主工具都自动扫描同一路径；宿主若要求显式注册 Skill，应按该宿主当前官方能力把这个目录配置为可读 Skill。无论宿主如何加载，项目事实仍来自目标仓库本身。
 
 目标项目还应忽略本地缓存：
@@ -82,6 +144,8 @@ Coding 不预设项目一定是 Python、Web、后端或数据库应用。它按
 ```gitignore
 .agents/project-context.json
 ```
+
+`bootstrap` 会补充这一条，但不会创建 `project-context.json`；缓存仍只在实际执行 `discover` 且具备写权限时创建。
 
 ## 4. 怎么用 Coding
 
@@ -225,6 +289,8 @@ python .agents/skills/coding/scripts/coding.py discover --root .
 ## 11. 常用 CLI
 
 ```bash
+python scripts/install.py --target <目标项目根目录>
+python .agents/skills/coding/scripts/coding.py bootstrap --root .
 python .agents/skills/coding/scripts/coding.py discover --root .
 python .agents/skills/coding/scripts/coding.py status --root .
 python .agents/skills/coding/scripts/coding.py conflicts --root . --json
@@ -232,7 +298,7 @@ python .agents/skills/coding/scripts/coding.py new-change --help
 python .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready
 ```
 
-CLI 是工作流辅助工具，不替代 Agent 对需求完整性、测试充分性和业务语义的判断。`status` 会显示实际使用的 Coding Change carrier。
+`install.py` 从 Agent_Skills 源仓库执行；其余 Coding CLI 从已经安装 Skill 的目标项目执行。CLI 是工作流辅助工具，不替代 Agent 对需求完整性、测试充分性和业务语义的判断。`status` 会显示实际使用的 Coding Change carrier。
 
 ## 12. 维护原则
 
@@ -256,5 +322,6 @@ CLI 是工作流辅助工具，不替代 Agent 对需求完整性、测试充分
 - [`.agents` 总说明](.agents/README.md)
 - [Coding 使用说明](.agents/skills/coding/README.md)
 - [Coding 正式规则](.agents/skills/coding/SKILL.md)
+- [目标项目安装与 AGENTS Bootstrap](.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md)
 - [Review 使用说明](.agents/skills/review/README.md)
 - [Docs 使用说明](.agents/skills/docs/README.md)
