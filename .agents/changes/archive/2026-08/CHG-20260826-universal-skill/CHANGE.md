@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260826-universal-skill
 title: Agent Skills 通用化与治理载体重构
 level: L3
-status: ready_for_review
+status: done
 owner: ChatGPT
 branch: refactor/universal-coding-skill
 created: 2026-08-26
@@ -44,7 +44,8 @@ data_changes: []
 - [x] 自包含测试替代对业务仓库文件树的依赖，并新增唯一轻量 `Skill Tests` CI。
 - [x] 最终独立 Review 已完成，期间发现并修复“过度精简”和“Change carrier 污染”两个 HIGH 问题；修复后未发现新的 BLOCKER/HIGH。
 - [x] PR 最新代码 head `6a33ec510a452311288250deb32be0a7934b0190` 的 `Skill Tests` 已在真实 GitHub Runner 全绿：两个脚本编译通过、43/43 tests 通过、Ready Check 通过。
-- [ ] PR 合并到 main，并在合并后按实际集成结果归档本 Change、再次验证 main。
+- [x] PR #1 已正常合并到 `main`，merge commit 为 `7a461c1da3d853bf4f572d793b4590072134b3f1`；main push `Skill Tests` run `32949669468` 为 success。
+- [x] 本 Change 在确认主分支集成成功后标记 `done`，并由独立归档分支移动到 `.agents/changes/archive/2026-08/`。
 
 # 范围
 
@@ -92,7 +93,7 @@ data_changes: []
 | R4 | 其余按已确认通用化方案执行且不丢已有高价值规则 | user:current-request | satisfied | Coding 主规则和关键 references 恢复原有详细流程后做增量迁移；TDD/根因/Traceability/Matrix/Audit/Review/Docs/Git/CI 仍可达；第一轮 Review 已纠正过度精简 |
 | R5 | 新增 README 并讲明怎么使用 | user:current-request | satisfied | 根 `README.md` 覆盖安装、Coding/Review/Docs、Greenfield、L1-L3、Change、cache、CLI 和硬规则 |
 | R6 | 五项特殊工程规则继续作为所有项目硬规则 | user:current-request | satisfied | 根 AGENTS、Coding SKILL、routing、README、agent prompt 和 development guidance tests 均保留 |
-| R7 | 最终通过正常 PR/CI 门禁集成到 main，不绕过检查 | user:current-request | satisfied | PR #1 Open/mergeable；最新代码 head `6a33ec5` 的 `Skill Tests` run `32949316192` success；当前证据同步提交后仍需再次通过同一 CI 才合并 |
+| R7 | 最终通过正常 PR/CI 门禁集成到 main，不绕过检查 | user:current-request | satisfied | PR #1 merged；merge commit `7a461c1da3d853bf4f572d793b4590072134b3f1`；main push run `32949669468` success |
 | R8 | Skill 可用于不同项目形态、语言和研发阶段，包括 Greenfield | user:current-request | satisfied | `SKILL.md` + routing 覆盖 Greenfield/Library/CLI/Service/Web/Mobile/Data/Embedded/IaC/Monorepo；polyglot/empty-repo portability tests 通过 |
 | R9 | Agent_Skills 自身测试不得依赖 AIMA 等业务仓库文件树 | AGENTS.md | satisfied | 8 个测试模块均为自包含 fixture/文本/临时仓库测试；最终 GitHub Runner 完整 unittest 43 tests 通过 |
 
@@ -103,10 +104,10 @@ data_changes: []
 | 行为 / Unit / Component | required | Coding CLI、Change carrier、Ready Check、cache、portability；GitHub Runner `unittest discover` 43 tests 通过 |
 | 接口 / Contract | required | `coding-change/v1` frontmatter/parser/template/Ready Check 一致；旧 schema 显式拒绝测试通过 |
 | 集成 / Persistence / Runtime Dependency | not_applicable | 本仓库无产品数据库/运行服务；脚本只依赖 Python 标准库、文件系统和 Git 子进程 |
-| 用户 / Workflow Acceptance | required | GitHub Actions 在真实 PR merge checkout 上执行 `py_compile`、完整 unittest 和 `ready_check.py`；最终均成功 |
+| 用户 / Workflow Acceptance | required | GitHub Actions 在真实 PR merge checkout 和 main push 上执行 `py_compile`、完整 unittest 和 `ready_check.py`；均成功 |
 | 跨组件 Golden Path | required | 模板/CLI/parser/Ready Check 使用同一 `coding-change/v1`；默认、current top-level、empty、foreign、mixed、OpenSpec carrier 行为均有真实临时仓库回归 |
 | External Dependency / Provider Probe | not_applicable | 无产品第三方 Provider/付费 API；GitHub 仅作为仓库交付和 CI 平台 |
-| Build / Package / Runtime | required | GitHub Hosted Runner Ubuntu 24.04.4 / Python 3.12.3：两个脚本 `py_compile` 通过，43 tests 通过 |
+| Build / Package / Runtime | required | GitHub Hosted Runner Ubuntu 24.04.4 / Python 3.12.3：两个脚本 `py_compile` 通过，43 tests 通过；main push CI success |
 | Docs / Governance / Other | required | README/AGENTS/Skill 引用、删除 reference、cache ignore、项目特定残留、五项硬规则、Workflow 和 carrier 治理均由自包含测试与 PR diff Review 覆盖 |
 
 # Completion Audit
@@ -114,7 +115,7 @@ data_changes: []
 - [x] upstream_re_read：已重新读取本轮用户明确决定、根 AGENTS、Coding 主规则及受影响 Change/cache/测试/Docs/Review 事实源；五项硬规则按用户后续明确决定保留为通用核心。
 - [x] change_coverage：已覆盖不兼容旧 schema、删除 ref12、本地 cache、根 README、Greenfield、项目 Overlay 分离、carrier 适配、自包含测试和最终 main 交付要求；第一版错误的 `--change-root` 说明已删除。
 - [x] reverse_audit：已从 README → Skill → references → CLI/template → tests/CI 反向检查使用说明和真实能力；OpenSpec、空/foreign/mixed 顶层 changes 不会被 CLI 静默污染，Persistence 专项不再反推固定 PostgreSQL。
-- [x] unresolved_cleared：Ready 前语义未满足项已清零；PR merge 与归档属于 `ready_for_review` 后的集成交付动作，并继续由 PR/Workflow 和合并后 main 复验约束。
+- [x] unresolved_cleared：所有需求和验证项已满足或有不适用依据；PR #1 已合并，main push CI 已 success，当前仅执行不改变产品行为的归档动作。
 
 # 任务
 
@@ -129,7 +130,8 @@ data_changes: []
 - [x] 完成 Requirement Traceability 与 Completion Audit
 - [x] 完成最终独立 Review；修复所有 BLOCKER/HIGH
 - [x] 最新代码 head 完成最终 CI：编译、43 tests、Ready Check 全绿
-- [ ] 合并 main、按真实集成结果归档 Change并确认最终 main
+- [x] PR #1 合并 main，并确认 main push CI success
+- [x] 从已验证 main 创建独立归档分支，标记 done 并移动 Change 到 archive
 
 # 验证
 
@@ -139,20 +141,23 @@ data_changes: []
 - `python3 -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v`
 - `python3 .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready`
 - PR diff 人工两阶段 Review：需求完整性 → 代码/规则质量与内容守恒
-- PR 最终 `Skill Tests` 必须为 success 后才允许合并
-- 合并后 main 再执行/确认 `Skill Tests`，随后单独归档 Change 并再次验证 main
+- PR `Skill Tests` success 后合并
+- 合并后 main push `Skill Tests` success 后归档 Change
+- 归档 PR 仅移动/更新 Change；其 CI 仍必须通过，合并后再次确认 main
 
 ## 新鲜证据
 
-- GitHub Actions `Skill Tests` run `32949316192`，PR code head `6a33ec510a452311288250deb32be0a7934b0190`，PR merge checkout `8303f242ab2937e53f0b1fd19688a1cefc16da6e`，Ubuntu 24.04.4 / Python 3.12.3。
+- 最终实现 PR 的 GitHub Actions `Skill Tests` run `32949316192`，PR code head `6a33ec510a452311288250deb32be0a7934b0190`，Ubuntu 24.04.4 / Python 3.12.3。
 - `python3 -m py_compile .agents/skills/coding/scripts/coding.py .agents/skills/coding/scripts/ready_check.py`：成功。
 - `python3 -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v`：`Ran 43 tests in 0.840s`，`OK`，0 failures/errors。
 - 最终 43 tests 包含 polyglot discovery、Greenfield empty repo、local cache invalidation、默认/current top-level/empty/foreign/mixed/OpenSpec carrier、当前/旧 schema、Completion Audit/Source/Evidence/changed-since/Archive、Docs/Review/网络源/Workflow evidence preservation 等回归。
 - `python3 .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready`：`Ready Check 通过：carrier=.agents/changes，gated=1，strict=1。`
 - 独立 Review 第一轮发现 HIGH：第一版规则/脚本过度精简；已恢复原始详细流程后做最小语义迁移。
 - 独立 Review 第二轮发现 HIGH：顶层 `changes` 可能被无 schema 证据静默认领；已修为只有 current schema 证据才可认领。
-- 独立 Review 最后一轮进一步收紧 mixed-carrier：只有顶层现有 `CHANGE.md` 全部为 `coding-change/v1` 才认作 Coding carrier；新增 mixed schema 回归并在上述 43 tests 中通过。
-- 修复后最终 Review 未发现新的 BLOCKER/HIGH；未通过测试、局部自检或旧日志没有被用来替代本轮 GitHub Runner 证据。
+- 独立 Review 最后一轮进一步收紧 mixed-carrier：只有顶层现有 `CHANGE.md` 全部为 `coding-change/v1` 才认作 Coding carrier；新增 mixed schema 回归并在 43 tests 中通过。
+- 修复后最终 Review 未发现新的 BLOCKER/HIGH。
+- PR #1 最终证据同步提交通过 `Skill Tests` run `32949496728` 后，使用精确 head guard 正常合并。
+- `main@7a461c1da3d853bf4f572d793b4590072134b3f1` 的 push `Skill Tests` run `32949669468`：success。
 
 # 文档影响
 
@@ -160,10 +165,11 @@ data_changes: []
 
 # 交付
 
-- Branch：`refactor/universal-coding-skill`
-- PR：#1 `将 Agent Skills 通用化并补齐自包含验证`，Open / mergeable
-- Latest code head：`6a33ec510a452311288250deb32be0a7934b0190`
-- CI：`Skill Tests` run `32949316192` success；编译、43 tests、Ready Check 全绿
-- Review：两阶段独立 Review 已完成，所有已发现 BLOCKER/HIGH 已修复，当前无未解决 BLOCKER/HIGH
-- 合并：待本次纯证据同步提交再次通过 `Skill Tests` 后执行
+- 原实现 Branch：`refactor/universal-coding-skill`
+- 实现 PR：#1 `将 Agent Skills 通用化并补齐自包含验证`，已合并
+- Merge commit：`7a461c1da3d853bf4f572d793b4590072134b3f1`
+- Main CI：`Skill Tests` run `32949669468` success
+- Review：两阶段独立 Review 已完成，所有已发现 BLOCKER/HIGH 已修复，最终无未解决 BLOCKER/HIGH
+- 归档 Branch：`archive/chg-20260826-universal-skill`
+- 归档：本文件由独立归档分支移入 `.agents/changes/archive/2026-08/`；归档 PR/合并状态以 Git 历史为最终事实
 - 发布：不适用
