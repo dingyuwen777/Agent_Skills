@@ -40,7 +40,7 @@ jobs:
             exit 1
           }
           TAG="${INPUT_TAG}"
-          if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+          if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
             echo "tag 必须使用 v<SemVer>，例如 v1.0.0；当前值=${TAG}" >&2
             exit 1
           fi
@@ -278,6 +278,18 @@ jobs:
             --target "${GITHUB_SHA}" \
             --title "Agent_Skills ${RELEASE_TAG}" \
             --generate-notes
-          git fetch --tags --force
+          git fetch --tags
           test "$(git rev-list -n 1 "${RELEASE_TAG}")" = "${GITHUB_SHA}"
-          gh release view "${RELEASE_TAG}" --json tagName,targetCommitish,isDraft,isPrerelease,url
+          published_assets="$(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name')"
+          for asset in \
+            "agent-skills-full-kit-v${RELEASE_TAG#v}.zip" \
+            "agent-skills-mcp-runtime-kit-v${RELEASE_TAG#v}-linux.zip" \
+            "agent-skills-mcp-runtime-kit-v${RELEASE_TAG#v}-windows.zip" \
+            "agent-skills-mcp-runtime-kit-v${RELEASE_TAG#v}-macos.zip" \
+            "SHA256SUMS"; do
+            grep -Fxq "${asset}" <<< "${published_assets}" || {
+              echo "Release 缺少已发布资产：${asset}" >&2
+              exit 1
+            }
+          done
+          gh release view "${RELEASE_TAG}" --json tagName,targetCommitish,isDraft,isPrerelease,url,assets
