@@ -188,7 +188,7 @@ def build_distribution_kit(
         shutil.copy2(manifest_path, kit_root / manifest_path.name)
         shutil.copy2(source / "scripts" / "install_runtime.py", kit_root / "install_runtime.py")
         shutil.copy2(source / "scripts" / "install_runtime_target.py", kit_root / "install_runtime_target.py")
-        shutil.copy2(source / "runtime" / "DISTRIBUTION.md", kit_root / "README.md")
+        shutil.copy2(source / "docs" / "distribution" / "runtime-kit.md", kit_root / "README.md")
         tools_requirements = source / "runtime" / "requirements-tools.txt"
         if tools_requirements.is_file():
             shutil.copy2(tools_requirements, kit_root / "requirements-tools.txt")

@@ -158,9 +158,10 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertIn("git rev-parse", workflow)
 
     def test_release_documentation_exists(self) -> None:
-        """维护者 Release、Full Kit 用户说明和版本历史必须有独立正式文档。"""
-        self.assertTrue((ROOT / "RELEASING.md").is_file())
-        self.assertTrue((ROOT / "FULL_DISTRIBUTION.md").is_file())
+        """维护者 Release、两种 Kit 用户说明和版本历史必须有独立正式文档。"""
+        self.assertTrue((ROOT / "docs/maintainers/releasing.md").is_file())
+        self.assertTrue((ROOT / "docs/distribution/full-kit.md").is_file())
+        self.assertTrue((ROOT / "docs/distribution/runtime-kit.md").is_file())
         self.assertTrue((ROOT / "CHANGELOG.md").is_file())
 
 
