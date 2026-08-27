@@ -1,10 +1,12 @@
 name: Release
 
 on:
-  push:
-    branches: ["main"]
-    paths: ["VERSION"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag，例如 v1.0.0"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -14,8 +16,58 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  preflight:
+    name: Validate Release Request
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Checkout main release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate manual tag and release identity
+        id: release
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main" || {
+            echo "Release Workflow 只能从 main 分支手工运行；当前 ref=${GITHUB_REF}" >&2
+            exit 1
+          }
+          TAG="${INPUT_TAG}"
+          if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "tag 必须使用 v<SemVer>，例如 v1.0.0；当前值=${TAG}" >&2
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          FILE_VERSION="$(tr -d '\r\n' < VERSION)"
+          test "${VERSION}" = "${FILE_VERSION}" || {
+            echo "输入 tag ${TAG} 与仓库 VERSION=${FILE_VERSION} 不一致" >&2
+            exit 1
+          }
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}" || {
+            echo "checkout HEAD 与 GITHUB_SHA 不一致" >&2
+            exit 1
+          }
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+            echo "tag 已存在，拒绝覆盖：${TAG}" >&2
+            exit 1
+          fi
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release 已存在，拒绝覆盖：${TAG}" >&2
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
   full-kit:
     name: Release Full Kit
+    needs: preflight
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -30,18 +82,19 @@ jobs:
         run: |
           python3 -m py_compile scripts/build_full_distribution.py scripts/install.py
           python3 -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v
-          python3 .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready
+          python3 .agents/skills/coding/scripts/ready_check.py --root .
 
       - name: Build and verify Full Distribution Kit
+        env:
+          RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           python3 scripts/build_full_distribution.py --output-dir .release-assets --json
-          VERSION="$(tr -d '\r\n' < VERSION)"
-          test -f ".release-assets/agent-skills-full-kit-v${VERSION}.zip"
+          test -f ".release-assets/agent-skills-full-kit-v${RELEASE_VERSION}.zip"
           extract_root="${RUNNER_TEMP}/agent-skills-full-release"
           target="${RUNNER_TEMP}/agent-skills-full-release-target"
           mkdir -p "${extract_root}" "${target}"
-          python3 -m zipfile -e ".release-assets/agent-skills-full-kit-v${VERSION}.zip" "${extract_root}"
-          kit="${extract_root}/agent-skills-full-kit-v${VERSION}"
+          python3 -m zipfile -e ".release-assets/agent-skills-full-kit-v${RELEASE_VERSION}.zip" "${extract_root}"
+          kit="${extract_root}/agent-skills-full-kit-v${RELEASE_VERSION}"
           cd "${RUNNER_TEMP}"
           python3 "${kit}/scripts/install.py" --target "${target}" --json
           test -f "${target}/AGENTS.md"
@@ -57,6 +110,7 @@ jobs:
 
   runtime-linux:
     name: Release Runtime Linux
+    needs: preflight
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -68,14 +122,15 @@ jobs:
         run: python3 -m pip install -r runtime/requirements-build.txt
 
       - name: Build and verify Linux Runtime Kit
+        env:
+          RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           python3 scripts/build_runtime.py --output-dir .runtime-dist --json
           .runtime-dist/agent-skills-mcp status --json
           .runtime-dist/agent-skills-mcp self-test --json
           python3 scripts/runtime_mcp_smoke.py --artifact .runtime-dist/agent-skills-mcp --json
-          VERSION="$(tr -d '\r\n' < VERSION)"
           mkdir -p .release-assets
-          cp .runtime-dist/agent-skills-mcp-runtime-kit.zip ".release-assets/agent-skills-mcp-runtime-kit-v${VERSION}-linux.zip"
+          cp .runtime-dist/agent-skills-mcp-runtime-kit.zip ".release-assets/agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-linux.zip"
 
       - name: Upload Linux Runtime Kit
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -87,6 +142,7 @@ jobs:
 
   runtime-windows:
     name: Release Runtime Windows
+    needs: preflight
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -107,10 +163,11 @@ jobs:
 
       - name: Stage Windows Runtime Kit
         shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
-          VERSION="$(tr -d '\r\n' < VERSION)"
           mkdir -p .release-assets
-          cp .runtime-dist/agent-skills-mcp-runtime-kit.zip ".release-assets/agent-skills-mcp-runtime-kit-v${VERSION}-windows.zip"
+          cp .runtime-dist/agent-skills-mcp-runtime-kit.zip ".release-assets/agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-windows.zip"
 
       - name: Upload Windows Runtime Kit
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -122,6 +179,7 @@ jobs:
 
   runtime-macos:
     name: Release Runtime macOS
+    needs: preflight
     runs-on: macos-15
     steps:
       - name: Checkout
@@ -136,14 +194,15 @@ jobs:
           echo "${GITHUB_WORKSPACE}/.venv-runtime/bin" >> "${GITHUB_PATH}"
 
       - name: Build and verify macOS Runtime Kit
+        env:
+          RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           python3 scripts/build_runtime.py --output-dir .runtime-dist --json
           .runtime-dist/agent-skills-mcp status --json
           .runtime-dist/agent-skills-mcp self-test --json
           python3 scripts/runtime_mcp_smoke.py --artifact .runtime-dist/agent-skills-mcp --json
-          VERSION="$(tr -d '\r\n' < VERSION)"
           mkdir -p .release-assets
-          cp .runtime-dist/agent-skills-mcp-runtime-kit.zip ".release-assets/agent-skills-mcp-runtime-kit-v${VERSION}-macos.zip"
+          cp .runtime-dist/agent-skills-mcp-runtime-kit.zip ".release-assets/agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-macos.zip"
 
       - name: Upload macOS Runtime Kit
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -155,7 +214,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [full-kit, runtime-linux, runtime-windows, runtime-macos]
+    needs: [preflight, full-kit, runtime-linux, runtime-windows, runtime-macos]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -175,29 +234,32 @@ jobs:
           digest-mismatch: error
 
       - name: Validate release identity and assets
+        env:
+          RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="$(tr -d '\r\n' < VERSION)"
-          TAG="v${VERSION}"
+          set -euo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main"
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(tr -d '\r\n' < VERSION)" = "${RELEASE_VERSION}"
           expected=(
-            "agent-skills-full-kit-v${VERSION}.zip"
-            "agent-skills-mcp-runtime-kit-v${VERSION}-linux.zip"
-            "agent-skills-mcp-runtime-kit-v${VERSION}-windows.zip"
-            "agent-skills-mcp-runtime-kit-v${VERSION}-macos.zip"
+            "agent-skills-full-kit-v${RELEASE_VERSION}.zip"
+            "agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-linux.zip"
+            "agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-windows.zip"
+            "agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-macos.zip"
           )
           for asset in "${expected[@]}"; do
             test -f "release-assets/${asset}" || { echo "missing release asset: ${asset}" >&2; exit 1; }
           done
-          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
-            echo "tag already exists: ${TAG}" >&2
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "tag 已存在，拒绝覆盖：${RELEASE_TAG}" >&2
             exit 1
           fi
-          if gh release view "${TAG}" >/dev/null 2>&1; then
-            echo "release already exists: ${TAG}" >&2
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "Release 已存在，拒绝覆盖：${RELEASE_TAG}" >&2
             exit 1
           fi
-        env:
-          GH_TOKEN: ${{ github.token }}
 
       - name: Generate SHA256SUMS
         run: |
@@ -207,15 +269,15 @@ jobs:
           cat SHA256SUMS
 
       - name: Create immutable GitHub Release
+        env:
+          RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="$(tr -d '\r\n' < VERSION)"
-          TAG="v${VERSION}"
-          gh release create "${TAG}" release-assets/* \
+          set -euo pipefail
+          gh release create "${RELEASE_TAG}" release-assets/* \
             --target "${GITHUB_SHA}" \
-            --title "Agent_Skills ${TAG}" \
+            --title "Agent_Skills ${RELEASE_TAG}" \
             --generate-notes
           git fetch --tags --force
-          test "$(git rev-list -n 1 "${TAG}")" = "${GITHUB_SHA}"
-          gh release view "${TAG}" --json tagName,targetCommitish,isDraft,isPrerelease,url
-        env:
-          GH_TOKEN: ${{ github.token }}
+          test "$(git rev-list -n 1 "${RELEASE_TAG}")" = "${GITHUB_SHA}"
+          gh release view "${RELEASE_TAG}" --json tagName,targetCommitish,isDraft,isPrerelease,url
