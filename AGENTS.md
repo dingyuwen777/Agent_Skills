@@ -43,6 +43,27 @@ Review 不维护第二套 Coding 规范；Docs 不复制 Coding 的研发规则�
 
 目标项目正式分发边界仍然只有上述三个 Skill。根 `scripts/install.py` 是 Agent_Skills 源仓库的分发/升级入口，不意味着目标项目应复制本仓库根 `AGENTS.md`、`.agents/changes/` 或其他仓库维护状态。目标项目 Overlay 的安装与 `AGENTS.md` Bootstrap 规则由 `.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md` 和对应 assets 定义。
 
+仓库文档按读者职责分层：
+
+```text
+README.md
+→ Agent_Skills 仓库总入口、安装与导航
+
+docs/distribution/
+→ 正式 Release Kit 最终用户说明
+
+docs/maintainers/
+→ Agent_Skills 维护者流程
+
+runtime/README.md
+→ Runtime 源码、构建与本地调试维护说明
+
+.agents/README.md
+→ .agents 目录导航，不复制仓库总教程或 Skill 正式规则
+```
+
+不要把不同读者的完整教程重复维护在多个 README 中。分发 Kit 内需要的 `README.md` 由 Builder 从对应 `docs/distribution/` 用户说明生成；源码维护说明不能冒充 Kit 用户说明。
+
 ## 3. 通用核心与项目 Overlay
 
 通用 Skill 可以强制跨项目工作方式，但不能伪造项目事实。
@@ -123,9 +144,9 @@ Coding 的 Requirement Traceability、Validation Matrix、Completion Audit 是�
 - 任一业务项目名称、业务源码路径、具体 Provider/平台或项目级 Blueprint/Stage 事实不出现在通用 live 规则或自包含测试中；
 - 用户定义的五项全局工程硬规则仍可从 Coding 主规则和完成前 Review 到达；
 - 删除/改名 reference 后没有 live 引用残留；
-- README、`FULL_DISTRIBUTION.md`、`runtime/DISTRIBUTION.md`、`RELEASING.md` 与实际文件路径、CLI、安装/Bootstrap、Release 和缓存策略一致；
-- Full Kit 解压后的 `README.md` 来自 `FULL_DISTRIBUTION.md`，Runtime Kit 解压后的 `README.md` 来自 `runtime/DISTRIBUTION.md`；不得把只在源仓库存在的维护者命令原样当成 Kit 用户入口；
-- CI 的 path filters 和编译/测试命令真实覆盖根 `scripts/install.py`、Full Kit Builder、Runtime Builder、两个分发说明和所有永久 Workflow，不能出现发布/安装能力只在本地存在而不进永久门禁。
+- `README.md`、`docs/distribution/full-kit.md`、`docs/distribution/runtime-kit.md`、`docs/maintainers/releasing.md`、`runtime/README.md` 与实际文件路径、CLI、安装/Bootstrap、Release 和缓存策略一致；
+- Full Kit 解压后的 `README.md` 来自 `docs/distribution/full-kit.md`，Runtime Kit 解压后的 `README.md` 来自 `docs/distribution/runtime-kit.md`；不得把只在源仓库存在的维护者命令原样当成 Kit 用户入口；
+- CI 的 path filters 和编译/测试命令真实覆盖根 `scripts/install.py`、Full Kit Builder、Runtime Builder、`docs/distribution/`、`docs/maintainers/` 和所有永久 Workflow，不能出现发布/安装能力只在本地存在而不进永久门禁。
 
 测试必须自包含。禁止让 Agent_Skills 自己的单元测试依赖另一个业务仓库才存在的 Blueprint、backend、workflow 或脚本。
 
@@ -187,4 +208,4 @@ Runtime 是三个正式 Skill 的**可选分发通道**，不是第四个 Skill�
 - 正式资产必须由合并后的 `main` SHA 重新构建，不把 PR 临时产物直接发布；
 - 永久 `Skill Tests` 与 Release Workflow 分别承担持续回归和实际发布候选验证，任何 Workflow 精简都要按 Evidence Preservation Mapping 证明独立责任没有丢失。
 
-维护者完整流程见 `RELEASING.md`，Full Kit 用户入口见 `FULL_DISTRIBUTION.md`，Runtime Kit 用户入口见 `runtime/DISTRIBUTION.md`，当前版本变化见 `CHANGELOG.md`。Release 完成结论必须核对真实 GitHub tag、Release、资产和 checksum；只看到 Workflow YAML 或本地 `dist/` 不足以宣称发布成功。
+维护者完整流程见 `docs/maintainers/releasing.md`，Full Kit 用户入口见 `docs/distribution/full-kit.md`，Runtime Kit 用户入口见 `docs/distribution/runtime-kit.md`，当前版本变化见 `CHANGELOG.md`。Release 完成结论必须核对真实 GitHub tag、Release、资产和 checksum；只看到 Workflow YAML 或本地 `dist/` 不足以宣称发布成功。
