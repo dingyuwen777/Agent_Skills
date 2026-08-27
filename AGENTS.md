@@ -123,8 +123,9 @@ Coding 的 Requirement Traceability、Validation Matrix、Completion Audit 是�
 - 任一业务项目名称、业务源码路径、具体 Provider/平台或项目级 Blueprint/Stage 事实不出现在通用 live 规则或自包含测试中；
 - 用户定义的五项全局工程硬规则仍可从 Coding 主规则和完成前 Review 到达；
 - 删除/改名 reference 后没有 live 引用残留；
-- README 使用方式与实际文件路径、CLI、安装/Bootstrap、Release 和缓存策略一致；
-- CI 的 path filters 和编译/测试命令真实覆盖根 `scripts/install.py`、Full Kit Builder、Runtime Builder 和所有永久 Workflow，不能出现发布/安装能力只在本地存在而不进永久门禁。
+- README、`FULL_DISTRIBUTION.md`、`runtime/DISTRIBUTION.md`、`RELEASING.md` 与实际文件路径、CLI、安装/Bootstrap、Release 和缓存策略一致；
+- Full Kit 解压后的 `README.md` 来自 `FULL_DISTRIBUTION.md`，Runtime Kit 解压后的 `README.md` 来自 `runtime/DISTRIBUTION.md`；不得把只在源仓库存在的维护者命令原样当成 Kit 用户入口；
+- CI 的 path filters 和编译/测试命令真实覆盖根 `scripts/install.py`、Full Kit Builder、Runtime Builder、两个分发说明和所有永久 Workflow，不能出现发布/安装能力只在本地存在而不进永久门禁。
 
 测试必须自包含。禁止让 Agent_Skills 自己的单元测试依赖另一个业务仓库才存在的 Blueprint、backend、workflow 或脚本。
 
@@ -176,13 +177,14 @@ Runtime 是三个正式 Skill 的**可选分发通道**，不是第四个 Skill�
 正式 Release 至少保持：
 
 - SemVer `VERSION` → `v<VERSION>` tag 一一对应；
-- Full Kit 只携带三个完整 Skill、安装器、版本和必要使用资料，不携带源仓库根 `AGENTS.md`、`.agents/changes/`、`project-context.json` 或其他仓库维护状态；
+- Release 只通过 GitHub Actions 的 `workflow_dispatch` 手工运行；维护者必须从 `main` 输入 `v<VERSION>`，Workflow 校验 tag 与根 `VERSION` 一致后再自动创建该 tag 和 GitHub Release；不得因 `VERSION` push 自动发布，也不得提前手工创建同名 tag；
+- Full Kit 只携带三个完整 Skill、安装器、版本和必要用户资料，不携带源仓库根 `AGENTS.md`、`.agents/changes/`、`project-context.json` 或其他仓库维护状态；
 - Linux / Windows / macOS Runtime Kit 分别在对应平台构建和验证；
 - Runtime manifest / Kit metadata 可以记录 `release_version`，但不能把版本号替代 canonical Reference `source_digest` / SHA256 完整性；
 - 正式 Release asset 至少包含版本化 Full Kit、三平台 Runtime Kit 和 `SHA256SUMS`；
-- Release Workflow 的构建 Job 只读；只有全部 Release Candidate 构建/测试成功后，最终 Publish Job 才能获得 `contents: write`；
+- Release Workflow 的 Preflight/构建 Job 只读；只有全部 Release Candidate 构建/测试成功后，最终 Publish Job 才能获得 `contents: write`；
 - 已存在同版本 tag/Release 时拒绝覆盖或移动历史事实；修复使用新 VERSION；
 - 正式资产必须由合并后的 `main` SHA 重新构建，不把 PR 临时产物直接发布；
 - 永久 `Skill Tests` 与 Release Workflow 分别承担持续回归和实际发布候选验证，任何 Workflow 精简都要按 Evidence Preservation Mapping 证明独立责任没有丢失。
 
-维护者完整流程见 `RELEASING.md`，当前版本变化见 `CHANGELOG.md`。Release 完成结论必须核对真实 GitHub tag、Release、资产和 checksum；只看到 Workflow YAML 或本地 `dist/` 不足以宣称发布成功。
+维护者完整流程见 `RELEASING.md`，Full Kit 用户入口见 `FULL_DISTRIBUTION.md`，Runtime Kit 用户入口见 `runtime/DISTRIBUTION.md`，当前版本变化见 `CHANGELOG.md`。Release 完成结论必须核对真实 GitHub tag、Release、资产和 checksum；只看到 Workflow YAML 或本地 `dist/` 不足以宣称发布成功。
