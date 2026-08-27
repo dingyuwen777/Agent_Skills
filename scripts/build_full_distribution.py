@@ -73,7 +73,7 @@ def _stage_full_payload(source: Path, kit_root: Path) -> None:
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
         )
     _copy_file(source / "scripts" / "install.py", kit_root / "scripts" / "install.py")
-    _copy_file(source / "FULL_DISTRIBUTION.md", kit_root / "README.md")
+    _copy_file(source / "docs" / "distribution" / "full-kit.md", kit_root / "README.md")
     _copy_file(source / ".agents" / "README.md", kit_root / ".agents" / "README.md")
     _copy_file(source / "VERSION", kit_root / "VERSION")
 
