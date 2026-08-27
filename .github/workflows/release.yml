@@ -1,0 +1,221 @@
+name: Release
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["VERSION"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-skills-release
+  cancel-in-progress: false
+
+jobs:
+  full-kit:
+    name: Release Full Kit
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Python version
+        run: python3 --version
+
+      - name: Verify release governance and self-contained tests
+        run: |
+          python3 -m py_compile scripts/build_full_distribution.py scripts/install.py
+          python3 -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v
+          python3 .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready
+
+      - name: Build and verify Full Distribution Kit
+        run: |
+          python3 scripts/build_full_distribution.py --output-dir .release-assets --json
+          VERSION="$(tr -d '\r\n' < VERSION)"
+          test -f ".release-assets/agent-skills-full-kit-v${VERSION}.zip"
+          extract_root="${RUNNER_TEMP}/agent-skills-full-release"
+          target="${RUNNER_TEMP}/agent-skills-full-release-target"
+          mkdir -p "${extract_root}" "${target}"
+          python3 -m zipfile -e ".release-assets/agent-skills-full-kit-v${VERSION}.zip" "${extract_root}"
+          kit="${extract_root}/agent-skills-full-kit-v${VERSION}"
+          cd "${RUNNER_TEMP}"
+          python3 "${kit}/scripts/install.py" --target "${target}" --json
+          test -f "${target}/AGENTS.md"
+          test -f "${target}/.agents/skills/coding/SKILL.md"
+
+      - name: Upload Full Kit
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-full-kit
+          path: .release-assets/agent-skills-full-kit-v*.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  runtime-linux:
+    name: Release Runtime Linux
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Runtime build dependencies
+        run: python3 -m pip install -r runtime/requirements-build.txt
+
+      - name: Build and verify Linux Runtime Kit
+        run: |
+          python3 scripts/build_runtime.py --output-dir .runtime-dist --json
+          .runtime-dist/agent-skills-mcp status --json
+          .runtime-dist/agent-skills-mcp self-test --json
+          python3 scripts/runtime_mcp_smoke.py --artifact .runtime-dist/agent-skills-mcp --json
+          VERSION="$(tr -d '\r\n' < VERSION)"
+          mkdir -p .release-assets
+          cp .runtime-dist/agent-skills-mcp-runtime-kit.zip ".release-assets/agent-skills-mcp-runtime-kit-v${VERSION}-linux.zip"
+
+      - name: Upload Linux Runtime Kit
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-runtime-linux
+          path: .release-assets/agent-skills-mcp-runtime-kit-v*-linux.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  runtime-windows:
+    name: Release Runtime Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Runtime build dependencies
+        run: python -m pip install -r runtime/requirements-build.txt
+
+      - name: Build and verify Windows Runtime
+        shell: pwsh
+        run: |
+          python scripts/build_runtime.py --output-dir .runtime-dist --json
+          .\.runtime-dist\agent-skills-mcp.exe status --json
+          .\.runtime-dist\agent-skills-mcp.exe self-test --json
+          python scripts/runtime_mcp_smoke.py --artifact .\.runtime-dist\agent-skills-mcp.exe --json
+
+      - name: Stage Windows Runtime Kit
+        shell: bash
+        run: |
+          VERSION="$(tr -d '\r\n' < VERSION)"
+          mkdir -p .release-assets
+          cp .runtime-dist/agent-skills-mcp-runtime-kit.zip ".release-assets/agent-skills-mcp-runtime-kit-v${VERSION}-windows.zip"
+
+      - name: Upload Windows Runtime Kit
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-runtime-windows
+          path: .release-assets/agent-skills-mcp-runtime-kit-v*-windows.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  runtime-macos:
+    name: Release Runtime macOS
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Runtime build dependencies
+        run: |
+          python3 -m venv .venv-runtime
+          .venv-runtime/bin/python -m pip install -r runtime/requirements-build.txt
+          echo "${GITHUB_WORKSPACE}/.venv-runtime/bin" >> "${GITHUB_PATH}"
+
+      - name: Build and verify macOS Runtime Kit
+        run: |
+          python3 scripts/build_runtime.py --output-dir .runtime-dist --json
+          .runtime-dist/agent-skills-mcp status --json
+          .runtime-dist/agent-skills-mcp self-test --json
+          python3 scripts/runtime_mcp_smoke.py --artifact .runtime-dist/agent-skills-mcp --json
+          VERSION="$(tr -d '\r\n' < VERSION)"
+          mkdir -p .release-assets
+          cp .runtime-dist/agent-skills-mcp-runtime-kit.zip ".release-assets/agent-skills-mcp-runtime-kit-v${VERSION}-macos.zip"
+
+      - name: Upload macOS Runtime Kit
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-runtime-macos
+          path: .release-assets/agent-skills-mcp-runtime-kit-v*-macos.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  release:
+    name: Publish GitHub Release
+    needs: [full-kit, runtime-linux, runtime-windows, runtime-macos]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download verified release assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+          digest-mismatch: error
+
+      - name: Validate release identity and assets
+        run: |
+          VERSION="$(tr -d '\r\n' < VERSION)"
+          TAG="v${VERSION}"
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          expected=(
+            "agent-skills-full-kit-v${VERSION}.zip"
+            "agent-skills-mcp-runtime-kit-v${VERSION}-linux.zip"
+            "agent-skills-mcp-runtime-kit-v${VERSION}-windows.zip"
+            "agent-skills-mcp-runtime-kit-v${VERSION}-macos.zip"
+          )
+          for asset in "${expected[@]}"; do
+            test -f "release-assets/${asset}" || { echo "missing release asset: ${asset}" >&2; exit 1; }
+          done
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "tag already exists: ${TAG}" >&2
+            exit 1
+          fi
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "release already exists: ${TAG}" >&2
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Generate SHA256SUMS
+        run: |
+          cd release-assets
+          find . -maxdepth 1 -type f -name '*.zip' -printf '%f\n' | sort | xargs sha256sum > SHA256SUMS
+          test "$(wc -l < SHA256SUMS)" -eq 4
+          cat SHA256SUMS
+
+      - name: Create immutable GitHub Release
+        run: |
+          VERSION="$(tr -d '\r\n' < VERSION)"
+          TAG="v${VERSION}"
+          gh release create "${TAG}" release-assets/* \
+            --target "${GITHUB_SHA}" \
+            --title "Agent_Skills ${TAG}" \
+            --generate-notes
+          git fetch --tags --force
+          test "$(git rev-list -n 1 "${TAG}")" = "${GITHUB_SHA}"
+          gh release view "${TAG}" --json tagName,targetCommitish,isDraft,isPrerelease,url
+        env:
+          GH_TOKEN: ${{ github.token }}
