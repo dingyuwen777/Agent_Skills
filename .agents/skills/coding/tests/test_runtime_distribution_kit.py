@@ -93,6 +93,9 @@ class RuntimeDistributionKitTest(unittest.TestCase):
         self.assertTrue((kit_root / "install_runtime_target.py").is_file())
         self.assertTrue((kit_root / artifact.name).is_file())
         self.assertTrue((kit_root / "payload/.agents/skills/coding/SKILL.md").is_file())
+        user_readme = (kit_root / "README.md").read_text(encoding="utf-8")
+        self.assertIn("从正式 GitHub Release 选择 Kit", user_readme)
+        self.assertIn("install_runtime_target.py", user_readme)
 
         for entry in bundle["references"]:
             stub = kit_root / "payload/.agents/skills" / entry["skill"] / "references" / entry["filename"]
@@ -104,6 +107,7 @@ class RuntimeDistributionKitTest(unittest.TestCase):
             self.assertNotIn(entry["content"], stub_text)
 
         kit_metadata = json.loads((kit_root / "agent-skills-runtime-kit.json").read_text(encoding="utf-8"))
+        self.assertEqual(kit_metadata["release_version"], "1.0.0")
         self.assertEqual(kit_metadata["source_digest"], bundle["source_digest"])
         self.assertGreater(len(kit_metadata["payload_files"]), len(bundle["references"]))
 
