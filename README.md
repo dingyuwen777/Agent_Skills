@@ -352,7 +352,7 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 
 ## 15. 正式 Release 与版本化分发
 
-仓库根 [`VERSION`](VERSION) 是正式产品版本的唯一事实源。当前正式 Release 使用 `v<VERSION>` tag，并由 [`.github/workflows/release.yml`](.github/workflows/release.yml) 在合并后的 `main` 上重新构建发布资产；PR 临时构建产物不会直接变成正式 Release。
+仓库根 [`VERSION`](VERSION) 是正式产品版本的唯一事实源。正式发布**不会因为 VERSION push 自动触发**：维护者在 GitHub Actions 中手工运行 [`.github/workflows/release.yml`](.github/workflows/release.yml)，Branch 选择 `main`，并输入与 `VERSION` 一致的 tag，例如 `v1.0.0`。Workflow 随后在该 `main` SHA 上重新构建正式资产、自动创建输入 tag 和 GitHub Release；PR 临时构建产物不会直接变成正式 Release，也不需要提前手工创建 tag。
 
 每个正式版本至少提供：
 
@@ -380,4 +380,4 @@ Runtime Kit 按平台下载，不要把某个平台 onefile 当成跨平台二�
 
 下载 Release 后先用 `SHA256SUMS` 校验 ZIP，再安装或升级。正式 tag/Release 不覆盖、不移动；需要修正版时递增 `VERSION`，不要替换旧版本资产。
 
-维护者发布流程、失败恢复和发布后验证见 [RELEASING.md](RELEASING.md)；版本用户可观察变化见 [CHANGELOG.md](CHANGELOG.md)。
+维护者手工 tag 发布流程、失败恢复和发布后验证见 [RELEASING.md](RELEASING.md)；版本用户可观察变化见 [CHANGELOG.md](CHANGELOG.md)。
