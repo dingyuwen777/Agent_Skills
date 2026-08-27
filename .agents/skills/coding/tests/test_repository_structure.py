@@ -28,12 +28,14 @@ class RepositoryStructureTest(unittest.TestCase):
         for path in legacy:
             self.assertFalse(path.exists(), f"旧文档路径仍存在：{path.relative_to(ROOT)}")
 
-    def test_builders_use_distribution_docs_from_new_locations(self) -> None:
-        """Full/Runtime Builder 必须从新文档位置生成 Kit README。"""
+    def test_builders_follow_current_distribution_boundaries(self) -> None:
+        """Full Builder 生成 Kit README；Runtime Builder 只产出单 binary，不再生成 Runtime Kit。"""
         full_builder = (ROOT / "scripts/build_full_distribution.py").read_text(encoding="utf-8")
         runtime_builder = (ROOT / "scripts/build_runtime.py").read_text(encoding="utf-8")
         self.assertIn('"docs" / "distribution" / "full-kit.md"', full_builder)
-        self.assertIn('"docs" / "distribution" / "runtime-kit.md"', runtime_builder)
+        self.assertNotIn('"docs" / "distribution" / "runtime-kit.md"', runtime_builder)
+        self.assertNotIn("build_distribution_kit", runtime_builder)
+        self.assertNotIn("install_runtime_target.py", runtime_builder)
         self.assertNotIn("FULL_DISTRIBUTION.md", full_builder)
         self.assertNotIn('"runtime" / "DISTRIBUTION.md"', runtime_builder)
 
