@@ -52,6 +52,23 @@ class RepositoryStructureTest(unittest.TestCase):
         self.assertIn("skills/review/README.md", agents_readme)
         self.assertIn("skills/docs/README.md", agents_readme)
 
+    def test_live_navigation_has_no_legacy_document_references(self) -> None:
+        """当前入口、维护规范和 Builder 不得继续把旧路径当作 live 文档入口。"""
+        live_paths = (
+            ROOT / "README.md",
+            ROOT / "AGENTS.md",
+            ROOT / ".agents/README.md",
+            ROOT / "runtime/README.md",
+            ROOT / "scripts/build_full_distribution.py",
+            ROOT / "scripts/build_runtime.py",
+            ROOT / ".github/workflows/skill-tests.yml",
+        )
+        legacy_markers = ("FULL_DISTRIBUTION.md", "RELEASING.md", "runtime/DISTRIBUTION.md")
+        for path in live_paths:
+            text = path.read_text(encoding="utf-8")
+            for marker in legacy_markers:
+                self.assertNotIn(marker, text, f"{path.relative_to(ROOT)} 仍引用旧路径 {marker}")
+
     def test_permanent_ci_tracks_new_document_paths(self) -> None:
         """永久 CI 必须在新分发/维护者文档变化时触发。"""
         workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
