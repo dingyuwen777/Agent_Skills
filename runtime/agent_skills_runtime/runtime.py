@@ -11,11 +11,19 @@ from .catalog import public_manifest, validate_bundle
 class RuntimeStore:
     """在进程内持有已验证 Bundle，并按逻辑 ID 提供 canonical Reference 原文。"""
 
-    def __init__(self, bundle: Mapping[str, Any]) -> None:
-        """复制已验证 Bundle 索引并初始化当前任务上下文状态。"""
+    def __init__(
+        self,
+        bundle: Mapping[str, Any],
+        *,
+        release_version: str | None = None,
+        payload_digest: str | None = None,
+    ) -> None:
+        """复制已验证 Bundle 索引，并记录可选 Release/Project Payload 元数据。"""
         validate_bundle(bundle)
         self._bundle = dict(bundle)
         self._entries = {str(entry["id"]): dict(entry) for entry in bundle["references"]}
+        self._release_version = release_version
+        self._payload_digest = payload_digest
         self._lock = RLock()
         self._task_id: str | None = None
         self._phase: str | None = None
@@ -39,13 +47,17 @@ class RuntimeStore:
         return normalized
 
     def status(self) -> dict[str, Any]:
-        """返回 Runtime 版本、源摘要和当前任务状态，不泄露 Reference 正文。"""
+        """返回 Runtime、Skill、源摘要和当前任务状态，不泄露 Reference 正文。"""
         with self._lock:
             return {
                 "runtime": "agent-skills-runtime",
+                "release_version": self._release_version,
                 "bundle_schema": self._bundle["schema"],
                 "bundle_version": self._bundle["bundle_version"],
                 "source_digest": self._bundle["source_digest"],
+                "payload_digest": self._payload_digest,
+                "skills": list(self._bundle["skills"]),
+                "skill_count": len(self._bundle["skills"]),
                 "reference_count": len(self._entries),
                 "task_id": self._task_id,
                 "phase": self._phase,
@@ -58,9 +70,13 @@ class RuntimeStore:
         status = self.status()
         return {
             "ok": True,
+            "release_version": status["release_version"],
             "bundle_schema": status["bundle_schema"],
             "bundle_version": status["bundle_version"],
             "source_digest": status["source_digest"],
+            "payload_digest": status["payload_digest"],
+            "skills": status["skills"],
+            "skill_count": status["skill_count"],
             "reference_count": status["reference_count"],
         }
 

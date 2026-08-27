@@ -13,11 +13,17 @@ class RuntimeBundleTest(unittest.TestCase):
     """验证 canonical Reference Bundle、加密和 RuntimeStore 的原文守恒。"""
 
     def _fixture_root(self) -> Path:
-        """创建一个包含三个 Skill Reference 的临时源仓库并返回根目录。"""
+        """创建一个包含三个正式 Skill 与 Reference 的临时源仓库并返回根目录。"""
         root = Path(self.temp_directory.name)
         for skill in ("coding", "review", "docs"):
-            references = root / ".agents/skills" / skill / "references"
+            skill_root = root / ".agents/skills" / skill
+            references = skill_root / "references"
             references.mkdir(parents=True)
+            (skill_root / "SKILL.md").write_text(
+                f"---\nname: {skill}\ndescription: fixture\n---\n\n# {skill}\n",
+                encoding="utf-8",
+                newline="",
+            )
             (references / "01_规则.md").write_text(
                 f"# {skill}\n\n复杂规则：条件、例外和失败处理必须逐字保留。\n",
                 encoding="utf-8",

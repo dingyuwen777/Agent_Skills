@@ -2,13 +2,21 @@
 
 `Agent_Skills` 是一组面向软件研发的通用 Agent Skills。它不规定某一种语言、框架、数据库或项目架构，而是让 AI / Coding Agent 在不同项目、不同研发阶段和不同技术栈中，先恢复当前真实事实，再按风险选择需求、实现、调试、测试、Review、文档、Git 和交付流程。
 
-当前正式 Skill：
+当前仓库实际存在的正式 Skill：
 
 | Skill | 主要职责 | 正式入口 |
 | --- | --- | --- |
 | `coding` | Greenfield、仓库事实恢复、需求/设计、功能开发、Bug、重构、验证、CI、Git、Release 与交付 | [`.agents/skills/coding/SKILL.md`](.agents/skills/coding/SKILL.md) |
 | `review` | 独立 Code Review、Findings、测试充分性审查和 re-review | [`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md) |
 | `docs` | 技术文档事实同步、审查、编写、更新和可读性治理 | [`.agents/skills/docs/SKILL.md`](.agents/skills/docs/SKILL.md) |
+
+这张表描述**当前仓库事实**，不是 Runtime/Release 的静态白名单。构建和分发会从：
+
+```text
+.agents/skills/*/SKILL.md
+```
+
+动态发现全部合法正式 Skill。以后新增 `security`、`testing`、`architecture` 等正式 Skill 时，不需要再修改 Runtime、安装器或 Release Workflow 的 Skill 名称列表。
 
 最重要的边界是：
 
@@ -20,13 +28,79 @@ Agent_Skills
 → 规定“这个项目具体是什么”
 ```
 
-不要把本仓库根 `AGENTS.md` 复制到业务项目覆盖项目自己的规则。目标项目真正需要安装的是 `.agents/skills/` 下的 Skill，并通过目标项目自己的 `AGENTS.md` 建立入口。
+不要把本仓库根 `AGENTS.md` 复制到业务项目覆盖项目自己的规则。目标项目真正需要的是当前 Release 的正式 Skill、目标项目自己的 `AGENTS.md` Overlay，以及 Runtime 模式下的项目本地 MCP。
 
 ## 1. 安装 / 接入
 
-### 1.1 推荐：一键安装 / 升级
+### 1.1 推荐：最终团队用户只拿一个 binary
 
-从 `Agent_Skills` 源仓库执行：
+正式团队 Runtime Release 面向最终使用者只提供与当前操作系统匹配的 binary：
+
+```text
+agent-skills-mcp-v<VERSION>-linux
+agent-skills-mcp-v<VERSION>-windows.exe
+agent-skills-mcp-v<VERSION>-macos
+SHA256SUMS
+```
+
+团队成员**不需要**：
+
+```text
+clone Agent_Skills
+Python / pip / venv
+install_runtime.py
+install_runtime_target.py
+用户级 / 全局 Runtime
+Runtime Kit ZIP
+```
+
+Windows 示例：
+
+```powershell
+cd D:\work\MyProject
+.\agent-skills-mcp-v<VERSION>-windows.exe
+```
+
+Linux / macOS 示例：
+
+```bash
+cd /work/MyProject
+/path/to/agent-skills-mcp-v<VERSION>-linux
+```
+
+无参数运行默认安装/升级当前工作目录。也可以显式指定：
+
+```text
+agent-skills-mcp install --target <目标项目根目录> --json
+```
+
+Runtime binary 会在当前项目内完成：
+
+```text
+动态发现当前 Release 全部正式 Skill
+→ 安装 Native Core / 运行资产
+→ canonical Reference 只安装同名 Stub
+→ 安装项目 .agents/runtime/agent-skills-mcp[.exe]
+→ 创建/更新 AGENTS.md managed block
+→ 增量更新 .gitignore
+→ 建立 Codex / Cursor / Claude Code 项目级 MCP 配置
+→ 写入 .agents/agent-skills-install.json ownership manifest
+```
+
+项目 Runtime 只属于当前项目，不污染其他项目。项目 `.agents/runtime/` 会被增量加入 `.gitignore`，避免把平台 binary 误提交到业务仓库。
+
+完整最终用户说明：
+
+[`docs/distribution/runtime-kit.md`](docs/distribution/runtime-kit.md)
+
+完整安装、ownership、AGENTS 和 Runtime Contract：
+
+- [`13_目标项目安装与AGENTS_Bootstrap.md`](.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md)
+- [`14_本地MCP_Runtime分发与原文上下文加载.md`](.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md)
+
+### 1.2 Full / source 安装：维护者与明确允许 Reference 明文的场景
+
+从 `Agent_Skills` 源仓库或受控 Full Distribution Kit 执行：
 
 ```bash
 python scripts/install.py --target <目标项目根目录>
@@ -38,15 +112,9 @@ Windows 示例：
 python scripts/install.py --target D:\work\MyProject
 ```
 
-安装器只管理：
+该模式会动态发现并完整复制当前版本全部正式 Skill，**包括 canonical `references/*.md` 明文**。它适合维护者、调试或明确允许规则正文分发的环境，不是“团队成员只拿 binary”的推荐路径。
 
-```text
-.agents/skills/coding/
-.agents/skills/review/
-.agents/skills/docs/
-```
-
-它不会把本仓库根 `AGENTS.md`、`.agents/changes/` 或 `.agents/project-context.json` 复制到目标项目，也不会删除目标项目自己的 `.agents/changes/`、自有 Skill 或其他 `.agents` 内容。
+安装器不会把本仓库根 `AGENTS.md`、`.agents/changes/` 或 `.agents/project-context.json` 复制到目标项目，也不会为了升级清理目标项目自己的 `.agents/changes/`、项目自有不同名 Skill 或其他 `.agents` 内容。
 
 安装完成后会调用目标项目中刚安装的 Coding CLI：
 
@@ -61,10 +129,10 @@ Bootstrap 负责建立目标项目自己的 Agent Skills 入口：
 → 保留原文
 → 仅在 managed block 中接入 Agent Skills
 → 后续任务先进入 Coding
-→ Coding 再按任务加载 references / Review / Docs
+→ Coding 再按任务加载 references / Review / Docs / 其他正式 Skill
 ```
 
-目标项目没有 `AGENTS.md` 时会创建最小 Overlay；已有 `AGENTS.md` 时只增量维护下面的受管区：
+目标项目没有 `AGENTS.md` 时会创建最小 Overlay；已有 `AGENTS.md` 时只增量维护：
 
 ```text
 <!-- agent-skills:managed:start -->
@@ -74,27 +142,23 @@ Bootstrap 负责建立目标项目自己的 Agent Skills 入口：
 
 marker 外项目原文保持不变；marker 不完整、重复或顺序错误时安装器拒绝猜测性覆盖。
 
-安装、升级和 Bootstrap 的完整规则见：
+Full Distribution 说明：
 
-[`13_目标项目安装与AGENTS_Bootstrap.md`](.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md)
+[`docs/distribution/full-kit.md`](docs/distribution/full-kit.md)
 
-### 1.2 手工安装
+### 1.3 项目自有 Skill 和宿主配置不会被整体接管
 
-仍可以直接复制：
+动态 Skill 发现解决的是“当前 Agent_Skills Release 有哪些正式 Skill”，不是“目标项目 `.agents/skills/` 下什么都可以覆盖”。
+
+Runtime 项目安装使用：
 
 ```text
-.agents/skills/coding/
-.agents/skills/review/
-.agents/skills/docs/
+.agents/agent-skills-install.json
 ```
 
-复制后建议在目标项目执行一次：
+证明上一版本由 Agent_Skills 明确认领的 Skill。首次安装遇到未被 manifest 认领的同名 Skill 时会 fail closed；升级删除 Skill 也只允许删除旧 manifest 明确认领而新 Release 已移除的项。
 
-```bash
-python .agents/skills/coding/scripts/coding.py bootstrap --root .
-```
-
-不同宿主是否自动发现 Skill 取决于宿主当前能力；如果宿主要求显式注册 Skill，应按该宿主当前机制配置。无论宿主怎样加载，项目事实仍来自目标项目当前仓库。
+项目中其他自有 Skill、AGENTS managed marker 外文本、其他 MCP server 和宿主配置字段保持。Codex 的项目 `.codex/config.toml` 仍受 Codex 自身 workspace trust 安全机制约束；Agent Skills 不绕过宿主 trust/approval。
 
 ## 2. 怎么用 Coding
 
@@ -107,7 +171,7 @@ python .agents/skills/coding/scripts/coding.py bootstrap --root .
 按适用规则实现和验证，完成前进入 Review，最后只报告本轮新鲜证据支持的状态。
 ```
 
-Coding 会按当前任务在 `references/` 中选择最少充分规则，不要求机械通读所有 reference。
+Coding 会按当前任务在 `references/` 中选择最少充分规则，不要求机械通读所有 Reference。Runtime 模式命中 Reference 时，项目里的同名文件只是 Stub；Agent 必须通过 `agent_skills_load_context` 取得并校验 canonical 原文后继续工作。
 
 ### Greenfield
 
@@ -204,49 +268,49 @@ python .agents/skills/coding/scripts/coding.py discover --root .
 
 缓存命中也不表示源码没有变化；任何具体结论仍需回到当前代码、Contract、Schema/Migration、测试和实际运行结果确认。
 
-## 7. 两种正式分发方式
+## 7. 两种分发方式
 
-### Full Distribution Kit
+### Runtime Binary：团队推荐
 
-适合直接分发三个完整 Markdown Skill，不需要本地 MCP Runtime 的场景。
+适合：
 
-正式用户说明：
+- 最终使用者不访问 Agent_Skills 源仓库；
+- 不希望 canonical Reference Markdown 直接落盘；
+- 希望一个 binary 在目标项目根完成安装/升级；
+- 需要 Codex / Cursor / Claude Code 共用当前项目 Runtime。
 
-[`docs/distribution/full-kit.md`](docs/distribution/full-kit.md)
-
-正式 Release 资产：
+正式团队 Release 资产：
 
 ```text
-agent-skills-full-kit-v<VERSION>.zip
+agent-skills-mcp-v<VERSION>-linux
+agent-skills-mcp-v<VERSION>-windows.exe
+agent-skills-mcp-v<VERSION>-macos
+SHA256SUMS
 ```
 
-解压后直接运行 Kit 内的：
-
-```bash
-python scripts/install.py --target <目标项目根目录>
-```
-
-### Runtime Distribution Kit
-
-适合希望目标项目只保留 Native Core `SKILL.md` + Reference Stub，而详细 canonical Reference 通过本地 MCP 在运行时加载的场景。
-
-正式用户说明：
+最终用户说明：
 
 [`docs/distribution/runtime-kit.md`](docs/distribution/runtime-kit.md)
 
-三个正式平台资产：
-
-```text
-agent-skills-mcp-runtime-kit-v<VERSION>-linux.zip
-agent-skills-mcp-runtime-kit-v<VERSION>-windows.zip
-agent-skills-mcp-runtime-kit-v<VERSION>-macos.zip
-```
-
-Runtime 源码、构建原理和维护者本地调试说明继续放在：
+Runtime 源码、构建和维护说明：
 
 [`runtime/README.md`](runtime/README.md)
 
-这两份文档职责不同：`runtime/README.md` 面向维护 Runtime 源码的人；`docs/distribution/runtime-kit.md` 面向拿到 Release Kit 后安装使用的人。
+### Full Distribution Kit：受控兼容分发
+
+适合明确允许使用者直接获得完整 Markdown Skill / canonical Reference 的场景。
+
+维护者构建：
+
+```bash
+python scripts/build_full_distribution.py --output-dir dist --json
+```
+
+用户说明：
+
+[`docs/distribution/full-kit.md`](docs/distribution/full-kit.md)
+
+由于 Full Kit 包含 canonical Reference 明文，**当前团队 Runtime 正式 Release 不默认同时发布 Full Kit**。如果未来要对外提供 Full Kit，应作为独立授权和安全决策处理。
 
 ## 8. 版本与 Release
 
@@ -262,7 +326,16 @@ Actions
 → Tag: v<VERSION>，例如 v1.0.0
 ```
 
-Workflow 校验 tag 与 `VERSION` 一致后，重新构建 Full Kit 和 Linux / Windows / macOS Runtime Kit，生成 `SHA256SUMS`，最后自动创建输入 tag 和 GitHub Release。同名历史 tag / Release 不覆盖、不移动。
+Workflow 校验 tag 与 `VERSION` 一致后，在 Linux / Windows / macOS 对应 Runner 上重新构建平台 onefile，并实际执行：
+
+```text
+status/self-test
+→ 真实 stdio MCP smoke
+→ binary 安装真实临时项目
+→ 项目内 Runtime MCP smoke
+```
+
+三个平台候选都成功后，最终 Publish Job 才创建 tag / GitHub Release，并发布三平台 binary + `SHA256SUMS`。同名历史 tag / Release 不覆盖、不移动。
 
 维护者完整发布流程：
 
@@ -282,8 +355,8 @@ Agent_Skills/
 ├── VERSION                      # 产品版本事实源
 ├── docs/
 │   ├── distribution/
-│   │   ├── full-kit.md          # Full Kit 最终用户说明
-│   │   └── runtime-kit.md       # Runtime Kit 最终用户说明
+│   │   ├── full-kit.md          # Full 明文兼容分发说明
+│   │   └── runtime-kit.md       # Runtime binary 最终用户说明（保留路径兼容）
 │   └── maintainers/
 │       └── releasing.md         # Release 维护者流程
 ├── .agents/
@@ -291,24 +364,38 @@ Agent_Skills/
 │   ├── skills/
 │   │   ├── coding/
 │   │   ├── review/
-│   │   └── docs/
+│   │   ├── docs/
+│   │   └── <未来其他正式 Skill>/
 │   └── changes/
 ├── runtime/
 │   ├── README.md                # Runtime 源码/构建维护说明
 │   ├── agent_skills_runtime/
+│   │   ├── skill_catalog.py
+│   │   ├── project_payload.py
+│   │   ├── project_installer.py
+│   │   └── ...
 │   └── requirements*.txt
-├── scripts/                     # 稳定公开安装/构建/验证脚本
+├── scripts/                     # 源安装、构建、验证脚本
 └── .github/workflows/
     ├── skill-tests.yml
     └── release.yml
 ```
 
-当前 `scripts/` 只有少量稳定公开入口，因此保持平铺，不为了视觉分类额外增加无价值目录层级。Skill 自身的 `SKILL.md / references / assets / scripts / tests` 也继续留在各自 Skill 内，保持自包含。
+当前 `scripts/` 只有少量稳定维护入口，因此保持平铺，不为了视觉分类额外增加无价值目录层级。Skill 自身的 `SKILL.md / references / assets / scripts / tests` 继续留在各自 Skill 内，保持自包含。
 
 ## 10. 常用入口
 
+最终团队用户：
+
+```text
+# 在目标项目根运行当前平台 binary
+agent-skills-mcp[.exe]
+```
+
+维护者 / Full/source：
+
 ```bash
-# 安装 / 升级三个 Skill
+# 完整 Markdown 安装 / 升级当前动态正式 Skill
 python scripts/install.py --target <目标项目根目录>
 
 # 目标项目 Bootstrap
@@ -321,6 +408,9 @@ python .agents/skills/coding/scripts/coding.py discover --root .
 python .agents/skills/coding/scripts/coding.py status --root .
 python .agents/skills/coding/scripts/coding.py new-change --help
 
+# 构建当前平台 Runtime binary
+python scripts/build_runtime.py --output-dir dist --json
+
 # Ready Gate
 python .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready
 ```
@@ -332,7 +422,7 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 - [Coding 正式规则](.agents/skills/coding/SKILL.md)
 - [Review 使用说明](.agents/skills/review/README.md)
 - [Docs 使用说明](.agents/skills/docs/README.md)
-- [Full Kit 用户说明](docs/distribution/full-kit.md)
-- [Runtime Kit 用户说明](docs/distribution/runtime-kit.md)
+- [Runtime binary 最终用户说明](docs/distribution/runtime-kit.md)
+- [Full 明文兼容分发说明](docs/distribution/full-kit.md)
 - [Runtime 维护说明](runtime/README.md)
 - [Release 维护说明](docs/maintainers/releasing.md)

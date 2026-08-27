@@ -8,10 +8,11 @@ from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
 
+from .skill_catalog import discover_skills, iter_reference_files
+
 
 BUNDLE_SCHEMA = "agent-skills-runtime-bundle/v1"
 MANIFEST_SCHEMA = "agent-skills-runtime-manifest/v1"
-MANAGED_SKILLS = ("coding", "review", "docs")
 _NUMBERED_REFERENCE = re.compile(r"^(\d{2})_")
 
 
@@ -27,18 +28,6 @@ def _reference_id(skill: str, filename: str) -> str:
         return f"{skill}.reference.{match.group(1)}"
     suffix = hashlib.sha256(filename.encode("utf-8")).hexdigest()[:12]
     return f"{skill}.reference.file-{suffix}"
-
-
-def _iter_reference_files(source_root: Path) -> Iterable[tuple[str, Path]]:
-    """按固定 Skill 顺序和文件名顺序枚举 canonical Reference 文件。"""
-    for skill in MANAGED_SKILLS:
-        references_root = source_root / ".agents" / "skills" / skill / "references"
-        if references_root.is_symlink() or not references_root.is_dir():
-            raise FileNotFoundError(f"Reference 目录不存在或不是普通目录：{references_root}")
-        for reference in sorted(references_root.glob("*.md"), key=lambda item: item.name):
-            if reference.is_symlink() or not reference.is_file():
-                raise ValueError(f"Reference 不能是符号链接或特殊文件：{reference}")
-            yield skill, reference
 
 
 def _source_digest(entries: Iterable[Mapping[str, Any]]) -> str:
@@ -60,11 +49,13 @@ def _source_digest(entries: Iterable[Mapping[str, Any]]) -> str:
 
 
 def build_bundle(source_root: str | Path) -> dict[str, Any]:
-    """从源仓库逐字收集三个 Skill 的 canonical References 并构建 Bundle。"""
+    """从动态正式 Skill Catalog 逐字收集 canonical References 并构建 Bundle。"""
     root = Path(source_root).resolve()
+    skills = discover_skills(root)
+    skill_names = [skill.name for skill in skills]
     entries: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
-    for skill, reference in _iter_reference_files(root):
+    for skill, reference in iter_reference_files(skills):
         payload = reference.read_bytes()
         try:
             content = payload.decode("utf-8")
@@ -91,6 +82,7 @@ def build_bundle(source_root: str | Path) -> dict[str, Any]:
         "schema": BUNDLE_SCHEMA,
         "bundle_version": digest[:16],
         "source_digest": digest,
+        "skills": skill_names,
         "references": entries,
     }
     validate_bundle(bundle)
@@ -98,12 +90,20 @@ def build_bundle(source_root: str | Path) -> dict[str, Any]:
 
 
 def validate_bundle(bundle: Mapping[str, Any]) -> None:
-    """严格验证 Bundle schema、Reference 原文摘要、ID 唯一性和源摘要。"""
+    """严格验证 Bundle schema、动态 Skill Catalog、Reference 原文摘要、ID 和源摘要。"""
     if bundle.get("schema") != BUNDLE_SCHEMA:
         raise ValueError(f"不支持的 Runtime Bundle schema：{bundle.get('schema')!r}")
+    skills = bundle.get("skills")
+    if not isinstance(skills, list) or not skills:
+        raise ValueError("Runtime Bundle skills 必须是非空列表")
+    normalized_skills = [str(item) for item in skills]
+    if normalized_skills != sorted(set(normalized_skills)):
+        raise ValueError("Runtime Bundle skills 必须唯一并按名称稳定排序")
+    skill_set = set(normalized_skills)
+
     references = bundle.get("references")
-    if not isinstance(references, list) or not references:
-        raise ValueError("Runtime Bundle references 必须是非空列表")
+    if not isinstance(references, list):
+        raise ValueError("Runtime Bundle references 必须是列表")
     seen_ids: set[str] = set()
     normalized: list[dict[str, Any]] = []
     for raw_entry in references:
@@ -118,8 +118,8 @@ def validate_bundle(bundle: Mapping[str, Any]) -> None:
             raise ValueError(f"Runtime Bundle Reference ID 重复：{reference_id}")
         seen_ids.add(reference_id)
         skill = str(raw_entry["skill"])
-        if skill not in MANAGED_SKILLS:
-            raise ValueError(f"未知 Skill：{skill}")
+        if skill not in skill_set:
+            raise ValueError(f"Reference 指向未声明 Skill：{skill}")
         content = raw_entry["content"]
         if not isinstance(content, str):
             raise ValueError(f"Reference content 必须是 UTF-8 文本：{reference_id}")
@@ -162,9 +162,10 @@ def deserialize_bundle(payload: bytes) -> dict[str, Any]:
 
 
 def public_manifest(bundle: Mapping[str, Any], skill: str | None = None) -> dict[str, Any]:
-    """生成不包含 Reference 正文的公开 Runtime Manifest。"""
+    """生成不包含 Reference 正文的动态 Skill/Reference Runtime Manifest。"""
     validate_bundle(bundle)
-    if skill is not None and skill not in MANAGED_SKILLS:
+    skills = [str(item) for item in bundle["skills"]]
+    if skill is not None and skill not in skills:
         raise ValueError(f"未知 Skill：{skill}")
     references = []
     for entry in bundle["references"]:
@@ -185,6 +186,8 @@ def public_manifest(bundle: Mapping[str, Any], skill: str | None = None) -> dict
         "bundle_schema": bundle["schema"],
         "bundle_version": bundle["bundle_version"],
         "source_digest": bundle["source_digest"],
+        "skills": skills if skill is None else [skill],
+        "skill_count": len(skills) if skill is None else 1,
         "reference_count": len(references),
         "references": references,
     }
