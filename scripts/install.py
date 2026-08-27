@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""把 Agent_Skills 安装/升级到目标项目，支持完整 Markdown 与本地 MCP Runtime 两种分发模式。"""
+"""把 Agent_Skills 源分发安装/升级到目标项目，支持 full 与兼容 runtime 模式。"""
 
 from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import shutil
 import subprocess
 import sys
@@ -13,24 +13,28 @@ import tempfile
 from typing import Any, Mapping, Sequence
 
 
-MANAGED_SKILLS = ("coding", "review", "docs")
-RUNTIME_CORE_ENTRIES = ("SKILL.md", "agents", "assets", "scripts")
+SOURCE_ROOT = Path(__file__).resolve().parents[1]
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
+
+from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.project_payload import build_project_payload, decode_payload_file
+from runtime.agent_skills_runtime.skill_catalog import discover_skills
+
+
 INSTALL_MODES = ("full", "runtime")
 
 
-def _validate_source(source_root: Path) -> None:
-    """确认源仓库包含三个完整受管 Skill，避免安装不完整来源。"""
-    for skill in MANAGED_SKILLS:
-        skill_root = source_root / ".agents/skills" / skill
-        if skill_root.is_symlink() or not skill_root.is_dir():
-            raise FileNotFoundError(f"源 Skill 目录不存在或不是普通目录：{skill_root}")
-        skill_file = skill_root / "SKILL.md"
-        if skill_file.is_symlink() or not skill_file.is_file():
-            raise FileNotFoundError(f"源 Skill 入口不存在或不是普通文件：{skill_file}")
+def _discover_managed_skills(source_root: Path) -> list[str]:
+    """使用统一 Skill Catalog 发现当前源分发全部正式 Skill，并保持 Coding Bootstrap 锚点。"""
+    skills = [skill.name for skill in discover_skills(source_root)]
+    if "coding" not in skills:
+        raise FileNotFoundError("Agent_Skills 正式 Skill Catalog 必须包含 coding，才能建立目标项目 AGENTS Bootstrap")
+    return skills
 
 
-def _validate_target(source_root: Path, target_root: Path) -> None:
-    """校验目标目录可用于安装，并拒绝 source 自身或 source 内部后代目录。"""
+def _validate_target(source_root: Path, target_root: Path, managed_skills: Sequence[str]) -> None:
+    """校验目标目录可用于安装，并拒绝 source 自身、source 后代和受管 Skill 符号链接。"""
     if not target_root.is_dir():
         raise NotADirectoryError(target_root)
     source = source_root.resolve()
@@ -49,22 +53,10 @@ def _validate_target(source_root: Path, target_root: Path) -> None:
     skills_root = agents_root / "skills"
     if skills_root.is_symlink():
         raise ValueError(f"目标 .agents/skills 不能是符号链接：{skills_root}")
-    for skill in MANAGED_SKILLS:
+    for skill in managed_skills:
         target_skill = skills_root / skill
         if target_skill.is_symlink():
             raise ValueError(f"受管 Skill 目录不能是符号链接：{target_skill}")
-
-
-def _load_runtime_bundle(source_root: Path) -> dict[str, Any]:
-    """从源仓库加载 Runtime catalog 模块并构建当前 canonical Reference Bundle。"""
-    root_text = str(source_root)
-    if root_text not in sys.path:
-        sys.path.insert(0, root_text)
-    try:
-        from runtime.agent_skills_runtime.catalog import build_bundle
-    except ImportError as error:
-        raise RuntimeError("源仓库缺少 Runtime catalog；无法执行 --mode runtime") from error
-    return build_bundle(source_root)
 
 
 def _run_json_command(command: Sequence[str]) -> dict[str, Any]:
@@ -102,8 +94,8 @@ def _normalize_runtime_command(runtime_command: str | Path | Sequence[str] | Non
     return command
 
 
-def _verify_runtime(runtime_command: Sequence[str], expected_digest: str) -> dict[str, Any]:
-    """在触碰目标项目之前验证 Runtime 自检结果与当前 canonical source digest 一致。"""
+def _verify_runtime(runtime_command: Sequence[str], expected_digest: str, expected_skills: Sequence[str]) -> dict[str, Any]:
+    """在触碰目标项目之前验证 Runtime 自检、source digest 与动态 Skill Catalog 一致。"""
     status = _run_json_command([*runtime_command, "status", "--json"])
     self_test = _run_json_command([*runtime_command, "self-test", "--json"])
     if self_test.get("ok") is not True:
@@ -112,73 +104,35 @@ def _verify_runtime(runtime_command: Sequence[str], expected_digest: str) -> dic
     if status_digest != self_test.get("source_digest"):
         raise RuntimeError("Runtime status 与 self-test source_digest 不一致")
     if status_digest != expected_digest:
-        raise RuntimeError(
-            "Runtime source_digest 与当前 Agent_Skills canonical References 不一致；"
-            "请先重新构建并安装 Runtime，再执行目标项目 runtime 模式升级"
-        )
+        raise RuntimeError("Runtime source_digest 与当前 Agent_Skills canonical References 不一致")
+    if status.get("skills") is not None and list(status["skills"]) != list(expected_skills):
+        raise RuntimeError("Runtime Skill Catalog 与当前 Agent_Skills source 不一致")
     return status
 
 
-def _render_reference_stub(entry: Mapping[str, Any]) -> str:
-    """生成与 canonical Reference 同名的 Runtime Stub，并锁定逻辑 ID 与预期 SHA256。"""
-    return (
-        "# Agent Skills Runtime Reference\n\n"
-        "此文件是正式 Reference 的 **Runtime 入口**，不包含规则正文，也不能替代正式规则。\n\n"
-        f"- Runtime ID: `{entry['id']}`\n"
-        f"- Canonical file: `{entry['filename']}`\n"
-        f"- Expected SHA256: `{entry['sha256']}`\n\n"
-        "在执行本 Reference 对应动作前，必须调用本地 Agent Skills MCP 工具 "
-        "`agent_skills_load_context`，并传入：\n\n"
-        "```json\n"
-        f"{{\"ids\":[\"{entry['id']}\"]}}\n"
-        "```\n\n"
-        "必须把返回对象中的 `canonical_text` 作为本 Reference 的**完整正式原文**继续执行；"
-        "不得摘要、凭印象补写或只使用本 stub。还必须确认返回的 `sha256` 与上面的 "
-        "`Expected SHA256` 一致。\n\n"
-        "如果 MCP 不可用、Reference ID 不存在、返回 hash 不一致或无法取得 `canonical_text`，"
-        "明确报告并停止依赖本 Reference 的动作；不得假装已经读取并遵守该 Reference。\n"
-    )
-
-
-def _copy_runtime_skill(source_skill: Path, target_skill: Path, entries: Sequence[Mapping[str, Any]]) -> None:
-    """复制 Runtime 模式 Core Skill，并为 canonical References 生成同名 stub。"""
-    target_skill.mkdir(parents=True, exist_ok=False)
-    for name in RUNTIME_CORE_ENTRIES:
-        source_entry = source_skill / name
-        if not source_entry.exists():
-            if name == "SKILL.md":
-                raise FileNotFoundError(source_entry)
-            continue
-        if source_entry.is_symlink():
-            raise ValueError(f"Runtime Core 分发不允许符号链接：{source_entry}")
-        target_entry = target_skill / name
-        if source_entry.is_dir():
-            shutil.copytree(
-                source_entry,
-                target_entry,
-                ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
-            )
-        elif source_entry.is_file():
-            shutil.copy2(source_entry, target_entry)
-        else:
-            raise ValueError(f"Runtime Core 分发只支持普通文件/目录：{source_entry}")
-    references_root = target_skill / "references"
-    references_root.mkdir()
-    for entry in entries:
-        stub = references_root / str(entry["filename"])
-        stub.write_text(_render_reference_stub(entry), encoding="utf-8", newline="\n")
+def _materialize_runtime_payload(staging_root: Path, payload: Mapping[str, Any]) -> None:
+    """把统一 Project Payload 解码到兼容 runtime-mode 暂存目录。"""
+    for entry in payload["files"]:
+        relative = PurePosixPath(str(entry["path"]))
+        destination = staging_root.joinpath(*relative.parts)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(decode_payload_file(entry))
+        mode = entry.get("mode")
+        if isinstance(mode, int):
+            destination.chmod(mode)
 
 
 def _copy_managed_skills(
     source_root: Path,
     staging_root: Path,
+    managed_skills: Sequence[str],
     mode: str = "full",
     bundle: Mapping[str, Any] | None = None,
 ) -> None:
-    """按 full/runtime 模式先完整暂存三个受管 Skill，复制失败时不触碰现有目标。"""
-    source_skills = source_root / ".agents/skills"
+    """按 full/runtime 模式完整暂存动态正式 Skill；复制失败时不触碰现有目标。"""
+    source_skills = source_root / ".agents" / "skills"
     if mode == "full":
-        for skill in MANAGED_SKILLS:
+        for skill in managed_skills:
             shutil.copytree(
                 source_skills / skill,
                 staging_root / skill,
@@ -187,11 +141,10 @@ def _copy_managed_skills(
         return
     if mode != "runtime" or bundle is None:
         raise ValueError(f"不支持的安装模式：{mode}")
-    references_by_skill: dict[str, list[Mapping[str, Any]]] = {skill: [] for skill in MANAGED_SKILLS}
-    for entry in bundle["references"]:
-        references_by_skill[str(entry["skill"])].append(entry)
-    for skill in MANAGED_SKILLS:
-        _copy_runtime_skill(source_skills / skill, staging_root / skill, references_by_skill[skill])
+    payload = build_project_payload(source_root, bundle)
+    if list(payload["skills"]) != list(managed_skills):
+        raise RuntimeError("runtime-mode Project Payload 与动态 Skill Catalog 不一致")
+    _materialize_runtime_payload(staging_root, payload)
 
 
 def _remove_path(path: Path) -> None:
@@ -216,11 +169,16 @@ def _rollback_skills(target_skills: Path, backup_root: Path, swapped: Sequence[s
             backup.rename(target)
 
 
-def _swap_skills(staging_root: Path, target_skills: Path, backup_root: Path) -> list[str]:
-    """逐个切换已暂存 Skill；任一切换失败时恢复当前项和此前所有已切换项。"""
+def _swap_skills(
+    staging_root: Path,
+    target_skills: Path,
+    backup_root: Path,
+    managed_skills: Sequence[str],
+) -> list[str]:
+    """逐个切换动态正式 Skill；任一切换失败时恢复当前项和此前已切换项。"""
     swapped: list[str] = []
     try:
-        for skill in MANAGED_SKILLS:
+        for skill in managed_skills:
             target = target_skills / skill
             backup = backup_root / skill
             staged = staging_root / skill
@@ -270,21 +228,21 @@ def install_skills(
     mode: str = "full",
     runtime_command: str | Path | Sequence[str] | None = None,
 ) -> dict[str, Any]:
-    """原子安装受管 Core/Full Skills，再执行 AGENTS Bootstrap；Runtime 模式先验证本地 MCP 与源摘要。"""
+    """原子安装动态正式 Skills，再执行 AGENTS Bootstrap；兼容 runtime 模式先验证 Runtime。"""
     source = Path(source_root).resolve()
     target = Path(target_root).resolve()
     if mode not in INSTALL_MODES:
         raise ValueError(f"不支持的安装模式：{mode}")
-    _validate_source(source)
+    managed_skills = _discover_managed_skills(source)
 
     bundle: dict[str, Any] | None = None
     runtime_status: dict[str, Any] | None = None
     if mode == "runtime":
-        bundle = _load_runtime_bundle(source)
+        bundle = build_bundle(source)
         command = _normalize_runtime_command(runtime_command)
-        runtime_status = _verify_runtime(command, str(bundle["source_digest"]))
+        runtime_status = _verify_runtime(command, str(bundle["source_digest"]), managed_skills)
 
-    _validate_target(source, target)
+    _validate_target(source, target, managed_skills)
     agents_root = target / ".agents"
     target_skills = agents_root / "skills"
     agents_root.mkdir(parents=True, exist_ok=True)
@@ -294,10 +252,10 @@ def install_skills(
         with tempfile.TemporaryDirectory(prefix=".agent-skills-backup-", dir=agents_root) as backup_name:
             staging_root = Path(staging_name)
             backup_root = Path(backup_name)
-            _copy_managed_skills(source, staging_root, mode, bundle)
+            _copy_managed_skills(source, staging_root, managed_skills, mode, bundle)
             swapped: list[str] = []
             try:
-                swapped = _swap_skills(staging_root, target_skills, backup_root)
+                swapped = _swap_skills(staging_root, target_skills, backup_root, managed_skills)
                 bootstrap = _run_bootstrap(target)
             except Exception:
                 _rollback_skills(target_skills, backup_root, swapped)
@@ -305,7 +263,7 @@ def install_skills(
 
     result: dict[str, Any] = {
         "mode": mode,
-        "skills": list(MANAGED_SKILLS),
+        "skills": list(managed_skills),
         "bootstrap": bootstrap,
     }
     if bundle is not None and runtime_status is not None:
@@ -313,46 +271,41 @@ def install_skills(
             "bundle_version": runtime_status.get("bundle_version"),
             "source_digest": runtime_status.get("source_digest"),
             "reference_count": runtime_status.get("reference_count"),
+            "skills": runtime_status.get("skills"),
         }
     return result
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """构造 Agent Skills 安装/升级命令行参数。"""
-    parser = argparse.ArgumentParser(
-        description="把 coding/review/docs 安装或升级到目标项目，并安全 Bootstrap AGENTS.md。"
-    )
+    """构造 Agent Skills 源分发安装/升级命令行参数。"""
+    parser = argparse.ArgumentParser(description="动态发现并安装 Agent_Skills 正式 Skills，同时安全 Bootstrap AGENTS.md。")
     parser.add_argument("--target", required=True, help="目标项目根目录")
     parser.add_argument(
         "--mode",
         choices=INSTALL_MODES,
         default="full",
-        help="full=完整 Markdown 分发（默认，向后兼容）；runtime=Core Skill + MCP Reference Stub",
+        help="full=完整 Markdown 分发（默认）；runtime=兼容 Core Skill + MCP Reference Stub 分发",
     )
-    parser.add_argument(
-        "--runtime-command",
-        help="runtime 模式使用的已安装 agent-skills-mcp 可执行文件路径",
-    )
+    parser.add_argument("--runtime-command", help="兼容 runtime 模式使用的 agent-skills-mcp 可执行文件路径")
     parser.add_argument("--json", action="store_true", help="以 JSON 输出安装结果")
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """执行安装器 CLI，并以退出码明确表示成功或失败。"""
+    """执行源分发安装器 CLI，并以退出码明确表示成功或失败。"""
     parser = _build_parser()
     arguments = parser.parse_args(argv)
-    source_root = Path(__file__).resolve().parents[1]
     try:
-        result = install_skills(source_root, arguments.target, arguments.mode, arguments.runtime_command)
+        result = install_skills(
+            SOURCE_ROOT,
+            arguments.target,
+            mode=arguments.mode,
+            runtime_command=arguments.runtime_command,
+        )
         if arguments.json:
-            print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+            print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         else:
-            bootstrap = result["bootstrap"]
-            print(
-                f"mode={result['mode']} 已安装/升级 coding、review、docs；"
-                f"AGENTS.md={bootstrap.get('agents')}；"
-                f".gitignore={bootstrap.get('gitignore')}"
-            )
+            print(f"mode={result['mode']} skills={','.join(result['skills'])}")
         return 0
     except (FileNotFoundError, NotADirectoryError, OSError, RuntimeError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
