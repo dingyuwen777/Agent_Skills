@@ -25,11 +25,12 @@
 - 提供 Native Core Skill + 本地 MCP 加密 Reference Runtime 分发模式。
 - canonical Reference 原文继续由源仓库维护；Runtime `agent_skills_load_context` 返回完整 `canonical_text` 与 SHA256，不做自动摘要。
 - 提供 Linux、Windows、macOS 平台独立 Runtime Kit、source digest 校验、用户级 Runtime 安装和无源仓库目标项目安装。
+- POSIX Runtime Kit 即使被解压器去掉 executable bit，用户级安装器也会先在暂存副本恢复执行权限后再完成自检和原子切换。
 - Windows Coding Core 带最小 `Asia/Shanghai` timezone fallback，不要求目标业务项目额外引入 `tzdata` 依赖。
 
 ### Release
 
 - 根 `VERSION` 是正式版本事实源。
-- 提供版本化 Full Distribution Kit。
-- GitHub Release 自动构建 Linux/Windows/macOS Runtime Kit、Full Kit 和 `SHA256SUMS`。
-- Release tag 使用 `v<VERSION>`，同版本 tag/Release 不覆盖、不移动。
+- 提供版本化 Full Distribution Kit，并为解压后的 Full Kit 提供独立用户安装说明。
+- 维护者从 GitHub Actions 的 `Release` Workflow **手工输入** `v<VERSION>` tag；Workflow 校验 tag 与 `VERSION` 一致且当前 ref 为 `main` 后，自动构建 Linux/Windows/macOS Runtime Kit、Full Kit 和 `SHA256SUMS`，再创建该 tag 与 GitHub Release。
+- Release 不因 `VERSION` push 自动触发；同版本 tag/Release 不覆盖、不移动。
