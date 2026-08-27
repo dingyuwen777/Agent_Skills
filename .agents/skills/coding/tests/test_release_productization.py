@@ -54,7 +54,7 @@ class InstallerSourceBoundaryTest(unittest.TestCase):
 
 
 class ReleaseProductizationTest(unittest.TestCase):
-    """验证正式版本、Full Distribution Kit 和 Release workflow 的产品合同。"""
+    """验证正式版本、Full Distribution Kit 和手工 tag Release workflow 的产品合同。"""
 
     def test_version_source_of_truth_is_semver_1_0_0(self) -> None:
         """首个正式产品化版本必须由根 VERSION 唯一声明为 1.0.0。"""
@@ -112,36 +112,42 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertIn("source_digest", source)
         self.assertIn("VERSION", source)
 
-    def test_release_workflow_builds_three_platforms_and_creates_immutable_release(self) -> None:
-        """正式 workflow 必须由 VERSION/main 驱动，三平台构建后汇总校验和并创建 Release。"""
+    def test_release_workflow_requires_manual_tag_and_builds_immutable_release(self) -> None:
+        """正式 Release 必须手工输入 tag，从 main 构建三平台资产后创建不可覆盖 Release。"""
         self.assertTrue(RELEASE_WORKFLOW.is_file(), "缺少正式 Release workflow")
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for marker in (
             "workflow_dispatch",
-            'branches: ["main"]',
-            'paths: ["VERSION"]',
+            "inputs:",
+            "tag:",
+            "Release tag，例如 v1.0.0",
+            "${{ inputs.tag }}",
             "refs/heads/main",
+            'VERSION="${TAG#v}"',
+            "输入 tag ${TAG} 与仓库 VERSION=${FILE_VERSION} 不一致",
             "ubuntu-24.04",
             "windows-latest",
             "macos-15",
             "scripts/build_full_distribution.py",
             "scripts/build_runtime.py",
-            "agent-skills-full-kit-v${VERSION}.zip",
-            "agent-skills-mcp-runtime-kit-v${VERSION}-linux.zip",
-            "agent-skills-mcp-runtime-kit-v${VERSION}-windows.zip",
-            "agent-skills-mcp-runtime-kit-v${VERSION}-macos.zip",
+            "agent-skills-full-kit-v${RELEASE_VERSION}.zip",
+            "agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-linux.zip",
+            "agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-windows.zip",
+            "agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-macos.zip",
             "SHA256SUMS",
-            "gh release create",
+            'gh release create "${RELEASE_TAG}"',
             "contents: write",
             "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
             "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
         ):
             self.assertIn(marker, workflow)
         self.assertEqual(workflow.count("contents: write"), 1)
+        self.assertNotIn("\n  push:\n", workflow)
+        self.assertNotIn('branches: ["main"]', workflow)
+        self.assertNotIn('paths: ["VERSION"]', workflow)
         self.assertIn("gh release view", workflow)
         self.assertIn("gh api", workflow)
         self.assertIn("git rev-parse", workflow)
-        self.assertNotIn("git fetch --tags --force", workflow)
 
     def test_release_documentation_exists(self) -> None:
         """维护者 Release 流程和版本历史必须有独立正式文档。"""
