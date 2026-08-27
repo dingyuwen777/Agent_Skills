@@ -67,13 +67,14 @@ def _copy_file(source: Path, destination: Path) -> None:
 
 
 def _stage_installer_helpers(source: Path, kit_root: Path) -> None:
-    """复制 Full Kit 独立安装器所需的统一动态 Skill/Payload helper，不复制 Runtime 服务实现。"""
+    """复制 Full Kit 独立安装器所需的统一动态 Skill/Payload helper，不复制 MCP 服务实现。"""
     helper_paths = [
         "runtime/__init__.py",
         "runtime/agent_skills_runtime/__init__.py",
         "runtime/agent_skills_runtime/skill_catalog.py",
         "runtime/agent_skills_runtime/catalog.py",
         "runtime/agent_skills_runtime/project_payload.py",
+        "runtime/agent_skills_runtime/runtime.py",
     ]
     for relative in helper_paths:
         _copy_file(source / relative, kit_root / relative)
