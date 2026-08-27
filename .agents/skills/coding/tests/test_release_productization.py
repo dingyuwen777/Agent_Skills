@@ -9,6 +9,8 @@ import unittest
 from pathlib import Path
 import zipfile
 
+from runtime.agent_skills_runtime.skill_catalog import discover_skills
+
 
 ROOT = Path(__file__).resolve().parents[4]
 INSTALL_PATH = ROOT / "scripts/install.py"
@@ -54,7 +56,7 @@ class InstallerSourceBoundaryTest(unittest.TestCase):
 
 
 class ReleaseProductizationTest(unittest.TestCase):
-    """验证正式版本、Full Distribution Kit 和手工 tag Release workflow 的产品合同。"""
+    """验证版本、动态 Full Kit 与只发布平台单二进制的正式 Release 合同。"""
 
     def test_version_source_of_truth_is_valid_semver(self) -> None:
         """永久门禁应接受未来合法版本，而不是把首个 1.0.0 永久写死在测试中。"""
@@ -63,11 +65,12 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertRegex(version, builder.VERSION_PATTERN)
         self.assertEqual(builder.read_release_version(ROOT), version)
 
-    def test_full_distribution_kit_is_source_independent_and_excludes_repository_state(self) -> None:
-        """Full Kit 解压后应可独立安装三个完整 Skill，并携带真实可用的用户说明。"""
+    def test_full_distribution_kit_is_source_independent_and_dynamic(self) -> None:
+        """维护者 Full Kit 应独立安装全部正式 Skill，但不作为团队 Runtime Release 资产。"""
         self.assertTrue(FULL_BUILDER_PATH.is_file(), "缺少 Full Distribution Kit Builder")
         builder = _load_module("full_distribution_builder", FULL_BUILDER_PATH)
         version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        expected_skills = [skill.name for skill in discover_skills(ROOT)]
         with tempfile.TemporaryDirectory() as directory:
             temp = Path(directory)
             output = temp / "dist"
@@ -75,6 +78,7 @@ class ReleaseProductizationTest(unittest.TestCase):
             zip_path = Path(result["distribution_kit"])
             self.assertTrue(zip_path.is_file())
             self.assertEqual(result["release_version"], version)
+            self.assertEqual(result["skills"], expected_skills)
             self.assertEqual(zip_path.name, f"agent-skills-full-kit-v{version}.zip")
 
             extract_root = temp / "extract"
@@ -82,10 +86,10 @@ class ReleaseProductizationTest(unittest.TestCase):
                 archive.extractall(extract_root)
             kit = extract_root / f"agent-skills-full-kit-v{version}"
             self.assertTrue((kit / "scripts/install.py").is_file())
-            self.assertTrue((kit / ".agents/skills/coding/SKILL.md").is_file())
-            self.assertTrue((kit / ".agents/skills/review/SKILL.md").is_file())
-            self.assertTrue((kit / ".agents/skills/docs/SKILL.md").is_file())
-            self.assertTrue((kit / "agent-skills-full-kit.json").is_file())
+            for skill in expected_skills:
+                self.assertTrue((kit / ".agents/skills" / skill / "SKILL.md").is_file())
+            metadata = json.loads((kit / "agent-skills-full-kit.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["skills"], expected_skills)
             self.assertFalse((kit / "AGENTS.md").exists())
             self.assertFalse((kit / ".agents/changes").exists())
             self.assertFalse((kit / ".agents/project-context.json").exists())
@@ -109,19 +113,23 @@ class ReleaseProductizationTest(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, completed.stderr or completed.stdout)
             payload = json.loads(completed.stdout)
             self.assertEqual(payload["mode"], "full")
+            self.assertEqual(payload["skills"], expected_skills)
             self.assertTrue((target / "AGENTS.md").is_file())
 
-    def test_runtime_builder_reads_current_release_version_without_changing_reference_digest_contract(self) -> None:
-        """Runtime Builder 应读取当前 VERSION，且 source_digest 仍保持独立 canonical Reference 合同。"""
+    def test_runtime_builder_reads_current_release_version_and_embeds_project_payload(self) -> None:
+        """Runtime Builder 应读取 VERSION，并同时保持 source_digest 与 Project Payload 独立完整性合同。"""
         builder = _load_module("runtime_release_version", RUNTIME_BUILDER_PATH)
         version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
         self.assertEqual(builder._read_release_version(ROOT), version)
         source = RUNTIME_BUILDER_PATH.read_text(encoding="utf-8")
         self.assertIn("source_digest", source)
+        self.assertIn("payload_digest", source)
+        self.assertIn("PROJECT_PAYLOAD_B64", source)
         self.assertIn("VERSION", source)
+        self.assertNotIn("build_distribution_kit", source)
 
-    def test_release_workflow_requires_manual_tag_and_builds_immutable_release(self) -> None:
-        """正式 Release 必须手工输入 tag，从 main 构建三平台资产后创建不可覆盖 Release。"""
+    def test_release_workflow_publishes_only_platform_binaries_and_checksums(self) -> None:
+        """正式 Release 必须手工输入 tag，并只发布三平台单 binary 与 SHA256SUMS。"""
         self.assertTrue(RELEASE_WORKFLOW.is_file(), "缺少正式 Release workflow")
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for marker in (
@@ -136,12 +144,10 @@ class ReleaseProductizationTest(unittest.TestCase):
             "ubuntu-24.04",
             "windows-latest",
             "macos-15",
-            "scripts/build_full_distribution.py",
             "scripts/build_runtime.py",
-            "agent-skills-full-kit-v${RELEASE_VERSION}.zip",
-            "agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-linux.zip",
-            "agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-windows.zip",
-            "agent-skills-mcp-runtime-kit-v${RELEASE_VERSION}-macos.zip",
+            "agent-skills-mcp-v${RELEASE_VERSION}-linux",
+            "agent-skills-mcp-v$env:RELEASE_VERSION-windows.exe",
+            "agent-skills-mcp-v${RELEASE_VERSION}-macos",
             "SHA256SUMS",
             'gh release create "${RELEASE_TAG}"',
             "contents: write",
@@ -153,12 +159,14 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertNotIn("\n  push:\n", workflow)
         self.assertNotIn('branches: ["main"]', workflow)
         self.assertNotIn('paths: ["VERSION"]', workflow)
+        self.assertNotIn("agent-skills-mcp-runtime-kit", workflow)
+        self.assertNotIn("agent-skills-full-kit-v${RELEASE_VERSION}.zip", workflow)
         self.assertIn("gh release view", workflow)
         self.assertIn("gh api", workflow)
         self.assertIn("git rev-parse", workflow)
 
     def test_release_documentation_exists(self) -> None:
-        """维护者 Release、两种 Kit 用户说明和版本历史必须有独立正式文档。"""
+        """维护者 Release、Full Kit/Runtime binary 用户说明和版本历史必须有独立正式文档。"""
         self.assertTrue((ROOT / "docs/maintainers/releasing.md").is_file())
         self.assertTrue((ROOT / "docs/distribution/full-kit.md").is_file())
         self.assertTrue((ROOT / "docs/distribution/runtime-kit.md").is_file())
