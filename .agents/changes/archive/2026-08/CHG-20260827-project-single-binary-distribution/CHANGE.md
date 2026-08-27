@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260827-project-single-binary-distribution
 title: 项目级单二进制 Agent Skills 分发
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: feature/project-single-binary-distribution
 created: 2026-08-27
@@ -137,26 +137,26 @@ Reference 只从每个正式 Skill 的 `references/*.md` 发现；允许没有 `
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | 最终团队成员不 clone Agent_Skills，只拿一个对应平台 binary | user:single-binary-project-install | satisfied | `scripts/build_runtime.py` 已只生成 onefile + manifest；PR CI run #136 的 Linux/Windows/macOS onefile 均完成项目安装验证 |
-| R2 | 在目标项目根运行 binary 后自动完成项目安装/升级，不使用全局 Runtime | user:project-only-install | satisfied | `runtime/agent_skills_runtime/server.py` 无参数默认 install；run #136 验证显式安装、重复升级和无参数安装，Runtime 落到项目 `.agents/runtime/` |
-| R3 | Codex、Cursor、Claude Code 使用同一项目 Runtime，并只做项目级宿主配置 | user:multi-host-project-install | satisfied | `project_installer.py` 生成 `.codex/config.toml`、`.cursor/mcp.json`、`.mcp.json`、`CLAUDE.md`；run #136 三平台均验证这些项目文件存在，Codex 当前官方 Contract 复核确认项目 `.codex/config.toml` 与 `mcp_servers.<id>.command/args` 语义匹配 |
-| R4 | `.agents/skills/` 后续新增任意正式 Skill，Release/build/install 自动识别，不维护静态名单 | user:dynamic-skill-release | satisfied | `skill_catalog.py` 为唯一动态发现入口；`test_dynamic_skill_distribution.py` 用第四个 `security` 和无 Reference 的 `architecture` 回归，run #136 的 96 个自包含测试全部通过 |
-| R5 | canonical Reference 不直接分发，Runtime 仍返回逐字 canonical_text | .agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md | satisfied | `test_runtime_bundle.py` exact-text/hash 回归通过；Project Payload 只含 Stub；run #136 Linux onefile 与安装后 Runtime 的真实 stdio MCP smoke 均通过，tool_count=5 |
+| R1 | 最终团队成员不 clone Agent_Skills，只拿一个对应平台 binary | user:single-binary-project-install | satisfied | `scripts/build_runtime.py` 只生成 onefile + manifest；PR CI run #137 与合并后 main push run #138 的 Linux/Windows/macOS onefile 均完成项目安装验证 |
+| R2 | 在目标项目根运行 binary 后自动完成项目安装/升级，不使用全局 Runtime | user:project-only-install | satisfied | `runtime/agent_skills_runtime/server.py` 无参数默认 install；run #137/#138 验证显式安装、重复升级和无参数安装，Runtime 落到项目 `.agents/runtime/` |
+| R3 | Codex、Cursor、Claude Code 使用同一项目 Runtime，并只做项目级宿主配置 | user:multi-host-project-install | satisfied | `project_installer.py` 生成 `.codex/config.toml`、`.cursor/mcp.json`、`.mcp.json`、`CLAUDE.md`；三平台 CI 验证项目文件存在，Codex 当前官方 Contract 复核确认项目 `.codex/config.toml` 与 `mcp_servers.<id>.command/args` 语义匹配 |
+| R4 | `.agents/skills/` 后续新增任意正式 Skill，Release/build/install 自动识别，不维护静态名单 | user:dynamic-skill-release | satisfied | `skill_catalog.py` 为统一动态发现入口；`test_dynamic_skill_distribution.py` 用第四个 `security` 和无 Reference 的 `architecture` 回归，run #137/#138 的自包含测试全部通过 |
+| R5 | canonical Reference 不直接分发，Runtime 仍返回逐字 canonical_text | .agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md | satisfied | `test_runtime_bundle.py` exact-text/hash 回归通过；Project Payload 只含 Stub；run #137/#138 的真实 stdio MCP smoke 通过 |
 | R6 | 目标项目已有 `.agents`、项目 Skill 与 AGENTS 用户内容必须安全保留 | .agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md | satisfied | `test_single_binary_project_install.py` 覆盖项目自有 Skill/AGENTS/CLAUDE 保留、首次同名 fail closed、Release 删除旧受管 Skill；现有 Bootstrap/rollback 回归继续通过 |
-| R7 | Build/Package/Runtime 结论必须由最终 onefile 在目标平台实际验证 | .agents/skills/coding/references/07_通用验证与证据策略.md | satisfied | PR CI run #136：Linux 主 job 的 build/status/self-test/project install/MCP smoke 通过；Runtime Windows Package 与 Runtime macOS Package jobs 均成功 |
+| R7 | Build/Package/Runtime 结论必须由最终 onefile 在目标平台实际验证 | .agents/skills/coding/references/07_通用验证与证据策略.md | satisfied | PR CI run #137 与 main push run #138 的 Linux 主 job、Runtime Windows Package、Runtime macOS Package 全部成功 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | run #136：`python3 -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v`，96 tests，0 failure / 0 error；覆盖 dynamic discovery、payload/hash/path/mode、managed ownership、配置合并、冲突/升级保护 |
+| 行为 / Unit / Component | required | run #137/#138：自包含测试全部通过；覆盖 dynamic discovery、payload/hash/path/mode、managed ownership、配置合并、冲突/升级保护 |
 | 接口 / Contract | required | Runtime CLI 已验证无参数 install、显式 install/serve/status/self-test；Bundle/Project Payload/Install Manifest schema 有机器校验；stdio MCP smoke 证明 5 个既有 Tool Contract 可用；Codex 官方当前项目配置/MCP Contract 已复核 |
 | 集成 / Persistence / Runtime Dependency | required | 临时真实文件系统安装、Runtime self-copy、symlink/path/rollback 既有回归、项目已有 Skill/config/AGENTS 保留与重复升级均在测试/CI 执行 |
-| 用户 / Workflow Acceptance | required | run #136 从临时目标项目只运行正式 onefile binary，显式安装与无参数安装均成功，项目 Runtime 可直接执行 status 并启动 stdio MCP |
+| 用户 / Workflow Acceptance | required | run #137/#138 从临时目标项目只运行正式 onefile binary，显式安装与无参数安装均成功，项目 Runtime 可直接执行 status 并启动 stdio MCP |
 | 跨组件 Golden Path | required | source Skills → dynamic catalog → encrypted Bundle/Project Payload → onefile → project install → Reference Stub → installed Runtime → `agent_skills_load_context` 的真实主链在 Linux CI 完整通过 |
 | External Dependency / Provider Probe | not_applicable | 本 Change 不依赖第三方远程服务、生产数据或硬件事实；宿主配置格式通过当前官方文档 Contract 复核，不需要远程副作用 Probe |
-| Build / Package / Runtime | required | run #136 在 ubuntu-24.04、windows-latest、macos-15 分别构建并运行 PyInstaller onefile；Windows/macOS project-only single-binary jobs 成功 |
-| Docs / Governance / Other | required | `README.md`、`.agents/README.md`、Runtime/Distribution/Release 文档、refs 13/14、Release/Skill Tests workflow 已同步；本提交修正 `coding-change/v1` list 字段并记录 Completion Audit，后续当前 HEAD CI 再执行 Ready Check |
+| Build / Package / Runtime | required | PR run #137 与 main push run #138 在 ubuntu-24.04、windows-latest、macos-15 分别构建并运行 PyInstaller onefile，三个平台 job 全部 success |
+| Docs / Governance / Other | required | `README.md`、`.agents/README.md`、Runtime/Distribution/Release 文档、refs 13/14、Release/Skill Tests workflow 已同步；PR Ready Check 与 main push Ready Check 均成功 |
 
 # Completion Audit
 
@@ -194,9 +194,8 @@ Reference 只从每个正式 Skill 的 `references/*.md` 发现；允许没有 `
 
 - Red 1 / PR CI run #106：93 个测试中仅新增目标测试出现 1 failure + 2 errors；证明确实存在“第四 Skill 被静态名单忽略、manifest 无 skills、Project Payload 不存在”三个目标缺口，旧回归保持绿色。
 - Red 2 / PR CI run #109：前 93 个测试全部通过，新增 project installer 测试唯一失败为 `ModuleNotFoundError: runtime.agent_skills_runtime.project_installer`，精确证明项目安装能力缺失。
-- Green / PR CI run #136：96 个自包含测试全部通过；compile、Full Distribution、Linux onefile build/status/self-test、真实 stdio MCP、显式/重复/无参数 project install 全部成功。
-- Green / PR CI run #136：`Runtime Windows Package` 与 `Runtime macOS Package` 两个独立 job 均成功，分别完成当前平台 onefile build/self-test/MCP smoke/project-only install。
-- run #136 唯一失败步骤是旧 Change frontmatter 把 `affected_areas` 等 list 字段写成 inline 形式；运行时、测试、安装和跨平台 package 步骤均已成功。本提交把 Change list 字段改为 `coding-change/v1` 要求的字符串列表形式，并将状态推进到 `ready_for_review`，由下一次当前 HEAD CI 验证 Ready Check。
+- Green / PR CI run #137：当前最终 PR HEAD 的 Linux 主 job、96 个自包含测试、Full Distribution、onefile build/status/self-test、真实 stdio MCP、显式/重复/无参数 project install、Active Change Ready Check 全部成功；Windows/macOS 两个独立 job 也全部成功。
+- Merge / main：PR #11 正常合并到 `main`，merge commit `3294a595d699a7261e4b252c26af03bfbac7a63f`；main push `Skill Tests` run #138（`33060406879`）completed/success，Linux、Windows、macOS 三个 job 全部成功。
 
 # Review
 
@@ -221,6 +220,7 @@ Reference 只从每个正式 Skill 的 `references/*.md` 发现；允许没有 `
 
 # 交付
 
-- Commit：专用分支已使用中文提交逐步记录 Red、Green、CI/文档与治理修正。
-- PR：Draft PR #11；当前 Change 已进入 `ready_for_review`，待本提交的永久 CI 全绿后可转 Ready。
-- 发布：本 Change 不直接创建正式 Release；合并后仍需维护者按既有 `workflow_dispatch` 输入与 `VERSION` 一致的 tag 才会构建并发布正式平台 binary。
+- Commit：Feature 分支使用中文提交逐步记录 Red、Green、CI/文档与治理修正。
+- PR：PR #11 已正常合并到 `main`；merge commit `3294a595d699a7261e4b252c26af03bfbac7a63f`。
+- CI：合并后 main push run #138（`33060406879`）completed/success；Linux、Windows、macOS 三个 job 全部成功。
+- 发布：本 Change 不直接创建正式 Release；后续仍需维护者按既有 `workflow_dispatch` 输入与 `VERSION` 一致的 tag，才会构建并发布正式平台 binary。
