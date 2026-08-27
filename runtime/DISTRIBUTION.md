@@ -1,6 +1,6 @@
 # Agent Skills Runtime Distribution Kit
 
-这份文档面向**实际拿到 Runtime Kit 的使用者**。使用者不需要访问 `Agent_Skills` 私有源仓库，也不会得到 canonical `references/*.md` 正文。
+这份文档面向**实际拿到 Runtime Kit 的使用者**。使用者不需要访问 `Agent_Skills` canonical 源仓库，也不会得到 canonical `references/*.md` 正文。
 
 Kit 的目标是：
 
@@ -13,15 +13,32 @@ Native Core SKILL.md
 
 让 Codex / Cursor / Claude Code 在需要某个 Reference 时，通过本地 MCP `agent_skills_load_context` 取得该 Reference 的 canonical 原文。
 
-## 1. 你会拿到什么
+## 0. 从正式 GitHub Release 选择 Kit
 
-Windows 构建产物通常是：
+正式版本号来自仓库根 `VERSION`，Release tag 为 `v<VERSION>`。同一个 Release 会提供三个平台独立 Runtime Kit：
 
 ```text
-agent-skills-mcp-runtime-kit.zip
+agent-skills-mcp-runtime-kit-v<VERSION>-linux.zip
+agent-skills-mcp-runtime-kit-v<VERSION>-windows.zip
+agent-skills-mcp-runtime-kit-v<VERSION>-macos.zip
+SHA256SUMS
 ```
 
-解压后：
+选择与你实际运行 Runtime 的操作系统一致的 ZIP。Windows onefile、Linux onefile、macOS onefile 不能跨平台混用。
+
+下载后先校验 `SHA256SUMS`，再解压和安装。正式 Release 的 tag 和资产属于历史事实：升级使用更高 VERSION 的新 Release，回滚使用旧 Release 的完整 Kit；不要把不同版本的 Runtime 和目标项目 Stub 混装。
+
+维护者可以直接运行 `scripts/build_runtime.py` 得到未重命名的本地构建 Kit；它用于开发验证。正式对外分发文件名由 Release workflow 增加 `v<VERSION>-<platform>`，二者内部 Kit 结构相同。
+
+## 1. 你会拿到什么
+
+Windows 构建产物解压前的正式 Release 文件名通常是：
+
+```text
+agent-skills-mcp-runtime-kit-v<VERSION>-windows.zip
+```
+
+解压后唯一顶层目录仍是：
 
 ```text
 agent-skills-mcp-runtime-kit/
@@ -48,6 +65,8 @@ agent-skills-mcp-runtime-kit/
 Linux / macOS 的 Runtime 文件没有 `.exe` 后缀，其余结构相同。
 
 `agent-skills-mcp[.exe]` 中包含经过 AES-256-GCM 加密并嵌入的 canonical Reference Bundle。它用于降低直接浏览/复制门槛，不承诺抵御本机管理员、调试器、内存转储或专业逆向。
+
+`agent-skills-mcp.manifest.json` 与 `agent-skills-runtime-kit.json` 都记录当前 `release_version`；Reference 完整性仍由 `source_digest` 和每个 Reference SHA256 独立证明，版本号不替代 hash 校验。
 
 ## 2. Windows 首次使用
 
@@ -276,7 +295,7 @@ Runtime Kit A
 
 回滚到旧版本时：
 
-1. 找回旧 Kit；
+1. 找回旧 Release 的对应平台 Kit；
 2. 用旧 Kit 的 `install_runtime.py` 安装旧 Runtime；
 3. 用同一个旧 Kit 的 `install_runtime_target.py` 重新安装目标项目 Core/Stub；
 4. 检查 Runtime `status/self-test`；
@@ -286,7 +305,7 @@ Runtime Kit A
 
 ## 11. 对维护者：怎么生成 Kit
 
-只有维护 canonical `Agent_Skills` 私有源仓库的人需要执行构建：
+只有维护 canonical `Agent_Skills` 源仓库的人需要执行本地预构建；正式 Release 仍由合并后 `main` 的 `.github/workflows/release.yml` 重新构建。
 
 ### Windows
 
@@ -296,7 +315,7 @@ py -3.12 -m venv .venv-runtime
 .\.venv-runtime\Scripts\python.exe scripts\build_runtime.py --output-dir dist --json
 ```
 
-输出：
+本地输出：
 
 ```text
 dist\agent-skills-mcp.exe
@@ -312,6 +331,6 @@ python3 -m venv .venv-runtime
 ./.venv-runtime/bin/python scripts/build_runtime.py --output-dir dist --json
 ```
 
-输出对应平台的 `agent-skills-mcp`、manifest 和 Runtime Kit ZIP。
+输出对应平台的 `agent-skills-mcp`、manifest 和未重命名 Runtime Kit ZIP。
 
-PyInstaller onefile 不是跨平台产物：Windows `.exe` 必须在 Windows 构建/验证，Linux/macOS 也要在对应平台构建。
+PyInstaller onefile 不是跨平台产物：Windows `.exe` 必须在 Windows 构建/验证，Linux/macOS 也要在对应平台构建。正式 Release workflow 会把各平台已验证 Kit 重命名为带 VERSION 和 platform 的固定资产名，并与 Full Kit 一起生成 `SHA256SUMS`。
