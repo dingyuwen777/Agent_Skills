@@ -70,7 +70,7 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
         self.assertIn("03_编程语言与工具链适配规则.md", skill)
         self.assertIn("07_通用验证与证据策略.md", skill)
         self.assertIn("09_多人和多智能体并行协作.md", skill)
-        self.assertIn("目标明确位于**中国大陆**网络", ref03)
+        self.assertIn("任务明确面向**中国大陆网络**", ref03)
         self.assertIn("Evidence Preservation Mapping", ref07)
         self.assertIn("主 Agent 必须复核", ref09)
 
