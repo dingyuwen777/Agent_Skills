@@ -161,15 +161,19 @@ Greenfield 表示工程事实尚未建立或只建立了一部分。此时先确
 | --- | --- |
 | 首次进入仓库、Greenfield 工程基线尚未建立、缓存缺失或可能过期 | [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) + [02_跨项目研发任务路由.md](references/02_跨项目研发任务路由.md) |
 | 需要识别项目形态、研发阶段或组合流程 | [02_跨项目研发任务路由.md](references/02_跨项目研发任务路由.md) |
-| 需要确认语言、Runtime、Manifest、锁文件、构建或包管理 | [03_编程语言与工具链适配规则.md](references/03_编程语言与工具链适配规则.md) |
+| 需要确认语言、Runtime、Manifest、锁文件、构建或包管理；新增/修改网络下载源、镜像或依赖安装链 | [03_编程语言与工具链适配规则.md](references/03_编程语言与工具链适配规则.md) |
 | L2/L3、需要需求追踪或已有 Active Change | [04_轻量变更管理.md](references/04_轻量变更管理.md) |
 | 新/当前 Change 使用 Completion Gate | [10_完成定义追溯门禁.md](references/10_完成定义追溯门禁.md) |
 | 开发 Feature、修 Bug、重构、性能或调查失败 | [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md) |
-| 需要规划或审计验证证据 | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md) |
+| 需要规划或审计验证证据；新增/修改永久 CI/Workflow 或测试/发布门禁 | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md) |
 | Web/API/PostgreSQL/Provider 等专项边界真实存在 | [08_分层测试与验收策略.md](references/08_分层测试与验收策略.md) |
 | 跨模块、跨消费者、Contract/Schema/Migration/Owner/数据边界 | [06_仓库边界数据交换与条件式约束.md](references/06_仓库边界数据交换与条件式约束.md) |
 | 多人、多 Agent、多个分支或 Active Change 并行 | [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md) |
 | Review、Ready、交付或准备表达完成结论 | [11_两阶段复核与完成前验证.md](references/11_两阶段复核与完成前验证.md) |
+| 首次安装/升级 Agent_Skills、创建/补充目标项目 AGENTS 或修复 managed block | [13_目标项目安装与AGENTS_Bootstrap.md](references/13_目标项目安装与AGENTS_Bootstrap.md) |
+| Runtime Bundle/Stub/MCP/Kit 或 `--mode runtime` 分发 | [14_本地MCP_Runtime分发与原文上下文加载.md](references/14_本地MCP_Runtime分发与原文上下文加载.md) |
+| Git/PR/Release/Delivery、依赖变化、安全边界、最终交付报告或宿主能力降级 | [15_Git交付依赖安全与宿主能力边界.md](references/15_Git交付依赖安全与宿主能力边界.md) |
+| Skill/reference/模板/项目 Overlay 的精简、重组、拆分、合并、改名、迁移或通用化 | [16_规则内容守恒与Skill维护.md](references/16_规则内容守恒与Skill维护.md) |
 
 不要要求用户重复提供能够从仓库、缓存或工具确认的信息。只读取当前任务真正需要的事实和 reference，不用“全仓全部读一遍”替代理解调用链。
 
@@ -636,75 +640,13 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 不要直接相信“子 Agent 已完成”。详细规则见 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)。
 
-## 6. Git、依赖与安全的通用边界
+## 6. Git、依赖、安全、交付与宿主能力边界
 
-### Git
+只要任务涉及 Git / PR / Release / Delivery、依赖变化、安全边界、最终交付报告，或当前宿主能力不足需要降级，必须读取 [15_Git交付依赖安全与宿主能力边界.md](references/15_Git交付依赖安全与宿主能力边界.md)。原主文件中 Git、依赖、安全、最终报告和能力边界的详细规则已完整迁入该 reference；不能因为本节变短而把它们视为可选建议。
 
-- 修改前检查 branch、worktree、未提交修改；
-- 不覆盖用户改动；
-- 禁止 `git reset --hard`、`git clean -fd`、强制推送、未授权共享历史重写；
-- 未经授权不创建分支、提交、推送、PR、合并、部署、删分支；
-- CI 失败、冲突、保护规则或结果未确认时不强行推进；
-- 所有 Git 提交信息使用中文；项目可以额外规定提交格式、前缀或工单号，但不能覆盖中文语言要求。
+## 7. 规则内容守恒与 Skill 维护
 
-### 依赖
-
-- 先确认语言、Runtime、包管理器、Manifest、锁文件和实际版本；
-- 优先标准库和现有依赖；
-- 普通功能不顺手升级；
-- 新依赖说明必要性、维护、许可证、体积/构建影响和替代方案；
-- Manifest 改动同步仓库正式 lock；
-- 不用删除 lock、切换包管理器或解析 `latest` 掩盖问题。
-
-### 安全
-
-- 不硬编码、打印、提交或上传 Secret/Token/密码；
-- 不关闭认证、授权、证书、输入校验或既有安全门禁制造“通过”；
-- 避免不安全反序列化、任意命令/动态代码执行、字符串拼接 SQL；
-- 按任务风险校验路径、文件、网络、数据库、命令、模板、归档和用户输入；
-- 外部服务、生产数据、真实环境写入必须受明确权限和数据边界约束。
-
-## 7. 交付报告
-
-最终报告至少包含：
-
-1. 变更摘要与逐文件/按类别目的；
-2. 本次项目形态、研发阶段、语言/工具链和风险等级；
-3. 上游 Requirement Traceability 与成功标准完成状态；
-4. Validation Matrix：每层 Scope、实际 Evidence、`not_applicable` 依据；
-5. Completion Audit / 两阶段 Review 结果；
-6. Contract/API/ABI/Schema/Migration/数据变化（无则明确无）；
-7. 文档同步及判断依据；
-8. 本轮实际执行命令/检查、退出码、通过/失败数量；
-9. 未验证内容、阻塞和剩余风险；
-10. 兼容性、依赖、Migration、部署、迁移和回滚影响；
-11. Git 分支、提交、PR、CI、合并和分支清理的实际状态。
-
-不要只回复“已完成”“已修复”或“测试通过”。
-
-## 8. 能力边界
-
-- 项目缓存是本地可失效导航，不是向量数据库、长期记忆或需求事实副本，也不是应提交到 Git 的团队事实；
-- Change 是 Git 可见施工契约，不是原子锁、租约、看板、通知或在线状态服务；项目使用其他正式治理载体时，Coding 不假装拥有该载体没有提供的锁或状态能力；
-- Completion Gate 是流程完整性门禁，不是自然语言需求证明器；它不能替代 Agent/Reviewer 从上游事实源做语义完整性审计；
-- Validation Matrix 是风险到证据的语义映射，不是固定测试配额，也不是 `ready_check.py` 能自动证明充分性的清单；
-- 语言/项目 profile 是发现和验证导航，不是授权升级技术栈或重构架构；
-- 看不到未提交、未推送、未同步、无权限访问或另一客户端私有状态；
-- 不能强制其他人/Agent 遵守 Owner、分支或影响范围；仓库 CI/Branch Protection 可以阻止不满足门禁的变更合入；
-- 宿主不支持持久文件、目标工具链、脚本、Git、device、数据库或外部服务时，只能执行其实际支持的流程，并明确降级与未验证风险。
-
-## 9. 规则完整性维护
-
-后续如果要再次“精简”“拆分”“合并”本 Skill：
-
-1. 先检查当前 `SKILL.md`、命中 references、agent metadata、Change/CI/README 对规则和路径的实时引用；
-2. 在当前 Change 或 Review 记录本次准备移动、删除、条件化或改名的高价值规则集合，不要求再维护独立“规则保留映射”文档；
-3. 建立会因规则丢失而失败的 portability / preservation 回归；
-4. 内容守恒优先于篇幅精简；不能用一条抽象原则替代多条带条件、例外或失败处理的可执行规则；
-5. 逐项复核触发条件、例外、失败行为、验证责任和安全/兼容边界，不能只比较关键词；
-6. 只有逐项证明完全等价时才允许删除重复；无法证明完全等价时，保留原细节；
-7. 项目特定规则迁回项目 Overlay 前，先证明已有新的正式承载；
-8. 完成后从旧入口反向检查每条高价值规则是否仍可达，并执行 portability / preservation 回归与人工内容守恒 Review。
+当任务会精简、重组、拆分、合并、改名、迁移或通用化 `SKILL.md`、reference、模板或项目 Overlay 时，必须在修改之前读取 [16_规则内容守恒与Skill维护.md](references/16_规则内容守恒与Skill维护.md)。内容守恒仍是硬门禁：只有逐项证明完全等价时才允许消除重复，无法证明时保留原细节。
 
 ## 10. Review Skill 集成
 
@@ -723,29 +665,6 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 11. 网络下载源与永久 Workflow 治理
 
-### 网络下载源与镜像选择必须感知执行环境
+涉及 Runtime/Compiler/SDK、系统包、语言依赖、bootstrap、Docker/OCI、CI bootstrap、部署/恢复等网络下载行为时，必须读取 [03_编程语言与工具链适配规则.md](references/03_编程语言与工具链适配规则.md) 的“网络下载源与镜像选择”完整规则；该 reference 已保留中国大陆/海外环境判断、联网核验、供应链身份、完整性与 fallback 的全部细节。
 
-当任务涉及 Runtime/Compiler/SDK、系统包或依赖安装，启动/初始化/bootstrap 脚本，Docker/OCI 镜像构建，CI bootstrap，部署/恢复环境准备等网络下载行为时，**必须读取 [03_编程语言与工具链适配规则.md](references/03_编程语言与工具链适配规则.md)** 并先确认目标执行环境：
-
-- 目标明确位于**中国大陆**网络，且本次会新增或修改下载行为：必须**联网核验**当前稳定、可信、与目标生态匹配的国内镜像/代理后再选择默认值或 fallback；阿里云、清华 TUNA、中科大 USTC、npmmirror 等只作为候选，不是永久白名单；
-- 目标是 GitHub Hosted Runner、海外服务器或其他海外网络：不因为项目主要在中国使用就机械切换国内源，应选择该执行环境当前稳定且符合项目 policy 的官方上游或近端源；
-- 镜像/代理只能改善传输路径，不能静默改变 package/base image 的 canonical identity、锁定版本、Manifest/锁文件、checksum/hash/digest/签名、安全更新或 SBOM/provenance 等供应链事实；
-- 当前候选镜像已停服、同步异常、缺少目标版本/架构或无法验证时，使用另一个已验证候选、项目既有可信源或官方 fallback，并明确未验证风险；禁止为下载成功关闭 TLS/GPG/完整性/签名检查。
-
-### 永久 CI/Workflow 优化必须证据守恒
-
-当任务新增/修改永久 CI、Workflow、测试门禁、构建/发布流水线，用户明确要求精简/加速，或当前调查已经确认存在明显无关触发、重复 setup/build/install、相同风险重复证明、昂贵层覆盖过宽等长期成本问题时，**必须先读取 [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md)** 并执行 **Workflow Responsibility Audit**；Web/API/PostgreSQL/Provider 等专项边界真实存在时，还必须读取 [08_分层测试与验收策略.md](references/08_分层测试与验收策略.md)。
-
-任何永久 Job/Step 的删除、合并、迁移或大幅收缩之前，必须建立 **Evidence Preservation Mapping**，逐项说明：
-
-```text
-原证明责任
-→ 原位置
-→ 新位置
-→ 证据等级是否保持
-→ 等价/更强依据
-```
-
-只有在独立失败边界仍由等价或更强证据负责时，才允许通过 event/path filter、changed-scope/risk detection、fast path、安全缓存、artifact reuse、并行、PR/main/release 分责或 Golden Path 收敛等方式降低成本。禁止用较弱层冒充较强层，也不能因“CI 仍绿”“另一个测试很多”就删除原独立证据。
-
-Workflow 重命名、拆分或合并时还要检查 Branch Protection/Ruleset、release gate、脚本和外部平台对 check name 的实时引用，不能借“精简”让门禁消费者失效。普通功能任务没有修改这些边界、也没有发现明确长期成本问题时，不要求机械全仓审计所有 Workflow。
+新增或修改永久 CI/Workflow/test gate/build/package/release 流程，或明确优化其成本/时延时，必须读取 [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md) 的 `CI / Workflow Responsibility Audit` 完整规则。删除、合并、迁移或大幅收缩永久 Job/Step 前仍必须完成 `Evidence Preservation Mapping`，并检查 Branch Protection/Ruleset/release gate/check name 的实时消费者；不能因主文件不再复制该长段规则而降低证据责任。
