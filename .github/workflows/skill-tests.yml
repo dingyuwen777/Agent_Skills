@@ -5,8 +5,8 @@ on:
     paths:
       - "AGENTS.md"
       - "README.md"
-      - "FULL_DISTRIBUTION.md"
-      - "RELEASING.md"
+      - "docs/distribution/**"
+      - "docs/maintainers/**"
       - "CHANGELOG.md"
       - "VERSION"
       - ".gitignore"
@@ -20,8 +20,8 @@ on:
     paths:
       - "AGENTS.md"
       - "README.md"
-      - "FULL_DISTRIBUTION.md"
-      - "RELEASING.md"
+      - "docs/distribution/**"
+      - "docs/maintainers/**"
       - "CHANGELOG.md"
       - "VERSION"
       - ".gitignore"
