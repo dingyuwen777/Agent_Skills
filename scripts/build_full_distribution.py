@@ -16,8 +16,13 @@ import zipfile
 
 
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
+
+from runtime.agent_skills_runtime.skill_catalog import discover_skills
+
+
 FULL_KIT_SCHEMA = "agent-skills-full-kit/v1"
-MANAGED_SKILLS = ("coding", "review", "docs")
 VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
 
 
@@ -61,21 +66,38 @@ def _copy_file(source: Path, destination: Path) -> None:
     shutil.copy2(source, destination)
 
 
-def _stage_full_payload(source: Path, kit_root: Path) -> None:
-    """只暂存正式可分发 Skill、安装器和用户说明，不携带源仓库治理状态。"""
-    skills_source = source / ".agents" / "skills"
-    for skill in MANAGED_SKILLS:
-        skill_source = skills_source / skill
-        _validate_regular_tree(skill_source)
+def _stage_installer_helpers(source: Path, kit_root: Path) -> None:
+    """复制 Full Kit 独立安装器所需的统一动态 Skill/Payload helper，不复制 Runtime 服务实现。"""
+    helper_paths = [
+        "runtime/__init__.py",
+        "runtime/agent_skills_runtime/__init__.py",
+        "runtime/agent_skills_runtime/skill_catalog.py",
+        "runtime/agent_skills_runtime/catalog.py",
+        "runtime/agent_skills_runtime/project_payload.py",
+    ]
+    for relative in helper_paths:
+        _copy_file(source / relative, kit_root / relative)
+
+
+def _stage_full_payload(source: Path, kit_root: Path) -> list[str]:
+    """动态暂存全部正式 Skill、独立安装 helper 和用户说明，不携带源仓库治理状态。"""
+    skills = discover_skills(source)
+    skill_names = [skill.name for skill in skills]
+    if "coding" not in skill_names:
+        raise FileNotFoundError("Full Kit 必须包含 coding Skill 才能执行 AGENTS Bootstrap")
+    for skill in skills:
+        _validate_regular_tree(skill.root)
         shutil.copytree(
-            skill_source,
-            kit_root / ".agents" / "skills" / skill,
+            skill.root,
+            kit_root / ".agents" / "skills" / skill.name,
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
         )
     _copy_file(source / "scripts" / "install.py", kit_root / "scripts" / "install.py")
+    _stage_installer_helpers(source, kit_root)
     _copy_file(source / "docs" / "distribution" / "full-kit.md", kit_root / "README.md")
     _copy_file(source / ".agents" / "README.md", kit_root / ".agents" / "README.md")
     _copy_file(source / "VERSION", kit_root / "VERSION")
+    return skill_names
 
 
 def _payload_manifest(kit_root: Path) -> list[dict[str, Any]]:
@@ -121,7 +143,7 @@ def build_full_distribution(
     source_root: str | Path,
     output_dir: str | Path,
 ) -> dict[str, Any]:
-    """构建可脱离源仓库安装的版本化 Full Distribution Kit。"""
+    """构建可脱离源仓库安装、动态包含全部正式 Skill 的版本化 Full Kit。"""
     source = Path(source_root).resolve()
     output = Path(output_dir).resolve()
     if not source.is_dir():
@@ -134,12 +156,13 @@ def build_full_distribution(
     with tempfile.TemporaryDirectory(prefix="agent-skills-full-kit-") as temp_name:
         kit_root = Path(temp_name) / kit_name
         kit_root.mkdir()
-        _stage_full_payload(source, kit_root)
+        skills = _stage_full_payload(source, kit_root)
         payload_files = _payload_manifest(kit_root)
         metadata = {
             "schema": FULL_KIT_SCHEMA,
             "release_version": version,
-            "skills": list(MANAGED_SKILLS),
+            "skills": skills,
+            "skill_count": len(skills),
             "payload_files": payload_files,
         }
         (kit_root / "agent-skills-full-kit.json").write_text(
@@ -152,6 +175,8 @@ def build_full_distribution(
     return {
         "schema": FULL_KIT_SCHEMA,
         "release_version": version,
+        "skills": skills,
+        "skill_count": len(skills),
         "distribution_kit": str(zip_path),
         "distribution_kit_sha256": _sha256_file(zip_path),
         "payload_file_count": len(payload_files),
@@ -160,7 +185,7 @@ def build_full_distribution(
 
 def _build_parser() -> argparse.ArgumentParser:
     """构造 Full Distribution Kit Builder CLI。"""
-    parser = argparse.ArgumentParser(description="构建版本化 Agent_Skills Full Distribution Kit")
+    parser = argparse.ArgumentParser(description="构建动态包含全部正式 Skill 的 Agent_Skills Full Distribution Kit")
     parser.add_argument("--source-root", default=str(SOURCE_ROOT), help="Agent_Skills 源仓库根目录")
     parser.add_argument("--output-dir", default="dist", help="输出目录，默认 dist")
     parser.add_argument("--json", action="store_true", help="以 JSON 输出构建结果")
@@ -176,9 +201,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
         else:
             print(
-                f"release_version={result['release_version']} "
-                f"distribution_kit={result['distribution_kit']} "
-                f"sha256={result['distribution_kit_sha256']}"
+                f"release_version={result['release_version']} distribution_kit={result['distribution_kit']} "
+                f"skills={result['skill_count']} sha256={result['distribution_kit_sha256']}"
             )
         return 0
     except (FileNotFoundError, NotADirectoryError, OSError, ValueError) as error:
