@@ -56,28 +56,31 @@ class InstallerSourceBoundaryTest(unittest.TestCase):
 class ReleaseProductizationTest(unittest.TestCase):
     """验证正式版本、Full Distribution Kit 和手工 tag Release workflow 的产品合同。"""
 
-    def test_version_source_of_truth_is_semver_1_0_0(self) -> None:
-        """首个正式产品化版本必须由根 VERSION 唯一声明为 1.0.0。"""
+    def test_version_source_of_truth_is_valid_semver(self) -> None:
+        """永久门禁应接受未来合法版本，而不是把首个 1.0.0 永久写死在测试中。"""
+        builder = _load_module("full_distribution_version", FULL_BUILDER_PATH)
         version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
-        self.assertEqual(version, "1.0.0")
+        self.assertRegex(version, builder.VERSION_PATTERN)
+        self.assertEqual(builder.read_release_version(ROOT), version)
 
     def test_full_distribution_kit_is_source_independent_and_excludes_repository_state(self) -> None:
-        """Full Kit 解压后应可独立安装三个完整 Skill，且不携带源仓库治理状态。"""
+        """Full Kit 解压后应可独立安装三个完整 Skill，并携带真实可用的用户说明。"""
         self.assertTrue(FULL_BUILDER_PATH.is_file(), "缺少 Full Distribution Kit Builder")
         builder = _load_module("full_distribution_builder", FULL_BUILDER_PATH)
+        version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
         with tempfile.TemporaryDirectory() as directory:
             temp = Path(directory)
             output = temp / "dist"
             result = builder.build_full_distribution(ROOT, output)
             zip_path = Path(result["distribution_kit"])
             self.assertTrue(zip_path.is_file())
-            self.assertEqual(result["release_version"], "1.0.0")
-            self.assertEqual(zip_path.name, "agent-skills-full-kit-v1.0.0.zip")
+            self.assertEqual(result["release_version"], version)
+            self.assertEqual(zip_path.name, f"agent-skills-full-kit-v{version}.zip")
 
             extract_root = temp / "extract"
             with zipfile.ZipFile(zip_path) as archive:
                 archive.extractall(extract_root)
-            kit = extract_root / "agent-skills-full-kit-v1.0.0"
+            kit = extract_root / f"agent-skills-full-kit-v{version}"
             self.assertTrue((kit / "scripts/install.py").is_file())
             self.assertTrue((kit / ".agents/skills/coding/SKILL.md").is_file())
             self.assertTrue((kit / ".agents/skills/review/SKILL.md").is_file())
@@ -88,6 +91,10 @@ class ReleaseProductizationTest(unittest.TestCase):
             self.assertFalse((kit / ".agents/project-context.json").exists())
             reference = kit / ".agents/skills/coding/references/02_跨项目研发任务路由.md"
             self.assertNotIn("Runtime 入口", reference.read_text(encoding="utf-8"))
+            user_readme = (kit / "README.md").read_text(encoding="utf-8")
+            self.assertIn("Agent Skills Full Distribution Kit", user_readme)
+            self.assertIn("scripts/install.py --target", user_readme)
+            self.assertNotIn("scripts/build_runtime.py", user_readme)
 
             target = temp / "target"
             target.mkdir()
@@ -104,10 +111,11 @@ class ReleaseProductizationTest(unittest.TestCase):
             self.assertEqual(payload["mode"], "full")
             self.assertTrue((target / "AGENTS.md").is_file())
 
-    def test_runtime_builder_reads_release_version_without_changing_reference_digest_contract(self) -> None:
-        """Runtime Builder 应真实读取 VERSION，且 source_digest 仍保持独立 canonical Reference 合同。"""
+    def test_runtime_builder_reads_current_release_version_without_changing_reference_digest_contract(self) -> None:
+        """Runtime Builder 应读取当前 VERSION，且 source_digest 仍保持独立 canonical Reference 合同。"""
         builder = _load_module("runtime_release_version", RUNTIME_BUILDER_PATH)
-        self.assertEqual(builder._read_release_version(ROOT), "1.0.0")
+        version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        self.assertEqual(builder._read_release_version(ROOT), version)
         source = RUNTIME_BUILDER_PATH.read_text(encoding="utf-8")
         self.assertIn("source_digest", source)
         self.assertIn("VERSION", source)
@@ -150,8 +158,9 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertIn("git rev-parse", workflow)
 
     def test_release_documentation_exists(self) -> None:
-        """维护者 Release 流程和版本历史必须有独立正式文档。"""
+        """维护者 Release、Full Kit 用户说明和版本历史必须有独立正式文档。"""
         self.assertTrue((ROOT / "RELEASING.md").is_file())
+        self.assertTrue((ROOT / "FULL_DISTRIBUTION.md").is_file())
         self.assertTrue((ROOT / "CHANGELOG.md").is_file())
 
 
