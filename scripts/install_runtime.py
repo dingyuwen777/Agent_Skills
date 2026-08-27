@@ -63,12 +63,21 @@ def _target_filename(artifact: Path) -> str:
     return "agent-skills-mcp"
 
 
+def _can_execute_directly(path: Path) -> bool:
+    """判断源 artifact 是否可直接执行；Windows 不依赖 POSIX executable bit。"""
+    return os.name == "nt" or os.access(path, os.X_OK)
+
+
 def install_runtime(artifact: str | Path, install_dir: str | Path | None = None) -> dict[str, Any]:
-    """原子安装 Runtime；新版本自检失败时恢复旧可执行文件。"""
+    """原子安装 Runtime；POSIX 解压丢执行位时先修复暂存副本，最终自检失败则恢复旧文件。"""
     source = Path(artifact).resolve()
     if source.is_symlink() or not source.is_file():
         raise FileNotFoundError(f"Runtime artifact 不存在或不是普通文件：{source}")
-    source_status = verify_runtime([str(source)])
+
+    source_status: dict[str, Any] | None = None
+    if _can_execute_directly(source):
+        source_status = verify_runtime([str(source)])
+
     destination_dir = Path(install_dir).expanduser().resolve() if install_dir else default_install_dir().resolve()
     destination_dir.mkdir(parents=True, exist_ok=True)
     destination = destination_dir / _target_filename(source)
@@ -84,7 +93,9 @@ def install_runtime(artifact: str | Path, install_dir: str | Path | None = None)
         if os.name != "nt":
             staged.chmod(staged.stat().st_mode | 0o111)
         staged_status = verify_runtime([str(staged)])
-        if staged_status.get("source_digest") != source_status.get("source_digest"):
+        if source_status is None:
+            source_status = staged_status
+        elif staged_status.get("source_digest") != source_status.get("source_digest"):
             raise RuntimeError("暂存 Runtime 与源 artifact source_digest 不一致")
 
         backup = temp_root / f"{destination.name}.backup"
