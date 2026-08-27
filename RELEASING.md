@@ -1,6 +1,6 @@
 # Agent_Skills Release 维护说明
 
-本文面向 Agent_Skills 维护者，说明如何把已经通过 Coding Change、Review 和永久 CI 的主分支状态发布成正式 GitHub Release。它描述当前发布合同，不替代 `AGENTS.md`、Coding Skill 或 GitHub Workflow 本身。
+本文面向 Agent_Skills 维护者，说明如何把已经通过 Coding Change、Review 和永久 CI 的 `main` 状态，通过**手工指定 tag 的 Release Workflow**发布成正式 GitHub Release。它描述当前发布合同，不替代 `AGENTS.md`、Coding Skill 或 GitHub Workflow 本身。
 
 ## 1. 版本事实源
 
@@ -26,7 +26,7 @@ v<VERSION>
 
 例如 `VERSION=1.0.0` 对应 `v1.0.0`。
 
-不要同时在多个脚本、README 或 Workflow 中手工维护另一个版本号。Runtime manifest、Runtime Kit metadata、Full Distribution Kit 和 Release 资产名都从根 `VERSION` 派生。
+不要同时在多个脚本、README 或 Workflow 中手工维护另一个产品版本。Runtime manifest、Runtime Kit metadata、Full Distribution Kit 和 Release 资产名都从根 `VERSION` 派生；手工输入的 Release tag 必须与它严格一致。
 
 ## 2. 什么情况下允许改 VERSION
 
@@ -40,7 +40,7 @@ v<VERSION>
 - Completion Audit / Review；
 - 当前 HEAD 的永久 CI 证据。
 
-不要为了“触发一次 Workflow”随便改 VERSION，也不要在实现/测试尚未闭环时先打正式 tag。
+不要为了“跑一次 Workflow”随便改 VERSION，也不要在实现/测试尚未闭环时先创建正式 tag。
 
 ## 3. 当前正式 Release 资产
 
@@ -67,7 +67,7 @@ SHA256SUMS
 
 三个平台分别构建自己的 PyInstaller onefile Runtime。Windows `.exe`、Linux 和 macOS 不是跨平台通用二进制，必须在对应 GitHub Hosted Runner 上构建和验证。
 
-## 4. 自动发布流程
+## 4. 正式发布只走手工 tag Workflow
 
 正式 Workflow：
 
@@ -75,31 +75,50 @@ SHA256SUMS
 .github/workflows/release.yml
 ```
 
-触发条件：
+它**不会**因为 `VERSION` push 自动发布。正式触发方式只有：
 
 ```text
-main 上 VERSION 发生变化
-或
-维护者显式 workflow_dispatch
+GitHub Actions
+→ Release
+→ Run workflow
+→ Branch 选择 main
+→ tag 输入 v<VERSION>，例如 v1.0.0
+→ Run workflow
 ```
 
-正常发布优先走第一种：
+Workflow 会自己创建输入的 tag 和 GitHub Release；维护者**不需要、也不应该提前手工创建同名 tag**。
+
+发布前正常开发链仍是：
 
 ```text
 feature branch
 → Change / Review / Skill Tests 全绿
 → PR 正常合并 main
-→ main 上 VERSION 变化
-→ Release Workflow 自动启动
+→ main 新鲜 CI 通过
+→ 维护者手工运行 Release Workflow
+→ 输入例如 v1.0.0
+→ Workflow 自动构建、创建 tag、发布 Release
 ```
 
-Release Workflow 自己重新构建 Release Candidate，不直接拿 PR 临时产物冒充正式资产。
+如果输入 `v1.0.0`，Workflow 会检查：
+
+```text
+当前 ref == refs/heads/main
+VERSION == 1.0.0
+当前 checkout HEAD == GITHUB_SHA
+v1.0.0 tag 尚不存在
+v1.0.0 Release 尚不存在
+```
+
+任一条件不满足就停止，不进入正式发布。
 
 ## 5. Release Workflow 的证据边界
 
-Workflow 分为四个只读构建 Job 和一个最终写 Release Job：
+Workflow 先执行只读 Preflight，再执行四个只读构建 Job，最后只有 Publish Job 获得写权限：
 
 ```text
+Validate Release Request
+        ↓
 Full Kit / Ubuntu
 Runtime / Linux
 Runtime / Windows
@@ -110,7 +129,7 @@ Runtime / macOS
 Publish GitHub Release
 ```
 
-构建 Job 只拥有 `contents: read`。最终 Publish Job 只有在四个前置 Job 全部成功后才获得：
+Preflight 和构建 Job 使用 `contents: read`。最终 Publish Job 只有在全部前置 Job 成功后才获得：
 
 ```text
 contents: write
@@ -118,28 +137,51 @@ contents: write
 
 Publish Job 会：
 
-1. 重新确认 checkout HEAD 等于当前 `GITHUB_SHA`；
+1. 再次确认当前 ref 是 `main` 且 checkout HEAD 等于当前 `GITHUB_SHA`；
 2. 下载同一 Workflow Run 的四个已验证 ZIP；
 3. 核对四个版本化资产名；
-4. 拒绝覆盖已经存在的同名 tag 或 Release；
+4. 再次拒绝覆盖已经存在的同名 tag 或 Release；
 5. 按稳定文件名顺序生成 `SHA256SUMS`；
-6. 使用 `gh release create` 在当前 main SHA 创建 `v<VERSION>`；
-7. 重新 fetch tag，确认 tag 最终指向当前 `GITHUB_SHA`；
+6. 使用 `gh release create <输入tag>` 在当前 main SHA 创建 tag 和 GitHub Release；
+7. fetch 新 tag，确认它最终指向当前 `GITHUB_SHA`；
 8. 读取创建后的 Release metadata。
 
-Release 创建失败时，不得手工上传部分资产后宣称版本完成。先判断失败发生在 build、artifact、permission、tag、Release API 还是 GitHub 基础设施，再从同一正式版本合同恢复。
+Release 创建失败时，不得手工上传部分资产后宣称版本完成。先判断失败发生在 preflight、build、artifact、permission、tag、Release API 还是 GitHub 基础设施，再从同一版本合同恢复。
 
-## 6. 人工 workflow_dispatch
+## 6. 手工运行示例
 
-`workflow_dispatch` 用于：
+当前 `VERSION` 为：
 
-- 首次启用 Workflow 后的受控验证；
-- GitHub Actions 基础设施故障导致自动触发没有正常执行；
-- 同一未发布 VERSION 的正式重试。
+```text
+1.0.0
+```
 
-它不是绕过版本规则的入口。手工运行仍从当前默认分支/所选 ref 的 `VERSION` 读取版本，并受相同 build、checksum、existing-tag/release 拒绝逻辑约束。
+在 GitHub Actions 页面运行 `Release`：
 
-如果 `v<VERSION>` 已经存在，Workflow 应失败，而不是覆盖旧 Release。需要发布新内容时递增 VERSION 并创建新的 Change/PR。
+```text
+Branch: main
+Tag: v1.0.0
+```
+
+正确情况下 Workflow 会自动生成：
+
+```text
+Tag: v1.0.0
+Release: Agent_Skills v1.0.0
+```
+
+并附带四个 ZIP 和 `SHA256SUMS`。
+
+以下输入必须失败：
+
+```text
+Branch: feature/xxx, Tag: v1.0.0
+VERSION=1.0.0, Tag: v1.0.1
+Tag: 1.0.0
+Tag: 已经存在的 v1.0.0
+```
+
+如果当前版本已经正式发布，需要先通过正常 Change/PR 把 `VERSION` 提升到新版本，再从 `main` 手工运行新的 tag。
 
 ## 7. 发布后的验证
 
@@ -147,7 +189,7 @@ Release 创建失败时，不得手工上传部分资产后宣称版本完成。
 
 ```text
 Release tag
-→ 指向预期 main merge SHA
+→ 指向预期 main SHA
 
 Release assets
 → 四个 ZIP + SHA256SUMS
@@ -190,4 +232,4 @@ python scripts/build_full_distribution.py --output-dir dist --json
 python scripts/build_runtime.py --output-dir dist --json
 ```
 
-本地预构建用于提前发现问题；正式 Release 资产仍由合并后 main 的 Release Workflow 重新生成。
+本地预构建用于提前发现问题；正式 Release 资产仍由 `main` 上手工触发的 Release Workflow 重新生成。
