@@ -3,11 +3,11 @@ schema: coding-change/v1
 id: "CHG-20260826-local-mcp-skill-runtime"
 title: "Native Core Skill + 本地 MCP 加密 Reference Runtime"
 level: L3
-status: ready_for_review
+status: done
 owner: "ChatGPT"
 branch: "feature/local-mcp-skill-runtime"
 created: 2026-08-26
-updated: 2026-08-26
+updated: 2026-08-27
 completion_gate: required
 depends_on: []
 affected_areas:
@@ -284,6 +284,8 @@ macOS Hosted Runner 的 Homebrew Python 受 PEP 668 externally-managed 保护；
 - 三平台 pre-ready：run `32972469737` 中 macOS/Windows 独立 Package Jobs success，Linux 72 个测试及全部 Runtime/Kit 产品步骤 success，Linux 唯一失败是当时 Change `in_progress` 的预期 Ready Gate。
 - ready_for_review 验证：run `32972612021` 中 Windows/macOS Jobs success，Linux 72 个测试及 Runtime/Kit 产品链 success；Ready Check 仅指出 R6/R7 Requirement Source 使用了非路径语义标签，随后已改为 `.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md` 与 `AGENTS.md` 真实仓库路径。
 - Runner 调度异常：run `32973835211` 在三个 job 上均表现为 `runner_id=0`、`steps=[]`，没有任何 Runner step 或可下载 job log；该 run 不作为产品失败证据，也不替代后续必须取得的新鲜全绿 Ready CI。
+- 最终 Ready CI：run `32974150900` attempt 3 在当前 feature HEAD `502f8dec80d23ff7473cedaa76dcdfeab22e2b6a` 真正分配 Ubuntu、Windows、macOS Hosted Runner，三个 Job 全部 `success`；Linux 72 个自包含测试、onefile Runtime、真实 stdio MCP、用户级安装、runtime-mode 目标安装、无源 Kit 目标安装和 Ready Check 全部通过，Windows/macOS 对应平台构建与安装链也全部通过。
+- main 集成验证：PR #5 正常合并为 `340885ef51ccf8b9230883485bcbcaa9b43bba74` 后，main push run `33031994383` 在同一 merge HEAD 完成并 `success`，证明合并后的正式主分支仍通过永久三平台门禁。
 
 # Completion Audit
 
@@ -305,8 +307,8 @@ macOS Hosted Runner 的 Homebrew Python 受 PEP 668 externally-managed 保护；
 9. Completion Audit 发现 source-independent 分发缺口后，先增加 2 个 Kit Red 用例，再实现 Distribution Kit、独立目标安装器和 Linux/Windows no-source CI。
 10. 执行 A1/A2 和独立 Review；修复 PyInstaller 依赖边界、Windows tzdata、Distribution Kit、digest 显式排序 Finding，Review `5030751931` 无 blocker。
 11. Re-review 继续发现并修复 macOS artifact 永久验证、managed block ref14 路径、Runtime 安装目标类型保护和目标 Coding CLI 无系统 tzdb 可移植性；永久 CI 已覆盖 Linux/Windows/macOS。
-12. 当前 Change 已进入 `ready_for_review`；必须由本提交触发的新鲜三平台 CI 全绿后才能把 PR #5 从 Draft 转 Ready。
-13. 正常 PR 合并到 `main`，确认 main 新鲜 CI 后通过独立归档 PR 将本 Change 标记 `done` 并移入 archive。
+12. 当前 Change 已进入 `ready_for_review`；由当前 HEAD 触发的 run `32974150900` attempt 3 已取得新鲜 Linux/Windows/macOS 全绿证据，PR #5 随后从 Draft 转 Ready。
+13. PR #5 已正常合并到 `main`；main merge commit `340885ef51ccf8b9230883485bcbcaa9b43bba74` 的 push run `33031994383` 已全绿；本归档 PR 将 Change 标记 `done` 并移入 archive。
 
 # 文档影响
 
@@ -321,12 +323,13 @@ macOS Hosted Runner 的 Homebrew Python 受 PEP 668 externally-managed 保护；
 # 交付
 
 - Implementation Branch：`feature/local-mcp-skill-runtime`。
-- Draft PR：`#5 增加本地 MCP 加密 Reference Runtime`。
-- Independent Review：PR review `5030751931`；后续 re-review Findings 已修复，等待最终 Ready HEAD 复核。
+- PR：`#5 增加本地 MCP 加密 Reference Runtime`，最终从 Draft 转 Ready 后正常合并。
+- Independent Review：PR review `5030751931`；最终 re-review `5030998879`；最终 CI 门禁更新 review `5036617932`；无阻断 Finding。
 - Pre-ready CI：run `32972469737` 的 Linux 产品链与 Windows/macOS Package Jobs 均通过；Linux 仅因当时 Change 仍为 `in_progress` 被 Ready Gate 正常阻断。
 - Ready-for-review CI：run `32972612021` 三平台产品链均通过；Linux Ready Check 仅因 R6/R7 Source 不是仓库路径失败，随后已修正这两条事实源路径。
-- Infrastructure retry：run `32973835211` 未分配任何 Runner、三个 job 均无 steps；不作为实现结论，等待当前 HEAD 的新鲜三平台 CI。
-- Ready：本 Change 为 `ready_for_review`；必须等待当前 HEAD 的新鲜 Linux/Windows/macOS 永久 CI 全绿后再将 PR #5 从 Draft 转 Ready。
-- Merge：未授权绕过 PR/CI；只在全绿和 re-review 完成后正常合并。
-- Change Archive：实现合并且 main 新鲜 CI 成功后使用独立归档 PR，完整保留本 Change 详细内容并将状态改为 `done`。
-- Release：本任务提供可构建且已在 Linux/Windows/macOS Runner 验证的 Runtime artifact/Distribution Kit；是否创建正式 GitHub Release 不属于本轮成功标准，除非后续用户另行要求。
+- Infrastructure retry：run `32973835211` 以及 run `32974150900` attempt 1/2 未分配 Runner，不作为实现失败证据；attempt 3 已在当前 HEAD 真正运行并三平台全绿。
+- Final Ready CI：run `32974150900` attempt 3，feature HEAD `502f8dec80d23ff7473cedaa76dcdfeab22e2b6a`，Ubuntu/Windows/macOS 三个 Job 全部 `success`。
+- Merge：PR #5 通过正常 merge 合入；main merge commit `340885ef51ccf8b9230883485bcbcaa9b43bba74`。
+- Main CI：run `33031994383`，head `340885ef51ccf8b9230883485bcbcaa9b43bba74`，completed / success。
+- Change Archive：本文件在独立归档 PR 中完整保留正文、状态更新为 `done` 并移入 `.agents/changes/archive/2026-08/CHG-20260826-local-mcp-skill-runtime/CHANGE.md`；Active 路径将在同一归档单元删除。
+- Release：该历史 Change 只交付可构建、可验证的 Runtime artifact/Distribution Kit；正式 GitHub Release 产品化由后续独立 Change 承担，不回写本历史 Change 的原始范围。
