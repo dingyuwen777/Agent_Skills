@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: "CHG-20260827-release-productization-skill-structure"
 title: "Coding 内容守恒式结构优化与 Release 产品化"
 level: L3
-status: ready_for_review
+status: done
 owner: "ChatGPT"
 branch: "feature/release-productization-skill-structure"
 created: 2026-08-27
@@ -151,22 +151,22 @@ Release workflow 不直接发布 PR HEAD，也不由 `VERSION` push 自动触发
 | R1 | 优化 Coding `SKILL.md`，但不能过度总结、不能丢失原文含义或任何规则 | user:current-request | satisfied | 主 `SKILL.md` 保留 16 项不变量、TDD/根因停止条件、Docs/Review 硬路由；原 §6-9 完整进入 ref15/ref16；ref03/ref07/ref09 承接更完整既有细节；`test_coding_progressive_disclosure.py`、`test_network_and_workflow_governance.py`、`test_migration_cleanliness.py` 已在 run 33037194834 与后续 run 的自包含测试阶段通过 |
 | R2 | 忽略仓库 public 属性，不把隐私切换作为本轮工作 | user:current-request | satisfied | PR #7 changed-file 集合只涉及 Skill、脚本、测试、文档与 Workflow；没有仓库 visibility 设置变更，也没有把 public/private 切换写入实现范围 |
 | R3 | Release 依赖手工运行 Workflow 并输入 tag（例如 `v1.0.0`），随后自动创建 tag 和 GitHub Release；不由 VERSION push 自动发布 | user:current-correction | satisfied | `.github/workflows/release.yml` 只有 `workflow_dispatch.inputs.tag`；Preflight 强制 `refs/heads/main`、tag↔VERSION、无既有 tag/Release；四个平台/Full Kit 构建后 Publish job 才有 `contents: write` 并执行 `gh release create`；永久静态合同测试通过。实际 Release 只有维护者手工运行时才发生，本轮未用旁路代替该操作 |
-| R4 | 修复 Windows/跨平台可用性并保持三平台永久验证 | user:prior-audit-approved-plan | satisfied | 前置 PR #5 已建立三平台链；run 33037194834 的 Windows/macOS Job 全部 success，Ubuntu 除预期 in_progress Ready Gate 外所有产品步骤 success；后续当前 run 再次验证最新文档/CI 组合 |
+| R4 | 修复 Windows/跨平台可用性并保持三平台永久验证 | user:prior-audit-approved-plan | satisfied | 前置 PR #5 已建立三平台链；Feature Ready run `33037577024` 三个 Job 全部 success；合并后的 main push run `33037756902` 的 Skill Tests、Runtime Windows Package、Runtime macOS Package 也全部 success |
 | R5 | 安装器拒绝 source 内部 descendant target | user:prior-audit-approved-plan | satisfied | `scripts/install.py::_validate_target` 在任何 `.agents` 创建前拒绝 source 自身/后代；descendant/sibling 回归测试通过 |
 | R6 | GitHub 平台级主分支门禁应尽量强制，不得把无法配置的设置伪装为已完成 | user:prior-audit-approved-plan | satisfied | `GET /rulesets` 返回 `[]`；`GET /branches/main` 显示 `protected:false`；branch-protection 读取对当前 integration 返回 403；当前 GitHub connector 暴露读取但无 Ruleset/Protection mutation。未伪造平台设置，现有 PR/CI/Ready/Release 门禁保留 |
-| R7 | 现有 Agent_Skills 全局工程规则、CI/PR/Change 门禁必须完整保持 | AGENTS.md | satisfied | 五项硬规则仍在主 Coding/AGENTS；85 个自包含测试与 Full/Runtime 安装链通过；永久 check identity `Skill Tests` / Windows / macOS 保持；PR 最终 Ready CI 通过后才允许 merge，merge 后仍需 main 新鲜 CI 才能归档 done |
+| R7 | 现有 Agent_Skills 全局工程规则、CI/PR/Change 门禁必须完整保持 | AGENTS.md | satisfied | 五项硬规则仍在主 Coding/AGENTS；85 个自包含测试、Full/Runtime 安装链和三平台最终 CI 通过；Independent Review `5037073276` 无未关闭阻断 Finding；PR #7 正常 merge 到 main；main 新鲜三平台 CI run `33037756902` 全绿 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | 85 个自包含测试覆盖 Coding 内容守恒、安装器 descendant、动态 VERSION/full kit、runtime release_version、POSIX executable bit、手工 tag workflow 合同；run 33037194834 及后续当前 run 的该阶段均通过 |
+| 行为 / Unit / Component | required | 85 个自包含测试覆盖 Coding 内容守恒、安装器 descendant、动态 VERSION/full kit、runtime release_version、POSIX executable bit、手工 tag workflow 合同；Feature Ready run `33037577024` 和 main run `33037756902` 均通过 |
 | 接口 / Contract | required | Full Kit schema、VERSION/tag/asset naming、`workflow_dispatch.inputs.tag`、Runtime manifest/kit additive `release_version`、Builder CLI、managed Skill/install CLI 均由静态/行为测试覆盖 |
 | 集成 / Persistence / Runtime Dependency | required | GitHub Hosted Ubuntu 上真实 Full Kit 解压安装、Linux onefile、stdio MCP、user runtime install、runtime-mode target install、extracted Runtime Kit；Windows/macOS 对应真实平台链由永久 Job 验证 |
 | 用户 / Workflow Acceptance | required | Full Kit 与 Runtime Kit 都从解压后用户入口完成真实目标项目安装；README/Full Distribution/Runtime Distribution/RELEASING 与实际命令一致；Release 手工 tag 输入/main-only/version-match 控制路径由 Workflow 合同测试覆盖 |
-| 跨组件 Golden Path | required | Source Skills → Builder → ZIP/onefile → 解压 → 安装器 → 目标 AGENTS/Core/Stub 的真实链已在 PR CI 执行；正式 Publish side effect 只在维护者从 main 手工触发 Release Workflow 时执行，不在 PR 上旁路模拟 |
+| 跨组件 Golden Path | required | Source Skills → Builder → ZIP/onefile → 解压 → 安装器 → 目标 AGENTS/Core/Stub 的真实链已在 Feature 与 main CI 执行；正式 Publish side effect 只在维护者从 main 手工触发 Release Workflow 时执行，不在 PR 上旁路模拟 |
 | 外部依赖 Probe | not_applicable | 本 Change 不需要探测第三方 Provider 当前行为；GitHub Release 写入是明确的维护者手工交付动作，而非普通 PR 自动 Probe。当前任务实现并验证其 Workflow contract，不把未手工运行的 Release 说成已发布 |
-| Build / Package / Runtime | required | Full Kit、Linux/Windows/macOS onefile + Runtime Kit、manifest/metadata version、MCP smoke、用户级安装、目标项目安装均由永久 CI 实际执行 |
+| Build / Package / Runtime | required | Full Kit、Linux/Windows/macOS onefile + Runtime Kit、manifest/metadata version、MCP smoke、用户级安装、目标项目安装均由永久 CI 实际执行；main run `33037756902` 三个 Job 全绿 |
 | Docs / Governance / Other | required | Change/Completion/Review、README、FULL_DISTRIBUTION、Runtime Distribution、RELEASING、CHANGELOG、AGENTS、Workflow pins、Ruleset 能力边界均已同步；`FULL_DISTRIBUTION.md` 和所有 Workflow 已进入 Skill Tests path filters |
 
 # Completion Audit
@@ -208,9 +208,10 @@ A2 Change → 实现/测试/文档：
 4. 已增加 VERSION、Full Kit Builder、Runtime release_version、Full/Runtime 分发说明和 Release 文档。
 5. 已增加三平台**手工 tag** Release workflow 与 checksums/发布后资产验证。
 6. 已更新永久 Skill Tests、README、AGENTS、CHANGELOG。
-7. 已执行自包含测试、Full Kit、Linux/Windows/macOS package；最终 Ready CI 将在本次状态提交后重新执行。
-8. PR #7 最终 CI 全绿后转 Ready 并正常 merge；merge 后确认 main 新鲜 CI，再归档本 Change。
-9. 正式 GitHub Release 由维护者在 Actions 中从 `main` 手工输入 `v<VERSION>` 运行；本任务不通过旁路自动替维护者触发。
+7. Feature Ready run `33037577024` 的 Skill Tests、Runtime Windows Package、Runtime macOS Package 全部 success。
+8. Independent Review `5037073276` 结论为 `NO_FINDINGS_WITHIN_SCOPE`；PR #7 正常 merge，merge commit `0b5a0bc779f6810c850e6f8b96e0b847c2aa681e`。
+9. 合并后 main push run `33037756902` 三个永久 Job 全部 success，满足归档门禁。
+10. 正式 GitHub Release 仍由维护者在 Actions 中从 `main` 手工输入 `v<VERSION>` 运行；本任务没有通过旁路自动替维护者触发，也没有把 `v1.0.0` 声称为已发布。
 
 # 文档影响
 
@@ -230,8 +231,10 @@ A2 Change → 实现/测试/文档：
 
 # 交付
 
-- Branch：`feature/release-productization-skill-structure`。
-- PR：#7。
-- Feature Ready Gate：本次 `ready_for_review` 提交后由永久 `Skill Tests` 重新执行完整 Ubuntu/Windows/macOS 门禁。
-- Main Gate：PR 合并后确认 `main` 新鲜 CI 成功，再通过独立 Archive PR 把本 Change 标记 `done` 并移入 `archive/2026-08/`。
-- Release 使用：维护者从 GitHub Actions → `Release` → `Run workflow`，Branch 选 `main`，输入例如 `v1.0.0`；Workflow 自动创建 tag 与 GitHub Release。
+- Feature Branch：`feature/release-productization-skill-structure`。
+- Feature Ready CI：run `33037577024`，`Skill Tests` / `Runtime Windows Package` / `Runtime macOS Package` 全部 success。
+- Independent Review：review `5037073276`，`NO_FINDINGS_WITHIN_SCOPE`。
+- PR：#7 `产品化 Release 并优化 Coding Skill 结构`，已正常 merge。
+- Merge Commit：`0b5a0bc779f6810c850e6f8b96e0b847c2aa681e`。
+- Main Fresh CI：push run `33037756902`，三个永久 Job 全部 success。
+- Release 使用：维护者从 GitHub Actions → `Release` → `Run workflow`，Branch 选 `main`，输入例如 `v1.0.0`；Workflow 自动创建 tag 与 GitHub Release。本归档只记录该能力已产品化，不把尚未手工执行的 Release 写成已发布。
