@@ -24,13 +24,14 @@ INSTALL = _load_installer()
 
 
 class InstallerBootstrapFailureTest(unittest.TestCase):
-    """验证三个 Skill 已切换后若目标 AGENTS 校验失败，安装器恢复原受管目录。"""
+    """验证全部动态正式 Skill 已切换后若目标 AGENTS 校验失败，安装器恢复原受管目录。"""
 
     def test_install_restores_all_managed_skills_when_bootstrap_fails(self) -> None:
-        """坏 managed marker 导致 Bootstrap 失败时，三个目标 Skill 都应恢复到安装前内容。"""
+        """坏 managed marker 导致 Bootstrap 失败时，全部动态正式 Skill 都应恢复到安装前内容。"""
+        managed_skills = INSTALL._discover_managed_skills(ROOT)
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
-            for skill in INSTALL.MANAGED_SKILLS:
+            for skill in managed_skills:
                 skill_root = target / ".agents/skills" / skill
                 skill_root.mkdir(parents=True)
                 (skill_root / "old.txt").write_text(f"old {skill}\n", encoding="utf-8")
@@ -41,7 +42,7 @@ class InstallerBootstrapFailureTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "Bootstrap 失败"):
                 INSTALL.install_skills(ROOT, target)
 
-            for skill in INSTALL.MANAGED_SKILLS:
+            for skill in managed_skills:
                 skill_root = target / ".agents/skills" / skill
                 self.assertEqual(
                     (skill_root / "old.txt").read_text(encoding="utf-8"),
