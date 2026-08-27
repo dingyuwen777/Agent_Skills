@@ -290,3 +290,32 @@ Bootstrap 不是“自动架构设计器”。即使目标项目已经很复杂�
 - CI 的 paths 与 compile/smoke 命令真实覆盖根 `scripts/install.py` 和 `bootstrap` CLI。
 
 完成结论仍遵守 Coding 的 Validation Matrix、Completion Audit、独立 Review 和新鲜证据门禁。
+
+## 13. Runtime 模式补充
+
+前面第 3 节描述的是默认 `full` 模式，旧命令继续保持完整 Markdown 分发语义。需要“Native Core Skill + 本地 MCP 加密 Reference Bundle”时，使用显式 Runtime 模式；完整 Contract 见 [14_本地MCP_Runtime分发与原文上下文加载.md](14_本地MCP_Runtime分发与原文上下文加载.md)。
+
+Runtime 模式的目标项目安装入口为：
+
+```bash
+python scripts/install.py \
+  --mode runtime \
+  --runtime-command <已安装的 agent-skills-mcp> \
+  --target <目标项目根目录>
+```
+
+执行该命令前，`agent-skills-mcp` 必须已经由同一份 canonical Agent_Skills 源版本构建并完成用户级安装/宿主 MCP 注册。安装器会在触碰目标项目之前比较当前源 Reference `source_digest` 与 Runtime `status/self-test` 的 digest，不一致时直接拒绝。
+
+Runtime 模式仍只认领 `coding/review/docs` 三个受管 Skill，但分发内容不同：
+
+```text
+SKILL.md            # 保留 Native Core 原文
+agents/              # 存在时复制
+assets/              # 存在时复制
+scripts/             # 存在时复制
+references/*.md      # 同名 Runtime Stub，不含 canonical Reference 正文
+```
+
+目标项目中的 `.agents/changes/`、项目自有 Skill、其他 `.agents` 内容、`project-context.json` 和 `AGENTS.md` managed marker 外项目原文继续按前述边界保护。Bootstrap 行为本身不因为 full/runtime 模式改变。
+
+如果 Coding/Review/Docs 命中一个 Runtime Stub，必须调用本地 MCP `agent_skills_load_context`，把返回的 `canonical_text` 当作该 Reference 完整正式原文，并校验 SHA256；MCP 不可用、ID/hash 不一致或无法取得正文时，不得把 stub 当成已经读取的规则继续工作。

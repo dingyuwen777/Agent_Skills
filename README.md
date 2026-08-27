@@ -325,3 +325,27 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 - [目标项目安装与 AGENTS Bootstrap](.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md)
 - [Review 使用说明](.agents/skills/review/README.md)
 - [Docs 使用说明](.agents/skills/docs/README.md)
+
+## 14. 本地 MCP Runtime 分发
+
+如果你的目标是**尽量保持当前 Skill 执行效果，同时不把完整 Reference Markdown 直接放进每个目标项目**，使用 Runtime 模式。它保留 Native Core `SKILL.md`，把详细 `references/*.md` 逐字打进本地 MCP 的加密 Bundle；目标项目只留下同名 stub，Agent 命中 Reference 后通过 `agent_skills_load_context` 取得 canonical 原文。
+
+这不是把复杂 Skill 摘要成 Policy，也不是对机器 Owner 的强加密。AES-256-GCM + onefile 的主要价值是阻止普通使用者直接浏览/批量复制完整 Markdown，同时让模型仍然获得原始 Reference 文本。
+
+完整打包、安装、Codex/Cursor/Claude Code 配置、目标项目接入、升级和回滚说明见：
+
+- [Runtime 使用说明](runtime/README.md)
+- [Runtime 正式规则](.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md)
+
+最短流程：
+
+```text
+1. 安装 runtime/requirements-build.txt
+2. python scripts/build_runtime.py --output-dir dist --json
+3. python scripts/install_runtime.py --artifact <dist/agent-skills-mcp[.exe]> --json
+4. 把已安装 Runtime 作为全局 stdio MCP 注册到 Codex/Cursor/Claude Code
+5. python scripts/install.py --mode runtime --runtime-command <agent-skills-mcp> --target <目标项目>
+6. 在目标项目按原来的 AGENTS → Coding → Reference / Review / Docs 流程开发
+```
+
+旧命令 `python scripts/install.py --target <目标项目>` 仍等价于 `--mode full`，继续完整复制 Markdown，保证现有用户兼容。

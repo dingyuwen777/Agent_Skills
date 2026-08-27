@@ -7,6 +7,7 @@ on:
       - "README.md"
       - ".gitignore"
       - ".agents/**"
+      - "runtime/**"
       - "scripts/**"
       - ".github/workflows/skill-tests.yml"
   push:
@@ -17,6 +18,7 @@ on:
       - "README.md"
       - ".gitignore"
       - ".agents/**"
+      - "runtime/**"
       - "scripts/**"
       - ".github/workflows/skill-tests.yml"
 
@@ -36,17 +38,32 @@ jobs:
       - name: Python version
         run: python3 --version
 
-      - name: Compile helper scripts
+      - name: Install Runtime build dependencies
+        run: python3 -m pip install -r runtime/requirements-build.txt
+
+      - name: Compile helper scripts and Runtime
         run: >-
           python3 -m py_compile
           .agents/skills/coding/scripts/coding.py
           .agents/skills/coding/scripts/ready_check.py
           scripts/install.py
+          scripts/build_runtime.py
+          scripts/install_runtime.py
+          scripts/install_runtime_target.py
+          scripts/runtime_mcp_smoke.py
+          runtime/agent_skills_runtime/catalog.py
+          runtime/agent_skills_runtime/crypto.py
+          runtime/agent_skills_runtime/runtime.py
+          runtime/agent_skills_runtime/server.py
 
       - name: Smoke public CLI entrypoints
         run: |
           python3 .agents/skills/coding/scripts/coding.py bootstrap --help
           python3 scripts/install.py --help
+          python3 scripts/build_runtime.py --help
+          python3 scripts/install_runtime.py --help
+          python3 scripts/install_runtime_target.py --help
+          python3 scripts/runtime_mcp_smoke.py --help
 
       - name: Run self-contained tests
         run: >-
@@ -55,8 +72,201 @@ jobs:
           -p 'test_*.py'
           -v
 
+      - name: Build and self-test onefile Runtime
+        run: |
+          python3 scripts/build_runtime.py --output-dir .runtime-dist --json
+          .runtime-dist/agent-skills-mcp status --json
+          .runtime-dist/agent-skills-mcp self-test --json
+          test -f .runtime-dist/agent-skills-mcp-runtime-kit.zip
+
+      - name: Verify real stdio MCP contract
+        run: >-
+          python3 scripts/runtime_mcp_smoke.py
+          --artifact .runtime-dist/agent-skills-mcp
+          --json
+
+      - name: Verify user-level Runtime installation
+        run: |
+          runtime_dir="${RUNNER_TEMP}/agent-skills-runtime-bin"
+          python3 scripts/install_runtime.py \
+            --artifact .runtime-dist/agent-skills-mcp \
+            --install-dir "${runtime_dir}" \
+            --json
+          "${runtime_dir}/agent-skills-mcp" status --json
+          "${runtime_dir}/agent-skills-mcp" self-test --json
+
+      - name: Verify runtime-mode target installation
+        run: |
+          target="${RUNNER_TEMP}/agent-skills-runtime-target"
+          mkdir -p "${target}"
+          python3 scripts/install.py \
+            --mode runtime \
+            --runtime-command "${RUNNER_TEMP}/agent-skills-runtime-bin/agent-skills-mcp" \
+            --target "${target}" \
+            --json
+          test -f "${target}/.agents/skills/coding/SKILL.md"
+          grep -q "agent_skills_load_context" "${target}/.agents/skills/coding/references/02_跨项目研发任务路由.md"
+          test ! -f "${target}/.agents/skills/coding/README.md"
+
+      - name: Verify extracted Runtime Kit without source repository
+        run: |
+          extract_root="${RUNNER_TEMP}/agent-skills-kit-extracted"
+          target="${RUNNER_TEMP}/agent-skills-kit-target"
+          mkdir -p "${extract_root}" "${target}"
+          python3 -m zipfile -e .runtime-dist/agent-skills-mcp-runtime-kit.zip "${extract_root}"
+          kit="${extract_root}/agent-skills-mcp-runtime-kit"
+          test -f "${kit}/agent-skills-runtime-kit.json"
+          test -f "${kit}/install_runtime_target.py"
+          cd "${RUNNER_TEMP}"
+          python3 "${kit}/install_runtime_target.py" \
+            --runtime-command "${RUNNER_TEMP}/agent-skills-runtime-bin/agent-skills-mcp" \
+            --target "${target}" \
+            --json
+          test -f "${target}/AGENTS.md"
+          grep -q "agent_skills_load_context" "${target}/.agents/skills/docs/references/01_事实源与同步判断.md"
+
       - name: Verify active Coding Change
         run: >-
           python3 .agents/skills/coding/scripts/ready_check.py
           --root .
           --require-active-ready
+
+  runtime-windows-package:
+    name: Runtime Windows Package
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Python version
+        run: python --version
+
+      - name: Install Runtime build dependencies
+        run: python -m pip install -r runtime/requirements-build.txt
+
+      - name: Build and self-test Windows onefile Runtime
+        shell: pwsh
+        run: |
+          python scripts/build_runtime.py --output-dir .runtime-dist --json
+          .\.runtime-dist\agent-skills-mcp.exe status --json
+          .\.runtime-dist\agent-skills-mcp.exe self-test --json
+          python scripts/runtime_mcp_smoke.py --artifact .\.runtime-dist\agent-skills-mcp.exe --json
+          if (-not (Test-Path .\.runtime-dist\agent-skills-mcp-runtime-kit.zip)) { throw "缺少 Windows Runtime Distribution Kit" }
+
+      - name: Verify Windows user-level Runtime installation
+        shell: pwsh
+        run: |
+          $runtimeDir = Join-Path $env:RUNNER_TEMP "agent-skills-runtime-bin"
+          python scripts/install_runtime.py `
+            --artifact .\.runtime-dist\agent-skills-mcp.exe `
+            --install-dir $runtimeDir `
+            --json
+          $runtime = Join-Path $runtimeDir "agent-skills-mcp.exe"
+          & $runtime status --json
+          & $runtime self-test --json
+
+      - name: Verify Windows runtime-mode target installation
+        shell: pwsh
+        run: |
+          $runtime = Join-Path $env:RUNNER_TEMP "agent-skills-runtime-bin\agent-skills-mcp.exe"
+          $target = Join-Path $env:RUNNER_TEMP "agent-skills-runtime-target"
+          New-Item -ItemType Directory -Force -Path $target | Out-Null
+          python scripts/install.py `
+            --mode runtime `
+            --runtime-command $runtime `
+            --target $target `
+            --json
+          $skill = Join-Path $target ".agents\skills\coding\SKILL.md"
+          $stub = Join-Path $target ".agents\skills\coding\references\02_跨项目研发任务路由.md"
+          $readme = Join-Path $target ".agents\skills\coding\README.md"
+          if (-not (Test-Path $skill)) { throw "Runtime 模式缺少 Coding Core SKILL.md" }
+          if (-not (Select-String -Path $stub -Pattern "agent_skills_load_context" -Quiet)) { throw "Runtime Stub 未接入 MCP" }
+          if (Test-Path $readme) { throw "Runtime 模式不应分发 Coding README.md" }
+
+      - name: Verify extracted Windows Runtime Kit without source repository
+        shell: pwsh
+        run: |
+          $extractRoot = Join-Path $env:RUNNER_TEMP "agent-skills-kit-extracted"
+          $target = Join-Path $env:RUNNER_TEMP "agent-skills-kit-target"
+          Expand-Archive -Path .\.runtime-dist\agent-skills-mcp-runtime-kit.zip -DestinationPath $extractRoot -Force
+          $kit = Join-Path $extractRoot "agent-skills-mcp-runtime-kit"
+          $runtime = Join-Path $env:RUNNER_TEMP "agent-skills-runtime-bin\agent-skills-mcp.exe"
+          New-Item -ItemType Directory -Force -Path $target | Out-Null
+          Push-Location $env:RUNNER_TEMP
+          try {
+            python (Join-Path $kit "install_runtime_target.py") `
+              --runtime-command $runtime `
+              --target $target `
+              --json
+          } finally {
+            Pop-Location
+          }
+          $agents = Join-Path $target "AGENTS.md"
+          $stub = Join-Path $target ".agents\skills\docs\references\01_事实源与同步判断.md"
+          if (-not (Test-Path $agents)) { throw "Runtime Kit 未生成目标 AGENTS.md" }
+          if (-not (Select-String -Path $stub -Pattern "agent_skills_load_context" -Quiet)) { throw "Runtime Kit Stub 未接入 MCP" }
+
+  runtime-macos-package:
+    name: Runtime macOS Package
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Python version
+        run: python3 --version
+
+      - name: Install Runtime build dependencies
+        run: |
+          python3 -m venv .venv-runtime
+          .venv-runtime/bin/python -m pip install -r runtime/requirements-build.txt
+          echo "${GITHUB_WORKSPACE}/.venv-runtime/bin" >> "${GITHUB_PATH}"
+
+      - name: Build and self-test macOS onefile Runtime
+        run: |
+          python3 scripts/build_runtime.py --output-dir .runtime-dist --json
+          .runtime-dist/agent-skills-mcp status --json
+          .runtime-dist/agent-skills-mcp self-test --json
+          python3 scripts/runtime_mcp_smoke.py --artifact .runtime-dist/agent-skills-mcp --json
+          test -f .runtime-dist/agent-skills-mcp-runtime-kit.zip
+
+      - name: Verify macOS user-level Runtime installation
+        run: |
+          runtime_dir="${RUNNER_TEMP}/agent-skills-runtime-bin"
+          python3 scripts/install_runtime.py \
+            --artifact .runtime-dist/agent-skills-mcp \
+            --install-dir "${runtime_dir}" \
+            --json
+          "${runtime_dir}/agent-skills-mcp" status --json
+          "${runtime_dir}/agent-skills-mcp" self-test --json
+
+      - name: Verify macOS runtime-mode target installation
+        run: |
+          target="${RUNNER_TEMP}/agent-skills-runtime-target"
+          mkdir -p "${target}"
+          python3 scripts/install.py \
+            --mode runtime \
+            --runtime-command "${RUNNER_TEMP}/agent-skills-runtime-bin/agent-skills-mcp" \
+            --target "${target}" \
+            --json
+          test -f "${target}/.agents/skills/coding/SKILL.md"
+          grep -q "agent_skills_load_context" "${target}/.agents/skills/coding/references/02_跨项目研发任务路由.md"
+
+      - name: Verify extracted macOS Runtime Kit without source repository
+        run: |
+          extract_root="${RUNNER_TEMP}/agent-skills-kit-extracted"
+          target="${RUNNER_TEMP}/agent-skills-kit-target"
+          mkdir -p "${extract_root}" "${target}"
+          python3 -m zipfile -e .runtime-dist/agent-skills-mcp-runtime-kit.zip "${extract_root}"
+          kit="${extract_root}/agent-skills-mcp-runtime-kit"
+          cd "${RUNNER_TEMP}"
+          python3 "${kit}/install_runtime_target.py" \
+            --runtime-command "${RUNNER_TEMP}/agent-skills-runtime-bin/agent-skills-mcp" \
+            --target "${target}" \
+            --json
+          test -f "${target}/AGENTS.md"
+          grep -q "agent_skills_load_context" "${target}/.agents/skills/docs/references/01_事实源与同步判断.md"

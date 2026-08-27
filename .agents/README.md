@@ -340,3 +340,26 @@ README 可以解释“怎么用”，但不应复制所有详细规则。README 
 - [Docs Skill 使用说明](skills/docs/README.md)
 - [Docs 正式规则](skills/docs/SKILL.md)
 - [仓库根使用说明](../README.md)
+
+## 8. Runtime 分发模式
+
+默认 `full` 模式仍然把三个 Skill 的完整 Markdown 复制到目标项目。需要降低详细 Reference 的直接浏览/复制暴露面时，可以使用 Local MCP Runtime：
+
+```text
+Agent_Skills canonical Core/References
+→ build_runtime
+→ encrypted onefile agent-skills-mcp
+→ 用户级全局 stdio MCP
+→ 目标项目 Core SKILL.md + Reference Stubs
+→ agent_skills_load_context
+→ canonical Reference 原文进入 Agent Context
+```
+
+Runtime 只是三个正式 Skill 的可选交付通道，不是第四个 Skill，也不改变这里的职责划分。完整自然语言规则仍只存在于源仓库各 `SKILL.md` / `references/*.md`；目标项目 Stub 不是事实源。
+
+Runtime 正式规则：
+
+- [`skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md`](skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md)
+- [`../runtime/README.md`](../runtime/README.md)
+
+Runtime 模式目标项目中的 Reference 文件仍保持原文件名，是为了让 Core Skill 现有相对链接继续可达；其正文只有 Runtime ID、Expected SHA256 和 MCP 加载协议。命中 Stub 时，只有 MCP 返回并通过 hash 校验的 `canonical_text` 才等价于读取正式 Reference。
