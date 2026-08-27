@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import stat
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
@@ -42,12 +43,13 @@ def render_reference_stub(entry: Mapping[str, Any]) -> str:
     )
 
 
-def _encode_file(path: str, payload: bytes) -> dict[str, Any]:
-    """把一个项目文件编码为稳定、可校验的 Payload 条目。"""
+def _encode_file(path: str, payload: bytes, mode: int = 0o644) -> dict[str, Any]:
+    """把一个项目文件编码为稳定、可校验且保留权限的 Payload 条目。"""
     return {
         "path": path,
         "size": len(payload),
         "sha256": _sha256_bytes(payload),
+        "mode": int(mode),
         "content_b64": base64.b64encode(payload).decode("ascii"),
     }
 
@@ -68,7 +70,7 @@ def _is_excluded_runtime_path(relative: PurePosixPath) -> bool:
 
 
 def _payload_digest(skills: list[str], files: list[Mapping[str, Any]]) -> str:
-    """根据 Skill 集合和文件身份/hash 计算确定性 Project Payload 摘要。"""
+    """根据 Skill 集合和文件身份/hash/权限计算确定性 Project Payload 摘要。"""
     material = {
         "skills": list(skills),
         "files": [
@@ -76,6 +78,7 @@ def _payload_digest(skills: list[str], files: list[Mapping[str, Any]]) -> str:
                 "path": str(entry["path"]),
                 "size": int(entry["size"]),
                 "sha256": str(entry["sha256"]),
+                "mode": int(entry["mode"]),
             }
             for entry in sorted(files, key=lambda item: str(item["path"]))
         ],
@@ -114,11 +117,12 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
             if _is_excluded_runtime_path(relative_in_skill):
                 continue
             relative = path.relative_to(skills_root).as_posix()
-            files.append(_encode_file(relative, path.read_bytes()))
+            mode = stat.S_IMODE(path.stat().st_mode)
+            files.append(_encode_file(relative, path.read_bytes(), mode))
 
         for reference in sorted(references_by_skill[skill.name], key=lambda item: str(item["filename"])):
             relative = f"{skill.name}/references/{reference['filename']}"
-            files.append(_encode_file(relative, render_reference_stub(reference).encode("utf-8")))
+            files.append(_encode_file(relative, render_reference_stub(reference).encode("utf-8"), 0o644))
 
     files.sort(key=lambda item: str(item["path"]))
     payload = {
@@ -146,10 +150,13 @@ def _safe_payload_path(value: str) -> PurePosixPath:
 
 def decode_payload_file(entry: Mapping[str, Any]) -> bytes:
     """解码并验证单个 Project Payload 文件条目。"""
-    for field in ("path", "size", "sha256", "content_b64"):
+    for field in ("path", "size", "sha256", "mode", "content_b64"):
         if field not in entry:
             raise ValueError(f"Project Payload 文件缺少字段：{field}")
     _safe_payload_path(str(entry["path"]))
+    mode = int(entry["mode"])
+    if mode < 0 or mode > 0o7777:
+        raise ValueError(f"Project Payload 文件权限非法：{entry['path']}")
     try:
         payload = base64.b64decode(str(entry["content_b64"]), validate=True)
     except ValueError as error:
@@ -160,7 +167,7 @@ def decode_payload_file(entry: Mapping[str, Any]) -> bytes:
 
 
 def validate_project_payload(payload: Mapping[str, Any]) -> None:
-    """验证 Project Payload schema、Skill/file 集合、hash 和整体摘要。"""
+    """验证 Project Payload schema、Skill/file 集合、hash、权限和整体摘要。"""
     if payload.get("schema") != PROJECT_PAYLOAD_SCHEMA:
         raise ValueError(f"不支持的 Project Payload schema：{payload.get('schema')!r}")
     skills = payload.get("skills")
@@ -180,7 +187,8 @@ def validate_project_payload(payload: Mapping[str, Any]) -> None:
             raise ValueError(f"Project Payload 路径重复：{path}")
         seen.add(path)
         content = decode_payload_file(raw)
-        normalized.append({"path": path, "size": len(content), "sha256": _sha256_bytes(content)})
+        mode = int(raw["mode"])
+        normalized.append({"path": path, "size": len(content), "sha256": _sha256_bytes(content), "mode": mode})
         pure = PurePosixPath(path)
         if len(pure.parts) == 2 and pure.name == "SKILL.md":
             skill_roots_with_entry.add(pure.parts[0])
