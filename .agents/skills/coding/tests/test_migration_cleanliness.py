@@ -46,6 +46,19 @@ class UniversalizationCleanlinessTest(unittest.TestCase):
         combined = self._combined_live_text()
         self.assertIn("13_目标项目安装与AGENTS_Bootstrap.md", combined)
 
+    def test_current_distribution_and_maintenance_references_are_live(self) -> None:
+        """Runtime、Git 交付与内容守恒 references 必须存在且从 live 规则可达。"""
+        references = ROOT / ".agents/skills/coding/references"
+        names = (
+            "14_本地MCP_Runtime分发与原文上下文加载.md",
+            "15_Git交付依赖安全与宿主能力边界.md",
+            "16_规则内容守恒与Skill维护.md",
+        )
+        combined = self._combined_live_text()
+        for name in names:
+            self.assertTrue((references / name).is_file())
+            self.assertIn(name, combined)
+
     def test_live_universal_rules_do_not_depend_on_aima_product_paths(self) -> None:
         """通用 live 规则不能继续把 AIMA、TikHub 或业务源码路径作为默认事实。"""
         combined = self._combined_live_text()

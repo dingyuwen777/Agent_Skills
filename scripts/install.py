@@ -30,11 +30,19 @@ def _validate_source(source_root: Path) -> None:
 
 
 def _validate_target(source_root: Path, target_root: Path) -> None:
-    """校验目标目录可用于安装，并拒绝把 Agent_Skills 安装回自身。"""
+    """校验目标目录可用于安装，并拒绝 source 自身或 source 内部后代目录。"""
     if not target_root.is_dir():
         raise NotADirectoryError(target_root)
-    if source_root.resolve() == target_root.resolve():
+    source = source_root.resolve()
+    target = target_root.resolve()
+    if source == target:
         raise ValueError("目标项目不能是 Agent_Skills 源仓库自身")
+    try:
+        target.relative_to(source)
+    except ValueError:
+        pass
+    else:
+        raise ValueError("目标项目不能位于 Agent_Skills 源仓库内部")
     agents_root = target_root / ".agents"
     if agents_root.is_symlink():
         raise ValueError(f"目标 .agents 不能是符号链接：{agents_root}")

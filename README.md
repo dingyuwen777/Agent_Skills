@@ -349,3 +349,35 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 ```
 
 旧命令 `python scripts/install.py --target <目标项目>` 仍等价于 `--mode full`，继续完整复制 Markdown，保证现有用户兼容。
+
+## 15. 正式 Release 与版本化分发
+
+仓库根 [`VERSION`](VERSION) 是正式产品版本的唯一事实源。正式发布**不会因为 VERSION push 自动触发**：维护者在 GitHub Actions 中手工运行 [`.github/workflows/release.yml`](.github/workflows/release.yml)，Branch 选择 `main`，并输入与 `VERSION` 一致的 tag，例如 `v1.0.0`。Workflow 随后在该 `main` SHA 上重新构建正式资产、自动创建输入 tag 和 GitHub Release；PR 临时构建产物不会直接变成正式 Release，也不需要提前手工创建 tag。
+
+每个正式版本至少提供：
+
+```text
+agent-skills-full-kit-v<VERSION>.zip
+agent-skills-mcp-runtime-kit-v<VERSION>-linux.zip
+agent-skills-mcp-runtime-kit-v<VERSION>-windows.zip
+agent-skills-mcp-runtime-kit-v<VERSION>-macos.zip
+SHA256SUMS
+```
+
+### Full Kit
+
+`agent-skills-full-kit-v<VERSION>.zip` 面向完整 Markdown 分发。解压后可以直接从 Kit 根执行：
+
+```bash
+python scripts/install.py --target <目标项目根目录>
+```
+
+Full Kit 只携带三个正式 Skill、安装器、版本和必要使用资料，不携带 Agent_Skills 源仓库自己的根 `AGENTS.md`、`.agents/changes/` 或 `project-context.json`。
+
+### Runtime Kit
+
+Runtime Kit 按平台下载，不要把某个平台 onefile 当成跨平台二进制。解压后的完整使用方式见 [runtime/DISTRIBUTION.md](runtime/DISTRIBUTION.md)：先安装用户级 Runtime，再注册 stdio MCP，再用 Kit 内 `install_runtime_target.py` 给目标项目安装 Native Core + Reference Stub。
+
+下载 Release 后先用 `SHA256SUMS` 校验 ZIP，再安装或升级。正式 tag/Release 不覆盖、不移动；需要修正版时递增 `VERSION`，不要替换旧版本资产。
+
+维护者手工 tag 发布流程、失败恢复和发布后验证见 [RELEASING.md](RELEASING.md)；版本用户可观察变化见 [CHANGELOG.md](CHANGELOG.md)。

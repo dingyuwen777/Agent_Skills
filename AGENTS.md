@@ -115,14 +115,17 @@ Coding 的 Requirement Traceability、Validation Matrix、Completion Audit 是�
 - 所有 Markdown/YAML/Python 文件可读；
 - Coding CLI 的 `bootstrap/discover/status/conflicts/new-change` 入口可运行；
 - `scripts/install.py` 可在临时目标项目完成三个受管 Skill 的首次安装和重复升级，且不删除目标项目 `.agents/changes/`、项目自有 Skill 或其他 `.agents` 内容；
+- 安装器拒绝把目标项目设为 Agent_Skills source 自身或 source 内部后代目录，避免递归复制、源树污染或无界磁盘增长；正常 sibling/外部目标继续可安装；
 - Bootstrap 在无 `AGENTS.md`、已有 `AGENTS.md`、已有 managed block、坏 marker、LF/CRLF 和 `.gitignore` 幂等场景都保留用户内容并按 Contract 工作；
 - `ready_check.py` 的 schema、Traceability、Completion Audit 和 Change root 行为正确；
 - portability 测试证明不同语言/项目形态不会被反向推断成固定 Web/Python/PostgreSQL 项目；
+- preservation 测试证明 Coding 主规则结构调整后，全局不变量、停止条件、Review/Docs 硬路由以及迁移到 references 的详细规则仍可达且没有语义降级；
 - 任一业务项目名称、业务源码路径、具体 Provider/平台或项目级 Blueprint/Stage 事实不出现在通用 live 规则或自包含测试中；
 - 用户定义的五项全局工程硬规则仍可从 Coding 主规则和完成前 Review 到达；
 - 删除/改名 reference 后没有 live 引用残留；
-- README 使用方式与实际文件路径、CLI、安装/Bootstrap 和缓存策略一致；
-- CI 的 path filters 和编译/测试命令真实覆盖根 `scripts/install.py`，不能出现安装器只在本地存在而不进永久门禁。
+- README、`FULL_DISTRIBUTION.md`、`runtime/DISTRIBUTION.md`、`RELEASING.md` 与实际文件路径、CLI、安装/Bootstrap、Release 和缓存策略一致；
+- Full Kit 解压后的 `README.md` 来自 `FULL_DISTRIBUTION.md`，Runtime Kit 解压后的 `README.md` 来自 `runtime/DISTRIBUTION.md`；不得把只在源仓库存在的维护者命令原样当成 Kit 用户入口；
+- CI 的 path filters 和编译/测试命令真实覆盖根 `scripts/install.py`、Full Kit Builder、Runtime Builder、两个分发说明和所有永久 Workflow，不能出现发布/安装能力只在本地存在而不进永久门禁。
 
 测试必须自包含。禁止让 Agent_Skills 自己的单元测试依赖另一个业务仓库才存在的 Blueprint、backend、workflow 或脚本。
 
@@ -166,3 +169,22 @@ Runtime 是三个正式 Skill 的**可选分发通道**，不是第四个 Skill�
 - Runtime/source digest 不匹配时必须在修改目标项目之前失败，不能制造旧 Runtime 与新 Stub 的混装状态；
 - Runtime build 必须验证最终平台 artifact，而不只验证 Python 模块；永久 CI 至少覆盖 onefile `status/self-test`、真实 stdio MCP `tools/list`/`tools/call` 和 runtime-mode 临时目标项目安装；
 - Windows `.exe`、Linux、macOS artifact 分别在对应目标平台构建/验证，不把 PyInstaller onefile 当作跨平台产物。
+
+## 9. 版本与正式 Release 维护边界
+
+根 `VERSION` 是 Agent_Skills 正式产品版本的唯一事实源。修改 VERSION、Full Distribution Kit、Runtime Release metadata、Release asset、tag 或 `.github/workflows/release.yml` 时，必须把它视为 Build / Package / Release Contract 变化并读取 Coding 的 Git/Release 与永久 Workflow 规则。
+
+正式 Release 至少保持：
+
+- SemVer `VERSION` → `v<VERSION>` tag 一一对应；
+- Release 只通过 GitHub Actions 的 `workflow_dispatch` 手工运行；维护者必须从 `main` 输入 `v<VERSION>`，Workflow 校验 tag 与根 `VERSION` 一致后再自动创建该 tag 和 GitHub Release；不得因 `VERSION` push 自动发布，也不得提前手工创建同名 tag；
+- Full Kit 只携带三个完整 Skill、安装器、版本和必要用户资料，不携带源仓库根 `AGENTS.md`、`.agents/changes/`、`project-context.json` 或其他仓库维护状态；
+- Linux / Windows / macOS Runtime Kit 分别在对应平台构建和验证；
+- Runtime manifest / Kit metadata 可以记录 `release_version`，但不能把版本号替代 canonical Reference `source_digest` / SHA256 完整性；
+- 正式 Release asset 至少包含版本化 Full Kit、三平台 Runtime Kit 和 `SHA256SUMS`；
+- Release Workflow 的 Preflight/构建 Job 只读；只有全部 Release Candidate 构建/测试成功后，最终 Publish Job 才能获得 `contents: write`；
+- 已存在同版本 tag/Release 时拒绝覆盖或移动历史事实；修复使用新 VERSION；
+- 正式资产必须由合并后的 `main` SHA 重新构建，不把 PR 临时产物直接发布；
+- 永久 `Skill Tests` 与 Release Workflow 分别承担持续回归和实际发布候选验证，任何 Workflow 精简都要按 Evidence Preservation Mapping 证明独立责任没有丢失。
+
+维护者完整流程见 `RELEASING.md`，Full Kit 用户入口见 `FULL_DISTRIBUTION.md`，Runtime Kit 用户入口见 `runtime/DISTRIBUTION.md`，当前版本变化见 `CHANGELOG.md`。Release 完成结论必须核对真实 GitHub tag、Release、资产和 checksum；只看到 Workflow YAML 或本地 `dist/` 不足以宣称发布成功。

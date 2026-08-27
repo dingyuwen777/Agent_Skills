@@ -5,22 +5,30 @@ on:
     paths:
       - "AGENTS.md"
       - "README.md"
+      - "FULL_DISTRIBUTION.md"
+      - "RELEASING.md"
+      - "CHANGELOG.md"
+      - "VERSION"
       - ".gitignore"
       - ".agents/**"
       - "runtime/**"
       - "scripts/**"
-      - ".github/workflows/skill-tests.yml"
+      - ".github/workflows/**"
   push:
     branches:
       - main
     paths:
       - "AGENTS.md"
       - "README.md"
+      - "FULL_DISTRIBUTION.md"
+      - "RELEASING.md"
+      - "CHANGELOG.md"
+      - "VERSION"
       - ".gitignore"
       - ".agents/**"
       - "runtime/**"
       - "scripts/**"
-      - ".github/workflows/skill-tests.yml"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
@@ -47,6 +55,7 @@ jobs:
           .agents/skills/coding/scripts/coding.py
           .agents/skills/coding/scripts/ready_check.py
           scripts/install.py
+          scripts/build_full_distribution.py
           scripts/build_runtime.py
           scripts/install_runtime.py
           scripts/install_runtime_target.py
@@ -60,6 +69,7 @@ jobs:
         run: |
           python3 .agents/skills/coding/scripts/coding.py bootstrap --help
           python3 scripts/install.py --help
+          python3 scripts/build_full_distribution.py --help
           python3 scripts/build_runtime.py --help
           python3 scripts/install_runtime.py --help
           python3 scripts/install_runtime_target.py --help
@@ -72,12 +82,30 @@ jobs:
           -p 'test_*.py'
           -v
 
+      - name: Build and verify Full Distribution Kit
+        run: |
+          python3 scripts/build_full_distribution.py --output-dir .full-dist --json
+          VERSION="$(tr -d '\r\n' < VERSION)"
+          kit_zip=".full-dist/agent-skills-full-kit-v${VERSION}.zip"
+          extract_root="${RUNNER_TEMP}/agent-skills-full-extracted"
+          target="${RUNNER_TEMP}/agent-skills-full-target"
+          mkdir -p "${extract_root}" "${target}"
+          test -f "${kit_zip}"
+          python3 -m zipfile -e "${kit_zip}" "${extract_root}"
+          kit="${extract_root}/agent-skills-full-kit-v${VERSION}"
+          cd "${RUNNER_TEMP}"
+          python3 "${kit}/scripts/install.py" --target "${target}" --json
+          test -f "${target}/AGENTS.md"
+          test -f "${target}/.agents/skills/coding/references/02_跨项目研发任务路由.md"
+
       - name: Build and self-test onefile Runtime
         run: |
           python3 scripts/build_runtime.py --output-dir .runtime-dist --json
           .runtime-dist/agent-skills-mcp status --json
           .runtime-dist/agent-skills-mcp self-test --json
           test -f .runtime-dist/agent-skills-mcp-runtime-kit.zip
+          VERSION="$(tr -d '\r\n' < VERSION)"
+          grep -Fq "\"release_version\": \"${VERSION}\"" .runtime-dist/agent-skills-mcp.manifest.json
 
       - name: Verify real stdio MCP contract
         run: >-
@@ -116,6 +144,8 @@ jobs:
           python3 -m zipfile -e .runtime-dist/agent-skills-mcp-runtime-kit.zip "${extract_root}"
           kit="${extract_root}/agent-skills-mcp-runtime-kit"
           test -f "${kit}/agent-skills-runtime-kit.json"
+          VERSION="$(tr -d '\r\n' < VERSION)"
+          grep -Fq "\"release_version\": \"${VERSION}\"" "${kit}/agent-skills-runtime-kit.json"
           test -f "${kit}/install_runtime_target.py"
           cd "${RUNNER_TEMP}"
           python3 "${kit}/install_runtime_target.py" \
@@ -154,6 +184,9 @@ jobs:
           .\.runtime-dist\agent-skills-mcp.exe self-test --json
           python scripts/runtime_mcp_smoke.py --artifact .\.runtime-dist\agent-skills-mcp.exe --json
           if (-not (Test-Path .\.runtime-dist\agent-skills-mcp-runtime-kit.zip)) { throw "缺少 Windows Runtime Distribution Kit" }
+          $version = (Get-Content VERSION -Raw).Trim()
+          $manifest = Get-Content .\.runtime-dist\agent-skills-mcp.manifest.json -Raw | ConvertFrom-Json
+          if ($manifest.release_version -ne $version) { throw "Runtime manifest release_version 与 VERSION 不一致" }
 
       - name: Verify Windows user-level Runtime installation
         shell: pwsh
@@ -203,8 +236,11 @@ jobs:
           } finally {
             Pop-Location
           }
+          $version = (Get-Content VERSION -Raw).Trim()
+          $metadata = Get-Content (Join-Path $kit "agent-skills-runtime-kit.json") -Raw | ConvertFrom-Json
           $agents = Join-Path $target "AGENTS.md"
           $stub = Join-Path $target ".agents\skills\docs\references\01_事实源与同步判断.md"
+          if ($metadata.release_version -ne $version) { throw "Runtime Kit release_version 与 VERSION 不一致" }
           if (-not (Test-Path $agents)) { throw "Runtime Kit 未生成目标 AGENTS.md" }
           if (-not (Select-String -Path $stub -Pattern "agent_skills_load_context" -Quiet)) { throw "Runtime Kit Stub 未接入 MCP" }
 
@@ -233,6 +269,8 @@ jobs:
           .runtime-dist/agent-skills-mcp self-test --json
           python3 scripts/runtime_mcp_smoke.py --artifact .runtime-dist/agent-skills-mcp --json
           test -f .runtime-dist/agent-skills-mcp-runtime-kit.zip
+          VERSION="$(tr -d '\r\n' < VERSION)"
+          grep -Fq "\"release_version\": \"${VERSION}\"" .runtime-dist/agent-skills-mcp.manifest.json
 
       - name: Verify macOS user-level Runtime installation
         run: |
@@ -263,6 +301,8 @@ jobs:
           mkdir -p "${extract_root}" "${target}"
           python3 -m zipfile -e .runtime-dist/agent-skills-mcp-runtime-kit.zip "${extract_root}"
           kit="${extract_root}/agent-skills-mcp-runtime-kit"
+          VERSION="$(tr -d '\r\n' < VERSION)"
+          grep -Fq "\"release_version\": \"${VERSION}\"" "${kit}/agent-skills-runtime-kit.json"
           cd "${RUNNER_TEMP}"
           python3 "${kit}/install_runtime_target.py" \
             --runtime-command "${RUNNER_TEMP}/agent-skills-runtime-bin/agent-skills-mcp" \

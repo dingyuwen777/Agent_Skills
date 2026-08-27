@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -26,6 +27,19 @@ from runtime.agent_skills_runtime.crypto import encrypt_bundle, generate_bundle_
 
 
 KIT_SCHEMA = "agent-skills-runtime-kit/v1"
+VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
+
+
+def _read_release_version(source_root: str | Path) -> str:
+    """读取并校验根 VERSION，供 Runtime manifest 与 Kit metadata 记录产品版本。"""
+    root = Path(source_root).resolve()
+    version_path = root / "VERSION"
+    if version_path.is_symlink() or not version_path.is_file():
+        raise FileNotFoundError(f"VERSION 不存在或不是普通文件：{version_path}")
+    version = version_path.read_text(encoding="utf-8").strip()
+    if not VERSION_PATTERN.fullmatch(version):
+        raise ValueError(f"VERSION 必须是 SemVer：{version!r}")
+    return version
 
 
 def _sha256_file(path: Path) -> str:
@@ -151,12 +165,14 @@ def build_distribution_kit(
     artifact_manifest: str | Path,
     bundle: Mapping[str, Any],
     name: str = "agent-skills-mcp",
+    release_version: str | None = None,
 ) -> dict[str, Any]:
-    """构建不含 canonical Reference 正文、可脱离私有源仓库使用的 Runtime Distribution Kit。"""
+    """构建不含 canonical Reference 正文、可脱离源仓库使用的 Runtime Distribution Kit。"""
     source = Path(source_root).resolve()
     output = Path(output_dir).resolve()
     runtime_artifact = Path(artifact).resolve()
     manifest_path = Path(artifact_manifest).resolve()
+    version = release_version or _read_release_version(source)
     if runtime_artifact.is_symlink() or not runtime_artifact.is_file():
         raise FileNotFoundError(f"Runtime artifact 不存在或不是普通文件：{runtime_artifact}")
     if manifest_path.is_symlink() or not manifest_path.is_file():
@@ -172,7 +188,7 @@ def build_distribution_kit(
         shutil.copy2(manifest_path, kit_root / manifest_path.name)
         shutil.copy2(source / "scripts" / "install_runtime.py", kit_root / "install_runtime.py")
         shutil.copy2(source / "scripts" / "install_runtime_target.py", kit_root / "install_runtime_target.py")
-        shutil.copy2(source / "runtime" / "README.md", kit_root / "README.md")
+        shutil.copy2(source / "runtime" / "DISTRIBUTION.md", kit_root / "README.md")
         tools_requirements = source / "runtime" / "requirements-tools.txt"
         if tools_requirements.is_file():
             shutil.copy2(tools_requirements, kit_root / "requirements-tools.txt")
@@ -182,6 +198,7 @@ def build_distribution_kit(
         payload_files = _payload_file_manifest(payload_root)
         metadata = {
             "schema": KIT_SCHEMA,
+            "release_version": version,
             "source_digest": str(bundle["source_digest"]),
             "bundle_version": str(bundle["bundle_version"]),
             "reference_count": len(bundle["references"]),
@@ -202,6 +219,7 @@ def build_distribution_kit(
         "distribution_kit": str(zip_path),
         "distribution_kit_sha256": _sha256_file(zip_path),
         "kit_schema": KIT_SCHEMA,
+        "release_version": version,
         "source_digest": str(bundle["source_digest"]),
         "payload_file_count": len(payload_files),
     }
@@ -216,6 +234,7 @@ def build_runtime(
     source = Path(source_root).resolve()
     output = Path(output_dir).resolve()
     output.mkdir(parents=True, exist_ok=True)
+    release_version = _read_release_version(source)
     bundle = build_bundle(source)
     serialized = serialize_bundle(bundle)
     key = generate_bundle_key()
@@ -283,6 +302,7 @@ def build_runtime(
         raise RuntimeError("构建产物 self-test 未通过")
 
     manifest = public_manifest(bundle)
+    manifest["release_version"] = release_version
     manifest["artifact"] = artifact.name
     manifest["artifact_sha256"] = _sha256_file(artifact)
     manifest_path = output / f"{name}.manifest.json"
@@ -291,11 +311,20 @@ def build_runtime(
         encoding="utf-8",
         newline="\n",
     )
-    kit = build_distribution_kit(source, output, artifact, manifest_path, bundle, name)
+    kit = build_distribution_kit(
+        source,
+        output,
+        artifact,
+        manifest_path,
+        bundle,
+        name,
+        release_version,
+    )
     return {
         "artifact": str(artifact),
         "manifest": str(manifest_path),
         "artifact_sha256": manifest["artifact_sha256"],
+        "release_version": release_version,
         "source_digest": expected_digest,
         "reference_count": manifest["reference_count"],
         "bundle_version": manifest["bundle_version"],
@@ -322,6 +351,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
         else:
             print(
+                f"release_version={result['release_version']} "
                 f"artifact={result['artifact']} manifest={result['manifest']} "
                 f"distribution_kit={result['distribution_kit']} source_digest={result['source_digest']}"
             )
