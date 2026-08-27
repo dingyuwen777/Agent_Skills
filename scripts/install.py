@@ -33,7 +33,11 @@ def _discover_managed_skills(source_root: Path) -> list[str]:
     return skills
 
 
-def _validate_target(source_root: Path, target_root: Path, managed_skills: Sequence[str]) -> None:
+def _validate_target(
+    source_root: Path,
+    target_root: Path,
+    managed_skills: Sequence[str] = (),
+) -> None:
     """校验目标目录可用于安装，并拒绝 source 自身、source 后代和受管 Skill 符号链接。"""
     if not target_root.is_dir():
         raise NotADirectoryError(target_root)
@@ -57,6 +61,11 @@ def _validate_target(source_root: Path, target_root: Path, managed_skills: Seque
         target_skill = skills_root / skill
         if target_skill.is_symlink():
             raise ValueError(f"受管 Skill 目录不能是符号链接：{target_skill}")
+
+
+def _load_runtime_bundle(source_root: Path) -> dict[str, Any]:
+    """兼容现有测试/维护入口，使用统一动态 Catalog 构建当前 Runtime Bundle。"""
+    return build_bundle(source_root)
 
 
 def _run_json_command(command: Sequence[str]) -> dict[str, Any]:
@@ -169,16 +178,31 @@ def _rollback_skills(target_skills: Path, backup_root: Path, swapped: Sequence[s
             backup.rename(target)
 
 
+def _derived_swap_skills(staging_root: Path, target_skills: Path) -> list[str]:
+    """为兼容内部测试从暂存/目标目录动态推导待切换 Skill，不维护静态名单。"""
+    names: set[str] = set()
+    for root in (staging_root, target_skills):
+        if not root.is_dir():
+            continue
+        for candidate in root.iterdir():
+            if candidate.is_symlink():
+                raise ValueError(f"受管 Skill 目录不能是符号链接：{candidate}")
+            if candidate.is_dir():
+                names.add(candidate.name)
+    return sorted(names)
+
+
 def _swap_skills(
     staging_root: Path,
     target_skills: Path,
     backup_root: Path,
-    managed_skills: Sequence[str],
+    managed_skills: Sequence[str] | None = None,
 ) -> list[str]:
     """逐个切换动态正式 Skill；任一切换失败时恢复当前项和此前已切换项。"""
+    skills = list(managed_skills) if managed_skills is not None else _derived_swap_skills(staging_root, target_skills)
     swapped: list[str] = []
     try:
-        for skill in managed_skills:
+        for skill in skills:
             target = target_skills / skill
             backup = backup_root / skill
             staged = staging_root / skill
@@ -238,7 +262,7 @@ def install_skills(
     bundle: dict[str, Any] | None = None
     runtime_status: dict[str, Any] | None = None
     if mode == "runtime":
-        bundle = build_bundle(source)
+        bundle = _load_runtime_bundle(source)
         command = _normalize_runtime_command(runtime_command)
         runtime_status = _verify_runtime(command, str(bundle["source_digest"]), managed_skills)
 
