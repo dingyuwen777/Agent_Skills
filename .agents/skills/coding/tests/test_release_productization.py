@@ -13,6 +13,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[4]
 INSTALL_PATH = ROOT / "scripts/install.py"
 FULL_BUILDER_PATH = ROOT / "scripts/build_full_distribution.py"
+RUNTIME_BUILDER_PATH = ROOT / "scripts/build_runtime.py"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 
 
@@ -103,10 +104,11 @@ class ReleaseProductizationTest(unittest.TestCase):
             self.assertEqual(payload["mode"], "full")
             self.assertTrue((target / "AGENTS.md").is_file())
 
-    def test_runtime_builder_records_release_version_without_changing_reference_digest_contract(self) -> None:
-        """Runtime manifest 与 Kit metadata 应增加 release_version，但 source_digest 仍独立来自 canonical References。"""
-        source = (ROOT / "scripts/build_runtime.py").read_text(encoding="utf-8")
-        self.assertIn('"release_version"', source)
+    def test_runtime_builder_reads_release_version_without_changing_reference_digest_contract(self) -> None:
+        """Runtime Builder 应真实读取 VERSION，且 source_digest 仍保持独立 canonical Reference 合同。"""
+        builder = _load_module("runtime_release_version", RUNTIME_BUILDER_PATH)
+        self.assertEqual(builder._read_release_version(ROOT), "1.0.0")
+        source = RUNTIME_BUILDER_PATH.read_text(encoding="utf-8")
         self.assertIn("source_digest", source)
         self.assertIn("VERSION", source)
 
@@ -118,6 +120,7 @@ class ReleaseProductizationTest(unittest.TestCase):
             "workflow_dispatch",
             'branches: ["main"]',
             'paths: ["VERSION"]',
+            "refs/heads/main",
             "ubuntu-24.04",
             "windows-latest",
             "macos-15",
@@ -134,8 +137,11 @@ class ReleaseProductizationTest(unittest.TestCase):
             "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
         ):
             self.assertIn(marker, workflow)
+        self.assertEqual(workflow.count("contents: write"), 1)
         self.assertIn("gh release view", workflow)
+        self.assertIn("gh api", workflow)
         self.assertIn("git rev-parse", workflow)
+        self.assertNotIn("git fetch --tags --force", workflow)
 
     def test_release_documentation_exists(self) -> None:
         """维护者 Release 流程和版本历史必须有独立正式文档。"""
