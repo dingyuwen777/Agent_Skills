@@ -72,7 +72,9 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
         self.assertIn("09_多人和多智能体并行协作.md", skill)
         self.assertIn("任务明确面向**中国大陆网络**", ref03)
         self.assertIn("Evidence Preservation Mapping", ref07)
-        self.assertIn("主 Agent 必须复核", ref09)
+        self.assertIn("子 Agent 返回后，主 Agent 必须", ref09)
+        self.assertIn("检查实际 diff 和工作区", ref09)
+        self.assertIn("运行目标及整体相关验证", ref09)
 
     def test_main_skill_is_structurally_smaller_without_becoming_a_stub(self) -> None:
         """主文件应明显减少重复细节，但仍保留足够完整的研发主链而不是变成短摘要。"""
