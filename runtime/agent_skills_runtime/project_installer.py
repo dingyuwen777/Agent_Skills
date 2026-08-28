@@ -159,10 +159,12 @@ def _normalise_shared_files(raw: Any, label: str) -> list[str]:
     if shared_files != sorted(set(shared_files)):
         raise ValueError(f"{label} shared_files 必须唯一且稳定排序")
     for value in shared_files:
+        if "\\" in value:
+            raise ValueError(f"{label} shared file 不能包含反斜杠：{value!r}")
         path = PurePosixPath(value)
         if (
             not value
-            or value.startswith(("/", "\\"))
+            or value.startswith("/")
             or path.is_absolute()
             or len(path.parts) != 1
             or path.parts[0] in {".", ".."}
