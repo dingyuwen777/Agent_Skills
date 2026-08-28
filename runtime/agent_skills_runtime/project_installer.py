@@ -529,9 +529,9 @@ def install_project(
                     backup_skill = backup_skills / skill
                     if target_skill.exists():
                         target_skill.rename(backup_skill)
+                    switched_skills.append(skill)
                     if skill in new_skills:
                         (staged_skills / skill).rename(target_skill)
-                    switched_skills.append(skill)
 
                 for relative in sorted(set(old_shared_files) | set(new_shared_files)):
                     target_shared = skills_root / relative
@@ -539,9 +539,9 @@ def install_project(
                     backup_path.parent.mkdir(parents=True, exist_ok=True)
                     if target_shared.exists():
                         target_shared.rename(backup_path)
+                    switched_shared.append(relative)
                     if relative in new_shared_files:
                         (staged_skills / relative).rename(target_shared)
-                    switched_shared.append(relative)
 
                 if artifact != runtime_target:
                     staged_runtime = stage_root / runtime_name
