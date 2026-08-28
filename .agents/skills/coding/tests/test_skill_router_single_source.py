@@ -1,0 +1,102 @@
+from __future__ import annotations
+
+import unittest
+from pathlib import Path
+
+from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.project_payload import build_project_payload, decode_payload_file
+
+
+ROOT = Path(__file__).resolve().parents[4]
+ROUTER_PATH = ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
+MAINTENANCE_PATH = ".agents/MAINTENANCE.md"
+MANAGED_PATH = ".agents/skills/coding/assets/AGENTS.managed.md"
+
+
+class SkillRouterSingleSourceTest(unittest.TestCase):
+    """验证 Skill Router 只有一个正式正文，并同时服务源码直读与 Runtime 安装入口。"""
+
+    def _read(self, relative: str) -> str:
+        """读取仓库 UTF-8 文本，供入口职责和内容守恒断言使用。"""
+        return (ROOT / relative).read_text(encoding="utf-8")
+
+    def test_root_and_managed_agents_are_thin_bootstraps_to_same_router(self) -> None:
+        """根 AGENTS 与目标 managed block 都只能导航到同一个 Router，不再复制详细路由。"""
+        root_agents = self._read("AGENTS.md")
+        managed = self._read(MANAGED_PATH)
+        self.assertTrue((ROOT / ROUTER_PATH).is_file(), "缺少唯一 canonical Skill Router")
+        self.assertTrue((ROOT / MAINTENANCE_PATH).is_file(), "缺少 Agent_Skills 源仓库维护规则")
+
+        for text in (root_agents, managed):
+            self.assertIn(ROUTER_PATH, text)
+        self.assertIn(MAINTENANCE_PATH, root_agents)
+
+        self.assertNotIn("## 8. Runtime 维护不变量", root_agents)
+        self.assertNotIn("agent_skills_load_context", managed)
+        self.assertNotIn(".agents/skills/figma/SKILL.md", managed)
+        self.assertNotIn(".agents/skills/review/SKILL.md", managed)
+        self.assertNotIn(".agents/skills/docs/SKILL.md", managed)
+
+    def test_router_preserves_high_value_routing_and_failure_semantics(self) -> None:
+        """旧 managed block 的高价值触发、失败和权限规则必须完整迁入唯一 Router。"""
+        router = self._read(ROUTER_PATH)
+        required_markers = (
+            ".agents/skills/*/SKILL.md",
+            ".agents/skills/coding/SKILL.md",
+            "项目自己的",
+            "agent_skills_load_context",
+            "SHA256",
+            "canonical_text",
+            ".agents/skills/figma/SKILL.md",
+            "READY / READY_WITH_NOTES / NOT_READY",
+            ".agents/skills/review/SKILL.md",
+            ".agents/skills/docs/SKILL.md",
+            "无法读取",
+            "不得假装",
+            "Branch Protection",
+            "没有相应授权",
+            "不能单凭文件名推出 React、FastAPI、PostgreSQL",
+        )
+        for marker in required_markers:
+            self.assertIn(marker, router, f"Router 丢失高价值规则：{marker}")
+
+        for skill in ("coding", "review", "docs", "figma"):
+            self.assertIn(f"`{skill}`", router)
+        self.assertIn("不是分发白名单", router)
+
+    def test_maintenance_preserves_source_repository_governance(self) -> None:
+        """根 AGENTS 迁出的维护规则必须在专属 Maintenance Owner 中继续可达。"""
+        maintenance = self._read(MAINTENANCE_PATH)
+        required_markers = (
+            "Agent_Skills 源仓库",
+            "内容守恒",
+            "Runtime 维护不变量",
+            "Change 与完成门禁",
+            "Git 与 Release",
+            "完成报告",
+            "Asia/Shanghai",
+            "[YYYY-MM-DD HH:mm:ss.SSS source.ext L<line>] [LEVEL] message",
+            "禁止强制推送",
+            "Release 只从 main",
+        )
+        for marker in required_markers:
+            self.assertIn(marker, maintenance, f"Maintenance 丢失源仓库治理规则：{marker}")
+
+        self.assertIn(ROUTER_PATH, maintenance)
+        self.assertNotIn("当前正式 Skill：", maintenance)
+
+    def test_project_payload_distributes_router_exactly_as_runtime_asset(self) -> None:
+        """Router 必须原样进入 Project Payload，使安装后的 managed block 指向真实本地文件。"""
+        bundle = build_bundle(ROOT)
+        payload = build_project_payload(ROOT, bundle)
+        entry = next(
+            (item for item in payload["files"] if item["path"] == "coding/assets/AGENT_SKILLS_ROUTER.md"),
+            None,
+        )
+        self.assertIsNotNone(entry, "Project Payload 没有分发 canonical Router 运行资产")
+        installed_router = decode_payload_file(entry).decode("utf-8")
+        self.assertEqual(installed_router, self._read(ROUTER_PATH))
+
+
+if __name__ == "__main__":
+    unittest.main()
