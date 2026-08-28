@@ -195,7 +195,7 @@ agent-skills-project-payload/v1
 正式 Skill 根目录
 → canonical references/ 排除正文
 → 为每个 canonical Reference 生成同名 Runtime Stub
-→ tests/、顶层 README.md、__pycache__、*.pyc、*.pyo 等维护内容排除
+→ tests/、任意深度的维护 `README.md`、__pycache__、*.pyc、*.pyo 等维护内容排除
 → 其余普通运行资产原样进入 payload
 → 记录 path / size / SHA256 / mode / content
 → 计算 payload_digest
