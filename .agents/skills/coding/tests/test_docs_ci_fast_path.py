@@ -25,10 +25,10 @@ class LocalCacheAndDocsGovernanceTest(unittest.TestCase):
             self.assertIn(marker, skill)
 
     def test_repository_rules_require_self_contained_skill_tests(self) -> None:
-        """根维护规范必须明确 Skill 测试不能依赖另一个业务仓库。"""
-        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-        self.assertIn("测试必须自包含", agents)
-        self.assertIn("不能依赖另一个业务仓库", agents)
+        """源仓库维护规范必须明确 Skill 测试不能依赖另一个业务仓库。"""
+        maintenance = (ROOT / ".agents/MAINTENANCE.md").read_text(encoding="utf-8")
+        self.assertIn("测试必须自包含", maintenance)
+        self.assertIn("不能依赖另一个业务仓库", maintenance)
 
     def test_docs_skill_does_not_require_repository_docs_directory(self) -> None:
         """Docs 是可分发 Skill，不依赖 Agent_Skills 源仓库自身存在 docs/ 目录。"""

@@ -25,6 +25,7 @@ CODEX_MANAGED_START = "# agent-skills:mcp:start"
 CODEX_MANAGED_END = "# agent-skills:mcp:end"
 CACHE_IGNORE_RULE = ".agents/project-context.json"
 RUNTIME_IGNORE_RULE = "/.agents/runtime/"
+SKILL_ROUTER_ASSET = "coding/assets/AGENT_SKILLS_ROUTER.md"
 _SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _CODEX_SERVER_PATTERN = re.compile(r"(?m)^\s*\[mcp_servers\.agent-skills\]\s*$")
 _FACT_SOURCE_NAMES = {
@@ -170,7 +171,8 @@ def _fact_sources(root: Path) -> str:
 
 
 def _updated_agents_content(root: Path, existing: bytes | None, payload_files: Mapping[str, bytes]) -> bytes:
-    """按 Coding Bootstrap Contract 创建或增量更新根 AGENTS.md。"""
+    """按 Coding Bootstrap Contract 创建或增量更新根 AGENTS.md，并预检统一 Router 运行资产。"""
+    _payload_asset(payload_files, SKILL_ROUTER_ASSET)
     managed_text = _payload_asset(payload_files, "coding/assets/AGENTS.managed.md").rstrip("\r\n")
     if existing is None:
         template = Template(_payload_asset(payload_files, "coding/assets/AGENTS.template.md"))

@@ -1,6 +1,6 @@
 # Runtime 源码维护说明
 
-`runtime/` 实现 Agent_Skills 当前唯一正式对外分发形态：**项目级 onefile Runtime + Native Core Skill + Encrypted Canonical References + local stdio MCP**。
+`runtime/` 实现 Agent_Skills 当前唯一正式对外分发形态：**项目级 onefile Runtime + Native Core Skill + Shared Skill Router + Encrypted Canonical References + local stdio MCP**。
 
 最终使用者不需要阅读本文件；下载、安装、升级、回滚和排障见根 [`USAGE.md`](../USAGE.md)。
 
@@ -17,7 +17,7 @@ agent_skills_runtime/crypto.py
 → AES-GCM 加密/认证 Reference Bundle
 
 agent_skills_runtime/project_payload.py
-→ 构建目标项目需要的 Core/运行资产与 Reference Stub payload
+→ 构建目标项目需要的 Core/Router/运行资产与 Reference Stub payload
 
 agent_skills_runtime/project_installer.py
 → 项目级安装、ownership、AGENTS/.gitignore/宿主配置与回滚
@@ -29,7 +29,7 @@ agent_skills_runtime/server.py
 → CLI + stdio MCP Server
 ```
 
-Runtime 不负责重新解释 Coding / Review / Docs / Figma 规则；完整语义仍由各 Skill 的 `SKILL.md` 和 canonical `references/*.md` 定义。
+Runtime 不负责重新解释 Coding / Review / Docs / Figma 规则；跨 Skill 发现与 Handoff 由 `coding/assets/AGENT_SKILLS_ROUTER.md` 唯一负责，各 Skill 完整专业语义仍由自己的 `SKILL.md` 和 canonical `references/*.md` 定义。
 
 ## 2. 两个完整性域
 
@@ -45,7 +45,7 @@ canonical Reference bytes
 Project Payload：
 
 ```text
-Native Core / assets / scripts / metadata
+Native Core / Router / assets / scripts / metadata
 + 同名 Reference Stub
 → path / sha256 / size / mode
 → payload_digest
@@ -60,7 +60,7 @@ Project Payload 明确排除：
 - tests；
 - Python cache/编译产物。
 
-因此像 `coding/scripts/tzdata/README.md` 这种源码维护说明可以留在私有源仓库，但不会安装到目标项目；真正运行需要的 `coding/scripts/tzdata/zoneinfo/Asia/Shanghai` 等资源仍会进入 Payload。
+因此像 `coding/scripts/tzdata/README.md` 这种源码维护说明可以留在私有源仓库，但不会安装到目标项目；真正运行需要的 `coding/scripts/tzdata/zoneinfo/Asia/Shanghai` 等资源、`coding/assets/AGENT_SKILLS_ROUTER.md` 和其他必要运行资产仍会进入 Payload。
 
 目标项目 Stub 只能保存逻辑 ID、Expected SHA256 和 MCP 加载协议，不复制摘要版规则。
 
@@ -79,9 +79,12 @@ agent-skills-mcp install --target <project-root>
 - 新 Release 删除 Skill 时只删除旧 manifest 明确认领项；
 - `.agents/runtime/` 为项目本地运行资产并加入 `.gitignore`；
 - `AGENTS.md` / CLAUDE / Codex 使用 managed marker；
+- 目标项目 `AGENTS.md` managed block 只做薄 Bootstrap，并指向随 Coding asset 一起安装的 `AGENT_SKILLS_ROUTER.md`；
 - Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；
 - marker 外项目文本、其他 MCP server、项目自有 Skill 保留；
 - 任一可预检错误先于写入发现；切换后的失败按快照恢复。
+
+Router 由 Project Payload 的正常动态资产规则分发，不在 Runtime 建立第二份静态 Skill/Router 白名单。
 
 ## 4. MCP Contract
 
@@ -142,6 +145,7 @@ python3 scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 `.github/workflows/skill-tests.yml` 负责持续验证：
 
 - self-contained unit/preservation/portability tests；
+- 单一 Router / 双 Bootstrap / Maintenance 职责与 Project Payload Router 分发；
 - Linux onefile build/status/self-test；
 - real stdio MCP；
 - project-only single-binary 首次安装、升级和无参数安装；

@@ -12,8 +12,14 @@ class UniversalizationCleanlinessTest(unittest.TestCase):
     """验证 live 通用规则只使用当前治理/分发模型，并移除业务仓库与废弃入口残留。"""
 
     def _live_text_files(self) -> list[Path]:
-        """返回非测试 live 规则与当前人类入口，避免测试样例自身污染清洁度断言。"""
-        paths = [ROOT / "AGENTS.md", ROOT / "README.md", ROOT / "USAGE.md", ROOT / "runtime/README.md"]
+        """返回非测试 live 规则与当前入口，避免测试样例自身污染清洁度断言。"""
+        paths = [
+            ROOT / "AGENTS.md",
+            ROOT / ".agents/MAINTENANCE.md",
+            ROOT / "README.md",
+            ROOT / "USAGE.md",
+            ROOT / "runtime/README.md",
+        ]
         for path in SKILL_ROOT.rglob("*"):
             if not path.is_file() or path.suffix not in {".md", ".yaml", ".yml", ".py"}:
                 continue
@@ -77,13 +83,19 @@ class UniversalizationCleanlinessTest(unittest.TestCase):
         ):
             self.assertNotIn(marker, combined)
 
-    def test_root_agents_is_source_repository_overlay(self) -> None:
-        """根 AGENTS 只负责源仓库维护，不冒充目标项目使用说明。"""
+    def test_root_agents_bootstraps_router_and_source_maintenance(self) -> None:
+        """根 AGENTS 只做双模式 Bootstrap，源仓库维护规则由独立 Maintenance 承担。"""
         agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-        self.assertIn("Agent_Skills 源仓库维护规范", agents)
-        self.assertIn("通用核心与项目 Overlay", agents)
-        self.assertIn("必须留在目标项目 Overlay 的内容", agents)
+        maintenance = (ROOT / ".agents/MAINTENANCE.md").read_text(encoding="utf-8")
+        self.assertIn("Agent_Skills AI Bootstrap", agents)
+        self.assertIn(".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md", agents)
+        self.assertIn(".agents/MAINTENANCE.md", agents)
         self.assertIn("不得复制到目标项目", agents)
+        self.assertNotIn("## 8. Runtime 维护不变量", agents)
+        self.assertIn("Agent_Skills 源仓库维护规范", maintenance)
+        self.assertIn("Runtime 维护不变量", maintenance)
+        self.assertIn("通用核心与项目 Overlay", maintenance)
+        self.assertIn("必须留在目标项目 Overlay 的内容", maintenance)
 
     def test_root_readme_is_maintainer_landing_page(self) -> None:
         """根 README 应解释源仓库职责并把最终用户路由到 USAGE。"""
