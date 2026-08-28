@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime import project_installer, project_payload
 from runtime.agent_skills_runtime.project_installer import INSTALL_MANIFEST_PATH, install_project
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 
@@ -51,6 +52,20 @@ class SharedRootRouterContractTest(unittest.TestCase):
         paths = {str(entry["path"]) for entry in payload["files"]}
         self.assertIn("ROUTER.md", paths)
         self.assertNotIn("coding/assets/AGENT_SKILLS_ROUTER.md", paths)
+
+    def test_cross_platform_payload_paths_reject_backslash_segments(self) -> None:
+        """Payload 使用 POSIX 相对路径，必须拒绝会在 Windows 被解释成目录分隔符的反斜杠。"""
+        with self.assertRaisesRegex(ValueError, "反斜杠"):
+            project_payload._safe_payload_path("..\\..\\escape.md")
+        with self.assertRaisesRegex(ValueError, "反斜杠"):
+            project_payload._safe_payload_path("coding\\SKILL.md")
+
+    def test_shared_file_ownership_rejects_backslash_segments(self) -> None:
+        """install manifest/shared_files 也必须拒绝 Windows 语义下可能越界的反斜杠路径。"""
+        with self.assertRaisesRegex(ValueError, "反斜杠"):
+            project_installer._normalise_shared_files(["..\\..\\escape.md"], "fixture")
+        with self.assertRaisesRegex(ValueError, "反斜杠"):
+            project_installer._normalise_shared_files(["nested\\ROUTER.md"], "fixture")
 
     def test_installer_manifest_owns_shared_router(self) -> None:
         """安装结果必须由新 manifest 显式认领共享 Router，保证后续升级与回滚有 ownership。"""
