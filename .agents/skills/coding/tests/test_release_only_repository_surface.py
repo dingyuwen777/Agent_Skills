@@ -44,6 +44,10 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             "Completion Audit",
             "Change Archive",
             "python -m pip",
+            "canonical Reference",
+            "Project Payload",
+            "Runtime Stub",
+            "coding/scripts/",
         ):
             self.assertNotIn(maintainer_only, text)
 
@@ -79,8 +83,8 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         for relative in removed:
             self.assertFalse((ROOT / relative).exists(), f"旧分发入口仍存在：{relative}")
 
-    def test_coding_python_helpers_remain_runtime_assets_and_usage_states_boundary(self) -> None:
-        """单 binary 安装不能误删 Coding helper；用户说明必须准确区分安装/MCP 与 helper 的 Python 需求。"""
+    def test_coding_python_helpers_remain_runtime_assets_without_leaking_internal_paths_to_usage(self) -> None:
+        """单 binary 安装不能误删 Coding helper；最终用户只需知道必要的 Python 前提与降级边界。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         paths = {entry["path"] for entry in payload["files"]}
@@ -89,9 +93,11 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
 
         usage = self._read("USAGE.md")
         self.assertIn("安装和 MCP Runtime 本身不需要 Python", usage)
-        self.assertIn("Coding Python helper", usage)
+        self.assertIn("部分 Coding 流程", usage)
         self.assertIn("没有可用 Python", usage)
         self.assertIn("fallback", usage)
+        self.assertNotIn("coding.py", usage)
+        self.assertNotIn("ready_check.py", usage)
 
     def test_nested_maintenance_readme_is_not_distributed_but_runtime_resource_is(self) -> None:
         """源码内局部维护 README 可保留，但不能随 Project Payload 暴露；真实运行资源必须继续分发。"""
