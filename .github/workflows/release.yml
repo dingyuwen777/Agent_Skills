@@ -50,6 +50,10 @@ jobs:
             echo "输入 tag ${TAG} 与仓库 VERSION=${FILE_VERSION} 不一致" >&2
             exit 1
           }
+          test -f USAGE.md || {
+            echo "缺少 Release 最终用户说明 USAGE.md" >&2
+            exit 1
+          }
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}" || {
             echo "checkout HEAD 与 GITHUB_SHA 不一致" >&2
             exit 1
@@ -218,6 +222,9 @@ jobs:
           merge-multiple: true
           digest-mismatch: error
 
+      - name: Include end-user guide
+        run: cp USAGE.md release-assets/USAGE.md
+
       - name: Validate release identity and assets
         env:
           RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
@@ -232,6 +239,7 @@ jobs:
             "agent-skills-mcp-v${RELEASE_VERSION}-linux"
             "agent-skills-mcp-v${RELEASE_VERSION}-windows.exe"
             "agent-skills-mcp-v${RELEASE_VERSION}-macos"
+            "USAGE.md"
           )
           for asset in "${expected[@]}"; do
             test -f "release-assets/${asset}" || { echo "missing release asset: ${asset}" >&2; exit 1; }
@@ -249,7 +257,7 @@ jobs:
         run: |
           cd release-assets
           find . -maxdepth 1 -type f -printf '%f\n' | sort | xargs sha256sum > SHA256SUMS
-          test "$(wc -l < SHA256SUMS)" -eq 3
+          test "$(wc -l < SHA256SUMS)" -eq 4
           cat SHA256SUMS
 
       - name: Create immutable GitHub Release
@@ -261,7 +269,7 @@ jobs:
           gh release create "${RELEASE_TAG}" release-assets/* \
             --target "${GITHUB_SHA}" \
             --title "Agent_Skills ${RELEASE_TAG}" \
-            --generate-notes
+            --notes-file USAGE.md
           git fetch --tags
           test "$(git rev-list -n 1 "${RELEASE_TAG}")" = "${GITHUB_SHA}"
           published_assets="$(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name')"
@@ -269,6 +277,7 @@ jobs:
             "agent-skills-mcp-v${RELEASE_TAG#v}-linux" \
             "agent-skills-mcp-v${RELEASE_TAG#v}-windows.exe" \
             "agent-skills-mcp-v${RELEASE_TAG#v}-macos" \
+            "USAGE.md" \
             "SHA256SUMS"; do
             grep -Fxq "${asset}" <<< "${published_assets}" || {
               echo "Release 缺少已发布资产：${asset}" >&2
