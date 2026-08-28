@@ -2,20 +2,20 @@
 
 这份规则定义 Agent_Skills 当前唯一正式对外分发模式：**Native Core Skill + Shared Skill Router + Project-local MCP Runtime + Encrypted Canonical References + onefile binary**。
 
-目标是：最终使用者只拿到对应平台 Release binary，在目标项目根运行即可完成项目级接入；详细 canonical `references/*.md` 不作为普通 Markdown 分发到目标项目，同时保持现有自然语言 Skill 的执行语义和逐字完整性。跨 Skill 的 Catalog / Router 只维护一份 `coding/assets/AGENT_SKILLS_ROUTER.md`，源码直读和 Runtime 安装共享同一正文。
+目标是：最终使用者只拿到对应平台 Release binary，在目标项目根运行即可完成项目级接入；详细 canonical `references/*.md` 不作为普通 Markdown 分发到目标项目，同时保持现有自然语言 Skill 的执行语义和逐字完整性。跨 Skill 的 Catalog / Router 只维护一份 `.agents/skills/ROUTER.md`，源码直读和 Runtime 安装共享同一正文。
 
-本文件只规定 Runtime 分发、动态 Skill 发现、Project Payload、Reference 原文加载、项目级安装/升级、宿主接入、完整性、Release 和失败边界。Coding / Review / Docs / Figma 的研发语义仍由各自 `SKILL.md` 与 canonical References 定义；跨 Skill 入口、Reference 取得方式和 Handoff 由唯一 Router 定义。
+本文件只规定 Runtime 分发、动态 Skill 发现、Skills 根级共享运行资产、Project Payload、Reference 原文加载、项目级安装/升级、宿主接入、完整性、Release 和失败边界。Coding / Review / Docs / Figma 的研发语义仍由各自 `SKILL.md` 与 canonical References 定义；跨 Skill 入口、Reference 取得方式和 Handoff 由唯一 Router 定义。
 
 ## 1. 何时必须读取
 
 出现以下任务时必须读取本文件：
 
 - 构建、Release、安装或升级 `agent-skills-mcp`；
-- 修改 Project Payload、动态 Skill Catalog、共享 Router、installation manifest 或项目宿主 MCP 配置；
-- 修改 Runtime Bundle schema、Reference ID、加密格式、MCP Tool Contract、Stub、`source_digest` 或 `payload_digest`；
+- 修改 Project Payload、动态 Skill Catalog、Skills 根级 shared runtime files、共享 Router、installation manifest 或项目宿主 MCP 配置；
+- 修改 Runtime Bundle schema、Project Payload schema、install manifest schema、Reference ID、加密格式、MCP Tool Contract、Stub、`source_digest` 或 `payload_digest`；
 - 调试目标项目 Reference Stub → MCP canonical 原文链；
 - Review Runtime 是否仍逐字返回 canonical Reference；
-- 修改正式 Skill，使新 Skill/资产自动进入下一次 Runtime Release；
+- 修改正式 Skill 或 shared runtime file，使其进入下一次 Runtime Release；
 - 修改 onefile 项目安装、升级、rollback 或 fail-closed ownership 逻辑。
 
 ## 2. 设计目标与非目标
@@ -23,10 +23,14 @@
 ### 目标
 
 ```text
-Agent_Skills 源仓库 .agents/skills/*
+Agent_Skills 源仓库 .agents/skills/*/SKILL.md
 → 构建时动态发现正式 Skill
 
-Native Core / Shared Router / 必要运行资产
+Agent_Skills 源仓库 .agents/skills/ROUTER.md
+→ 显式 Skills 根级 shared runtime file
+→ 不属于任何具体 Skill
+
+Shared Router + Native Core / 必要运行资产
 → 构建成 Project Payload
 → 随 onefile Runtime 嵌入
 → 安装到目标项目 .agents/skills/
@@ -68,7 +72,8 @@ Local MCP
 - 不承诺抵御机器 Owner、调试器、内存转储、进程 Hook 或专业逆向；
 - 不用 Runtime 替代项目 `AGENTS.md`、CI、PR、Review、Migration、安全和授权门禁；
 - 不把网页端 Remote MCP / secure tunnel 混进本地 stdio Runtime；
-- 不在本规则建立在线许可证、远程 KMS 或自动更新服务。
+- 不在本规则建立在线许可证、远程 KMS 或自动更新服务；
+- 不为了 shared files 自动打包 `.agents/skills/` 根目录下所有文件。
 
 ## 3. 动态正式 Skill Catalog
 
@@ -91,7 +96,7 @@ Runtime、Project Payload、manifest、测试和 Release **不得维护固定完
 7. `references/` 存在时只接受当前 Contract 支持的普通 Markdown，不通过特殊文件/符号链接越界；
 8. 发现结果确定性排序。
 
-`coding` 仍是当前目标项目研发路由的核心锚点。`coding/assets/AGENT_SKILLS_ROUTER.md` 可以展示当前 Catalog 供 Agent 导航，但明确不是 Runtime 分发白名单；改变 Coding 的上位入口关系属于独立架构变化，不能借动态发现静默修改。
+`.agents/skills/ROUTER.md` 是根级普通文件，**不能被识别成正式 Skill**。`coding` 仍是当前目标项目研发路由的核心锚点；Router 可以展示当前 Catalog 供 Agent 导航，但明确不是 Runtime 分发白名单。改变 Coding 的上位入口关系属于独立架构变化，不能借动态发现静默修改。
 
 ## 4. 规则与 Router 事实源
 
@@ -105,10 +110,10 @@ Runtime、Project Payload、manifest、测试和 Release **不得维护固定完
 跨 Skill 的 Catalog、项目事实优先、Reference 两种取得方式和 Coding/Figma/Review/Docs Handoff 的唯一正文 Owner：
 
 ```text
-.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md
+.agents/skills/ROUTER.md
 ```
 
-Router 不是新的专业 Skill，也不得复制各 Skill 的完整详细规则；根 `AGENTS.md` 与 `AGENTS.managed.md` 只做 Bootstrap，不再拥有第二套完整 Router。
+Router 是 Skills 根级 shared runtime file，不是新的专业 Skill，也不得复制各 Skill 的完整详细规则；根 `AGENTS.md` 与 `AGENTS.managed.md` 只做 Bootstrap，不再拥有第二套完整 Router。
 
 Builder 读取 canonical References 时：
 
@@ -198,29 +203,50 @@ Core/Router/Project Payload 变化不一定改变 `source_digest`，所以必须
 当前 schema：
 
 ```text
-agent-skills-project-payload/v1
+agent-skills-project-payload/v2
 ```
 
-用于让 onefile binary 在**没有源仓库和 Python 安装脚本**的情况下重建目标项目需要的受管 Skill 运行资产。
+用于让 onefile binary 在**没有源仓库和 Python 安装脚本**的情况下重建目标项目需要的受管共享运行文件、Skill 运行资产和 Reference Stub。
+
+Project Payload 至少包含：
+
+```text
+skills
+→ 动态正式 Skill 名称列表
+
+shared_files
+→ Skills 根级共享运行文件列表
+→ 当前为 ["ROUTER.md"]
+
+files
+→ shared files + Skill-owned runtime files + Reference Stubs
+```
 
 构建原则：
 
 ```text
+显式 shared_files
+→ 当前只收集 .agents/skills/ROUTER.md
+→ 不扫描并自动认领 Skills 根目录所有文件
+
 正式 Skill 根目录
 → canonical references/ 排除正文
 → 为每个 canonical Reference 生成同名 Runtime Stub
 → tests/、任意深度的维护 `README.md`、__pycache__、*.pyc、*.pyo 等维护内容排除
 → 其余普通运行资产原样进入 payload
-→ 包括 coding/assets/AGENT_SKILLS_ROUTER.md
+
+shared files + Skill files
 → 记录 path / size / SHA256 / mode / content
-→ 计算 payload_digest
+→ 连同 skills/shared_files 一起计算 payload_digest
 ```
 
-使用明确排除项，而不是不断扩展固定 Core/Router 白名单。未来某 Skill 新增 `templates/`、`schemas/`、`scripts/` 或其他真实运行资产时，只要不属于明确排除范围，应自动进入 payload。
+未来某 Skill 新增 `templates/`、`schemas/`、`scripts/` 或其他真实运行资产时，只要不属于明确排除范围，应自动进入其 Skill payload；未来新增 Skills 根级共享运行文件时，必须显式进入 shared-files Contract，不能靠目录里“碰巧有文件”自动分发。
 
-Payload 路径必须是安全相对路径，拒绝绝对路径、盘符、`..`、符号链接和特殊文件。POSIX mode 进入完整性 Contract。
+Payload 路径必须是安全相对路径，拒绝绝对路径、盘符、`..`、符号链接和特殊文件。根级 payload file 必须被 `shared_files` 明确认领；非根级文件必须属于动态发现的正式 Skill。POSIX mode 进入完整性 Contract。
 
-永久测试必须证明 `coding/assets/AGENT_SKILLS_ROUTER.md` 原样进入 Payload，使目标项目 managed block 不会指向不存在的 Router。
+本版本不兼容 `agent-skills-project-payload/v1`，不保留旧 Router 路径 fallback。
+
+永久测试必须证明 `ROUTER.md` 原样进入 Payload、`shared_files == ["ROUTER.md"]`，使目标项目 managed block 不会指向不存在的 Router。
 
 ## 9. Reference Stub Contract
 
@@ -366,31 +392,50 @@ POSIX:   .agents/runtime/agent-skills-mcp
 .agents/agent-skills-install.json
 ```
 
-记录 Agent_Skills 可证明的 ownership、Release Version、`source_digest`、`payload_digest`、受管 Skill 集合和项目 Runtime 位置。
+当前 schema：
+
+```text
+agent-skills-install/v2
+```
+
+记录 Agent_Skills 可证明的 ownership、Release Version、`source_digest`、`payload_digest`、受管 Skill 集合、`shared_files` 和项目 Runtime 位置。
+
+两类 ownership：
+
+```text
+skills
+→ 受管正式 Skill 目录
+
+shared_files
+→ 受管 Skills 根级共享运行文件
+→ 当前包含 ROUTER.md
+```
 
 升级规则：
 
 ```text
-旧 manifest skills ∩ 新 Release skills
-→ 可以替换对应受管 Skill
+旧 manifest 明确认领 + 新 Release 仍存在
+→ 可以替换对应 Skill/shared file
 
-旧 manifest 有、新 Release 无
-→ 可以删除旧版本明确认领 Skill
+旧 manifest 明确认领 + 新 Release 已删除
+→ 可以删除旧受管项
 
-目标存在、旧 manifest 从未认领
+目标存在 + 旧 manifest 从未认领
 → 项目自有/归属不明
 → 普通安装不得删除或接管
 ```
 
-首次安装已存在同名 Skill，但没有合法旧 manifest 证明由 Agent_Skills 管理时，必须 fail closed。禁止用内容相似/hash 猜 ownership。
+首次安装已存在同名 Skill 或 `.agents/skills/ROUTER.md`，但没有合法当前 manifest 证明由 Agent_Skills 管理时，必须 fail closed。禁止用内容相似/hash 猜 ownership。
 
-`.agents/changes/`、`.agents/project-context.json`、项目自有 Skill、其他 `.agents` 内容和 AGENTS marker 外文本都不是清理目标。
+本版本不兼容 `agent-skills-install/v1`。旧 schema 不作为迁移输入，直接报告不支持；不通过旧路径、内容或 hash 猜 ownership。
+
+`.agents/changes/`、`.agents/project-context.json`、项目自有 Skill、未认领 Skills 根级文件、其他 `.agents` 内容和 AGENTS marker 外文本都不是清理目标。
 
 ## 14. AGENTS / `.gitignore` / 宿主配置保护
 
 项目安装还会建立：
 
-- 根 `AGENTS.md`：创建或只更新 `agent-skills:managed` block；该 block 只负责项目事实优先并指向项目内 `coding/assets/AGENT_SKILLS_ROUTER.md`；
+- 根 `AGENTS.md`：创建或只更新 `agent-skills:managed` block；该 block 只负责项目事实优先并指向项目内 `.agents/skills/ROUTER.md`；
 - `.gitignore`：增量加入项目缓存和 Runtime ignore；
 - Cursor：`.cursor/mcp.json` 的 `mcpServers.agent-skills`；
 - Claude Code：`.mcp.json` 的 `mcpServers.agent-skills` + `CLAUDE.md` 最薄 `@AGENTS.md` bridge；
@@ -402,19 +447,21 @@ POSIX:   .agents/runtime/agent-skills-mcp
 - JSON 只认领 `mcpServers.agent-skills`；
 - 其他配置、其他 MCP server、marker 外文本保持；
 - 已存在未被 manifest 认领的同名 Agent Skills MCP 时拒绝静默覆盖；
+- 已存在未被 manifest 认领的同名 Skill/shared file 时拒绝静默覆盖；
 - marker 损坏、文本编码不可安全增量编辑、受管路径为符号链接时预检失败。
 
 Codex workspace trust 以及 Cursor/Claude 的首次确认属于宿主安全边界，安装器不得绕过。
 
 ## 15. 安装原子性与回滚
 
-1. 先验证 Project Payload、路径/hash/mode、旧 manifest、同名 Skill ownership、AGENTS/host config marker/JSON 编码和符号链接；
-2. 在 `.agents` 下完整暂存新 Skill，当前正式构建必须包含 managed block 指向的 Router；
-3. 备份旧 manifest 明确认领的受管 Skill；
+1. 先验证 Project Payload v2、路径/hash/mode/shared_files、当前 install manifest、同名 Skill/shared-file ownership、AGENTS/host config marker/JSON 编码和符号链接；
+2. 在 `.agents` 下完整暂存新 Skill 和 shared files，必须包含 managed block 指向的 `ROUTER.md`；
+3. 备份旧 manifest 明确认领的受管 Skill 和 shared files；
 4. 切换 Skill；
-5. 安装项目 Runtime 并验证 SHA256；
-6. 原子写入 AGENTS、`.gitignore`、宿主配置和 install manifest；
-7. 任一步异常恢复本轮已切换 Skill、Runtime 和受管文本快照。
+5. 切换 shared files；
+6. 安装项目 Runtime 并验证 SHA256；
+7. 原子写入 AGENTS、`.gitignore`、宿主配置和 install manifest；
+8. 任一步异常恢复本轮已切换 shared files、Skill、Runtime 和受管文本快照。
 
 不能保证多个普通文件具备数据库式事务，但必须做到：能预检的错误先发现；切换后失败尽最大可能恢复；绝不用破坏性 Git 命令实现回滚。
 
@@ -428,10 +475,10 @@ python scripts/build_runtime.py --output-dir dist --json
 
 Builder 至少：
 
-1. 动态 Skill Catalog 校验；
+1. 动态 Skill Catalog 校验，确认 `ROUTER.md` 不进入 Skill 名称列表；
 2. canonical References UTF-8 / ID / SHA / size / `source_digest`；
-3. Project Payload path / SHA / size / mode / `payload_digest`；
-4. 确认唯一 Router 作为 Coding 正式运行资产进入 Payload；
+3. Project Payload v2 的 `skills / shared_files / path / SHA / size / mode / payload_digest`；
+4. 确认 `.agents/skills/ROUTER.md` 原样作为 shared runtime file 进入 Payload；
 5. AES-GCM Reference 加密；
 6. PyInstaller onefile build；
 7. artifact `status --json`；
@@ -446,12 +493,17 @@ artifact status/self-test
 → 真实临时项目单 binary 安装
 → 重复升级
 → 无参数当前目录安装
-→ 项目 Runtime / Skill / Router / Stub / manifest / host config
-→ 项目 AGENTS managed block → Router 导航闭环
+→ 项目 Runtime / Skill / shared Router / Stub / manifest / host config
+→ 项目 AGENTS managed block → .agents/skills/ROUTER.md 导航闭环
 → 项目内 Runtime status + MCP smoke
 ```
 
-还必须确认正式 Coding helper 仍进入 Project Payload；否则会形成“Core 要求执行、目标项目却没有脚本”的断链。
+还必须确认：
+
+- 正式 Coding helper 继续进入 Project Payload；
+- 同名未认领 Router 在任何目标写入前失败；
+- shared Router 已切换后若 Runtime/后续写入失败，旧 Router 能恢复；
+- 旧 Project Payload/install manifest schema 被明确拒绝而不是静默兼容。
 
 Windows `.exe`、Linux、macOS 必须在对应平台分别构建验证。
 
@@ -484,17 +536,21 @@ Release 规则：
 
 ## 18. 升级
 
+当前版本只接受当前 v2 install manifest：
+
 ```text
 下载新 Release binary + checksum
 → 在目标项目根运行
-→ 校验 Bundle / Project Payload
-→ 根据旧 manifest 计算 ownership
-→ 原子升级项目 Runtime + 受管 Skill/Router/Stub + managed 配置
-→ 写入新 manifest
+→ 校验 Bundle / Project Payload v2
+→ 根据当前 v2 manifest 计算 Skill/shared-file ownership
+→ 原子升级项目 Runtime + 受管 Skill/ROUTER.md/Stub + managed 配置
+→ 写入新 v2 manifest
 → 重新建立 MCP 会话（宿主需要时）
 ```
 
 Reference bytes 变化会改变 SHA/source_digest；Core/Router/运行资产变化会改变 payload_digest。Stub Expected SHA256 与项目 Runtime 不匹配时，Agent 必须停止依赖该 Reference。
+
+旧 v1 manifest/旧 `coding/assets/AGENT_SKILLS_ROUTER.md` 不在本版本迁移与兼容范围；不要为了兼容旧版本保留双路径或第二份 Router。
 
 ## 19. 回滚
 
@@ -504,17 +560,10 @@ Reference bytes 变化会改变 SHA/source_digest；Core/Router/运行资产变�
 Runtime binary A
 ↔ source_digest A
 ↔ payload_digest A
-↔ target managed Skill / Router / Stub A
+↔ target managed Skill / shared ROUTER.md / Stub A
 ```
 
-回滚：
-
-1. 找回旧 Release 同平台 binary；
-2. 校验旧 checksum；
-3. 在目标项目根运行旧 binary；
-4. 由旧 binary 根据当前 manifest 恢复该版本对应 Runtime/Skill/Router/Stub/managed 配置；
-5. 检查项目 Runtime `status/self-test`；
-6. 重新建立 MCP 会话并做真实 Reference 加载。
+同一当前 Contract 范围内的安装失败回滚必须由 Installer 快照恢复。跨 Release 手工回退只允许回到使用相同当前 schema/路径 Contract 的版本；本规则不承诺通过 v2 Installer 自动迁移或恢复旧 v1 安装。
 
 不要只手工替换 Runtime、Router 或 Stub，避免版本混装。
 
@@ -527,7 +576,7 @@ Runtime binary A
 ```text
 任务开始
 → 项目 AGENTS managed block / 源码根 AGENTS
-→ 唯一 AGENT_SKILLS_ROUTER.md
+→ .agents/skills/ROUTER.md
 → agent_skills_start_task(task_id, phase)（安装态可选）
 → Coding/Core 恢复项目事实并路由
 → 读命中 canonical Reference 或 Runtime Stub
@@ -544,12 +593,12 @@ MCP 负责 Reference 传输和完整性，不替 Agent 判断需求是否满足�
 
 当前 Runtime 是**项目本地 stdio MCP**。纯网页端 ChatGPT 不能直接启动用户电脑上的本地 `agent-skills-mcp` 进程，也不能因为 GitHub 中存在 Runtime 源码就把本地 stdio MCP 当作已经连接。
 
-如果 ChatGPT 网页端已经通过 GitHub 连接获得 Agent_Skills 源仓库的读取权限，可以使用本 Change 定义的**源码直接读取模式**：
+如果 ChatGPT 网页端已经通过 GitHub 连接获得 Agent_Skills 源仓库的读取权限，可以使用本规则定义的**源码直接读取模式**：
 
 ```text
 目标项目当前规则/事实
 → Agent_Skills 根 AGENTS.md
-→ AGENT_SKILLS_ROUTER.md
+→ .agents/skills/ROUTER.md
 → 命中的 SKILL.md
 → 直接读取 canonical Reference
 ```
