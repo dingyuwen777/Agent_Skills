@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260829-shared-root-router
 title: 将统一 Router 提升为 Skills 根级共享运行资产
 level: L3
-status: ready_for_review
+status: done
 owner: ChatGPT
 branch: refactor/shared-root-router
 created: 2026-08-29
@@ -183,7 +183,7 @@ agent-skills-install/v2
 - [x] 同步 Bootstrap、README、runtime README、ref13/ref14、USAGE 和三平台 CI。
 - [x] 运行目标/全量/三平台验证；run #219 行为/Runtime 均 Green，唯一失败为 Change 当时仍 `in_progress` 的预期 Ready Gate。
 - [x] 完成 A1/A2、独立 Review、Docs targeted re-review、Requirement Traceability 与 Completion Audit。
-- [ ] PR Ready / merge / main 新鲜 CI / Change archive：属于 Ready 后交付阶段，待本提交后的完整 CI 通过后执行。
+- [x] PR Ready / merge / main 新鲜 CI 已完成；本独立归档 PR 承担最后的 active→archive 收尾。
 
 # 验证
 
@@ -332,3 +332,15 @@ PR run #228（`33199230087`），HEAD `288aaf2beb68e4f8a3aebad08a041cc4ab677d65`
 最终 re-review 结论：`NO_OPEN_FINDINGS_WITHIN_SCOPE`。3 个后续 Finding 均已有可触发 Red、最小修复和针对性 Green；没有通过删除/跳过/放宽测试制造 Green。Router 正文 blob 仍为 `84c6b0b5d7fdc34e8440ba031c04699a7cf1dd39`，本轮安全修复未改动 Router 规则正文。
 
 本治理提交只更新 Change 证据，不改变产品实现；其新 HEAD 必须再次通过永久 CI 后才能合并 PR #21。
+
+# 最终交付与归档证据
+
+本节覆盖上文“尚待 Ready CI / merge / main CI / archive”的阶段性快照；原记录保留用于审计过程，不再代表最终状态。
+
+- 最终 PR HEAD：`dc85550ed42e6c00ad387fa5f98fb9cb399dddc7`。
+- 最终 PR run #229（`33199426901`）三平台全部 `success`：Skill Tests 124/124、Linux onefile/status/self-test、真实 stdio MCP、项目安装与 Ready Check 均通过；Windows/macOS package + project install 均通过。
+- PR #21 已正常合并，merge commit：`6054a460ad5babda52b7156ac0d0eff7759c4957`。
+- merge 后 `main` run #230（`33199666593`）再次三平台全部 `success`，证明最终 merge commit 在主分支重新通过永久 CI。
+- 最终独立 Review 结论保持 `NO_OPEN_FINDINGS_WITHIN_SCOPE`；3 个后续 Finding 均已通过 Red → 最小修复 → targeted Green → 全量/三平台 Green 闭环。
+- 当前独立归档分支从 `main@6054a460ad5babda52b7156ac0d0eff7759c4957` 创建，只移动/更新两份 Router 相关 Change，不修改产品实现。
+- 因实现已合并、main 新鲜 CI 已通过、Requirement Traceability / Validation Matrix / Completion Audit / Docs targeted re-review / 独立 Review 均无未解决 blocker，本 Change 状态更新为 `done` 并移入 `archive/2026-08/`。

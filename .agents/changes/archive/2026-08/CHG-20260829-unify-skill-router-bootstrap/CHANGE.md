@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260829-unify-skill-router-bootstrap
 title: 统一 Skill Router 与源码/Runtime 双入口 Bootstrap
 level: L3
-status: ready_for_review
+status: done
 owner: ChatGPT
 branch: refactor/unify-skill-router-bootstrap
 created: 2026-08-29
@@ -298,3 +298,14 @@ re-review：当前 head `795835ab7850aecfae113204d17d3c3e4b2fdf9c` 无剩余阻�
 - pre-Ready CI：run #197 (`33194154944`)；三平台产品验证全部通过，Linux 仅因 Change `in_progress` 的预期 Ready 状态门禁失败。
 - 本提交将 Change 切到 `ready_for_review` 并触发最终 PR CI；最终交付必须确认该新 HEAD 全部永久 Job 成功后才能把 PR 转 Ready。
 - 未授权合并，不合并 `main`；未创建实际 Release。
+
+# 最终交付与归档证据
+
+本节覆盖上文“Draft PR / 未授权合并 / 尚待最终 CI”的阶段性快照；原记录保留用于审计过程，不再代表最终状态。
+
+- PR #20 `统一 Skill Router 与双入口 Bootstrap` 已在最终 PR HEAD `c99dafcfdc02de78aa993909ec08203b032ab339` 上完成 run #198（`33194522713`）三平台全绿，并正常合并。
+- PR #20 merge commit：`0d532a5899ace3b17371559f8823e5d7393f7aa0`。
+- merge 后 `main` run #199（`33194807546`）状态 `success`，证明该 merge commit 在主分支重新通过永久 CI。
+- 后续依赖 Change `CHG-20260829-shared-root-router` / PR #21 已继续把 canonical Router 提升为 `.agents/skills/ROUTER.md`，并在其独立 Review 中补齐 Bootstrap、跨平台路径与切换 rollback 边界；本 Change 的核心“唯一 Router + 双 Bootstrap + 独立 Maintenance”职责没有被回退。
+- 当前归档动作从 `main@6054a460ad5babda52b7156ac0d0eff7759c4957` 创建独立分支，只移动/更新 Change 治理记录，不修改产品实现。
+- 因实现已合并、main 新鲜 CI 已通过、上游要求/Review/文档影响均无未解决 blocker，本 Change 状态更新为 `done` 并移入 `archive/2026-08/`。
