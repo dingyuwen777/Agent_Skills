@@ -13,7 +13,7 @@ from .skill_catalog import discover_skills
 
 
 PROJECT_PAYLOAD_SCHEMA = "agent-skills-project-payload/v1"
-_EXCLUDED_TOP_LEVEL = {"README.md", "tests"}
+_EXCLUDED_TOP_LEVEL = {"tests"}
 _EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
 
 
@@ -59,6 +59,8 @@ def _is_excluded_runtime_path(relative: PurePosixPath) -> bool:
     if not relative.parts:
         return True
     if relative.parts[0] in _EXCLUDED_TOP_LEVEL:
+        return True
+    if relative.name == "README.md":
         return True
     if "__pycache__" in relative.parts:
         return True

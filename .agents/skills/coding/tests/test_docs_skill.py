@@ -8,19 +8,26 @@ ROOT = Path(__file__).resolve().parents[4]
 
 
 class DocsSkillIntegrationTest(unittest.TestCase):
-    """验证 Docs 使用说明和 Coding 路由保持通用、事实优先和非第二套事实原则。"""
+    """验证 Docs 正式规则保持通用、事实优先，并可独立于辅助 README 使用。"""
 
     def _read(self, path: str) -> str:
-        """读取仓库中的文档规则。"""
+        """读取仓库中的正式文档规则。"""
         return (ROOT / path).read_text(encoding="utf-8")
 
-    def test_docs_readme_is_project_agnostic(self) -> None:
-        """Docs README 不应把某个业务项目写成默认使用场景。"""
-        readme = self._read(".agents/skills/docs/README.md")
-        self.assertIn("为什么存在", readme)
-        self.assertIn("第二套事实", readme)
-        self.assertIn("code_issue_detected", readme)
-        self.assertIn("在任意项目中能不能单独用 Docs", readme)
+    def test_docs_skill_is_project_agnostic_and_self_describing(self) -> None:
+        """删除 Docs README 后，主 SKILL 仍必须完整表达 Docs 的入口、事实和失败路由。"""
+        skill = self._read(".agents/skills/docs/SKILL.md")
+        for marker in (
+            "为什么存在",
+            "第二套事实",
+            "code_issue_detected",
+            "既可以独立用于文档 Review / 编写 / 更新",
+            "not_applicable",
+            "targeted",
+            "full",
+        ):
+            self.assertIn(marker, skill)
+        self.assertFalse((ROOT / ".agents/skills/docs/README.md").exists())
 
     def test_first_principles_examples_cover_multiple_project_shapes(self) -> None:
         """Docs 写作示例应覆盖通用数据流、CLI 和设备控制流，而不是固定业务链。"""
