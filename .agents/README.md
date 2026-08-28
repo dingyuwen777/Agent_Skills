@@ -29,14 +29,19 @@
     │   ├── SKILL.md
     │   ├── agents/
     │   └── references/
-    └── docs/
+    ├── docs/
+    │   ├── README.md
+    │   ├── SKILL.md
+    │   ├── agents/
+    │   └── references/
+    └── figma/
         ├── README.md
         ├── SKILL.md
         ├── agents/
         └── references/
 ```
 
-这只是**当前实际 Skill 集合**。正式分发不会把 `coding/review/docs` 写成永久全量白名单，而是从：
+这只是**当前实际 Skill 集合**。正式分发不会把 `coding/review/docs/figma` 写成永久全量白名单，而是从：
 
 ```text
 .agents/skills/*/SKILL.md
@@ -44,22 +49,26 @@
 
 动态发现合法正式 Skill。未来增加新的正式 Skill 后，Runtime、Full/source 安装和 Release 应自动识别，不要求更新静态名称列表。
 
-## 2. 当前三个核心 Skill
+## 2. 当前正式 Skill
 
 | Skill | 负责什么 | 使用说明 | 正式规则 |
 | --- | --- | --- | --- |
 | Coding | 研发、调试、验证、Git、CI、Release 与交付主流程 | [`skills/coding/README.md`](skills/coding/README.md) | [`skills/coding/SKILL.md`](skills/coding/SKILL.md) |
 | Review | 独立审查、Findings、测试充分性和 re-review | [`skills/review/README.md`](skills/review/README.md) | [`skills/review/SKILL.md`](skills/review/SKILL.md) |
 | Docs | 技术文档事实同步、审查、编写与更新 | [`skills/docs/README.md`](skills/docs/README.md) | [`skills/docs/SKILL.md`](skills/docs/SKILL.md) |
+| Figma | 设计事实、Canvas/Prototype、设计系统与可用性审查、修复、Ready 验收和 Design-to-Code 实施交接 | [`skills/figma/README.md`](skills/figma/README.md) | [`skills/figma/SKILL.md`](skills/figma/SKILL.md) |
 
 `README.md` 用来帮助人理解入口；真正约束 Agent 行为的是对应 `SKILL.md` 以及任务命中的 `references/`。
 
-Review 不维护第二套 Coding 规范；Docs 也不复制 Coding 的研发规则。当前常见路由是：
+Review 不维护第二套 Coding 规范；Docs 不复制 Coding 的研发规则；Figma 不复制 Coding 的 Change/TDD/CI/Git 规则，Coding 也不维护第二套 Figma Canvas/Spacing/Annotation/Prototype 详细规则。当前常见路由是：
 
 ```text
 目标项目 AGENTS.md / CONTRIBUTING / 同等规则
 → Coding
 → 按任务读取最少充分 references
+→ Figma 任务：进入 Figma 审查 / 修复 / baseline-ready
+   → NOT_READY：阻塞生产实现
+   → READY / READY_WITH_NOTES：交回 Coding 做真实实现
 → 需要文档同步时进入 Docs
 → 完成前进入 Review
 → PR / CI / Delivery
@@ -67,7 +76,7 @@ Review 不维护第二套 Coding 规范；Docs 也不复制 Coding 的研发规�
 
 以后增加其他正式 Skill 时，由当前 Core Skill、目标项目规则和新增 Skill 自身 `SKILL.md` 定义触发/路由；不要回到本文件维护一份“所有 Skill 必须怎样串联”的静态全集。
 
-显式 Code Review 可以让 Review 成为主要工作流，但仍先遵守项目上位规则和真实仓库事实。Docs 发现实现本身错误时返回 Coding，而不是修改文档去迎合 Bug。
+显式 Code Review 可以让 Review 成为主要工作流，但仍先遵守项目上位规则和真实仓库事实。Docs 发现实现本身错误时返回 Coding，而不是修改文档去迎合 Bug。Figma 发现生产实现问题时也返回 Coding 修真实实现，而不是让设计迎合已知 Bug。
 
 ## 3. `changes/`
 
@@ -155,7 +164,7 @@ Bootstrap 的职责只有：
 → 后续任务进入 Coding
 ```
 
-它不会因为看到 `package.json`、`pyproject.toml`、`Cargo.toml` 等文件名就自行决定框架、数据库或架构。
+它不会因为看到 `package.json`、`pyproject.toml`、`Cargo.toml` 等文件名就自行决定框架、数据库或架构，也不会把 Figma 示例反向当成目标项目的技术栈或系统能力。
 
 已有目标项目 `AGENTS.md` 时，只有 Agent Skills managed markers 内由 Bootstrap 管理；marker 外项目原文必须保持。
 
@@ -185,6 +194,8 @@ Runtime 模式的目标项目还会出现：
 - 保留项目自有不同名 Skill；
 - 首次遇到未认领的同名 Skill 时 fail closed，而不是猜测性覆盖。
 
+新增 `figma` 也必须走同一动态 ownership 机制；不能因为当前正式 Skill 变成四个，就在 Runtime、Project Payload、Installer 或 Release 中建立固定四项名单。
+
 ## 7. 从哪里继续读
 
 普通使用者通常不需要浏览 `.agents` 全目录。按任务直接进入：
@@ -192,6 +203,7 @@ Runtime 模式的目标项目还会出现：
 - 开发 / Bug / 方案 / Greenfield：[`skills/coding/README.md`](skills/coding/README.md)
 - Code Review / Audit：[`skills/review/README.md`](skills/review/README.md)
 - 文档 Review / 编写 / 更新：[`skills/docs/README.md`](skills/docs/README.md)
+- Figma Review / 修复 / Prototype / Ready / Design-to-Code：[`skills/figma/README.md`](skills/figma/README.md)
 - 仓库整体安装、Runtime binary、Full/source 分发和 Release：[`../README.md`](../README.md)
 
 不要机械读取所有 references；由对应 `SKILL.md` 的触发条件决定当前任务真正需要加载哪些规则。Runtime 项目里的 Reference Stub 也不能替代 MCP 返回的 canonical 原文。
