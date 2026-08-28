@@ -15,7 +15,7 @@ from typing import Any, Mapping
 from .project_payload import decode_payload_file, validate_project_payload
 
 
-INSTALL_SCHEMA = "agent-skills-install/v1"
+INSTALL_SCHEMA = "agent-skills-install/v2"
 INSTALL_MANIFEST_PATH = Path(".agents") / "agent-skills-install.json"
 AGENTS_MANAGED_START = "<!-- agent-skills:managed:start -->"
 AGENTS_MANAGED_END = "<!-- agent-skills:managed:end -->"
@@ -25,7 +25,7 @@ CODEX_MANAGED_START = "# agent-skills:mcp:start"
 CODEX_MANAGED_END = "# agent-skills:mcp:end"
 CACHE_IGNORE_RULE = ".agents/project-context.json"
 RUNTIME_IGNORE_RULE = "/.agents/runtime/"
-SKILL_ROUTER_ASSET = "coding/assets/AGENT_SKILLS_ROUTER.md"
+SKILL_ROUTER_ASSET = "ROUTER.md"
 _SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _CODEX_SERVER_PATTERN = re.compile(r"(?m)^\s*\[mcp_servers\.agent-skills\]\s*$")
 _FACT_SOURCE_NAMES = {
@@ -151,6 +151,29 @@ def _payload_asset(payload_files: Mapping[str, bytes], path: str) -> str:
     return _validate_utf8(content, path)
 
 
+def _normalise_shared_files(raw: Any, label: str) -> list[str]:
+    """校验 Skills 根级共享文件 ownership 清单并返回稳定列表。"""
+    if not isinstance(raw, list) or not raw:
+        raise ValueError(f"{label} shared_files 必须是非空列表")
+    shared_files = [str(item) for item in raw]
+    if shared_files != sorted(set(shared_files)):
+        raise ValueError(f"{label} shared_files 必须唯一且稳定排序")
+    for value in shared_files:
+        if "\\" in value:
+            raise ValueError(f"{label} shared file 不能包含反斜杠：{value!r}")
+        path = PurePosixPath(value)
+        if (
+            not value
+            or value.startswith("/")
+            or path.is_absolute()
+            or len(path.parts) != 1
+            or path.parts[0] in {".", ".."}
+            or ":" in path.parts[0]
+        ):
+            raise ValueError(f"{label} shared file 必须是 Skills 根级安全相对文件：{value!r}")
+    return shared_files
+
+
 def _fact_sources(root: Path) -> str:
     """只列出当前真实存在的少量高价值事实入口，不推断框架、数据库或架构。"""
     sources: list[str] = []
@@ -213,7 +236,7 @@ def _updated_gitignore(existing: bytes | None) -> bytes:
 
 
 def _load_install_manifest(path: Path) -> dict[str, Any] | None:
-    """读取并严格校验旧 managed installation manifest；不存在时返回空值。"""
+    """读取并严格校验当前 managed installation manifest；不存在时返回空值。"""
     if not path.exists():
         return None
     if path.is_symlink() or not path.is_file():
@@ -231,6 +254,7 @@ def _load_install_manifest(path: Path) -> dict[str, Any] | None:
     if normalized != sorted(set(normalized)) or any(not _SKILL_NAME_PATTERN.fullmatch(item) for item in normalized):
         raise ValueError("现有 Agent Skills install manifest skills 不是稳定唯一 Skill 列表")
     manifest["skills"] = normalized
+    manifest["shared_files"] = _normalise_shared_files(manifest.get("shared_files"), "现有 Agent Skills install manifest")
     return manifest
 
 
@@ -357,7 +381,7 @@ def _remove_path(path: Path) -> None:
 
 
 def _stage_skills(staging: Path, payload: Mapping[str, Any]) -> Path:
-    """把 Project Payload 完整写入临时 Skill 树，切换前不触碰目标正式目录。"""
+    """把 Project Payload 完整写入临时 Skills 树，切换前不触碰目标正式目录。"""
     skills_stage = staging / "skills"
     skills_stage.mkdir(parents=True)
     for entry in payload["files"]:
@@ -394,13 +418,14 @@ def _build_manifest(
     release_version: str,
     runtime_relative: str,
 ) -> bytes:
-    """生成只描述 Agent_Skills 自身 ownership/version/hash 的项目安装 manifest。"""
+    """生成描述 Agent_Skills Skill/shared ownership、版本和完整性的项目安装 manifest。"""
     manifest = {
         "schema": INSTALL_SCHEMA,
         "release_version": release_version,
         "source_digest": str(payload["source_digest"]),
         "payload_digest": str(payload["payload_digest"]),
         "skills": [str(item) for item in payload["skills"]],
+        "shared_files": [str(item) for item in payload["shared_files"]],
         "runtime": runtime_relative,
         "host_configs": [".codex/config.toml", ".cursor/mcp.json", ".mcp.json", "CLAUDE.md"],
     }
@@ -414,7 +439,7 @@ def install_project(
     *,
     release_version: str,
 ) -> dict[str, Any]:
-    """把当前 Runtime/Skill Payload 原子接入目标项目，并只修改 Agent_Skills 可证明认领的边界。"""
+    """把当前 Runtime/Payload 原子接入目标项目，并只修改 Agent_Skills 可证明认领的边界。"""
     target = Path(target_root).resolve()
     artifact = Path(runtime_artifact).resolve()
     if not target.is_dir():
@@ -427,6 +452,7 @@ def install_project(
         raise ValueError("release_version 不能为空")
 
     new_skills = [str(item) for item in project_payload["skills"]]
+    new_shared_files = _normalise_shared_files(project_payload.get("shared_files"), "Project Payload")
     agents_root = target / ".agents"
     skills_root = agents_root / "skills"
     manifest_path = target / INSTALL_MANIFEST_PATH
@@ -438,6 +464,7 @@ def install_project(
         _ensure_path_not_symlink(target, path)
     old_manifest = _load_install_manifest(manifest_path)
     old_skills = list(old_manifest["skills"]) if old_manifest is not None else []
+    old_shared_files = list(old_manifest["shared_files"]) if old_manifest is not None else []
     owned = old_manifest is not None
 
     for skill in sorted(set(old_skills) | set(new_skills)):
@@ -447,6 +474,14 @@ def install_project(
             raise ValueError(f"目标项目已存在未被 Agent Skills manifest 认领的同名 Skill：{skill}")
         if skill_path.exists() and (skill_path.is_symlink() or not skill_path.is_dir()):
             raise ValueError(f"受管 Skill 目标必须是普通目录：{skill_path}")
+
+    for relative in sorted(set(old_shared_files) | set(new_shared_files)):
+        shared_path = skills_root / relative
+        _ensure_path_not_symlink(target, shared_path)
+        if shared_path.exists() and relative not in old_shared_files:
+            raise ValueError(f"目标项目已存在未被 Agent Skills manifest 认领的同名共享文件：{relative}")
+        if shared_path.exists() and (shared_path.is_symlink() or not shared_path.is_file()):
+            raise ValueError(f"受管共享路径必须是普通文件：{shared_path}")
 
     payload_files = _payload_files(project_payload)
     agents_path = target / "AGENTS.md"
@@ -472,6 +507,7 @@ def install_project(
     snapshots = {path: _snapshot_file(path) for path in text_paths}
     runtime_snapshot = _snapshot_file(runtime_target)
     removed_skills = sorted(set(old_skills) - set(new_skills))
+    removed_shared_files = sorted(set(old_shared_files) - set(new_shared_files))
 
     agents_root.mkdir(parents=True, exist_ok=True)
     skills_root.mkdir(parents=True, exist_ok=True)
@@ -482,17 +518,30 @@ def install_project(
             backup_root = Path(backup_name)
             staged_skills = _stage_skills(stage_root, project_payload)
             backup_skills = backup_root / "skills"
+            backup_shared = backup_root / "shared"
             backup_skills.mkdir()
-            switched: list[str] = []
+            backup_shared.mkdir()
+            switched_skills: list[str] = []
+            switched_shared: list[str] = []
             try:
                 for skill in sorted(set(old_skills) | set(new_skills)):
                     target_skill = skills_root / skill
                     backup_skill = backup_skills / skill
                     if target_skill.exists():
                         target_skill.rename(backup_skill)
+                    switched_skills.append(skill)
                     if skill in new_skills:
                         (staged_skills / skill).rename(target_skill)
-                    switched.append(skill)
+
+                for relative in sorted(set(old_shared_files) | set(new_shared_files)):
+                    target_shared = skills_root / relative
+                    backup_path = backup_shared / relative
+                    backup_path.parent.mkdir(parents=True, exist_ok=True)
+                    if target_shared.exists():
+                        target_shared.rename(backup_path)
+                    switched_shared.append(relative)
+                    if relative in new_shared_files:
+                        (staged_skills / relative).rename(target_shared)
 
                 if artifact != runtime_target:
                     staged_runtime = stage_root / runtime_name
@@ -515,7 +564,16 @@ def install_project(
                     _restore_file(runtime_target, runtime_snapshot)
                 except Exception:
                     pass
-                for skill in reversed(switched):
+                for relative in reversed(switched_shared):
+                    target_shared = skills_root / relative
+                    backup_path = backup_shared / relative
+                    try:
+                        _remove_path(target_shared)
+                        if backup_path.exists():
+                            backup_path.rename(target_shared)
+                    except Exception:
+                        pass
+                for skill in reversed(switched_skills):
                     target_skill = skills_root / skill
                     backup_skill = backup_skills / skill
                     try:
@@ -533,7 +591,9 @@ def install_project(
         "source_digest": str(project_payload["source_digest"]),
         "payload_digest": str(project_payload["payload_digest"]),
         "skills": new_skills,
+        "shared_files": new_shared_files,
         "removed_skills": removed_skills,
+        "removed_shared_files": removed_shared_files,
         "runtime": runtime_relative,
         "manifest": INSTALL_MANIFEST_PATH.as_posix(),
         "hosts": ["codex", "cursor", "claude-code"],

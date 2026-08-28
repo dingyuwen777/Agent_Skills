@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 CODING_PATH = ROOT / ".agents/skills/coding/scripts/coding.py"
-ROUTER_PATH = ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
+ROUTER_PATH = ".agents/skills/ROUTER.md"
 
 
 def _load_module(name: str, path: Path):
@@ -28,10 +28,12 @@ class ProjectBootstrapTest(unittest.TestCase):
     """验证目标项目 AGENTS Overlay 与本地缓存忽略规则的安全、幂等行为。"""
 
     def _install_minimal_coding(self, root: Path) -> None:
-        """为 Bootstrap 测试建立最小已安装 Coding Skill 事实。"""
-        skill = root / ".agents/skills/coding"
+        """为 Bootstrap 测试建立最小已安装 Coding Skill 与共享 Router 事实。"""
+        skills = root / ".agents/skills"
+        skill = skills / "coding"
         skill.mkdir(parents=True)
         (skill / "SKILL.md").write_text("# Coding\n", encoding="utf-8")
+        (skills / "ROUTER.md").write_text("# Router\n", encoding="utf-8")
 
     def test_bootstrap_creates_agents_for_greenfield_without_inventing_stack(self) -> None:
         """空项目应创建可用 AGENTS 初版，并通过薄 managed block 进入唯一 Router。"""
@@ -129,6 +131,19 @@ class ProjectBootstrapTest(unittest.TestCase):
             updated = (root / ".gitignore").read_text(encoding="utf-8")
             self.assertEqual(updated, original)
             self.assertEqual(updated.count("project-context.json"), 1)
+
+    def test_bootstrap_requires_installed_router_before_mutation(self) -> None:
+        """Coding Skill 存在但共享 Router 缺失时不得写出悬空 AGENTS 导航。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._install_minimal_coding(root)
+            (root / ROUTER_PATH).unlink()
+
+            with self.assertRaisesRegex(FileNotFoundError, "ROUTER.md"):
+                CODING.bootstrap_project(root)
+
+            self.assertFalse((root / "AGENTS.md").exists())
+            self.assertFalse((root / ".gitignore").exists())
 
     def test_bootstrap_requires_installed_coding_skill(self) -> None:
         """目标项目没有 Coding Skill 时不得生成指向不存在入口的 AGENTS。"""

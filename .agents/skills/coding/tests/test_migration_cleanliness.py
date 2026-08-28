@@ -88,7 +88,7 @@ class UniversalizationCleanlinessTest(unittest.TestCase):
         agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         maintenance = (ROOT / ".agents/MAINTENANCE.md").read_text(encoding="utf-8")
         self.assertIn("Agent_Skills AI Bootstrap", agents)
-        self.assertIn(".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md", agents)
+        self.assertIn(".agents/skills/ROUTER.md", agents)
         self.assertIn(".agents/MAINTENANCE.md", agents)
         self.assertIn("不得复制到目标项目", agents)
         self.assertNotIn("## 8. Runtime 维护不变量", agents)

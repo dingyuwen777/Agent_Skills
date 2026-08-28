@@ -12,7 +12,8 @@ from typing import Any, Mapping
 from .skill_catalog import discover_skills
 
 
-PROJECT_PAYLOAD_SCHEMA = "agent-skills-project-payload/v1"
+PROJECT_PAYLOAD_SCHEMA = "agent-skills-project-payload/v2"
+SHARED_RUNTIME_FILES = ("ROUTER.md",)
 _EXCLUDED_TOP_LEVEL = {"tests"}
 _EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
 
@@ -71,10 +72,15 @@ def _is_excluded_runtime_path(relative: PurePosixPath) -> bool:
     return False
 
 
-def _payload_digest(skills: list[str], files: list[Mapping[str, Any]]) -> str:
-    """根据 Skill 集合和文件身份/hash/权限计算确定性 Project Payload 摘要。"""
+def _payload_digest(
+    skills: list[str],
+    shared_files: list[str],
+    files: list[Mapping[str, Any]],
+) -> str:
+    """根据 Skill、共享资产和文件身份/hash/权限计算确定性 Project Payload 摘要。"""
     material = {
         "skills": list(skills),
+        "shared_files": list(shared_files),
         "files": [
             {
                 "path": str(entry["path"]),
@@ -90,7 +96,7 @@ def _payload_digest(skills: list[str], files: list[Mapping[str, Any]]) -> str:
 
 
 def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) -> dict[str, Any]:
-    """从动态 Skill Catalog 构建 Core/运行资产 + Reference Stub 的自包含项目 Payload。"""
+    """从共享运行资产和动态 Skill Catalog 构建可独立安装的 Project Payload。"""
     root = Path(source_root).resolve()
     skills = discover_skills(root)
     skill_names = [skill.name for skill in skills]
@@ -107,6 +113,13 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
 
     files: list[dict[str, Any]] = []
     skills_root = root / ".agents" / "skills"
+    shared_files = list(SHARED_RUNTIME_FILES)
+    for relative in shared_files:
+        path = skills_root / relative
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"Project Payload 缺少普通共享运行资产：{path}")
+        files.append(_encode_file(relative, path.read_bytes(), stat.S_IMODE(path.stat().st_mode)))
+
     for skill in skills:
         for path in sorted(skill.root.rglob("*"), key=lambda item: item.as_posix()):
             if path.is_symlink():
@@ -130,24 +143,42 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
     payload = {
         "schema": PROJECT_PAYLOAD_SCHEMA,
         "skills": skill_names,
+        "shared_files": shared_files,
         "source_digest": str(bundle["source_digest"]),
         "files": files,
     }
-    payload["payload_digest"] = _payload_digest(skill_names, files)
+    payload["payload_digest"] = _payload_digest(skill_names, shared_files, files)
     validate_project_payload(payload)
     return payload
 
 
 def _safe_payload_path(value: str) -> PurePosixPath:
-    """校验 Payload 路径为位于 `.agents/skills` 下的安全 POSIX 相对路径。"""
+    """校验 Payload 路径为跨平台安全的 POSIX 相对路径。"""
+    if "\\" in value:
+        raise ValueError(f"Project Payload 路径不能包含反斜杠：{value!r}")
     candidate = PurePosixPath(value)
-    if not value or value.startswith(("/", "\\")) or candidate.is_absolute():
+    if not value or value.startswith("/") or candidate.is_absolute():
         raise ValueError(f"Project Payload 路径必须是相对路径：{value!r}")
     if any(part in {"", ".", ".."} for part in candidate.parts):
         raise ValueError(f"Project Payload 路径不能包含跳转段：{value!r}")
     if ":" in candidate.parts[0]:
         raise ValueError(f"Project Payload 路径不能包含盘符：{value!r}")
     return candidate
+
+
+def _shared_file_list(payload: Mapping[str, Any]) -> list[str]:
+    """读取并校验 Skills 根级共享运行文件清单。"""
+    raw = payload.get("shared_files")
+    if not isinstance(raw, list) or not raw:
+        raise ValueError("Project Payload shared_files 必须是非空列表")
+    shared_files = [str(item) for item in raw]
+    if shared_files != sorted(set(shared_files)):
+        raise ValueError("Project Payload shared_files 必须唯一且稳定排序")
+    for value in shared_files:
+        path = _safe_payload_path(value)
+        if len(path.parts) != 1:
+            raise ValueError(f"Project Payload shared file 必须位于 Skills 根目录：{value}")
+    return shared_files
 
 
 def decode_payload_file(entry: Mapping[str, Any]) -> bytes:
@@ -169,18 +200,21 @@ def decode_payload_file(entry: Mapping[str, Any]) -> bytes:
 
 
 def validate_project_payload(payload: Mapping[str, Any]) -> None:
-    """验证 Project Payload schema、Skill/file 集合、hash、权限和整体摘要。"""
+    """验证 Project Payload schema、Skill/shared/file 集合、hash、权限和整体摘要。"""
     if payload.get("schema") != PROJECT_PAYLOAD_SCHEMA:
         raise ValueError(f"不支持的 Project Payload schema：{payload.get('schema')!r}")
     skills = payload.get("skills")
     if not isinstance(skills, list) or not skills or skills != sorted(set(str(item) for item in skills)):
         raise ValueError("Project Payload skills 必须是非空、唯一、稳定排序列表")
+    skill_names = [str(item) for item in skills]
+    shared_files = _shared_file_list(payload)
     files = payload.get("files")
     if not isinstance(files, list) or not files:
         raise ValueError("Project Payload files 必须是非空列表")
     seen: set[str] = set()
     normalized: list[dict[str, Any]] = []
     skill_roots_with_entry: set[str] = set()
+    shared_entries: set[str] = set()
     for raw in files:
         if not isinstance(raw, Mapping):
             raise ValueError("Project Payload 文件条目必须是 object")
@@ -192,10 +226,19 @@ def validate_project_payload(payload: Mapping[str, Any]) -> None:
         mode = int(raw["mode"])
         normalized.append({"path": path, "size": len(content), "sha256": _sha256_bytes(content), "mode": mode})
         pure = PurePosixPath(path)
+        if len(pure.parts) == 1:
+            if path not in shared_files:
+                raise ValueError(f"Project Payload Skills 根级文件未在 shared_files 认领：{path}")
+            shared_entries.add(path)
+            continue
+        if pure.parts[0] not in skill_names:
+            raise ValueError(f"Project Payload 文件不属于正式 Skill：{path}")
         if len(pure.parts) == 2 and pure.name == "SKILL.md":
             skill_roots_with_entry.add(pure.parts[0])
-    if skill_roots_with_entry != set(str(item) for item in skills):
+    if shared_entries != set(shared_files):
+        raise ValueError("Project Payload shared_files 与实际共享文件条目不一致")
+    if skill_roots_with_entry != set(skill_names):
         raise ValueError("Project Payload 每个正式 Skill 必须且只能由自己的根 SKILL.md 建立入口")
-    expected_digest = _payload_digest([str(item) for item in skills], normalized)
+    expected_digest = _payload_digest(skill_names, shared_files, normalized)
     if str(payload.get("payload_digest")) != expected_digest:
         raise ValueError("Project Payload payload_digest 与文件内容不一致")

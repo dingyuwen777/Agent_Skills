@@ -10,7 +10,7 @@ from runtime.agent_skills_runtime.project_payload import build_project_payload
 ROOT = Path(__file__).resolve().parents[4]
 CODING_ROOT = ROOT / ".agents/skills/coding"
 FIGMA_ROOT = ROOT / ".agents/skills/figma"
-ROUTER_PATH = CODING_ROOT / "assets/AGENT_SKILLS_ROUTER.md"
+ROUTER_PATH = ROOT / ".agents/skills/ROUTER.md"
 
 
 class UniversalFigmaSkillTest(unittest.TestCase):
@@ -104,7 +104,7 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         router = self._read(ROUTER_PATH)
         root_readme = self._read(ROOT / "README.md")
         for text in (managed, root_agents):
-            self.assertIn("AGENT_SKILLS_ROUTER.md", text)
+            self.assertIn(".agents/skills/ROUTER.md", text)
         self.assertIn("figma", router.lower())
         self.assertIn(".agents/skills/*/SKILL.md", router)
         self.assertIn("figma", root_readme.lower())

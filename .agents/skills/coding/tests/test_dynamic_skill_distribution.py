@@ -12,9 +12,12 @@ class DynamicSkillDistributionTest(unittest.TestCase):
     """验证正式 Skill 由目录动态发现，而不是依赖 coding/review/docs 静态名单。"""
 
     def setUp(self) -> None:
-        """为每个测试建立隔离的最小 Agent_Skills 源目录。"""
+        """为每个测试建立隔离的最小 Agent_Skills 源目录和共享 Router。"""
         self.temp_directory = tempfile.TemporaryDirectory()
         self.root = Path(self.temp_directory.name)
+        skills_root = self.root / ".agents" / "skills"
+        skills_root.mkdir(parents=True)
+        (skills_root / "ROUTER.md").write_text("# Router\n", encoding="utf-8")
 
     def tearDown(self) -> None:
         """清理测试创建的临时源目录。"""
@@ -64,7 +67,7 @@ class DynamicSkillDistributionTest(unittest.TestCase):
         self.assertFalse(any(entry["skill"] == "architecture" for entry in bundle["references"]))
 
     def test_project_payload_builder_is_part_of_runtime_and_discovers_all_skills(self) -> None:
-        """单二进制构建必须提供可嵌入的 Project Payload，而不是依赖外部 Kit payload。"""
+        """单二进制构建必须提供共享资产 + 动态 Skills 的可嵌入 Project Payload。"""
         for skill in ("coding", "review", "docs", "security"):
             skill_root = self._write_skill(skill)
             (skill_root / "templates").mkdir()
@@ -74,7 +77,9 @@ class DynamicSkillDistributionTest(unittest.TestCase):
         payload = payload_module.build_project_payload(self.root, build_bundle(self.root))
 
         self.assertEqual(payload["skills"], ["coding", "docs", "review", "security"])
+        self.assertEqual(payload["shared_files"], ["ROUTER.md"])
         paths = {entry["path"] for entry in payload["files"]}
+        self.assertIn("ROUTER.md", paths)
         self.assertIn("security/SKILL.md", paths)
         self.assertIn("security/templates/example.txt", paths)
         self.assertIn("security/references/01_规则.md", paths)

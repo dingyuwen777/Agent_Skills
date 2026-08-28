@@ -8,7 +8,7 @@ from runtime.agent_skills_runtime.project_payload import build_project_payload, 
 
 
 ROOT = Path(__file__).resolve().parents[4]
-ROUTER_PATH = ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
+ROUTER_PATH = ".agents/skills/ROUTER.md"
 MAINTENANCE_PATH = ".agents/MAINTENANCE.md"
 MANAGED_PATH = ".agents/skills/coding/assets/AGENTS.managed.md"
 RUNTIME_REFERENCE_PATH = ".agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md"
@@ -87,14 +87,15 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertNotIn("当前正式 Skill：", maintenance)
 
     def test_project_payload_distributes_router_exactly_as_runtime_asset(self) -> None:
-        """Router 必须原样进入 Project Payload，使安装后的 managed block 指向真实本地文件。"""
+        """根级 Router 必须原样进入 Project Payload，使安装后的 managed block 指向真实本地文件。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
+        self.assertEqual(payload["shared_files"], ["ROUTER.md"])
         entry = next(
-            (item for item in payload["files"] if item["path"] == "coding/assets/AGENT_SKILLS_ROUTER.md"),
+            (item for item in payload["files"] if item["path"] == "ROUTER.md"),
             None,
         )
-        self.assertIsNotNone(entry, "Project Payload 没有分发 canonical Router 运行资产")
+        self.assertIsNotNone(entry, "Project Payload 没有分发 canonical Router 共享运行资产")
         installed_router = decode_payload_file(entry).decode("utf-8")
         self.assertEqual(installed_router, self._read(ROUTER_PATH))
 
