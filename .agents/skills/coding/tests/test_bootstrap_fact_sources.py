@@ -26,13 +26,19 @@ CODING = _load_coding()
 class BootstrapFactSourcesTest(unittest.TestCase):
     """验证多语言项目 Bootstrap 只列真实事实入口，不把仓库派生文本升级成技术栈或 Markdown 指令。"""
 
+    def _install_minimal_coding(self, root: Path) -> None:
+        """建立满足当前 Bootstrap Contract 的最小 Coding Skill 与共享 Router。"""
+        skills = root / ".agents/skills"
+        skill = skills / "coding"
+        skill.mkdir(parents=True)
+        (skill / "SKILL.md").write_text("# Coding\n", encoding="utf-8")
+        (skills / "ROUTER.md").write_text("# Router\n", encoding="utf-8")
+
     def test_polyglot_manifests_are_listed_without_affirmative_framework_inference(self) -> None:
         """Python/Node/Rust/Go 入口可同时进入导航，但不生成 FastAPI/React/PostgreSQL 等项目断言。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            skill = root / ".agents/skills/coding"
-            skill.mkdir(parents=True)
-            (skill / "SKILL.md").write_text("# Coding\n", encoding="utf-8")
+            self._install_minimal_coding(root)
             (root / "pyproject.toml").write_text("[project]\nname='example'\n", encoding="utf-8")
             (root / "package.json").write_text('{"name":"example"}\n', encoding="utf-8")
             (root / "Cargo.toml").write_text("[package]\nname='example'\nversion='0.1.0'\n", encoding="utf-8")
@@ -67,9 +73,7 @@ class BootstrapFactSourcesTest(unittest.TestCase):
         """真实文件名包含反引号时，Bootstrap 必须转义后再放入事实入口列表。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            skill = root / ".agents/skills/coding"
-            skill.mkdir(parents=True)
-            (skill / "SKILL.md").write_text("# Coding\n", encoding="utf-8")
+            self._install_minimal_coding(root)
             docs = root / "docs"
             docs.mkdir()
             (docs / "guide`danger.md").write_text("# Guide\n", encoding="utf-8")
