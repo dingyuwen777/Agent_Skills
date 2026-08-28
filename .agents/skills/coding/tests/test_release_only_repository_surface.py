@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[4]
 
 
 class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
-    """验证仓库只保留 Runtime Release 对外分发面，并把维护者与最终用户入口彻底分开。"""
+    """验证仓库只保留 Runtime Release 对外分发面，并把维护者、Agent 入口与最终用户入口分开。"""
 
     def _read(self, relative: str) -> str:
         """读取仓库 UTF-8 文本用于职责与 Release 合同断言。"""
@@ -107,6 +107,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         paths = {entry["path"] for entry in payload["files"]}
         self.assertNotIn("coding/scripts/tzdata/README.md", paths)
         self.assertIn("coding/scripts/tzdata/zoneinfo/Asia/Shanghai", paths)
+        self.assertIn("coding/assets/AGENT_SKILLS_ROUTER.md", paths)
 
         runtime_readme = self._read("runtime/README.md")
         runtime_reference = self._read(
@@ -116,22 +117,33 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             self.assertIn("任意深度", text)
             self.assertIn("维护 `README.md`", text)
 
-    def test_root_agents_and_managed_agents_have_distinct_roles(self) -> None:
-        """根 AGENTS 只维护源仓库，目标项目 managed block 才负责指导 AI 使用正式 Skills。"""
+    def test_root_managed_router_and_maintenance_have_distinct_roles(self) -> None:
+        """两个薄 Bootstrap 共用唯一 Router，源仓库维护规则由 Maintenance 独立承担。"""
         root_agents = self._read("AGENTS.md")
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
-        self.assertIn("Agent_Skills 源仓库", root_agents)
-        self.assertIn("维护", root_agents)
-        self.assertIn("不得复制到目标项目", root_agents)
-        self.assertNotIn("Full Distribution", root_agents)
-        self.assertNotIn("Full/source", root_agents)
+        router = self._read(".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md")
+        maintenance = self._read(".agents/MAINTENANCE.md")
 
-        self.assertIn("Agent Skills 研发入口", managed)
-        self.assertIn(".agents/skills/coding/SKILL.md", managed)
-        self.assertIn("agent_skills_load_context", managed)
-        self.assertIn(".agents/skills/figma/SKILL.md", managed)
-        self.assertIn(".agents/skills/review/SKILL.md", managed)
-        self.assertIn(".agents/skills/docs/SKILL.md", managed)
+        for text in (root_agents, managed):
+            self.assertIn(".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md", text)
+        self.assertIn(".agents/MAINTENANCE.md", root_agents)
+        self.assertIn("不得复制到目标项目", root_agents)
+        self.assertNotIn("agent_skills_load_context", managed)
+        self.assertNotIn(".agents/skills/figma/SKILL.md", managed)
+        self.assertNotIn(".agents/skills/review/SKILL.md", managed)
+        self.assertNotIn(".agents/skills/docs/SKILL.md", managed)
+
+        for marker in (
+            ".agents/skills/coding/SKILL.md",
+            "agent_skills_load_context",
+            ".agents/skills/figma/SKILL.md",
+            ".agents/skills/review/SKILL.md",
+            ".agents/skills/docs/SKILL.md",
+        ):
+            self.assertIn(marker, router)
+        self.assertIn("Agent_Skills 源仓库维护规范", maintenance)
+        self.assertIn("Runtime 维护不变量", maintenance)
+        self.assertIn("Git 与 Release", maintenance)
 
     def test_root_readme_is_maintainer_landing_page_not_user_manual(self) -> None:
         """根 README 只承担源码维护入口，并把最终用户路由到 USAGE。"""
@@ -139,6 +151,8 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         for marker in (
             "USAGE.md",
             "AGENTS.md",
+            ".agents/MAINTENANCE.md",
+            "AGENT_SKILLS_ROUTER.md",
             "runtime/README.md",
             ".agents/skills/*/SKILL.md",
             "scripts/build_runtime.py",
