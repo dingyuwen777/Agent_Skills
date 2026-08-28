@@ -1,17 +1,17 @@
 # 本地 MCP Runtime 分发与原文上下文加载
 
-这份规则定义 Agent_Skills 当前唯一正式对外分发模式：**Native Core Skill + Project-local MCP Runtime + Encrypted Canonical References + onefile binary**。
+这份规则定义 Agent_Skills 当前唯一正式对外分发模式：**Native Core Skill + Shared Skill Router + Project-local MCP Runtime + Encrypted Canonical References + onefile binary**。
 
-目标是：最终使用者只拿到对应平台 Release binary，在目标项目根运行即可完成项目级接入；详细 canonical `references/*.md` 不作为普通 Markdown 分发到目标项目，同时保持现有自然语言 Skill 的执行语义和逐字完整性。
+目标是：最终使用者只拿到对应平台 Release binary，在目标项目根运行即可完成项目级接入；详细 canonical `references/*.md` 不作为普通 Markdown 分发到目标项目，同时保持现有自然语言 Skill 的执行语义和逐字完整性。跨 Skill 的 Catalog / Router 只维护一份 `coding/assets/AGENT_SKILLS_ROUTER.md`，源码直读和 Runtime 安装共享同一正文。
 
-本文件只规定 Runtime 分发、动态 Skill 发现、Project Payload、Reference 原文加载、项目级安装/升级、宿主接入、完整性、Release 和失败边界。Coding / Review / Docs / Figma 的研发语义仍由各自 `SKILL.md` 与 canonical References 定义。
+本文件只规定 Runtime 分发、动态 Skill 发现、Project Payload、Reference 原文加载、项目级安装/升级、宿主接入、完整性、Release 和失败边界。Coding / Review / Docs / Figma 的研发语义仍由各自 `SKILL.md` 与 canonical References 定义；跨 Skill 入口、Reference 取得方式和 Handoff 由唯一 Router 定义。
 
 ## 1. 何时必须读取
 
 出现以下任务时必须读取本文件：
 
 - 构建、Release、安装或升级 `agent-skills-mcp`；
-- 修改 Project Payload、动态 Skill Catalog、installation manifest 或项目宿主 MCP 配置；
+- 修改 Project Payload、动态 Skill Catalog、共享 Router、installation manifest 或项目宿主 MCP 配置；
 - 修改 Runtime Bundle schema、Reference ID、加密格式、MCP Tool Contract、Stub、`source_digest` 或 `payload_digest`；
 - 调试目标项目 Reference Stub → MCP canonical 原文链；
 - Review Runtime 是否仍逐字返回 canonical Reference；
@@ -26,7 +26,7 @@
 Agent_Skills 源仓库 .agents/skills/*
 → 构建时动态发现正式 Skill
 
-Native Core / 必要运行资产
+Native Core / Shared Router / 必要运行资产
 → 构建成 Project Payload
 → 随 onefile Runtime 嵌入
 → 安装到目标项目 .agents/skills/
@@ -91,16 +91,24 @@ Runtime、Project Payload、manifest、测试和 Release **不得维护固定完
 7. `references/` 存在时只接受当前 Contract 支持的普通 Markdown，不通过特殊文件/符号链接越界；
 8. 发现结果确定性排序。
 
-`coding` 仍是当前目标项目 AGENTS Bootstrap 的核心锚点。改变这一上位入口关系属于独立架构变化，不能借动态发现静默修改。
+`coding` 仍是当前目标项目研发路由的核心锚点。`coding/assets/AGENT_SKILLS_ROUTER.md` 可以展示当前 Catalog 供 Agent 导航，但明确不是 Runtime 分发白名单；改变 Coding 的上位入口关系属于独立架构变化，不能借动态发现静默修改。
 
-## 4. 唯一规则事实源
+## 4. 规则与 Router 事实源
 
-每个正式 Skill 的规则事实源：
+每个正式 Skill 的专业规则事实源：
 
 ```text
 .agents/skills/<skill>/SKILL.md
 .agents/skills/<skill>/references/*.md
 ```
+
+跨 Skill 的 Catalog、项目事实优先、Reference 两种取得方式和 Coding/Figma/Review/Docs Handoff 的唯一正文 Owner：
+
+```text
+.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md
+```
+
+Router 不是新的专业 Skill，也不得复制各 Skill 的完整详细规则；根 `AGENTS.md` 与 `AGENTS.managed.md` 只做 Bootstrap，不再拥有第二套完整 Router。
 
 Builder 读取 canonical References 时：
 
@@ -113,17 +121,23 @@ Builder 读取 canonical References 时：
 
 Runtime Stub 不是规则事实源，只负责把 Core Skill 中原有相对链接接到 MCP canonical 原文加载能力。
 
-## 5. Native Core 为什么继续明文
+## 5. Native Core 与 Router 为什么继续明文
 
 Core `SKILL.md` 负责：
 
-- 让支持 Skill/Rules/AGENTS 的宿主在任务开始进入正确工作流；
+- 让支持 Skill/Rules/AGENTS 的宿主进入本 Skill 的正式工作流；
 - 恢复项目事实并完成任务/风险/工具链路由；
 - 决定何时必须读取某个 Reference；
-- 在 Skill 之间显式路由；
 - 保留 Reference 缺失/加载失败时的停止条件和完成门禁。
 
-如果 Core 也完全隐藏，只留下 MCP Tool，模型还需要额外猜“什么时候调用 MCP”，会增加执行效果回归风险。因此 Core/必要运行资产继续作为 Project Payload 明文安装；详细 canonical Reference 正文保留在加密 Bundle 中。
+共享 Router 负责：
+
+- 在两个 Bootstrap 之后提供同一跨 Skill Catalog / Router；
+- 固定项目事实优先；
+- 说明源码 canonical Reference 与 Runtime Stub 两种取得方式；
+- 把 Coding / Figma / Review / Docs Handoff 放在单一 Owner，而不是复制到两个 AGENTS 入口。
+
+如果 Core/Router 也完全隐藏，只留下 MCP Tool，模型还需要额外猜“什么时候进入哪个 Skill、什么时候调用 MCP”，会增加执行效果回归风险。因此 Core/Router/必要运行资产继续作为 Project Payload 明文安装；详细 canonical Reference 正文保留在加密 Bundle 中。
 
 ## 6. Stable Reference ID
 
@@ -177,7 +191,7 @@ size
 
 计算，用于证明 canonical Reference 集合与内容版本。`bundle_version` 是机器导航版本，不替代 Git SHA 或 Release Version。
 
-Core/Project Payload 变化不一定改变 `source_digest`，所以必须独立维护 `payload_digest`。
+Core/Router/Project Payload 变化不一定改变 `source_digest`，所以必须独立维护 `payload_digest`。
 
 ## 8. Project Payload Contract
 
@@ -197,13 +211,16 @@ agent-skills-project-payload/v1
 → 为每个 canonical Reference 生成同名 Runtime Stub
 → tests/、任意深度的维护 `README.md`、__pycache__、*.pyc、*.pyo 等维护内容排除
 → 其余普通运行资产原样进入 payload
+→ 包括 coding/assets/AGENT_SKILLS_ROUTER.md
 → 记录 path / size / SHA256 / mode / content
 → 计算 payload_digest
 ```
 
-使用明确排除项，而不是不断扩展固定 Core 白名单。未来某 Skill 新增 `templates/`、`schemas/`、`scripts/` 或其他真实运行资产时，只要不属于明确排除范围，应自动进入 payload。
+使用明确排除项，而不是不断扩展固定 Core/Router 白名单。未来某 Skill 新增 `templates/`、`schemas/`、`scripts/` 或其他真实运行资产时，只要不属于明确排除范围，应自动进入 payload。
 
 Payload 路径必须是安全相对路径，拒绝绝对路径、盘符、`..`、符号链接和特殊文件。POSIX mode 进入完整性 Contract。
+
+永久测试必须证明 `coding/assets/AGENT_SKILLS_ROUTER.md` 原样进入 Payload，使目标项目 managed block 不会指向不存在的 Router。
 
 ## 9. Reference Stub Contract
 
@@ -373,7 +390,7 @@ POSIX:   .agents/runtime/agent-skills-mcp
 
 项目安装还会建立：
 
-- 根 `AGENTS.md`：创建或只更新 `agent-skills:managed` block；
+- 根 `AGENTS.md`：创建或只更新 `agent-skills:managed` block；该 block 只负责项目事实优先并指向项目内 `coding/assets/AGENT_SKILLS_ROUTER.md`；
 - `.gitignore`：增量加入项目缓存和 Runtime ignore；
 - Cursor：`.cursor/mcp.json` 的 `mcpServers.agent-skills`；
 - Claude Code：`.mcp.json` 的 `mcpServers.agent-skills` + `CLAUDE.md` 最薄 `@AGENTS.md` bridge；
@@ -392,7 +409,7 @@ Codex workspace trust 以及 Cursor/Claude 的首次确认属于宿主安全边�
 ## 15. 安装原子性与回滚
 
 1. 先验证 Project Payload、路径/hash/mode、旧 manifest、同名 Skill ownership、AGENTS/host config marker/JSON 编码和符号链接；
-2. 在 `.agents` 下完整暂存新 Skill；
+2. 在 `.agents` 下完整暂存新 Skill，当前正式构建必须包含 managed block 指向的 Router；
 3. 备份旧 manifest 明确认领的受管 Skill；
 4. 切换 Skill；
 5. 安装项目 Runtime 并验证 SHA256；
@@ -414,11 +431,12 @@ Builder 至少：
 1. 动态 Skill Catalog 校验；
 2. canonical References UTF-8 / ID / SHA / size / `source_digest`；
 3. Project Payload path / SHA / size / mode / `payload_digest`；
-4. AES-GCM Reference 加密；
-5. PyInstaller onefile build；
-6. artifact `status --json`；
-7. artifact `self-test --json`；
-8. source/payload digest、skills、VERSION 与当前源一致。
+4. 确认唯一 Router 作为 Coding 正式运行资产进入 Payload；
+5. AES-GCM Reference 加密；
+6. PyInstaller onefile build；
+7. artifact `status --json`；
+8. artifact `self-test --json`；
+9. source/payload digest、skills、VERSION 与当前源一致。
 
 永久 CI 使用最终 artifact 验证：
 
@@ -428,7 +446,8 @@ artifact status/self-test
 → 真实临时项目单 binary 安装
 → 重复升级
 → 无参数当前目录安装
-→ 项目 Runtime / Skill / Stub / manifest / host config
+→ 项目 Runtime / Skill / Router / Stub / manifest / host config
+→ 项目 AGENTS managed block → Router 导航闭环
 → 项目内 Runtime status + MCP smoke
 ```
 
@@ -470,12 +489,12 @@ Release 规则：
 → 在目标项目根运行
 → 校验 Bundle / Project Payload
 → 根据旧 manifest 计算 ownership
-→ 原子升级项目 Runtime + 受管 Skill/Stub + managed 配置
+→ 原子升级项目 Runtime + 受管 Skill/Router/Stub + managed 配置
 → 写入新 manifest
 → 重新建立 MCP 会话（宿主需要时）
 ```
 
-Reference bytes 变化会改变 SHA/source_digest；Core/运行资产变化会改变 payload_digest。Stub Expected SHA256 与项目 Runtime 不匹配时，Agent 必须停止依赖该 Reference。
+Reference bytes 变化会改变 SHA/source_digest；Core/Router/运行资产变化会改变 payload_digest。Stub Expected SHA256 与项目 Runtime 不匹配时，Agent 必须停止依赖该 Reference。
 
 ## 19. 回滚
 
@@ -485,7 +504,7 @@ Reference bytes 变化会改变 SHA/source_digest；Core/运行资产变化会�
 Runtime binary A
 ↔ source_digest A
 ↔ payload_digest A
-↔ target managed Skill / Stub A
+↔ target managed Skill / Router / Stub A
 ```
 
 回滚：
@@ -493,11 +512,11 @@ Runtime binary A
 1. 找回旧 Release 同平台 binary；
 2. 校验旧 checksum；
 3. 在目标项目根运行旧 binary；
-4. 由旧 binary 根据当前 manifest 恢复该版本对应 Runtime/Skill/Stub/managed 配置；
+4. 由旧 binary 根据当前 manifest 恢复该版本对应 Runtime/Skill/Router/Stub/managed 配置；
 5. 检查项目 Runtime `status/self-test`；
 6. 重新建立 MCP 会话并做真实 Reference 加载。
 
-不要只手工替换 Runtime 或只回退 Stub，避免版本混装。
+不要只手工替换 Runtime、Router 或 Stub，避免版本混装。
 
 ## 20. 正常任务生命周期
 
@@ -507,18 +526,16 @@ Runtime binary A
 
 ```text
 任务开始
-→ agent_skills_start_task(task_id, phase)
-→ Core 恢复项目事实并路由
-→ 读命中 Reference Stub
-→ agent_skills_load_context(ids)
+→ 项目 AGENTS managed block / 源码根 AGENTS
+→ 唯一 AGENT_SKILLS_ROUTER.md
+→ agent_skills_start_task(task_id, phase)（安装态可选）
+→ Coding/Core 恢复项目事实并路由
+→ 读命中 canonical Reference 或 Runtime Stub
+→ Stub 模式调用 agent_skills_load_context(ids)
 → 校验 SHA
 → 使用 canonical_text 工作
-→ 阶段变化继续按 Core 触发新 Reference
+→ 阶段变化继续按 Router/Core 触发新 Skill/Reference
 → 可用 checkpoint 检查 required IDs
 ```
 
 MCP 负责 Reference 传输和完整性，不替 Agent 判断需求是否满足。
-
-## 21. ChatGPT 网页端边界
-
-当前 Runtime 是本地 stdio MCP。纯网页端 ChatGPT 不能直接启动用户电脑本地进程；网页端接入需要 Remote MCP 或受支持的安全隧道，是另一种部署形态，不属于当前 Runtime。

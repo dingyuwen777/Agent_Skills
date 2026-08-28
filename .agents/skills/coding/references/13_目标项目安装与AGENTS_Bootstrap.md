@@ -1,6 +1,6 @@
 # 目标项目安装与 AGENTS Bootstrap
 
-这份规则处理一个边界：**如何通过正式 Runtime binary 把当前 Release 的 Agent_Skills 安装/升级到目标项目，并安全建立目标项目自己的 `AGENTS.md` Overlay，使后续研发会话稳定进入 Coding，再按真实任务继续路由 Review / Docs / Figma / References。**
+这份规则处理一个边界：**如何通过正式 Runtime binary 把当前 Release 的 Agent_Skills 安装/升级到目标项目，并安全建立目标项目自己的 `AGENTS.md` Overlay，使后续研发会话稳定进入同一个 Agent Skills Router，再由 Router 进入 Coding / Review / Docs / Figma / References。**
 
 它不规定目标项目必须使用什么语言、框架、数据库、目录、CI 或部署方式，也不替代目标项目已有规则。
 
@@ -12,6 +12,7 @@ Runtime binary
 → 在目标项目根运行
 → 项目级安装 Runtime + 全部正式 Skill Project Payload + Reference Stub
 → 创建/更新目标项目 AGENTS managed block
+→ managed block 指向项目内唯一 AGENT_SKILLS_ROUTER.md
 → 建立项目级 MCP 配置
 ```
 
@@ -26,15 +27,22 @@ Runtime 的加密、Project Payload、managed installation manifest、Codex/Curs
 - 目标项目缺少根 `AGENTS.md`，需要建立项目 Overlay；
 - 目标项目已有 `AGENTS.md`，需要安全补充/升级 Agent Skills managed block；
 - 修复或审查 AGENTS managed block、Bootstrap 行为；
+- 修改唯一 `AGENT_SKILLS_ROUTER.md` 的项目安装/Bootstrap 可达性；
 - 修改正式 Skill 的 Project Payload 安装边界；
 - 判断哪些 `.agents` 内容属于 Agent_Skills 受管内容，哪些属于目标项目自有状态；
 - 修改项目 Runtime、ownership manifest、宿主 MCP 配置或安装回滚。
 
 普通只读分析、Review、文档审计或功能开发，如果用户没有授权项目规则写入，不因为发现 `AGENTS.md` 缺失就自动创建或修改文件。权限边界仍按 Coding 主规则执行。
 
-## 2. 固定边界：分发 Skill，不复制源仓库 Overlay
+## 2. 固定边界：分发 Skill，不复制源仓库 Bootstrap / Maintenance
 
-Agent_Skills 源仓库根 `AGENTS.md` 只用于维护 Agent_Skills 本身，**禁止直接复制成目标项目根 `AGENTS.md`**。
+Agent_Skills 源仓库根 `AGENTS.md` 是源码直读/维护模式的薄 Bootstrap，`.agents/MAINTENANCE.md` 只负责维护 Agent_Skills 源仓库本身。二者都**禁止直接复制成目标项目根 `AGENTS.md`**。
+
+目标项目安装后的跨 Skill 路由统一读取：
+
+```text
+.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md
+```
 
 正式 Skill 从：
 
@@ -42,7 +50,7 @@ Agent_Skills 源仓库根 `AGENTS.md` 只用于维护 Agent_Skills 本身，**�
 .agents/skills/<skill-name>/SKILL.md
 ```
 
-动态发现。当前仓库实际存在 `coding`、`review`、`docs`、`figma`，但这些名称不是安装器/Runtime 的永久白名单。
+动态发现。当前仓库实际存在 `coding`、`review`、`docs`、`figma`，但这些名称不是安装器/Runtime 的永久白名单；当前 Catalog 的可读导航由唯一 Router 展示，不要求 Bootstrap 再维护第二份列表。
 
 目标项目中的下列内容不是普通安装/升级的清理目标：
 
@@ -97,19 +105,34 @@ Runtime binary 负责：
 2. 读取动态正式 Skill Catalog；
 3. 读取旧 `.agents/agent-skills-install.json`，只把旧 manifest 明确认领的 Skill 当成 Agent_Skills 自有；
 4. 首次安装遇到未被认领的同名 Skill 时 fail closed；
-5. 完整暂存新受管 Skill；
+5. 完整暂存新受管 Skill，其中 Coding 的正式运行资产包含唯一 `AGENT_SKILLS_ROUTER.md`；
 6. 安装/升级项目 `.agents/runtime/agent-skills-mcp[.exe]`；
-7. 创建或安全增量更新根 `AGENTS.md`；
+7. 创建或安全增量更新根 `AGENTS.md`，managed block 只指向项目内 Router；
 8. 增量更新 `.gitignore`；
 9. 建立 Codex / Cursor / Claude Code 项目级 MCP 入口和必要 bridge；
 10. 写入新的 managed installation manifest；
 11. 任一步失败时按安装前快照恢复本轮已经切换的受管内容。
 
-目标项目里的 canonical Reference 只安装同名 Stub，正文不作为普通 Markdown 落盘；命中 Reference 后通过 MCP 取得并校验 `canonical_text`。
+目标项目里的 canonical Reference 只安装同名 Stub，正文不作为普通 Markdown 落盘；命中 Reference 后由 Router/Skill 按 Stub 协议通过 MCP 取得并校验 `canonical_text`。
 
-## 4. Bootstrap 的唯一模板事实源
+## 4. Bootstrap 与 Router 的唯一事实源
 
-`assets/AGENTS.template.md` 和 `assets/AGENTS.managed.md` 承担确定性 Bootstrap 模板。Runtime binary 使用同一套模板语义，不维护第二套项目规则。
+三个资产职责必须分开：
+
+```text
+assets/AGENTS.template.md
+→ 目标项目原本没有 AGENTS.md 时的项目 Overlay 外层模板
+
+assets/AGENTS.managed.md
+→ 写入目标项目 AGENTS.md 的薄 Bootstrap
+→ 只负责项目事实优先 + 指向唯一 Router + Router 不可用时 fail closed
+
+assets/AGENT_SKILLS_ROUTER.md
+→ 唯一完整 Skill Catalog / Router
+→ 负责 Coding 锚点、Reference 加载、Figma/Review/Docs Handoff、失败和权限边界
+```
+
+Runtime binary 和源码维护用 Coding Bootstrap 都使用这套同源资产语义，不维护第二套项目路由。`AGENTS.managed.md` 不能重新复制 Router 详细正文；Router 也不能复制各专业 Skill 的完整细则。
 
 Bootstrap 只负责机械可证明的内容：
 
@@ -144,10 +167,11 @@ python .agents/skills/coding/scripts/coding.py bootstrap --root . --json
 初版必须包含：
 
 1. Agent Skills managed block；
-2. 项目 Overlay 的维护边界；
-3. 初始化时真实存在的项目规则、Manifest/Lock/Build、需求/Spec、Contract/Schema、Migration、README/Architecture/Documentation 等事实入口导航；
-4. 明确“事实入口存在”不等于“已经确认某个框架、数据库或架构”；
-5. 项目特殊约束应由项目自己的规则/事实源维护。
+2. managed block 指向项目内已经随 Coding Skill 安装的唯一 Router；
+3. 项目 Overlay 的维护边界；
+4. 初始化时真实存在的项目规则、Manifest/Lock/Build、需求/Spec、Contract/Schema、Migration、README/Architecture/Documentation 等事实入口导航；
+5. 明确“事实入口存在”不等于“已经确认某个框架、数据库或架构”；
+6. 项目特殊约束应由项目自己的规则/事实源维护。
 
 例如：
 
@@ -210,22 +234,15 @@ marker 后原文：逐字保留
 
 ## 7. managed block 必须表达什么
 
-`assets/AGENTS.managed.md` 是 managed block 唯一模板事实源。至少保持：
+`assets/AGENTS.managed.md` 是 managed block 唯一模板事实源，但它现在只承担**薄 Bootstrap**。至少保持：
 
-1. 项目规则和通用 Skill 职责分离；
-2. 每个研发任务先读适用项目规则；
-3. 随后必须读取 `.agents/skills/coding/SKILL.md`；
-4. Coding 命中的 Reference 必须按触发条件读取；
-5. Runtime Stub 必须通过 `agent_skills_load_context` 取得 canonical 原文并校验 SHA；
-6. 只读取当前任务直接相关项目事实；
-7. Figma 任务进入正式 Figma Skill，并保持 NOT_READY / READY Handoff；
-8. Coding 要求独立 Review 时进入 Review Skill；
-9. Coding 判断有文档影响时进入 Docs Skill；
-10. Skill 缺失、不可读、Reference 加载失败或规则冲突时明确报告，不假装遵守；
-11. 不绕过目标项目 CI、Branch Protection、PR、Release、Migration、安全等门禁；
-12. 项目语言、框架、数据库、Contract、Schema、CI、部署等事实必须来自目标项目。
+1. 项目自己的规则和真实事实优先；
+2. 明确读取 `.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md`；
+3. 由 Router 决定本次 Skill / Reference 加载，不在 block 内复制第二套详细路由；
+4. 通用示例不能覆盖目标项目事实；
+5. Router 缺失、不可读或与更高优先级规则存在无法安全解析的冲突时明确报告并停止依赖它的动作，不假装遵守。
 
-不要为了缩短 managed block 删除这些可执行语义。
+原 managed block 曾直接承担的 Coding 锚点、Reference 触发、Runtime Stub → `agent_skills_load_context` + SHA/canonical 原文、Figma NOT_READY/READY Handoff、Review、Docs、Skill/Reference 失败停止、CI/Branch Protection/PR/Release/Migration/安全与授权边界、项目事实来源等完整可执行语义，已经按内容守恒迁入 `assets/AGENT_SKILLS_ROUTER.md`，该 Router 是这些跨 Skill 语义的唯一正文 Owner。本 Reference 只定义 Bootstrap Contract，不再复制第二份 Router 正文。
 
 ## 8. `.gitignore` 规则
 
@@ -276,6 +293,7 @@ Release Skill + 旧 manifest 明确认领
 
 - 目标 `.agents`、受管 Skill、Runtime、AGENTS/宿主配置路径出现符号链接时拒绝越界修改；
 - Project Payload 先校验 path / SHA / size / mode；
+- 正式构建/测试必须证明 Payload 包含 managed block 所指向的 `coding/assets/AGENT_SKILLS_ROUTER.md`，避免生成悬空导航；
 - 首次同名未认领 Skill 冲突在目标写入前发现；
 - Skill 完整暂存后再切换；
 - 切换前保留旧 manifest 明确认领内容的可恢复快照；
@@ -291,11 +309,12 @@ Release Skill + 旧 manifest 明确认领
 Greenfield / 空仓库：
 
 ```text
-安装当前 Release 正式 Skill
+安装当前 Release 正式 Skill + Router
 → Bootstrap 创建 AGENTS.md
+→ managed block 指向项目内 Router
 → 只列真实事实入口或明确当前未发现
 → 建立项目 MCP/宿主入口
-→ Coding 按 Greenfield 规则确认目标、硬约束和最小工程基线
+→ Router → Coding 按 Greenfield 规则确认目标、硬约束和最小工程基线
 ```
 
 已有项目：
@@ -305,8 +324,9 @@ Greenfield / 空仓库：
 → 保留项目自有 Skill 和其他 .agents 内容
 → 保留已有 AGENTS 原文
 → 追加/升级 managed block
+→ managed block 继续指向当前 Release Router
 → 只更新 Agent_Skills 自管宿主边界
-→ Coding 继续以已有项目规则和真实实现为准
+→ Router → Coding 继续以已有项目规则和真实实现为准
 ```
 
 Bootstrap 不是自动架构设计器。
@@ -322,7 +342,8 @@ Bootstrap 不是自动架构设计器。
 5. 不能仅凭文件名/目录名写入框架、数据库、架构、Owner、Contract、CI 或部署结论；
 6. 多个事实源冲突时继续核实，不猜一个正确；
 7. 不修改 managed block 内模板文本；
-8. Runtime binary 本身不调用 LLM 自动生成项目架构结论。
+8. 不把 Router 专业路由正文复制到项目 Overlay；
+9. Runtime binary 本身不调用 LLM 自动生成项目架构结论。
 
 ## 13. 宿主差异
 
@@ -354,6 +375,8 @@ Claude Code
 - 重复升级幂等；
 - 动态正式 Skill 都安装；
 - canonical Reference 目标只出现 Stub；
+- `coding/assets/AGENT_SKILLS_ROUTER.md` 原样进入 Project Payload 和目标项目；
+- 目标项目 managed block 指向这个真实存在的 Router，且不复制完整 Router；
 - Coding Python helper 作为 Project Payload 正式运行资产继续安装；
 - `.agents/runtime/` 和 install manifest 正确；
 - AGENTS 用户原文/managed marker 正确；
