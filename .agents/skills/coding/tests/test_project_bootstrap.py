@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 CODING_PATH = ROOT / ".agents/skills/coding/scripts/coding.py"
+ROUTER_PATH = ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
 
 
 def _load_module(name: str, path: Path):
@@ -33,7 +34,7 @@ class ProjectBootstrapTest(unittest.TestCase):
         (skill / "SKILL.md").write_text("# Coding\n", encoding="utf-8")
 
     def test_bootstrap_creates_agents_for_greenfield_without_inventing_stack(self) -> None:
-        """空项目应创建可用 AGENTS 初版，并明确禁止把技术示例反推成项目事实。"""
+        """空项目应创建可用 AGENTS 初版，并通过薄 managed block 进入唯一 Router。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._install_minimal_coding(root)
@@ -41,11 +42,11 @@ class ProjectBootstrapTest(unittest.TestCase):
             content = (root / "AGENTS.md").read_text(encoding="utf-8")
             self.assertEqual(result["agents"], "created")
             self.assertIn("<!-- agent-skills:managed:start -->", content)
-            self.assertIn(".agents/skills/coding/SKILL.md", content)
-            self.assertIn(".agents/skills/review/SKILL.md", content)
-            self.assertIn(".agents/skills/docs/SKILL.md", content)
-            self.assertIn(".agents/skills/figma/SKILL.md", content)
-            self.assertIn("不能单凭文件名推出 React、FastAPI、PostgreSQL", content)
+            self.assertIn(ROUTER_PATH, content)
+            self.assertNotIn(".agents/skills/figma/SKILL.md", content)
+            self.assertNotIn(".agents/skills/review/SKILL.md", content)
+            self.assertNotIn(".agents/skills/docs/SKILL.md", content)
+            self.assertIn("不能直接推导未被证据证明的架构结论", content)
             self.assertNotIn("本项目使用 FastAPI", content)
             self.assertNotIn("数据库：PostgreSQL", content)
             self.assertIn("初始化扫描未发现可稳定列出的项目规则", content)

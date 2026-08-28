@@ -1,6 +1,6 @@
 # $project_name Agent 开发规范
 
-本文件是目标项目自己的 Agent Overlay。它只记录当前项目真实规则、事实入口和特殊约束；通用研发方法由 `.agents/skills/` 提供。不要把 Agent_Skills 仓库自身的根 `AGENTS.md` 复制到这里，也不要把通用 Skill 中的示例技术栈当作本项目事实。
+本文件是目标项目自己的 Agent Overlay。它只记录当前项目真实规则、事实入口和特殊约束；通用研发方法由 `.agents/skills/` 提供。Agent_Skills 源仓库根 `AGENTS.md` 是源码直读/维护模式的 Bootstrap，不是目标项目规则，**不要复制到这里**；也不要把通用 Skill 中的示例技术栈当作本项目事实。
 
 $managed_block
 

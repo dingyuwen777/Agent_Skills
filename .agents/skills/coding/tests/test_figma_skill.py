@@ -10,6 +10,7 @@ from runtime.agent_skills_runtime.project_payload import build_project_payload
 ROOT = Path(__file__).resolve().parents[4]
 CODING_ROOT = ROOT / ".agents/skills/coding"
 FIGMA_ROOT = ROOT / ".agents/skills/figma"
+ROUTER_PATH = CODING_ROOT / "assets/AGENT_SKILLS_ROUTER.md"
 
 
 class UniversalFigmaSkillTest(unittest.TestCase):
@@ -97,14 +98,17 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         self.assertIn("第二套 Figma", preservation)
 
     def test_bootstrap_and_source_navigation_expose_figma_without_static_whitelist(self) -> None:
-        """目标项目 managed block 与源仓库导航都认识 Figma，同时保持动态 Skill Catalog。"""
+        """双 Bootstrap 指向唯一 Router，由 Router 暴露 Figma，同时保持动态 Skill Catalog。"""
         managed = self._read(CODING_ROOT / "assets/AGENTS.managed.md")
         root_agents = self._read(ROOT / "AGENTS.md")
+        router = self._read(ROUTER_PATH)
         root_readme = self._read(ROOT / "README.md")
-        for text in (managed, root_agents, root_readme):
-            self.assertIn("figma", text.lower())
-        for text in (root_agents, root_readme):
-            self.assertIn(".agents/skills/*/SKILL.md", text)
+        for text in (managed, root_agents):
+            self.assertIn("AGENT_SKILLS_ROUTER.md", text)
+        self.assertIn("figma", router.lower())
+        self.assertIn(".agents/skills/*/SKILL.md", router)
+        self.assertIn("figma", root_readme.lower())
+        self.assertIn(".agents/skills/*/SKILL.md", root_readme)
 
     def test_real_repository_distribution_discovers_figma_automatically(self) -> None:
         """正式 Figma Skill 自动进入 Bundle、公开 Catalog 和 Project Payload。"""
