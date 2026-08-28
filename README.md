@@ -41,10 +41,13 @@ GitHub Release
 跨 Skill 入口只维护一份：
 
 ```text
-.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md
+.agents/skills/ROUTER.md
+→ Skills 根级共享运行资产
 → 唯一 Skill Catalog / Router
 → 负责项目事实优先、Skill 发现、Reference 加载方式和跨 Skill Handoff
 ```
+
+`ROUTER.md` 不属于任何一个具体 Skill，也不是第五个 Skill；正式 Skill 仍只由各一级目录中的 `SKILL.md` 建立入口。
 
 各专业 Skill 的正式规则边界：
 
@@ -61,7 +64,8 @@ references/*.md
 正式 Runtime 构建时：
 
 ```text
-Native Core / Router / 必要运行资产
+Skills 根级 ROUTER.md
++ Native Core / 必要运行资产
 → Project Payload
 → 安装到目标项目
 
@@ -93,13 +97,13 @@ Runtime 不是第二套规则系统，也不摘要或重写 canonical References
 
 ### 唯一 Router
 
-[`.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md`](.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md) 是源码直读与 Runtime 安装两种模式共同使用的唯一跨 Skill Router。
+[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md) 是源码直读与 Runtime 安装两种模式共同使用的唯一跨 Skill Router。
 
 源码直读时，命中的 canonical Reference 直接从本源仓库读取；Runtime 安装态命中 Stub 时，通过项目本地 MCP 的 `agent_skills_load_context` 取得并校验 `canonical_text`。
 
 ### 目标项目 `AGENTS.md` managed block
 
-Runtime 安装后，`.agents/skills/coding/assets/AGENTS.managed.md` 只作为目标项目里的**薄 Bootstrap**：它要求先遵守目标项目事实，再读取本地同一个 Router。Coding / Figma / Review / Docs 和 Reference 详细路由不再复制进 managed block。
+Runtime 安装后，`.agents/skills/coding/assets/AGENTS.managed.md` 只作为目标项目里的**薄 Bootstrap**：它要求先遵守目标项目事实，再读取本地 `.agents/skills/ROUTER.md`。Coding / Figma / Review / Docs 和 Reference 详细路由不再复制进 managed block。
 
 ### `USAGE.md`
 
@@ -117,9 +121,8 @@ Agent_Skills/
 │   ├── MAINTENANCE.md        # Agent_Skills 源仓库 AI 维护规范
 │   ├── changes/              # 维护期 Change 记录
 │   └── skills/
+│       ├── ROUTER.md         # 唯一跨 Skill Router / 共享运行资产
 │       ├── coding/
-│       │   └── assets/
-│       │       └── AGENT_SKILLS_ROUTER.md  # 唯一跨 Skill Router
 │       ├── review/
 │       ├── docs/
 │       └── figma/
@@ -190,7 +193,7 @@ main
 - 最终用户：[`USAGE.md`](USAGE.md)
 - AI 统一入口：[`AGENTS.md`](AGENTS.md)
 - 源仓库 AI 维护规则：[`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md)
-- 唯一 Skill Router：[`.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md`](.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md)
+- 唯一 Skill Router：[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)
 - Runtime 源码维护：[`runtime/README.md`](runtime/README.md)
 - 正式 Skill：`.agents/skills/*/SKILL.md`
 - Runtime 构建：[`scripts/build_runtime.py`](scripts/build_runtime.py)
