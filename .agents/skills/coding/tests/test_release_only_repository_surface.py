@@ -107,7 +107,8 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         paths = {entry["path"] for entry in payload["files"]}
         self.assertNotIn("coding/scripts/tzdata/README.md", paths)
         self.assertIn("coding/scripts/tzdata/zoneinfo/Asia/Shanghai", paths)
-        self.assertIn("coding/assets/AGENT_SKILLS_ROUTER.md", paths)
+        self.assertIn("ROUTER.md", paths)
+        self.assertEqual(payload["shared_files"], ["ROUTER.md"])
 
         runtime_readme = self._read("runtime/README.md")
         runtime_reference = self._read(
@@ -118,14 +119,14 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             self.assertIn("维护 `README.md`", text)
 
     def test_root_managed_router_and_maintenance_have_distinct_roles(self) -> None:
-        """两个薄 Bootstrap 共用唯一 Router，源仓库维护规则由 Maintenance 独立承担。"""
+        """两个薄 Bootstrap 共用唯一根级 Router，源仓库维护规则由 Maintenance 独立承担。"""
         root_agents = self._read("AGENTS.md")
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
-        router = self._read(".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md")
+        router = self._read(".agents/skills/ROUTER.md")
         maintenance = self._read(".agents/MAINTENANCE.md")
 
         for text in (root_agents, managed):
-            self.assertIn(".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md", text)
+            self.assertIn(".agents/skills/ROUTER.md", text)
         self.assertIn(".agents/MAINTENANCE.md", root_agents)
         self.assertIn("不得复制到目标项目", root_agents)
         self.assertNotIn("agent_skills_load_context", managed)
@@ -152,7 +153,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             "USAGE.md",
             "AGENTS.md",
             ".agents/MAINTENANCE.md",
-            "AGENT_SKILLS_ROUTER.md",
+            ".agents/skills/ROUTER.md",
             "runtime/README.md",
             ".agents/skills/*/SKILL.md",
             "scripts/build_runtime.py",
@@ -188,11 +189,12 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             self.assertNotIn(forbidden, workflow)
 
     def test_runtime_project_payload_still_excludes_maintenance_readmes_tests_and_references(self) -> None:
-        """删文档不能改变 Runtime 只分发运行资产与 Reference Stub 的安全边界。"""
+        """共享 Router 不改变 Runtime 排除 canonical References/测试/维护 README 的安全边界。"""
         payload = self._read("runtime/agent_skills_runtime/project_payload.py")
         self.assertIn('_EXCLUDED_TOP_LEVEL = {"tests"}', payload)
         self.assertIn('relative.name == "README.md"', payload)
         self.assertIn('relative.parts[0] == "references"', payload)
+        self.assertIn('SHARED_RUNTIME_FILES = ("ROUTER.md",)', payload)
         self.assertIn("render_reference_stub", payload)
         self.assertIn("agent_skills_load_context", payload)
 
