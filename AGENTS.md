@@ -171,7 +171,7 @@ Coding 的 Requirement Traceability、Validation Matrix、Completion Audit 是�
 - Windows `.exe`、Linux、macOS artifact 分别在对应目标平台构建/验证，不把 PyInstaller onefile 当作跨平台产物；
 - CI 的 path filters 和编译/测试命令真实覆盖根 `scripts/install.py`、Full Kit Builder、Runtime Builder、动态 Skill/Project Payload/Installer、`docs/distribution/`、`docs/maintainers/` 和所有永久 Workflow，不能出现发布/安装能力只在本地存在而不进永久门禁。
 
-测试必须自包含。禁止让 Agent_Skills 自己的单元测试依赖另一个业务仓库才存在的 Blueprint、backend、workflow 或脚本。Figma preservation 测试也必须以当前仓库正式 Figma Skill 为事实源，不运行时依赖 AIMA_UGC。
+测试必须自包含。禁止让 Agent_Skills 自己的单元测试依赖另一个业务仓库才存在的 Blueprint、backend、workflow 或脚本。Figma preservation 测试也必须以当前仓库正式 Figma Skill 为事实源，不运行时依赖任何外部业务仓库。
 
 ## 6. Git 与交付
 
