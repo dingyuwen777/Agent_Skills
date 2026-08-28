@@ -3,6 +3,9 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.project_payload import build_project_payload
+
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -75,6 +78,20 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             self.assertTrue((ROOT / relative).is_file(), f"缺少正式 Runtime 入口：{relative}")
         for relative in removed:
             self.assertFalse((ROOT / relative).exists(), f"旧分发入口仍存在：{relative}")
+
+    def test_coding_python_helpers_remain_runtime_assets_and_usage_states_boundary(self) -> None:
+        """单 binary 安装不能误删 Coding helper；用户说明必须准确区分安装/MCP 与 helper 的 Python 需求。"""
+        bundle = build_bundle(ROOT)
+        payload = build_project_payload(ROOT, bundle)
+        paths = {entry["path"] for entry in payload["files"]}
+        self.assertIn("coding/scripts/coding.py", paths)
+        self.assertIn("coding/scripts/ready_check.py", paths)
+
+        usage = self._read("USAGE.md")
+        self.assertIn("安装和 MCP Runtime 本身不需要 Python", usage)
+        self.assertIn("Coding Python helper", usage)
+        self.assertIn("没有可用 Python", usage)
+        self.assertIn("fallback", usage)
 
     def test_root_agents_and_managed_agents_have_distinct_roles(self) -> None:
         """根 AGENTS 只维护源仓库，目标项目 managed block 才负责指导 AI 使用正式 Skills。"""
