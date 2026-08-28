@@ -2,7 +2,7 @@
 
 这份文件是 Agent_Skills **Release 最终使用者唯一需要阅读的人类说明**。
 
-你只需要从对应版本的 GitHub Release 获取当前操作系统的 Runtime binary、`USAGE.md` 和 `SHA256SUMS`。不需要 clone Agent_Skills 源仓库，也不需要安装 Python 环境。
+你只需要从维护者提供的正式 Release 交付资产中取得当前操作系统的 Runtime binary、`USAGE.md` 和 `SHA256SUMS`。不需要访问 Agent_Skills 源仓库，也不需要安装 Python 环境。
 
 ## 1. 下载哪个文件
 
@@ -16,11 +16,11 @@ USAGE.md
 SHA256SUMS
 ```
 
-- Windows：下载 `agent-skills-mcp-v<VERSION>-windows.exe`
-- Linux：下载 `agent-skills-mcp-v<VERSION>-linux`
-- macOS：下载 `agent-skills-mcp-v<VERSION>-macos`
+- Windows：使用 `agent-skills-mcp-v<VERSION>-windows.exe`
+- Linux：使用 `agent-skills-mcp-v<VERSION>-linux`
+- macOS：使用 `agent-skills-mcp-v<VERSION>-macos`
 
-建议同时下载 `SHA256SUMS` 校验文件完整性。
+建议同时取得 `SHA256SUMS` 校验文件完整性。
 
 Windows PowerShell：
 
@@ -68,7 +68,7 @@ chmod +x /path/to/agent-skills-mcp-v<VERSION>-macos
 
 无参数运行时，binary 默认对**当前工作目录**执行安装或升级。
 
-也可以显式指定项目：
+也可以显式指定项目。下面用 `agent-skills-mcp` 代表你拿到的当前平台 binary：
 
 ```text
 agent-skills-mcp install --target <目标项目根目录> --json
@@ -168,8 +168,8 @@ Linux / macOS：
 
 升级不需要卸载旧版本。
 
-1. 从新的 GitHub Release 下载当前平台的新 binary；
-2. 校验 `SHA256SUMS`；
+1. 从维护者提供的新版本正式 Release 资产中取得当前平台的新 binary 和 `SHA256SUMS`；
+2. 校验文件；
 3. 在同一个目标项目根目录运行新 binary；
 4. 安装器会根据项目里的 Agent_Skills ownership 记录升级自己负责的内容；
 5. 如果宿主已经打开，升级后建议重新建立一次 MCP 会话。
@@ -180,8 +180,8 @@ Linux / macOS：
 
 需要回滚时：
 
-1. 找到之前版本 GitHub Release 的同平台 binary；
-2. 校验该版本 `SHA256SUMS`；
+1. 从维护者提供的历史正式 Release 资产中取得之前版本的同平台 binary 与 checksum；
+2. 校验该版本文件；
 3. 在目标项目根目录运行旧版本 binary；
 4. 运行项目 Runtime 的 `status --json` 和 `self-test --json`；
 5. 重新建立 MCP 会话。
