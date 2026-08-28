@@ -165,6 +165,7 @@ Greenfield 表示工程事实尚未建立或只建立了一部分。此时先确
 | L2/L3、需要需求追踪或已有 Active Change | [04_轻量变更管理.md](references/04_轻量变更管理.md) |
 | 新/当前 Change 使用 Completion Gate | [10_完成定义追溯门禁.md](references/10_完成定义追溯门禁.md) |
 | 开发 Feature、修 Bug、重构、性能或调查失败 | [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md) |
+| Frontend / Web UI / Design-to-Code / Figma-to-code / 设计稿转代码；新增页面、跨页面 UI 或需要选择前端技术方案 | [17_前端与Design-to-Code实施规则.md](references/17_前端与Design-to-Code实施规则.md) |
 | 需要规划或审计验证证据；新增/修改永久 CI/Workflow 或测试/发布门禁 | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md) |
 | Web/API/PostgreSQL/Provider 等专项边界真实存在 | [08_分层测试与验收策略.md](references/08_分层测试与验收策略.md) |
 | 跨模块、跨消费者、Contract/Schema/Migration/Owner/数据边界 | [06_仓库边界数据交换与条件式约束.md](references/06_仓库边界数据交换与条件式约束.md) |
