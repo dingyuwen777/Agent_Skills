@@ -66,7 +66,9 @@ Runtime 安装自己的：
 
 ## 3. 最终用户入口：项目级单 binary
 
-最终使用者不需要访问 Agent_Skills 源仓库，也不需要 Python、pip、venv 或外部安装脚本。
+最终使用者不需要访问 Agent_Skills 源仓库，也不需要为了**安装 Agent_Skills 或运行项目 MCP Runtime** 预先安装 Python、pip、venv 或外部安装脚本。
+
+但正式 Coding Skill 自身仍包含 `scripts/coding.py`、`scripts/ready_check.py` 等 Python helper，并会在项目发现、Change 管理、Ready Check 等命中场景使用它们；这些脚本属于 Project Payload 的正式运行资产，不能因为“单 binary 安装”而删除。如果目标项目/宿主没有可用 Python，必须按 Coding Skill 对应规则使用明确的 manual fallback；某个机器门禁因此无法执行时要标记未验证，不能假装通过。
 
 Windows：
 
@@ -346,16 +348,17 @@ Claude Code
 至少验证：
 
 - 最终平台 artifact `status/self-test`；
-- 在真实临时项目运行 binary，不依赖源仓库/Python；
+- 在真实临时项目运行 binary，不依赖源仓库；
 - 无参数当前目录安装；
 - 显式 `install --target`；
 - 重复升级幂等；
 - 动态正式 Skill 都安装；
 - canonical Reference 目标只出现 Stub；
+- Coding Python helper 作为 Project Payload 正式运行资产继续安装；
 - `.agents/runtime/` 和 install manifest 正确；
 - AGENTS 用户原文/managed marker 正确；
 - 项目自有 Skill 保留；
-- 同名未认领 Skill冲突 fail closed；
+- 同名未认领 Skill 冲突 fail closed；
 - 删除旧受管 Skill 只依据旧 manifest；
 - Codex/Cursor/Claude 配置保留其他用户内容；
 - 项目内 Runtime 通过真实 stdio MCP smoke；
