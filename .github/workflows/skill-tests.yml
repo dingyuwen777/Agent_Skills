@@ -103,11 +103,13 @@ jobs:
           test -f "${target}/.mcp.json"
           test -f "${target}/.codex/config.toml"
           test -f "${target}/CLAUDE.md"
-          test -f "${target}/.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
-          grep -Fq ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md" "${target}/AGENTS.md"
+          test -f "${target}/.agents/skills/ROUTER.md"
+          grep -Fq ".agents/skills/ROUTER.md" "${target}/AGENTS.md"
           ! grep -Fq "agent_skills_load_context" "${target}/AGENTS.md"
-          grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
-          grep -Fq "agent_skills_load_context" "${target}/.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
+          grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/ROUTER.md"
+          grep -Fq "agent_skills_load_context" "${target}/.agents/skills/ROUTER.md"
+          grep -Fq '"schema": "agent-skills-install/v2"' "${target}/.agents/agent-skills-install.json"
+          grep -Fq '"ROUTER.md"' "${target}/.agents/agent-skills-install.json"
           grep -q "agent_skills_load_context" "${target}/.agents/skills/coding/references/02_跨项目研发任务路由.md"
           ! grep -Fq "# 跨项目研发任务路由" "${target}/.agents/skills/coding/references/02_跨项目研发任务路由.md"
           grep -Fq "/.agents/runtime/" "${target}/.gitignore"
@@ -119,8 +121,8 @@ jobs:
           "${artifact}"
           test -x "${no_args_target}/.agents/runtime/agent-skills-mcp"
           test -f "${no_args_target}/.agents/agent-skills-install.json"
-          test -f "${no_args_target}/.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
-          grep -Fq ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md" "${no_args_target}/AGENTS.md"
+          test -f "${no_args_target}/.agents/skills/ROUTER.md"
+          grep -Fq ".agents/skills/ROUTER.md" "${no_args_target}/AGENTS.md"
 
       - name: Verify active Coding Change
         run: >-
@@ -170,7 +172,7 @@ jobs:
 
           $installedRuntime = Join-Path $target ".agents\runtime\agent-skills-mcp.exe"
           $manifest = Join-Path $target ".agents\agent-skills-install.json"
-          $router = Join-Path $target ".agents\skills\coding\assets\AGENT_SKILLS_ROUTER.md"
+          $router = Join-Path $target ".agents\skills\ROUTER.md"
           $agents = Join-Path $target "AGENTS.md"
           $stub = Join-Path $target ".agents\skills\coding\references\02_跨项目研发任务路由.md"
           foreach ($path in @(
@@ -185,10 +187,13 @@ jobs:
           )) {
             if (-not (Test-Path $path)) { throw "Windows 项目安装缺少文件: $path" }
           }
-          if (-not (Select-String -Path $agents -Pattern ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md" -SimpleMatch -Quiet)) { throw "Windows 目标 AGENTS 未指向 Router" }
+          if (-not (Select-String -Path $agents -Pattern ".agents/skills/ROUTER.md" -SimpleMatch -Quiet)) { throw "Windows 目标 AGENTS 未指向 Router" }
           if (Select-String -Path $agents -Pattern "agent_skills_load_context" -SimpleMatch -Quiet) { throw "Windows 目标 AGENTS 不应复制完整 Router" }
           if (-not (Select-String -Path $router -Pattern ".agents/skills/coding/SKILL.md" -SimpleMatch -Quiet)) { throw "Windows Router 未指向 Coding Skill" }
           if (-not (Select-String -Path $router -Pattern "agent_skills_load_context" -SimpleMatch -Quiet)) { throw "Windows Router 未保留 Runtime Reference 路由" }
+          $installManifest = Get-Content $manifest -Raw | ConvertFrom-Json
+          if ($installManifest.schema -ne "agent-skills-install/v2") { throw "Windows install manifest schema 不是 v2" }
+          if (@($installManifest.shared_files) -notcontains "ROUTER.md") { throw "Windows install manifest 未认领 ROUTER.md" }
           if (-not (Select-String -Path $stub -Pattern "agent_skills_load_context" -Quiet)) { throw "Windows Runtime Stub 未接入 MCP" }
           & $installedRuntime status --json
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime status 失败" }
@@ -205,10 +210,10 @@ jobs:
           if (-not (Test-Path (Join-Path $noArgsTarget ".agents\runtime\agent-skills-mcp.exe"))) {
             throw "Windows binary 无参数运行未安装项目 Runtime"
           }
-          if (-not (Test-Path (Join-Path $noArgsTarget ".agents\skills\coding\assets\AGENT_SKILLS_ROUTER.md"))) {
+          if (-not (Test-Path (Join-Path $noArgsTarget ".agents\skills\ROUTER.md"))) {
             throw "Windows binary 无参数运行未安装 Router"
           }
-          if (-not (Select-String -Path (Join-Path $noArgsTarget "AGENTS.md") -Pattern ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md" -SimpleMatch -Quiet)) {
+          if (-not (Select-String -Path (Join-Path $noArgsTarget "AGENTS.md") -Pattern ".agents/skills/ROUTER.md" -SimpleMatch -Quiet)) {
             throw "Windows binary 无参数运行的 AGENTS 未指向 Router"
           }
 
@@ -255,11 +260,13 @@ jobs:
           test -f "${target}/.mcp.json"
           test -f "${target}/.codex/config.toml"
           test -f "${target}/CLAUDE.md"
-          test -f "${target}/.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
-          grep -Fq ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md" "${target}/AGENTS.md"
+          test -f "${target}/.agents/skills/ROUTER.md"
+          grep -Fq ".agents/skills/ROUTER.md" "${target}/AGENTS.md"
           ! grep -Fq "agent_skills_load_context" "${target}/AGENTS.md"
-          grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
-          grep -Fq "agent_skills_load_context" "${target}/.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
+          grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/ROUTER.md"
+          grep -Fq "agent_skills_load_context" "${target}/.agents/skills/ROUTER.md"
+          grep -Fq '"schema": "agent-skills-install/v2"' "${target}/.agents/agent-skills-install.json"
+          grep -Fq '"ROUTER.md"' "${target}/.agents/agent-skills-install.json"
           grep -q "agent_skills_load_context" "${target}/.agents/skills/coding/references/02_跨项目研发任务路由.md"
           "${target}/.agents/runtime/agent-skills-mcp" status --json
           python3 scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
@@ -268,5 +275,5 @@ jobs:
           "${artifact}"
           test -x "${no_args_target}/.agents/runtime/agent-skills-mcp"
           test -f "${no_args_target}/.agents/agent-skills-install.json"
-          test -f "${no_args_target}/.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
-          grep -Fq ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md" "${no_args_target}/AGENTS.md"
+          test -f "${no_args_target}/.agents/skills/ROUTER.md"
+          grep -Fq ".agents/skills/ROUTER.md" "${no_args_target}/AGENTS.md"
