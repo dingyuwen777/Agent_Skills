@@ -51,11 +51,13 @@ Local MCP
 
 最终使用者不需要：
 
-- clone Agent_Skills 源仓库；
-- Python、pip、venv；
+- 访问或 clone Agent_Skills 源仓库；
+- 为**安装、升级、status/self-test 或 MCP Runtime** 预先安装 Python、pip、venv；
 - 外部安装脚本；
 - Runtime Kit ZIP；
 - 用户级或全局 Runtime 前置安装。
+
+但 Project Payload 会保留正式 Skill 自己需要的运行资产。当前 Coding Core 明确使用 `coding/scripts/coding.py` 和 `coding/scripts/ready_check.py` 完成项目发现、Change 辅助与 Ready Check，因此这两个 Python helper 仍必须随 Skill 安装。目标项目/宿主没有可用 Python 时，Coding 只能按对应规则使用明确 manual fallback；无法执行的机器门禁必须记为未验证，不能用 onefile Runtime 的存在冒充已执行。
 
 ### 非目标
 
@@ -199,7 +201,7 @@ agent-skills-project-payload/v1
 → 计算 payload_digest
 ```
 
-使用明确排除项，而不是不断扩展固定 Core 白名单。未来某 Skill 新增 `templates/`、`schemas/` 或其他真实运行资产时，只要不属于明确排除范围，应自动进入 payload。
+使用明确排除项，而不是不断扩展固定 Core 白名单。未来某 Skill 新增 `templates/`、`schemas/`、`scripts/` 或其他真实运行资产时，只要不属于明确排除范围，应自动进入 payload。
 
 Payload 路径必须是安全相对路径，拒绝绝对路径、盘符、`..`、符号链接和特殊文件。POSIX mode 进入完整性 Contract。
 
@@ -249,7 +251,7 @@ magic
 - 反编译、Hook 或 MCP 通信观测不能取得规则；
 - Runtime 是可信执行环境。
 
-源仓库 canonical 文本的访问控制必须由 GitHub 仓库权限承担。
+源仓库 canonical 文本的访问控制必须由仓库权限承担。
 
 ## 11. MCP Tool Contract
 
@@ -430,6 +432,8 @@ artifact status/self-test
 → 项目内 Runtime status + MCP smoke
 ```
 
+还必须确认正式 Coding helper 仍进入 Project Payload；否则会形成“Core 要求执行、目标项目却没有脚本”的断链。
+
 Windows `.exe`、Linux、macOS 必须在对应平台分别构建验证。
 
 ## 17. 正式 Release Contract
@@ -456,6 +460,8 @@ Release 规则：
 - Preflight/构建 Job 只读；候选全部成功后 Publish Job 才获得 `contents: write`；
 - `SHA256SUMS` 覆盖三平台 binary 与 `USAGE.md`；
 - 不把 PR 临时 artifact 直接发布。
+
+如果源仓库是私有且最终使用者不应获得源码 read 权限，源仓库 GitHub Release 只是维护者构建/留存点；维护者应取得并校验上述资产后，通过内部制品库、文件服务或独立 release-only 渠道交付，不要为了下载同仓 Release 向接收者授予源仓库 read 权限。
 
 ## 18. 升级
 
