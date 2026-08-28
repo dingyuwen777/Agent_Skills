@@ -132,6 +132,19 @@ class ProjectBootstrapTest(unittest.TestCase):
             self.assertEqual(updated, original)
             self.assertEqual(updated.count("project-context.json"), 1)
 
+    def test_bootstrap_requires_installed_router_before_mutation(self) -> None:
+        """Coding Skill 存在但共享 Router 缺失时不得写出悬空 AGENTS 导航。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._install_minimal_coding(root)
+            (root / ROUTER_PATH).unlink()
+
+            with self.assertRaisesRegex(FileNotFoundError, "ROUTER.md"):
+                CODING.bootstrap_project(root)
+
+            self.assertFalse((root / "AGENTS.md").exists())
+            self.assertFalse((root / ".gitignore").exists())
+
     def test_bootstrap_requires_installed_coding_skill(self) -> None:
         """目标项目没有 Coding Skill 时不得生成指向不存在入口的 AGENTS。"""
         with tempfile.TemporaryDirectory() as directory:
