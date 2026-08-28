@@ -2,7 +2,9 @@
 
 这份文件是 Agent_Skills **Release 最终使用者唯一需要阅读的人类说明**。
 
-你只需要从维护者提供的正式 Release 交付资产中取得当前操作系统的 Runtime binary、`USAGE.md` 和 `SHA256SUMS`。不需要访问 Agent_Skills 源仓库，也不需要安装 Python 环境。
+你只需要从维护者提供的正式 Release 交付资产中取得当前操作系统的 Runtime binary、`USAGE.md` 和 `SHA256SUMS`，不需要访问 Agent_Skills 源仓库。
+
+**安装和 MCP Runtime 本身不需要 Python。** 但是当前 Coding Skill 在项目发现、Change 管理和 Ready Check 等部分流程中会使用随 Release 一起安装的 `coding/scripts/coding.py`、`coding/scripts/ready_check.py` 等 **Coding Python helper**。如果目标项目/宿主没有可用 Python，Agent 必须按对应 Skill 规则使用明确的 manual **fallback**；某个机器门禁因此无法执行时，必须标记为未验证，不能假装已经通过。
 
 ## 1. 下载哪个文件
 
