@@ -18,7 +18,7 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         """中文注释、函数说明、中文提交、北京时间和日志前缀必须继续存在。"""
         skill = self._read(".agents/skills/coding/SKILL.md")
         routing = self._read(".agents/skills/coding/references/02_跨项目研发任务路由.md")
-        agents = self._read("AGENTS.md")
+        maintenance = self._read(".agents/MAINTENANCE.md")
         for text in (
             "中文注释与函数级说明是通用规则",
             "内部/private/helper 函数也必须写函数级中文注释或文档注释",
@@ -28,7 +28,7 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         ):
             self.assertIn(text, skill)
         self.assertIn("跨项目用户级工程不变量", routing)
-        self.assertIn("用户定义的全局工程硬规则", agents)
+        self.assertIn("用户定义的全局工程硬规则", maintenance)
 
     def test_greenfield_and_existing_repo_flows_are_both_supported(self) -> None:
         """通用 Coding 必须同时支持空仓库 Bootstrap 和既有仓库事实恢复。"""
