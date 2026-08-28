@@ -539,3 +539,21 @@ Runtime binary A
 ```
 
 MCP 负责 Reference 传输和完整性，不替 Agent 判断需求是否满足。
+
+## 21. ChatGPT 网页端边界
+
+当前 Runtime 是**项目本地 stdio MCP**。纯网页端 ChatGPT 不能直接启动用户电脑上的本地 `agent-skills-mcp` 进程，也不能因为 GitHub 中存在 Runtime 源码就把本地 stdio MCP 当作已经连接。
+
+如果 ChatGPT 网页端已经通过 GitHub 连接获得 Agent_Skills 源仓库的读取权限，可以使用本 Change 定义的**源码直接读取模式**：
+
+```text
+目标项目当前规则/事实
+→ Agent_Skills 根 AGENTS.md
+→ AGENT_SKILLS_ROUTER.md
+→ 命中的 SKILL.md
+→ 直接读取 canonical Reference
+```
+
+这条路径不需要启动用户电脑上的本地 Runtime，也不经过 Reference Stub / `agent_skills_load_context`。
+
+如果未来需要让网页端 ChatGPT 调用目标项目机器上的 Agent Skills Runtime，则需要 Remote MCP、受支持的安全隧道或等价远程部署能力；这是另一种部署形态，不属于当前本地 stdio Runtime，也不得为实现它绕过宿主或网络安全边界。
