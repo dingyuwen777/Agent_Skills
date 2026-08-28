@@ -56,9 +56,11 @@ Native Core / assets / scripts / metadata
 Project Payload 明确排除：
 
 - canonical `references/*.md` 正文；
-- Skill 顶层 `README.md`；
+- 任意深度的维护 `README.md`；
 - tests；
 - Python cache/编译产物。
+
+因此像 `coding/scripts/tzdata/README.md` 这种源码维护说明可以留在私有源仓库，但不会安装到目标项目；真正运行需要的 `coding/scripts/tzdata/zoneinfo/Asia/Shanghai` 等资源仍会进入 Payload。
 
 目标项目 Stub 只能保存逻辑 ID、Expected SHA256 和 MCP 加载协议，不复制摘要版规则。
 
