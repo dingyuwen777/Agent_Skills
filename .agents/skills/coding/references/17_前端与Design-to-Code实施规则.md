@@ -706,3 +706,79 @@ Greenfield Web 默认首选推荐 Vue，但不强制迁移已有项目
 服务器/系统事实有唯一来源
 视觉、行为、Contract、Build、Accessibility 分别用合适证据验证
 ```
+
+---
+
+## 19. Figma Skill 的 READY Handoff 是正式 Figma-to-code 前置门禁
+
+本 reference 负责**真正进入生产代码后的实现**，不负责重新审查 Figma Canvas、Prototype 或设计基线。只要输入来自正式 Figma，且同仓存在 `.agents/skills/figma/SKILL.md`，在执行本 reference 的实现步骤前必须先按 `02_跨项目研发任务路由.md` 进入 Figma Skill。
+
+标准顺序：
+
+```text
+Figma Skill baseline-ready
+→ NOT_READY：停止生产实现；已授权时先修 Figma 并 re-review
+→ READY / READY_WITH_NOTES
+→ 接收 Coding Handoff
+→ 本 reference 按目标项目真实技术栈实施
+→ Coding 测试 / Completion Audit / Review / CI / Git / 交付
+→ targeted Figma re-review
+```
+
+### 19.1 `NOT_READY` 是阻塞，不是实现方可自行绕过的 Note
+
+`NOT_READY` 表示仍存在会导致系统能力错误、用户任务不可完成、Prototype/状态/数据来源不闭环、复用 Owner 错误或实现歧义的设计问题。除非用户明确授权先修改 Figma 并重新通过基线门禁，否则：
+
+- 不把已知设计缺陷照抄进生产代码；
+- 不用 mock、硬编码、死链、假按钮或伪成功状态“补齐”设计；
+- 不通过自行删掉 Loading/Error/Permission/兼容状态让实现更像截图；
+- 不把 Figma 工具输出的 React/Tailwind/依赖示例当作绕过目标项目技术栈的理由。
+
+### 19.2 `READY / READY_WITH_NOTES` 后只接收已确认设计事实
+
+Handoff 至少应提供适用的：
+
+```text
+正式 Figma Node / Section
+目标用户任务
+对应实现入口
+Shared / Feature / Page Owner
+必须复用的业务逻辑 Owner
+动态数据来源
+系统动作来源
+页面尺寸 / 响应式 / Safe Area 规则
+Prototype / 状态规格入口
+已知 Notes
+```
+
+本 reference 再把这些事实映射到目标项目当前 Framework、Router/Navigation、State/ViewModel、UI Library/Design System、API/SDK/generated client、Build/Test 体系。设计系统与代码组件不要求机械 1:1，但同一真实语义必须保持唯一 Owner。
+
+`READY_WITH_NOTES` 的 Notes 只能是已经证明不会阻止正确实施的非阻塞事项；Coding 不能把 Figma 尚未解决的 P0/阻塞 P1 自行降级成 Notes。
+
+### 19.3 职责不能反向复制
+
+Figma Skill 负责：
+
+```text
+设计事实
+Canvas / Section / Annotation
+Prototype / 状态
+真实系统能力映射
+设计组件与业务逻辑复用审计
+Findings
+READY / READY_WITH_NOTES / NOT_READY
+设计修改后的 Canvas-level Review
+```
+
+Coding / 本 reference 负责：
+
+```text
+当前仓库和技术栈事实
+生产代码 Owner 映射
+Change / TDD / 根因调试
+Validation Matrix
+代码 Review / Docs / CI
+Git / PR / Merge / Release
+```
+
+不能为了“一个文件里看全”把 Figma 的完整审查清单复制进本 reference，也不能让 Figma Skill维护第二套 Coding 研发流程。跨 Skill Contract 要清楚，但详细规则只有一个 Owner。

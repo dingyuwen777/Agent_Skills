@@ -11,7 +11,7 @@
 1. 先读本文件；
 2. 读取 `.agents/skills/coding/SKILL.md`，按其任务路由执行；
 3. 修改 Coding Skill 时，只读取本次受影响的 references、脚本、模板、Agent metadata 和测试；
-4. 修改 Review 或 Docs Skill 时，分别读取对应 `SKILL.md` 与直接相关 references；
+4. 修改 Review、Docs 或 Figma Skill 时，分别读取对应 `SKILL.md` 与直接相关 references；Figma 规则发生迁移、通用化或 Ownership 调整时还必须读取 Coding 的规则内容守恒 reference；
 5. 不从历史聊天或其他业务仓库猜当前实现，以本仓库当前文件和本轮验证为准；
 6. 规则重组、通用化、拆分、合并或改名时，必须保持仍有效的触发条件、例外、失败处理、验证责任、安全与兼容边界；不得为了缩短文本把多条可执行规则压成一句抽象原则；
 7. 本仓库不保存任何目标项目的 `.agents/project-context.json`；该文件是目标项目本地可失效导航缓存，应由目标项目 `.gitignore` 忽略。
@@ -24,6 +24,7 @@
 .agents/skills/coding/
 .agents/skills/review/
 .agents/skills/docs/
+.agents/skills/figma/
 ```
 
 职责：
@@ -37,11 +38,14 @@ Review
 
 Docs
 → 技术文档事实同步、审查、编写和更新
+
+Figma
+→ 通用 Figma 设计事实、Canvas/Prototype、可用性、真实系统能力映射、设计修复、Ready 验收和 Design-to-Code 实施交接
 ```
 
-Review 不维护第二套 Coding 规范；Docs 不复制 Coding 的研发规则。Coding 在适用时负责路由到 Review/Docs。
+Review 不维护第二套 Coding 规范；Docs 不复制 Coding 的研发规则；Figma 不复制 Coding 的 Change/TDD/CI/Git 研发规则，Coding 也不维护第二套 Figma Canvas/Spacing/Annotation/Prototype 详细规则。Coding 在适用时负责路由到 Review/Docs/Figma；Figma 达到 `READY / READY_WITH_NOTES` 后再把已确认设计事实交回 Coding 进入真实实现。
 
-**当前三个目录只是当前仓库事实，不是分发代码里的永久全量名单。** 正式可分发 Skill 必须从：
+**当前四个目录只是当前仓库事实，不是分发代码里的永久全量名单。** 正式可分发 Skill 必须从：
 
 ```text
 .agents/skills/*/SKILL.md
@@ -91,6 +95,7 @@ runtime/README.md
 - 多人/多 Agent 冲突预检；
 - Docs Impact；
 - 独立 Review；
+- Figma 设计任务的事实恢复、Prototype/Canvas 审查、Ready 门禁和 READY 后 Coding Handoff；
 - 新鲜证据门禁；
 - Git/CI/Branch Protection/Release/回滚边界。
 
@@ -113,9 +118,10 @@ runtime/README.md
 - 业务表、字段、Provider、Prompt、外部平台；
 - 具体 `docs/` 目录、Blueprint/Roadmap/ADR 编号；
 - 目标项目 CI Job、Branch Ruleset、Release 流程；
-- 项目自己的架构、Owner、Contract、Migration、运行和部署方式。
+- 项目自己的架构、Owner、Contract、Migration、运行和部署方式；
+- 项目自己的品牌、设计 Token、页面基准尺寸、业务组件、菜单、Prototype 数据、动态字段和产品术语。
 
-这些事实只能来自目标仓库当前 `AGENTS.md`、`CONTRIBUTING`、README、Spec/ADR、Manifest、locks、Contract/Schema/Migration、代码、测试和 CI。
+这些事实只能来自目标仓库当前 `AGENTS.md`、`CONTRIBUTING`、README、Spec/ADR、Design Guide/Design System、Manifest、locks、Contract/Schema/Migration、代码、测试、CI 和当前正式 Figma 事实。
 
 目标项目没有 `AGENTS.md` 时，可以通过当前安装器/Bootstrap 建立项目 Overlay 初版；已有 `AGENTS.md` 时只能在稳定 managed markers 内增量接入 Agent Skills，marker 外项目原文必须保持。Bootstrap 只可以记录实际发现的事实入口作为导航，不能把文件名推断成框架、数据库或架构事实。
 
@@ -144,15 +150,18 @@ Coding 的 Requirement Traceability、Validation Matrix、Completion Audit 是�
 - 所有 Markdown/YAML/Python 文件可读；
 - Coding CLI 的 `bootstrap/discover/status/conflicts/new-change` 入口可运行；
 - 正式 Skill Catalog 从 `.agents/skills/*/SKILL.md` 动态发现合法 Skill，不维护固定全量名单；新增一个合法测试 Skill 后能自动进入 Reference Bundle、Project Payload、安装结果和公开 manifest；
+- 当前正式 `figma` Skill 也必须通过同一动态 Catalog 自动进入 Reference Bundle、Project Payload、Full/source 安装、Runtime 项目安装和 ownership manifest，不能为第四个 Skill 新增静态分发名单；
 - `scripts/install.py` 可在临时目标项目完成当前动态正式 Skill 的首次安装和重复升级，且不删除目标项目 `.agents/changes/`、项目自有 Skill 或其他 `.agents` 内容；
 - 安装器拒绝把目标项目设为 Agent_Skills source 自身或 source 内部后代目录，避免递归复制、源树污染或无界磁盘增长；正常 sibling/外部目标继续可安装；
 - Bootstrap 在无 `AGENTS.md`、已有 `AGENTS.md`、已有 managed block、坏 marker、LF/CRLF 和 `.gitignore` 幂等场景都保留用户内容并按 Contract 工作；
+- Bootstrap/managed block 能把 Figma 创建、修改、审查、Prototype、Ready 和 Figma-to-code 场景路由到正式 Figma Skill，并保持 `NOT_READY` 不进入生产实现、READY 后返回 Coding 的职责边界；
 - Runtime Project Payload 不分发 canonical Reference 正文；Stub 的 Runtime ID / Expected SHA256 与加密 Bundle 对应；Project Payload path/hash/size/mode 和 `payload_digest` 有机器验证；
 - 单 binary 项目安装使用 `.agents/agent-skills-install.json` 区分 Agent_Skills ownership 与项目自有 Skill；首次未认领同名 Skill 冲突 fail closed；新 Release 删除 Skill 时只删除旧 manifest 明确认领项；
 - 项目 Runtime 安装在 `.agents/runtime/agent-skills-mcp[.exe]`，目标项目 `.gitignore` 增量忽略该 Runtime；Codex/Cursor/Claude Code 只配置项目级 MCP，并保留宿主其他用户配置；
 - `ready_check.py` 的 schema、Traceability、Completion Audit 和 Change root 行为正确；
-- portability 测试证明不同语言/项目形态不会被反向推断成固定 Web/Python/PostgreSQL 项目；
-- preservation 测试证明 Coding 主规则结构调整后，全局不变量、停止条件、Review/Docs 硬路由以及迁移到 references 的详细规则仍可达且没有语义降级；
+- portability 测试证明不同语言/项目形态不会被反向推断成固定 Web/Python/PostgreSQL 项目；Figma portability 还必须证明 Design-only、Static、Web/Full-stack、Mobile/Desktop、Dashboard、Design System 等形态不会被强制套用不存在的 API/数据库/Browser 边界；
+- preservation 测试证明 Coding 主规则结构调整后，全局不变量、停止条件、Review/Docs/Figma 硬路由以及迁移到专门 Skill/references 的详细规则仍可达且没有语义降级；
+- Figma 内容守恒测试至少覆盖 Canvas/Section/Spacing/Annotation、Prototype、Owner、状态、`READY / READY_WITH_NOTES / NOT_READY`、失败处理、Fresh Screenshot/Machine Audit 和写后 Canvas-level Review；
 - 任一业务项目名称、业务源码路径、具体 Provider/平台或项目级 Blueprint/Stage 事实不出现在通用 live 规则或自包含测试中；
 - 用户定义的五项全局工程硬规则仍可从 Coding 主规则和完成前 Review 到达；
 - 删除/改名 reference 后没有 live 引用残留；
@@ -162,7 +171,7 @@ Coding 的 Requirement Traceability、Validation Matrix、Completion Audit 是�
 - Windows `.exe`、Linux、macOS artifact 分别在对应目标平台构建/验证，不把 PyInstaller onefile 当作跨平台产物；
 - CI 的 path filters 和编译/测试命令真实覆盖根 `scripts/install.py`、Full Kit Builder、Runtime Builder、动态 Skill/Project Payload/Installer、`docs/distribution/`、`docs/maintainers/` 和所有永久 Workflow，不能出现发布/安装能力只在本地存在而不进永久门禁。
 
-测试必须自包含。禁止让 Agent_Skills 自己的单元测试依赖另一个业务仓库才存在的 Blueprint、backend、workflow 或脚本。
+测试必须自包含。禁止让 Agent_Skills 自己的单元测试依赖另一个业务仓库才存在的 Blueprint、backend、workflow 或脚本。Figma preservation 测试也必须以当前仓库正式 Figma Skill 为事实源，不运行时依赖任何外部业务仓库。
 
 ## 6. Git 与交付
 
@@ -182,6 +191,7 @@ Coding 的 Requirement Traceability、Validation Matrix、Completion Audit 是�
 - 逐文件/按类别目的；
 - 哪些项目特定内容被移出通用核心；
 - 用户定义的全局硬规则是否完整保留；
+- Figma 内容守恒与跨 Skill Ownership 是否完整保留；
 - Change schema / carrier / cache 策略变化；
 - 实际运行的测试、命令、退出码和结果；
 - 未验证内容及风险；
