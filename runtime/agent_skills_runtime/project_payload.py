@@ -153,9 +153,11 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
 
 
 def _safe_payload_path(value: str) -> PurePosixPath:
-    """校验 Payload 路径为位于 `.agents/skills` 下的安全 POSIX 相对路径。"""
+    """校验 Payload 路径为跨平台安全的 POSIX 相对路径。"""
+    if "\\" in value:
+        raise ValueError(f"Project Payload 路径不能包含反斜杠：{value!r}")
     candidate = PurePosixPath(value)
-    if not value or value.startswith(("/", "\\")) or candidate.is_absolute():
+    if not value or value.startswith("/") or candidate.is_absolute():
         raise ValueError(f"Project Payload 路径必须是相对路径：{value!r}")
     if any(part in {"", ".", ".."} for part in candidate.parts):
         raise ValueError(f"Project Payload 路径不能包含跳转段：{value!r}")
