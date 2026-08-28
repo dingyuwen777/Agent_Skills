@@ -60,6 +60,27 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         ):
             self.assertIn(marker, combined)
 
+    def test_canvas_fallbacks_and_failure_handling_remain_executable(self) -> None:
+        """Canvas fallback 数值、Prototype 失败处理和写后复核必须保留为可执行细则。"""
+        layout = self._read(FIGMA_ROOT / "references/07_页面布局与真实可用性审计.md")
+        prototype = self._read(FIGMA_ROOT / "references/04_Prototype状态与交互审计.md")
+        facts = self._read(FIGMA_ROOT / "references/01_事实源与审查流程.md")
+        for marker in (
+            "4 / 8 / 12 / 16 / 20 / 24 / 32 / 40 / 48 / 64 / 80",
+            "24–32px",
+            "40–64px",
+            "64–80px",
+            "96–160px",
+            "每次 Figma 写操作后必须执行 Canvas-level Review",
+            "当前目标节点",
+            "本次修改直接造成的相邻布局/可读性问题",
+            "zoom-out / fit selection / 整体缩略视图",
+        ):
+            self.assertIn(marker, layout)
+        self.assertIn("不能因为工具写入返回成功就宣称 Prototype 已修好", prototype)
+        self.assertIn("`review-and-fix` 必须明确写入能力缺失", facts)
+        self.assertIn("不得假装完成", facts)
+
     def test_figma_rules_are_project_shape_neutral_without_losing_system_checks(self) -> None:
         """通用化必须覆盖多种项目形态，并把系统接线条件化而不是删除。"""
         applicability = self._read(FIGMA_ROOT / "references/00_通用适用性与项目形态.md")
