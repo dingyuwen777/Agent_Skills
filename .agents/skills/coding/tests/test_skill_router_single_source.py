@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[4]
 ROUTER_PATH = ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
 MAINTENANCE_PATH = ".agents/MAINTENANCE.md"
 MANAGED_PATH = ".agents/skills/coding/assets/AGENTS.managed.md"
+RUNTIME_REFERENCE_PATH = ".agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md"
 
 
 class SkillRouterSingleSourceTest(unittest.TestCase):
@@ -96,6 +97,21 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertIsNotNone(entry, "Project Payload 没有分发 canonical Router 运行资产")
         installed_router = decode_payload_file(entry).decode("utf-8")
         self.assertEqual(installed_router, self._read(ROUTER_PATH))
+
+    def test_runtime_reference_preserves_web_direct_and_local_stdio_boundary(self) -> None:
+        """网页端源码直读不能被误写成本地 stdio MCP 已连接，Remote MCP 仍是另一部署形态。"""
+        runtime_reference = self._read(RUNTIME_REFERENCE_PATH)
+        for marker in (
+            "## 21. ChatGPT 网页端边界",
+            "项目本地 stdio MCP",
+            "源码直接读取模式",
+            "Agent_Skills 根 AGENTS.md",
+            "直接读取 canonical Reference",
+            "Remote MCP",
+            "安全隧道",
+        ):
+            self.assertIn(marker, runtime_reference)
+        self.assertIn("不经过 Reference Stub / `agent_skills_load_context`", runtime_reference)
 
 
 if __name__ == "__main__":
