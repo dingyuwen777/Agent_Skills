@@ -893,6 +893,9 @@ def bootstrap_project(root: str | Path) -> dict[str, str]:
     coding_skill = project_root / ".agents/skills/coding/SKILL.md"
     if coding_skill.is_symlink() or not coding_skill.is_file():
         raise FileNotFoundError(f"目标项目缺少已安装的 .agents/skills/coding/SKILL.md：{coding_skill}")
+    router = project_root / ".agents/skills/ROUTER.md"
+    if router.is_symlink() or not router.is_file():
+        raise FileNotFoundError(f"目标项目缺少已安装的 .agents/skills/ROUTER.md：{router}")
 
     agents_path = project_root / AGENTS_FILENAME
     gitignore_path = project_root / GITIGNORE_FILENAME
