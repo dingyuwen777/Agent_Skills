@@ -290,3 +290,45 @@ Docs Impact：`targeted`。
 - PR：#21（Draft，待 Ready HEAD CI 全绿后转 Ready）。
 - Release：本 Change 不创建 Release。
 - Merge / main CI / archive：待 Ready HEAD CI 通过后按仓库正常门禁执行。
+
+# 后续独立 Review 修订
+
+本节记录首次 Ready 结论之后重新执行的 Review，并**覆盖上文“`NO_FINDINGS_WITHIN_SCOPE`（截至 Ready 前审查）”作为最终结论的效力**。上文保留为当时审查快照，不作为本 Change 的最终 Review 结果。
+
+## Findings → Red → Fix
+
+重新按 A1/A2 和失败边界审查后发现 3 个可触发问题：
+
+1. **Bootstrap Router fail-closed 缺口**：`.agents/skills/coding/scripts/coding.py bootstrap` 只检查 `coding/SKILL.md`，当共享 `.agents/skills/ROUTER.md` 缺失时仍可能生成指向不存在 Router 的 `AGENTS.md`。
+2. **跨平台路径校验缺口**：Payload/shared-file 路径基于 `PurePosixPath` 校验时未显式拒绝反斜杠；`..\\..\\escape.md` 在 POSIX 校验环境可能作为普通字符通过，但在 Windows 文件系统可被解释为路径分隔符。
+3. **切换中途 rollback 缺口**：Installer 原实现先把旧 Skill/shared file 移到 backup，再把 staged 内容 rename 到正式目标，最后才登记 `switched_*`；如果 staged rename 恰在中间失败，rollback 列表可能不知道旧内容已经被移走。
+
+PR run #222（`33198376829`）首先锁定前两个问题：123 个 self-contained tests 中仅新增的 3 个安全/Bootstrap 断言失败，其他既有回归保持绿色。随后新增 staged Router rename 故障注入，要求旧 Router 已移入 backup 后 staged rename 失败时仍恢复旧 Router 与旧 manifest。
+
+对应修复：
+
+- Project Payload `_safe_payload_path` 显式拒绝反斜杠；
+- Installer `_normalise_shared_files` 同样拒绝反斜杠；
+- Installer 在旧目标成功移到 backup 后立即登记 `switched_skills/switched_shared`，再执行 staged rename，确保中途异常进入 rollback；
+- Coding Bootstrap 在写 `AGENTS.md/.gitignore` 前同时校验 `.agents/skills/coding/SKILL.md` 与 `.agents/skills/ROUTER.md`；
+- 两个旧 Bootstrap fact-source fixture 补齐共享 Router，保持其原测试目标不变，没有放宽生产 fail-closed。
+
+## Re-review 与新鲜证据
+
+PR run #228（`33199230087`），HEAD `288aaf2beb68e4f8a3aebad08a041cc4ab677d65`：
+
+- self-contained tests：124/124 success；
+- 新增 Bootstrap 缺 Router 写前失败回归：success；
+- Payload / install shared-files 反斜杠拒绝回归：success；
+- staged shared Router rename failure rollback 回归：success；
+- Runtime hash 失败后的 Router/Runtime/manifest rollback 回归：success；
+- Linux onefile build/status/self-test：success；
+- real stdio MCP：success；
+- Linux project-only single-binary install / repeat install / no-args install：success；
+- Ready Check：success；
+- Runtime macOS Package：build/self-test + project install success；
+- Runtime Windows Package：build/self-test + project install success。
+
+最终 re-review 结论：`NO_OPEN_FINDINGS_WITHIN_SCOPE`。3 个后续 Finding 均已有可触发 Red、最小修复和针对性 Green；没有通过删除/跳过/放宽测试制造 Green。Router 正文 blob 仍为 `84c6b0b5d7fdc34e8440ba031c04699a7cf1dd39`，本轮安全修复未改动 Router 规则正文。
+
+本治理提交只更新 Change 证据，不改变产品实现；其新 HEAD 必须再次通过永久 CI 后才能合并 PR #21。
