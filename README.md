@@ -2,7 +2,7 @@
 
 `Agent_Skills` 是通用 Agent Skill 的**源仓库与维护仓库**。它保存正式 Skill、canonical References、项目级 Runtime、构建/验证脚本和维护期 Change 记录。
 
-最终使用者不需要理解本仓库的维护过程，也不需要访问源码。正式对外交付只有：
+最终使用者不需要理解本仓库的维护过程，也不需要访问源码。正式构建产物只有：
 
 ```text
 GitHub Release
@@ -14,6 +14,8 @@ GitHub Release
 最终用户入口见 [`USAGE.md`](USAGE.md)。
 
 > **源码可见性边界**：如果完整 `SKILL.md` / canonical `references/*.md` 只允许维护者查看，本 GitHub 仓库必须设置为 **Private**。Runtime 的加密与 Stub 机制不能替代仓库访问控制。
+>
+> 私有仓库的 Release 仍受该仓库 read 权限控制。**如果接收者不应获得源码权限，不要为了让他下载 Release 而授予本源仓库 read 权限。** 维护者应从私有源仓库取得并校验 Release 资产后，通过内部制品库、文件服务或独立的 release-only 仓库/渠道向最终使用者分发。
 
 ## 1. 当前正式 Skills
 
@@ -163,7 +165,7 @@ main
 → 创建不可覆盖的 tag / GitHub Release
 ```
 
-Release 的用户可见内容固定为三平台 binary、`USAGE.md` 与 `SHA256SUMS`。Release 页面说明直接使用 `USAGE.md`，不自动把维护 commit / PR 历史生成给最终使用者。
+源仓库 Release 资产固定为三平台 binary、`USAGE.md` 与 `SHA256SUMS`。Release 页面说明直接使用 `USAGE.md`，不自动把维护 commit / PR 历史生成给最终使用者。最终交付给不具备源仓库权限的用户时，只复制这些 Release 资产，不暴露源仓库访问权。
 
 ## 7. 继续阅读
 
