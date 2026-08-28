@@ -88,3 +88,48 @@ Stub 或 MCP 失败时不得把“以前读过这条规则”作为继续执行�
 ```
 
 文件变短、重复减少或 CI 绿色本身都不能代替上述结论。
+
+## 6. 跨 Skill 规则 Ownership 也必须守恒
+
+当一组规则从 Coding 迁移到更专门的正式 Skill 时，内容守恒不仅要求“文字还在”，还要求**唯一 Owner、触发入口和回程路径同时存在**。不能因为拆出独立 Skill 就让规则变成只有用户显式点名才会加载，也不能为了保险在 Coding 中长期复制第二套详细规则。
+
+当前 Figma 设计规则的 Ownership 明确为：
+
+```text
+Figma 页面 / Canvas / Section / Spacing / Annotation
+Prototype Variable / Reaction / Flow
+设计系统与视觉组件复用审计
+设计状态完整性与真实系统能力映射
+Figma Findings / Ready / 写后 Canvas-level Review
+→ 唯一详细规则 Owner：.agents/skills/figma/SKILL.md + 其 references
+
+Coding
+→ 负责跨 Skill 触发、仓库事实、Change、代码实现、验证、Review、CI、Git 与交付
+→ READY 后的真实前端 / Design-to-Code 实施继续由 Coding reference 17 承担
+```
+
+硬规则：
+
+- 同仓存在 `.agents/skills/figma/SKILL.md` 时，Figma 创建、修改、整理、审查、Prototype、正式设计基线验收或 Figma-to-code 任务必须通过 Coding 的任务路由进入 Figma Skill；不能依赖用户记住 Skill 名称；
+- **不得在 Coding references 下恢复第二套 Figma 页面、Canvas、Spacing、Annotation、Prototype 或 Ready 详细设计规则**；需要设计细节时引用并加载 Figma Skill 的 canonical 规则；
+- Coding 可以维护 `NOT_READY → 阻止生产实现`、`READY / READY_WITH_NOTES → Coding Handoff` 这类跨 Skill Contract，但不能复制 Figma 如何判定布局、Prototype、状态或 Canvas Ready 的完整检查表；
+- Figma Skill 也不得复制 Coding 的 Change、TDD、Validation Matrix、Review、CI、Git、PR、Release 细则；进入生产实现后必须回到目标项目 Coding 工作流；
+- 从旧 Coding 规则迁入 Figma 时，必须逐条对照原触发条件、Canvas fallback、Prototype 状态、Owner、失败处理、修复后验证和完成判定；通用化只允许把项目特定假设条件化，不能删除原规则强度；
+- Runtime 模式还必须证明 Figma 的 canonical References 与 Stub/Bundle/MCP 加载逐字对应，新增正式 Figma Skill 能被动态 Catalog、Project Payload、Installer 和 manifest 自动发现，不得为第四个 Skill 引入静态白名单。
+
+跨 Skill 重组完成后的反向检查至少包括：
+
+```text
+Figma 审查 / 修改 / Ready 用户意图
+→ Coding 四维路由
+→ .agents/skills/figma/SKILL.md
+→ 命中的 Figma reference
+→ 原设计规则完整可达
+
+Figma READY / READY_WITH_NOTES
+→ Coding Handoff
+→ Coding reference 17 / 目标项目现有实现边界
+→ 测试 / Review / CI / Git / 交付
+```
+
+任一路径断开，都不能用“规则文件仍存在”作为内容守恒完成证据。
