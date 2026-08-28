@@ -1,6 +1,6 @@
 # Agent_Skills
 
-`Agent_Skills` 是一组面向软件研发的通用 Agent Skills。它不规定某一种语言、框架、数据库或项目架构，而是让 AI / Coding Agent 在不同项目、不同研发阶段和不同技术栈中，先恢复当前真实事实，再按风险选择需求、实现、调试、测试、Review、文档、Git 和交付流程。
+`Agent_Skills` 是一组面向软件研发的通用 Agent Skills。它不规定某一种语言、框架、数据库或项目架构，而是让 AI / Coding Agent 在不同项目、不同研发阶段和不同技术栈中，先恢复当前真实事实，再按风险选择需求、实现、调试、测试、Review、文档、Figma、Git 和交付流程。
 
 当前仓库实际存在的正式 Skill：
 
@@ -9,6 +9,7 @@
 | `coding` | Greenfield、仓库事实恢复、需求/设计、功能开发、Bug、重构、验证、CI、Git、Release 与交付 | [`.agents/skills/coding/SKILL.md`](.agents/skills/coding/SKILL.md) |
 | `review` | 独立 Code Review、Findings、测试充分性审查和 re-review | [`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md) |
 | `docs` | 技术文档事实同步、审查、编写、更新和可读性治理 | [`.agents/skills/docs/SKILL.md`](.agents/skills/docs/SKILL.md) |
+| `figma` | Figma 设计事实、Canvas/Prototype、设计系统/可用性审查、修复、Ready 验收与 Design-to-Code 实施交接 | [`.agents/skills/figma/SKILL.md`](.agents/skills/figma/SKILL.md) |
 
 这张表描述**当前仓库事实**，不是 Runtime/Release 的静态白名单。构建和分发会从：
 
@@ -24,7 +25,7 @@
 Agent_Skills
 → 规定“怎样可靠工作”
 
-目标项目 AGENTS.md / CONTRIBUTING / Contract / 代码 / 测试 / 文档
+目标项目 AGENTS.md / CONTRIBUTING / Contract / 代码 / 测试 / 文档 / Design Guide / 当前正式 Figma
 → 规定“这个项目具体是什么”
 ```
 
@@ -129,7 +130,7 @@ Bootstrap 负责建立目标项目自己的 Agent Skills 入口：
 → 保留原文
 → 仅在 managed block 中接入 Agent Skills
 → 后续任务先进入 Coding
-→ Coding 再按任务加载 references / Review / Docs / 其他正式 Skill
+→ Coding 再按任务加载 references / Review / Docs / Figma / 其他正式 Skill
 ```
 
 目标项目没有 `AGENTS.md` 时会创建最小 Overlay；已有 `AGENTS.md` 时只增量维护：
@@ -210,6 +211,21 @@ Review 默认只报告，不自动获得修改、提交或合并权限。需要�
 ```
 
 `full` 表示完整覆盖受影响文档域，不是机械扫描仓库全部 Markdown。Docs 发现实现本身有问题时会返回 Coding，而不是修改文档去迎合错误实现。
+
+## 4.1 怎么用 Figma
+
+Figma 任务也不需要记住长检查清单。安装后可以直接描述目标：
+
+```text
+全面检查这个 Figma：<链接>
+全面检查并修好这个 Figma：<链接>
+对照当前仓库全面验收这个 Figma：<链接>
+按这个 Figma 替换当前对应页面：<链接>
+```
+
+有目标实现仓库时，Coding 的任务路由会进入 `.agents/skills/figma/SKILL.md`。Figma 负责设计事实、Canvas/Section/Annotation、Prototype、真实系统能力映射、组件/业务逻辑复用审计和 `READY / READY_WITH_NOTES / NOT_READY`；用户要求 Figma-to-code 时必须先通过 `baseline-ready`，`NOT_READY` 不进入生产实现。达到可实施 Readiness 后，已确认设计事实交回 Coding 的前端/Design-to-Code 规则，继续按目标项目真实技术栈实现、测试、Review、CI、Git 与交付。
+
+Figma 规则不把某个项目的 Vue/React、数据库、品牌、页面尺寸或业务字段当成通用标准；这些具体事实仍来自目标项目当前 Design Guide/Design System、代码、Contract、运行状态和正式 Figma。
 
 ## 5. Change、风险与完成门禁
 
@@ -365,6 +381,7 @@ Agent_Skills/
 │   │   ├── coding/
 │   │   ├── review/
 │   │   ├── docs/
+│   │   ├── figma/
 │   │   └── <未来其他正式 Skill>/
 │   └── changes/
 ├── runtime/
@@ -422,6 +439,8 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 - [Coding 正式规则](.agents/skills/coding/SKILL.md)
 - [Review 使用说明](.agents/skills/review/README.md)
 - [Docs 使用说明](.agents/skills/docs/README.md)
+- [Figma 使用说明](.agents/skills/figma/README.md)
+- [Figma 正式规则](.agents/skills/figma/SKILL.md)
 - [Runtime binary 最终用户说明](docs/distribution/runtime-kit.md)
 - [Full 明文兼容分发说明](docs/distribution/full-kit.md)
 - [Runtime 维护说明](runtime/README.md)
