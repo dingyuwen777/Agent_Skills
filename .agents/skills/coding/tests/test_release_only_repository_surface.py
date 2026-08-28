@@ -93,6 +93,15 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertIn("没有可用 Python", usage)
         self.assertIn("fallback", usage)
 
+    def test_nested_maintenance_readme_is_not_distributed_but_runtime_resource_is(self) -> None:
+        """源码内局部维护 README 可保留，但不能随 Project Payload 暴露；真实运行资源必须继续分发。"""
+        self.assertTrue((ROOT / ".agents/skills/coding/scripts/tzdata/README.md").is_file())
+        bundle = build_bundle(ROOT)
+        payload = build_project_payload(ROOT, bundle)
+        paths = {entry["path"] for entry in payload["files"]}
+        self.assertNotIn("coding/scripts/tzdata/README.md", paths)
+        self.assertIn("coding/scripts/tzdata/zoneinfo/Asia/Shanghai", paths)
+
     def test_root_agents_and_managed_agents_have_distinct_roles(self) -> None:
         """根 AGENTS 只维护源仓库，目标项目 managed block 才负责指导 AI 使用正式 Skills。"""
         root_agents = self._read("AGENTS.md")
@@ -150,10 +159,11 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, workflow)
 
-    def test_runtime_project_payload_still_excludes_maintenance_readmes_and_tests(self) -> None:
-        """仓库删 README 不能改变 Runtime 只分发运行资产与 Reference Stub 的安全边界。"""
+    def test_runtime_project_payload_still_excludes_maintenance_readmes_tests_and_references(self) -> None:
+        """删文档不能改变 Runtime 只分发运行资产与 Reference Stub 的安全边界。"""
         payload = self._read("runtime/agent_skills_runtime/project_payload.py")
-        self.assertIn('_EXCLUDED_TOP_LEVEL = {"README.md", "tests"}', payload)
+        self.assertIn('_EXCLUDED_TOP_LEVEL = {"tests"}', payload)
+        self.assertIn('relative.name == "README.md"', payload)
         self.assertIn('relative.parts[0] == "references"', payload)
         self.assertIn("render_reference_stub", payload)
         self.assertIn("agent_skills_load_context", payload)
