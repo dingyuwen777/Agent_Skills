@@ -14,6 +14,7 @@
 - 第一次接手仓库，先恢复当前事实；
 - 需求分析和技术方案；
 - 功能开发；
+- Frontend / Web UI、Design-to-Code、Figma/原型/设计稿转正式代码；
 - Bug / 故障定位和修复；
 - 重构、性能和可维护性修改；
 - Code Review / 代码质量审计的仓库事实、风险和权限入口；
@@ -137,6 +138,16 @@ Greenfield / Repository Bootstrap：
 使用 coding 完成这个任务，并按仓库现有 Git/CI 门禁创建 PR。
 完成前按当前仓库规则进入 review；只有当前 HEAD 的适用验证、Review 和 CI 真正通过后，才能声明可合并。
 ```
+
+### 4.7 Frontend / Design-to-Code
+
+```text
+使用 coding 把当前设计稿/Figma/原型实现到这个项目。
+已有项目先识别当前实际 Framework、Manifest/锁文件、路由、状态管理、UI/样式体系、API/SDK 和测试构建链，不因为通用偏好改技术栈；按 Page/Feature/Shared 的真实 Owner 复用现有实现。
+如果是没有既定前端框架的 Greenfield Web 项目，默认优先推荐 Vue；存在实质长期取舍时给出真实备选、推荐方案和理由，由用户确认关键技术决定后再实施。
+```
+
+完整规则见 [`references/17_前端与Design-to-Code实施规则.md`](references/17_前端与Design-to-Code实施规则.md)。
 
 ## 5. L1、L2、L3 可以怎么理解
 
@@ -351,7 +362,7 @@ coding/
 
 ### “Greenfield 没有仓库事实，所以 Agent 可以随便选技术栈”
 
-不对。Greenfield 的事实源变成用户目标、正式需求、运行环境和已确认约束；影响长期架构的关键选择仍需按风险比较方案和确认。
+不对。Greenfield 的事实源变成用户目标、正式需求、运行环境和已确认约束；影响长期架构的关键选择仍需按风险比较方案和确认。对于没有既定前端框架的 Greenfield Web 项目，Coding 默认优先推荐 Vue，但这不是已有项目的迁移指令，目标约束不匹配时仍应比较其它真实方案。
 
 ### “Coding 已经会自检，所以不需要 Review Skill”
 
@@ -375,6 +386,7 @@ coding/
 - [多人和多 Agent 并行协作](references/09_多人和多智能体并行协作.md)
 - [完成定义追溯门禁](references/10_完成定义追溯门禁.md)
 - [两阶段复核与完成前验证](references/11_两阶段复核与完成前验证.md)
+- [前端与 Design-to-Code 实施规则](references/17_前端与Design-to-Code实施规则.md)
 - [Review Skill 使用说明](../review/README.md)
 - [Review 正式规则](../review/SKILL.md)
 - [Docs Skill 使用说明](../docs/README.md)
