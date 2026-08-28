@@ -102,6 +102,14 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertNotIn("coding/scripts/tzdata/README.md", paths)
         self.assertIn("coding/scripts/tzdata/zoneinfo/Asia/Shanghai", paths)
 
+        runtime_readme = self._read("runtime/README.md")
+        runtime_reference = self._read(
+            ".agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md"
+        )
+        for text in (runtime_readme, runtime_reference):
+            self.assertIn("任意深度", text)
+            self.assertIn("维护 `README.md`", text)
+
     def test_root_agents_and_managed_agents_have_distinct_roles(self) -> None:
         """根 AGENTS 只维护源仓库，目标项目 managed block 才负责指导 AI 使用正式 Skills。"""
         root_agents = self._read("AGENTS.md")
