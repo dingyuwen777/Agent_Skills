@@ -203,6 +203,37 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.assertEqual(manifest["shared_files"], ["ROUTER.md"])
         self.assertEqual(manifest["release_version"], "1.3.0")
 
+    def test_staged_shared_router_rename_failure_restores_previous_router(self) -> None:
+        """旧 Router 已移入备份后 staged Router 切换失败，也必须恢复旧 Router 与旧 manifest。"""
+        install_project(self.target, self._payload(), self.runtime_artifact, release_version="1.2.3")
+        target_router = (self.target / ROUTER_RELATIVE).resolve()
+        old_router = target_router.read_bytes()
+        old_manifest = (self.target / INSTALL_MANIFEST_PATH).read_bytes()
+
+        (self.source / ROUTER_RELATIVE).write_text("# Router v2\n", encoding="utf-8")
+        second_payload = self._payload()
+        original_rename = Path.rename
+
+        def controlled_rename(source_path: Path, destination: Path) -> Path:
+            """只在 staged ROUTER.md 即将替换正式 Router 时制造切换失败。"""
+            source = Path(source_path)
+            target = Path(destination)
+            if (
+                source.name == "ROUTER.md"
+                and ".agent-skills-project-stage-" in source.as_posix()
+                and target.resolve() == target_router
+            ):
+                raise OSError("fixture staged router rename failure")
+            return original_rename(source, target)
+
+        with patch.object(Path, "rename", new=controlled_rename):
+            with self.assertRaisesRegex(OSError, "staged router rename failure"):
+                install_project(self.target, second_payload, self.runtime_artifact, release_version="1.3.0")
+
+        self.assertTrue(target_router.is_file())
+        self.assertEqual(target_router.read_bytes(), old_router)
+        self.assertEqual((self.target / INSTALL_MANIFEST_PATH).read_bytes(), old_manifest)
+
     def test_runtime_failure_after_shared_switch_restores_previous_router(self) -> None:
         """共享 Router 已切换后若 Runtime 校验失败，安装器必须恢复旧 Router 和旧 Runtime。"""
         first_payload = self._payload()
@@ -216,19 +247,10 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         runtime_target = (self.target / ".agents/runtime/agent-skills-mcp.exe").resolve()
         artifact = self.runtime_artifact.resolve()
 
-        def fake_sha(path: Path) -> str:
-            """只制造安装后 Runtime hash 不一致，不影响回滚文件写入。"""
-            resolved = Path(path).resolve()
-            if resolved == runtime_target:
-                return "installed-mismatch"
-            if resolved == artifact:
-                return "artifact-expected"
-            return INSTALLER._sha256_file(path)
-
         original_sha = INSTALLER._sha256_file
 
         def controlled_sha(path: Path) -> str:
-            """避免 patched helper 递归，其他路径继续使用真实 SHA。"""
+            """只制造安装后 Runtime hash 不一致，其他路径继续使用真实 SHA。"""
             resolved = Path(path).resolve()
             if resolved == runtime_target:
                 return "installed-mismatch"
