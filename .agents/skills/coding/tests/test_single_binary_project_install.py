@@ -10,6 +10,9 @@ from runtime.agent_skills_runtime.project_installer import INSTALL_MANIFEST_PATH
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 
 
+ROUTER_RELATIVE = Path(".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md")
+
+
 class SingleBinaryProjectInstallTest(unittest.TestCase):
     """验证单二进制项目级安装、managed ownership 与宿主配置边界。"""
 
@@ -44,10 +47,15 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         if with_bootstrap_assets:
             assets = skill / "assets"
             assets.mkdir()
+            (assets / "AGENT_SKILLS_ROUTER.md").write_text(
+                "# Router\n\n"
+                "读取 `.agents/skills/coding/SKILL.md`，命中 Runtime Stub 时使用 `agent_skills_load_context`。\n",
+                encoding="utf-8",
+            )
             (assets / "AGENTS.managed.md").write_text(
                 "<!-- agent-skills:managed:start -->\n"
                 "## Agent Skills\n"
-                "每个研发任务先读取 `.agents/skills/coding/SKILL.md`。\n"
+                "读取 `.agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md`。\n"
                 "<!-- agent-skills:managed:end -->\n",
                 encoding="utf-8",
             )
@@ -82,8 +90,12 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
 
         self.assertEqual(result["skills"], ["coding", "docs", "review"])
         self.assertEqual((custom / "SKILL.md").read_text(encoding="utf-8"), "# company\n")
-        self.assertIn("KEEP-AGENTS", (self.target / "AGENTS.md").read_text(encoding="utf-8"))
-        self.assertIn("<!-- agent-skills:managed:start -->", (self.target / "AGENTS.md").read_text(encoding="utf-8"))
+        agents = (self.target / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("KEEP-AGENTS", agents)
+        self.assertIn("<!-- agent-skills:managed:start -->", agents)
+        self.assertIn(".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md", agents)
+        self.assertTrue((self.target / ROUTER_RELATIVE).is_file())
+        self.assertIn("agent_skills_load_context", (self.target / ROUTER_RELATIVE).read_text(encoding="utf-8"))
         self.assertIn("KEEP-CLAUDE", (self.target / "CLAUDE.md").read_text(encoding="utf-8"))
         self.assertIn("@AGENTS.md", (self.target / "CLAUDE.md").read_text(encoding="utf-8"))
         self.assertEqual((self.target / ".agents/runtime/agent-skills-mcp.exe").read_bytes(), b"runtime-v1")
@@ -101,6 +113,19 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         codex = (self.target / ".codex/config.toml").read_text(encoding="utf-8")
         self.assertIn("[mcp_servers.agent-skills]", codex)
         self.assertIn("agent-skills:mcp:start", codex)
+
+    def test_install_refuses_valid_payload_without_router_before_mutation(self) -> None:
+        """Payload 即使结构和 digest 合法，只要缺少 managed block 依赖的 Router 就必须在目标写入前失败。"""
+        router_source = self.source / ROUTER_RELATIVE
+        router_source.unlink()
+        payload = self._payload()
+
+        with self.assertRaisesRegex(ValueError, "AGENT_SKILLS_ROUTER.md"):
+            install_project(self.target, payload, self.runtime_artifact, release_version="1.2.3")
+
+        self.assertFalse((self.target / "AGENTS.md").exists())
+        self.assertFalse((self.target / INSTALL_MANIFEST_PATH).exists())
+        self.assertFalse((self.target / ".agents").exists())
 
     def test_first_install_refuses_unowned_same_name_skill_before_mutation(self) -> None:
         """首次安装遇到同名但未被 manifest 认领的 Skill 时必须 fail closed。"""
@@ -141,6 +166,7 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
 
         self.assertFalse((self.target / ".agents/skills/security").exists())
         self.assertTrue((custom / "SKILL.md").is_file())
+        self.assertTrue((self.target / ROUTER_RELATIVE).is_file())
         self.assertEqual((self.target / ".agents/runtime/agent-skills-mcp.exe").read_bytes(), b"runtime-v2")
         self.assertEqual(result["removed_skills"], ["security"])
         manifest = json.loads((self.target / INSTALL_MANIFEST_PATH).read_text(encoding="utf-8"))
