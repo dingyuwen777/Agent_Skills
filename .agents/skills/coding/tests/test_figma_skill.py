@@ -96,9 +96,19 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         routing = self._read(CODING_ROOT / "references/02_跨项目研发任务路由.md")
         implementation = self._read(CODING_ROOT / "references/17_前端与Design-to-Code实施规则.md")
         preservation = self._read(CODING_ROOT / "references/16_规则内容守恒与Skill维护.md")
-        for text in (skill, routing):
-            self.assertIn(".agents/skills/figma/SKILL.md", text)
-            self.assertIn("Prototype", text)
+
+        # Coding 主规则已经强制每个独立任务在规划前进入 reference 02，
+        # 因此 Figma 的唯一跨 Skill 触发入口放在 reference 02，避免主文件再复制一套详细路由。
+        self.assertIn(
+            "每个独立任务在制定实现计划前先按 [02_跨项目研发任务路由.md]",
+            skill,
+        )
+        self.assertIn(".agents/skills/figma/SKILL.md", routing)
+        self.assertIn("Prototype", routing)
+        self.assertIn("NOT_READY", routing)
+        self.assertIn("READY / READY_WITH_NOTES", routing)
+        self.assertIn("17_前端与Design-to-Code实施规则.md", routing)
+
         self.assertIn("NOT_READY", implementation)
         self.assertIn("READY / READY_WITH_NOTES", implementation)
         self.assertIn("Figma Skill", implementation)
