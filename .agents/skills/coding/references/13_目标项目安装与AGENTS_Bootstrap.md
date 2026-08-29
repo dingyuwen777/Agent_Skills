@@ -77,6 +77,12 @@ Runtime 安装自己的：
 
 `.agents/runtime/` 是项目本地 Runtime，应被目标项目 `.gitignore` 忽略；install manifest 只承担 Agent_Skills ownership/version 导航，不是项目业务事实源。
 
+### 普通 Runtime 与源仓库 Mutation 边界
+
+**普通 Runtime** 的 `AGENTS` managed block 和共享 Router 只承担目标项目正常研发入口：项目事实优先、动态 Skill 导航、Reference 加载、专业 Skill Handoff、失败停止和权限边界。它们不承载 **源仓库 Mutation**、canonical repository、源仓库 Maintenance 或跨仓库同步等维护者专用治理。
+
+源仓库中针对 Skill / Reference 的新增、修改、删除、重命名、拆分、合并、通用化和跨仓库同步，由 Agent_Skills 根 `AGENTS.md` 识别维护意图，再进入 `.agents/MAINTENANCE.md`、Coding 与 ref16。普通目标项目只需要知道：安装器 manifest 明确认领的 `.agents` 运行资产不是项目自有规则，不应直接手工修改；项目自己的长期规则继续写在项目自己的正式事实源中。
+
 ## 3. 最终用户入口：项目级单 binary
 
 最终使用者不需要访问 Agent_Skills 源仓库，也不需要为了**安装 Agent_Skills 或运行项目 MCP Runtime** 预先安装 Python、pip、venv 或外部安装脚本。
@@ -248,7 +254,8 @@ marker 后原文：逐字保留
 2. 明确读取 `.agents/skills/ROUTER.md`；
 3. 由 Router 决定本次 Skill / Reference 加载，不在 block 内复制第二套详细路由；
 4. 通用示例不能覆盖目标项目事实；
-5. Router 缺失、不可读或与更高优先级规则存在无法安全解析的冲突时明确报告并停止依赖它的动作，不假装遵守。
+5. 明确安装器认领的 `.agents` 受管运行资产不是项目自有规则，不直接手工修改，项目长期规则维护在项目自身正式事实源；
+6. Router 缺失、不可读或与更高优先级规则存在无法安全解析的冲突时明确报告并停止依赖它的动作，不假装遵守。
 
 原 managed block 曾直接承担的 Coding 锚点、Reference 触发、Runtime Stub → `agent_skills_load_context` + SHA/canonical 原文、Figma NOT_READY/READY Handoff、Review、Docs、Skill/Reference 失败停止、CI/Branch Protection/PR/Release/Migration/安全与授权边界、项目事实来源等完整可执行语义，已经按内容守恒迁入 `.agents/skills/ROUTER.md`，该 Router 是这些跨 Skill 语义的唯一正文 Owner。本 Reference 只定义 Bootstrap Contract，不再复制第二份 Router 正文。
 
