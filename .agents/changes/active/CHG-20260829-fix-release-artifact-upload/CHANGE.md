@@ -63,7 +63,7 @@ data_changes: []
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
 | R1 | 修复 Release #1 的实际失败根因 | user:2026-08-29-fix-release | satisfied | Release run `33232571749` 证明三平台 Build/verify 均成功而 Upload 均因 `.release-assets/...` 找不到文件失败；当前 diff 将三平台 staging 与 upload path 同步改为可见 `release-assets/...`。 |
-| R2 | 保持现有 Release 产品 Contract 不变 | `.agents/MAINTENANCE.md` / `.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md` / `.github/workflows/release.yml` | satisfied | PR diff 只修改三平台 staging/upload path；`test_release_publishes_three_binaries_usage_and_checksums`、`test_release_workflow_is_manual_and_immutable` 在 Green run `33233124852` 中通过；最终汇总目录、三平台文件名、`USAGE.md`、`SHA256SUMS`、VERSION/tag 与不可覆盖逻辑均未改变。 |
+| R2 | 保持现有 Release 产品 Contract 不变 | `.github/workflows/release.yml` | satisfied | PR diff 只修改三平台 staging/upload path；`test_release_publishes_three_binaries_usage_and_checksums`、`test_release_workflow_is_manual_and_immutable` 在 Green run `33233124852` 中通过；最终汇总目录、三平台文件名、`USAGE.md`、`SHA256SUMS`、VERSION/tag 与不可覆盖逻辑均未改变。 |
 | R3 | Bug 修复需有回归测试并验证 Red→Green | `.agents/skills/coding/references/05_设计实施与根因调试.md` | satisfied | Red run `33233059615`：132 tests 中仅新增 `test_release_upload_sources_are_not_hidden` 失败，明确命中 `.release-assets`；Green run `33233124852`：132 tests 全部通过，包括该回归测试。 |
 
 # Validation Matrix
