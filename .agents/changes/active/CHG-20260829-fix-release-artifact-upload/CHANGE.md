@@ -77,7 +77,7 @@ data_changes: []
 | 跨组件 Golden Path | not_applicable | 本 Change 不改变 Runtime 内部组件接线，且既有 Linux/Windows/macOS 项目安装链已在 Green run `33233124852` 继续通过；artifact 上传本身是单一 Workflow handoff 边界，不需要新增另一条应用 Golden Path。 |
 | External Dependency / Provider Probe | not_applicable | 不依赖第三方业务 Provider。`actions/upload-artifact` 的默认隐藏文件行为已由 Release #1 实际失败和当前锁定 action contract 共同确认；不需要额外外部 Probe。 |
 | Build / Package / Runtime | required | Green run `33233124852`：Linux onefile build/status/self-test、真实 stdio MCP、项目安装均成功；`Runtime Windows Package` 成功；`Runtime macOS Package` 成功。Runtime `source_digest` / `payload_digest` 与失败 Release 构建保持一致，说明本 Change 未改变 Runtime 内容 Contract。 |
-| Docs / Governance / Other | required | 独立 A1/A2、反向审计与代码质量 Review 已完成，结论 `NO_FINDINGS_WITHIN_SCOPE`；Green run `33233124852` 唯一失败是本 Change 当时仍为 `in_progress` 的 Ready Gate，当前已依据真实证据进入 `ready_for_review`，需新一轮 CI 重新验证。 |
+| Docs / Governance / Other | required | 独立 A1/A2、反向审计与代码质量 Review 已完成，结论 `NO_FINDINGS_WITHIN_SCOPE`；Green run `33233124852` 唯一失败是本 Change 当时仍为 `in_progress` 的 Ready Gate，当前已依据真实证据进入 `ready_for_review`，由 run `33233883147` 重新验证最终 Ready Gate。 |
 
 # Completion Audit
 
@@ -92,11 +92,11 @@ data_changes: []
 2. Verify Red：PR CI run `33233059615` 执行 132 tests，只有新增测试失败，失败原因是 workflow 仍包含 `.release-assets`；其余 131 tests 通过。
 3. Green：仅把 Linux/Windows/macOS 构建 Job 的 staging 与 upload path 从 `.release-assets` 改成 `release-assets`。
 4. Verify Green：PR CI run `33233124852` 的 132 tests 全部通过；Linux build/self-test/MCP/install 全部通过；Windows/macOS Package 与项目安装 Job 全部通过。
-5. Governance checkpoint：run `33233124852` 的 `Skill Tests` 最后只因 Active Change 状态仍为 `in_progress` 而失败，错误明确要求 `ready_for_review`；这不是代码/Runtime/平台回归。当前依据上述证据完成 Completion Audit 并进入 `ready_for_review`，由下一轮 CI 验证最终 Ready Gate。
+5. Governance checkpoint：run `33233124852` 的 `Skill Tests` 最后只因 Active Change 状态仍为 `in_progress` 而失败，错误明确要求 `ready_for_review`；这不是代码/Runtime/平台回归。当前依据上述证据完成 Completion Audit 并进入 `ready_for_review`，由 run `33233883147` 验证最终 Ready Gate。
 
 # Review
 
-Review Target：PR #29，base `188d174c970eea1676fe64d6923f669eb0f583f6`，实现 head `c83aade2f0f71d2928bac523c2b6d9e88def3b36`（本 Change 证据更新前）。
+Review Target：PR #29，base `188d174c970eea1676fe64d6923f669eb0f583f6`，实现 head `c83aade2f0f71d2928bac523c2b6d9e88def3b36`（后续提交只更新本 Change 的验证记录，不改变 workflow/test 实现）。
 
 模式：review-only 独立复核。
 
@@ -131,7 +131,7 @@ Review 结论：`NO_FINDINGS_WITHIN_SCOPE`。
 # Git / PR / Release 状态
 
 - branch: `fix/release-artifact-upload`
-- PR: `#29` Draft，等待当前 Ready 状态触发的新一轮永久 CI 全绿后再转 Ready
+- PR: `#29` Draft；当前 Ready 状态已触发 PR CI run `33233883147`，全绿后再转 Ready
 - merge: 未执行
 - main CI: 未执行；只有合并后才能取得 main 新鲜证据
 - Release: 未触发；本 Change 不自动创建 tag/Release
