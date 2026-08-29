@@ -136,7 +136,7 @@ Figma READY / READY_WITH_NOTES
 
 ## 7. Skill Mutation 与 canonical 仓库内容守恒
 
-本节处理通过 Router 命中的 **Skill Mutation**：新增、修改、删除、重命名 Skill / Reference，规则迁移、拆分、合并、通用化，以及跨仓库把可复用规则同步到 canonical Skill。
+本节处理由 Agent_Skills 源仓库**根 `AGENTS.md`** 命中并升级的 **Skill Mutation**：新增、修改、删除、重命名 Skill / Reference，规则迁移、拆分、合并、通用化，以及跨仓库把可复用规则同步到 canonical Skill。
 
 通用 Skill 的 canonical 源仓库是：
 
@@ -144,7 +144,9 @@ Figma READY / READY_WITH_NOTES
 dingyuwen777/Agent_Skills
 ```
 
-目标项目、Runtime 本地安装副本、Reference Stub、缓存或历史聊天可以提供需求背景与验证证据，但不能取代 Agent_Skills 当前源码作为 canonical 写入事实源。Mutation 执行前必须重新读取 Agent_Skills 当前目标分支真实内容，不能拿目标项目里的旧副本反向覆盖 canonical 规则。
+目标项目、Runtime 本地安装副本、Reference Stub、缓存或历史聊天可以提供需求背景与验证证据，但不能取代 Agent_Skills 当前源码作为 canonical 写入事实源。Mutation 执行前必须重新读取 Agent_Skills 当前目标分支根 `AGENTS.md`、Maintenance、Coding 以及本次受影响的正式 Skill / Reference；不能拿目标项目里的旧副本反向覆盖 canonical 规则。
+
+普通 Runtime Router 不承担本节的源仓库维护触发。Custom Instructions、Project instructions 等宿主提示只可以把维护者的相应意图引导回 Agent_Skills 当前根 `AGENTS.md`，不能替代这里的 canonical 内容、权限和交付门禁。
 
 ### 7.1 universal 与项目特定事实必须先分离
 
