@@ -254,9 +254,18 @@ jobs:
           fi
 
       - name: Generate SHA256SUMS
+        env:
+          RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
+          set -euo pipefail
           cd release-assets
-          find . -maxdepth 1 -type f -printf '%f\n' | sort | xargs sha256sum > SHA256SUMS
+          assets=(
+            "agent-skills-mcp-v${RELEASE_VERSION}-linux"
+            "agent-skills-mcp-v${RELEASE_VERSION}-windows.exe"
+            "agent-skills-mcp-v${RELEASE_VERSION}-macos"
+            "USAGE.md"
+          )
+          sha256sum "${assets[@]}" > SHA256SUMS
           test "$(wc -l < SHA256SUMS)" -eq 4
           cat SHA256SUMS
 
