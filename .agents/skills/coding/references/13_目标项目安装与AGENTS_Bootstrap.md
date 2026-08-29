@@ -115,13 +115,13 @@ chmod +x ./agent-skills-mcp
 agent-skills-mcp install --target <目标项目根目录> --json
 ```
 
-当前 Project Payload 使用 v2，install manifest 使用 v3 `managed_files` 逐文件 ownership。安装器只兼容读取旧 v2 manifest 作为一次性迁移输入；v1、未知或损坏 schema 直接失败，不猜测 ownership。
+当前 Project Payload 使用 v2，install manifest 使用 v3 `managed_files` 逐文件 ownership。安装器只接受当前 v3 manifest；v1、v2、未知或损坏 schema 全部直接失败，不推断 ownership，也不保留旧 Stub 清理通路。
 
 Runtime binary 负责：
 
 1. 校验自身内嵌 Reference Bundle 与 Project Payload；
 2. 读取动态正式 Skill Catalog，以及 Project Payload 显式 `shared_files`；
-3. 读取旧 `.agents/agent-skills-install.json`：v3 只认领 `managed_files`，v2 只允许已认领 Core/shared 同名升级与可识别旧 Stub 清理；
+3. 读取旧 `.agents/agent-skills-install.json`：只接受 v3，并且只认领 `managed_files`；
 4. 首次安装遇到未被认领的同名 Skill 或同名 shared file 时 fail closed；
 5. 预检并逐文件更新新受管 Core/shared files，其中唯一 Router 为 `.agents/skills/ROUTER.md`；
 6. 安装/升级项目 `.agents/runtime/agent-skills-mcp[.exe]`；
@@ -129,7 +129,7 @@ Runtime binary 负责：
 8. 增量更新 `.gitignore`；
 9. 建立 Codex / Cursor / Claude Code 项目级 MCP 入口和必要 bridge；
 10. 写入新的 managed installation manifest；
-11. 任一步失败时按安装前快照恢复本轮 touched managed files、可识别旧 Stub、Runtime、manifest 和受管文本。
+11. 任一步失败时按安装前快照恢复本轮 touched managed files、Runtime、manifest 和受管文本。
 
 目标项目不安装 canonical Reference 或 Stub；Runtime Mode 由 Router/Skill 先取得公共 route contract、提交中文 Task Route，再按不透明路由令牌加载当前 required 的完整 canonical Context。
 
@@ -298,7 +298,7 @@ managed_files
 
 当前 shared file 仍只有 `ROUTER.md`。首次安装若目标已有同名正式 Skill 目录或 Router 且没有合法 manifest 证明 ownership，必须在任何写入前 fail closed；禁止通过文件名、内容相似或 hash 猜归属。
 
-v2→v3 时，旧 v2 manifest 只证明其 Skill Core/shared file 的历史受管边界；`references/` 只清理具备旧 Runtime 固定 Stub 标记的文件。其他项目自有 Reference、Skill 和 `.agents` 内容保留。迁移成功后全部后续升级只按 v3 `managed_files`。
+非 v3 manifest 不提供原地升级。安装器不会扫描、识别或清理旧 Stub，也不会根据旧目录结构猜测 ownership；需要从旧安装切换时，必须先由项目 Owner 备份并显式处理旧安装边界，再执行当前版本安装。
 
 ## 10. 安全与原子性
 
@@ -309,10 +309,10 @@ v2→v3 时，旧 v2 manifest 只证明其 Skill Core/shared file 的历史受�
 - Project Payload v2 必须明确包含 `shared_files: ["ROUTER.md"]` 和对应 `ROUTER.md` 条目，避免生成悬空导航；
 - 首次同名未认领 Skill/shared file/managed file 冲突在目标写入前发现；
 - 不移动或替换整棵 Skill 目录，只逐文件原子写入；
-- 写入前保存全部 touched managed files、旧 Stub、Runtime、manifest 和受管文本的 bytes/权限快照；
+- 写入前保存全部 touched managed files、Runtime、manifest 和受管文本的 bytes/权限快照；
 - AGENTS、`.gitignore`、CLAUDE/Codex marker 和 JSON MCP 配置在写入前先验证编码/结构；
 - 单文件写入使用同目录临时文件 + 原子替换；
-- 任一步异常时恢复本轮 touched files、旧 Stub、Runtime、manifest 和受管文本快照；
+- 任一步异常时恢复本轮 touched files、Runtime、manifest 和受管文本快照；
 - 禁止用 `git reset --hard`、`git clean`、强制推送或历史重写实现安装回滚。
 
 安装器不承诺普通文件系统跨多文件具备数据库式事务，但必须把可预检错误尽量前移，并把修改限制在可审计 managed 边界。
@@ -330,10 +330,10 @@ Greenfield / 空仓库：
 → Router → Coding 按 Greenfield 规则确认目标、硬约束和最小工程基线
 ```
 
-已有 v3 安装项目或可安全迁移的 v2 项目：
+已有 v3 安装项目：
 
 ```text
-依据 v3 managed_files 逐文件升级；v2 只清理可识别旧 Stub
+依据 v3 managed_files 逐文件升级
 → 保留项目自有 Skill、Reference、未认领文件和其他 .agents 内容
 → 保留已有 AGENTS 原文
 → 追加/升级 managed block
@@ -393,13 +393,13 @@ Claude Code
 - install manifest v3 显式认领 `managed_files` 与 `shared_files`；
 - 同名未认领 shared Router 在任何目标写入前 fail closed；
 - Router/Runtime/manifest 后续失败可以恢复旧受管状态；
-- v2 只按固定标记清理旧 Stub，项目自有 Reference/资产保留；v1/未知 schema 明确拒绝；
+- v1/v2/未知 schema 明确拒绝，安装器不存在旧 Stub 扫描或清理路径；
 - Coding Python helper 作为 Project Payload 正式运行资产继续安装；
 - `.agents/runtime/` 和 install manifest 正确；
 - AGENTS 用户原文/managed marker 正确；
 - 项目自有 Skill 和未认领根级文件保留；
 - 同名未认领 Skill 冲突 fail closed；
-- 删除旧受管项只依据旧 v3 `managed_files`，v2 例外只限可证明旧 Stub；
+- 删除旧受管项只依据旧 v3 `managed_files`，没有 schema 或目录级例外；
 - Codex/Cursor/Claude 配置保留其他用户内容；
 - 项目内 Runtime 通过真实 stdio MCP smoke；
 - 安装失败可恢复本轮受管变化。

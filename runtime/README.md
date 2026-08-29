@@ -23,7 +23,7 @@ agent_skills_runtime/project_payload.py
 → 构建 Skills 根级共享运行资产与各 Skill Core/运行资产；显式禁止 Reference/Stub
 
 agent_skills_runtime/project_installer.py
-→ install v3 逐文件 ownership、v2 旧 Stub 安全迁移、宿主配置与回滚
+→ install v3 逐文件 ownership、宿主配置与回滚；非 v3 manifest 直接拒绝
 
 agent_skills_runtime/runtime.py
 → 维护 task/route token、单调 required Context、渐进式披露与 checkpoint
@@ -84,7 +84,7 @@ onefile binary 无参数运行默认安装/升级当前目录；也支持：
 agent-skills-mcp install --target <project-root>
 ```
 
-当前 Project Payload 使用 v2，install manifest 使用 v3 `managed_files` 逐文件 Contract。安装器可读取旧 v2 manifest 做一次性安全迁移：只清理具备固定旧 Runtime 标记的 Stub，保留项目自有 Reference、资产、Skill 和其他 `.agents` 内容；v1/未知/损坏 schema 失败关闭。
+当前 Project Payload 使用 v2，install manifest 使用 v3 `managed_files` 逐文件 Contract。安装器只接受当前 v3 manifest；v1、v2、未知或损坏 schema 全部失败关闭，不扫描旧 Stub，也不根据旧目录结构推断 ownership。
 
 项目安装需要保持：
 
@@ -96,7 +96,7 @@ agent-skills-mcp install --target <project-root>
 - 目标项目 `AGENTS.md` managed block 只做薄 Bootstrap，并指向 `.agents/skills/ROUTER.md`；
 - Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产和未认领 shared file 保留；
-- 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、旧 Stub、Runtime、manifest 与受管文本。
+- 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、manifest 与受管文本。
 
 正式 Skill 仍通过动态 Catalog 分发；Skills 根级共享文件只通过 Project Payload 的显式 `shared_files` Contract 分发，二者职责不混淆。
 
@@ -164,7 +164,7 @@ python3 scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 - self-contained unit/preservation/portability tests；
 - 唯一 Skills 根级 Router / 双 Bootstrap / Maintenance 职责与 Project Payload shared-file 分发；
 - metadata compiler/evaluator、Routing Conformance、private manifest/encryption parity；
-- install v3 ownership、v2 Stub 迁移、项目自有 Reference 保留、同名冲突和失败回滚；
+- install v3 ownership、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突和失败回滚；
 - Linux onefile build/status/self-test；
 - real stdio MCP；
 - project-only single-binary 首次安装、升级和无参数安装；

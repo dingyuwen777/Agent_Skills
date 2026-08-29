@@ -16,7 +16,6 @@ from .project_payload import decode_payload_file, validate_project_payload
 
 
 INSTALL_SCHEMA = "agent-skills-install/v3"
-LEGACY_INSTALL_SCHEMA = "agent-skills-install/v2"
 INSTALL_MANIFEST_PATH = Path(".agents") / "agent-skills-install.json"
 AGENTS_MANAGED_START = "<!-- agent-skills:managed:start -->"
 AGENTS_MANAGED_END = "<!-- agent-skills:managed:end -->"
@@ -29,12 +28,6 @@ RUNTIME_IGNORE_RULE = "/.agents/runtime/"
 SKILL_ROUTER_ASSET = "ROUTER.md"
 _SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _CODEX_SERVER_PATTERN = re.compile(r"(?m)^\s*\[mcp_servers\.agent-skills\]\s*$")
-_LEGACY_STUB_MARKERS = (
-    "# Agent Skills Runtime Reference",
-    "Runtime ID:",
-    "Expected SHA256:",
-    "agent_skills_load_context",
-)
 _FACT_SOURCE_NAMES = {
     "AGENTS.md",
     "CONTRIBUTING.md",
@@ -252,7 +245,7 @@ def _load_install_manifest(path: Path) -> dict[str, Any] | None:
         manifest = json.loads(path.read_text(encoding="utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ValueError("现有 Agent Skills install manifest 损坏，拒绝猜测 managed ownership") from error
-    if not isinstance(manifest, dict) or manifest.get("schema") not in {INSTALL_SCHEMA, LEGACY_INSTALL_SCHEMA}:
+    if not isinstance(manifest, dict) or manifest.get("schema") != INSTALL_SCHEMA:
         raise ValueError("现有 Agent Skills install manifest schema 不受支持")
     skills = manifest.get("skills")
     if not isinstance(skills, list):
@@ -262,16 +255,13 @@ def _load_install_manifest(path: Path) -> dict[str, Any] | None:
         raise ValueError("现有 Agent Skills install manifest skills 不是稳定唯一 Skill 列表")
     manifest["skills"] = normalized
     manifest["shared_files"] = _normalise_shared_files(manifest.get("shared_files"), "现有 Agent Skills install manifest")
-    if manifest["schema"] == INSTALL_SCHEMA:
-        managed_files = manifest.get("managed_files")
-        if not isinstance(managed_files, list):
-            raise ValueError("现有 Agent Skills install manifest managed_files 无效")
-        normalized_files = [_safe_managed_file(str(item)) for item in managed_files]
-        if normalized_files != sorted(set(normalized_files)):
-            raise ValueError("现有 Agent Skills install manifest managed_files 必须唯一且稳定排序")
-        manifest["managed_files"] = normalized_files
-    else:
-        manifest["managed_files"] = []
+    managed_files = manifest.get("managed_files")
+    if not isinstance(managed_files, list):
+        raise ValueError("现有 Agent Skills install manifest managed_files 无效")
+    normalized_files = [_safe_managed_file(str(item)) for item in managed_files]
+    if normalized_files != sorted(set(normalized_files)):
+        raise ValueError("现有 Agent Skills install manifest managed_files 必须唯一且稳定排序")
+    manifest["managed_files"] = normalized_files
     return manifest
 
 
@@ -285,34 +275,6 @@ def _safe_managed_file(value: str) -> str:
     if any(part in {"", ".", ".."} for part in candidate.parts) or ":" in candidate.parts[0]:
         raise ValueError(f"受管文件路径包含非法跳转或盘符：{value!r}")
     return candidate.as_posix()
-
-
-def _is_legacy_stub(path: Path) -> bool:
-    """只识别旧 Runtime 固定格式 Stub，避免把项目自有 Reference 当作迁移垃圾。"""
-    if path.is_symlink() or not path.is_file():
-        return False
-    try:
-        text = path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return False
-    return all(marker in text for marker in _LEGACY_STUB_MARKERS) and text.startswith(
-        "# Agent Skills Runtime Reference"
-    )
-
-
-def _legacy_stub_paths(skills_root: Path, skills: list[str]) -> list[Path]:
-    """在旧 v2 manifest 认领的 Skill 内动态找出可证明的旧 Runtime Stubs。"""
-    found: list[Path] = []
-    for skill in skills:
-        references = skills_root / skill / "references"
-        if not references.exists():
-            continue
-        if references.is_symlink() or not references.is_dir():
-            raise ValueError(f"旧 Runtime Reference 目录必须是普通目录：{references}")
-        for path in sorted(references.rglob("*.md"), key=lambda item: item.as_posix()):
-            if _is_legacy_stub(path):
-                found.append(path)
-    return found
 
 
 def _ensure_path_not_symlink(root: Path, path: Path) -> None:
@@ -508,7 +470,6 @@ def install_project(
     old_skills = list(old_manifest["skills"]) if old_manifest is not None else []
     old_shared_files = list(old_manifest["shared_files"]) if old_manifest is not None else []
     old_managed_files = set(old_manifest["managed_files"]) if old_manifest is not None else set()
-    legacy_v2 = old_manifest is not None and old_manifest["schema"] == LEGACY_INSTALL_SCHEMA
     owned = old_manifest is not None
 
     for skill in sorted(set(old_skills) | set(new_skills)):
@@ -531,14 +492,6 @@ def install_project(
     new_managed_files = sorted(_safe_managed_file(path) for path in payload_files)
     if new_managed_files != sorted(set(new_managed_files)):
         raise ValueError("Project Payload 受管文件路径必须唯一且稳定排序")
-    legacy_stubs = _legacy_stub_paths(skills_root, old_skills) if legacy_v2 else []
-
-    def legacy_v2_claims(relative: str) -> bool:
-        """判断旧 v2 目录级 manifest 是否足以证明同名 core/shared 文件可升级覆盖。"""
-        parts = PurePosixPath(relative).parts
-        if len(parts) == 1:
-            return relative in old_shared_files
-        return parts[0] in old_skills and (len(parts) < 2 or parts[1] != "references")
 
     managed_targets = {
         relative: skills_root.joinpath(*PurePosixPath(relative).parts)
@@ -552,7 +505,6 @@ def install_project(
             relative in new_managed_files
             and path.exists()
             and relative not in old_managed_files
-            and not legacy_v2_claims(relative)
         ):
             raise ValueError(f"目标项目已存在未被 Agent Skills manifest 认领的同名文件：{relative}")
     agents_path = target / "AGENTS.md"
@@ -585,7 +537,7 @@ def install_project(
     }
     snapshots = {path: _snapshot_file(path) for path in text_paths}
     runtime_snapshot = _snapshot_file(runtime_target)
-    managed_snapshot_paths = set(managed_targets.values()) | set(legacy_stubs)
+    managed_snapshot_paths = set(managed_targets.values())
     managed_snapshots = {path: _snapshot_file(path) for path in managed_snapshot_paths}
     removed_skills = sorted(set(old_skills) - set(new_skills))
     removed_shared_files = sorted(set(old_shared_files) - set(new_shared_files))
@@ -604,9 +556,6 @@ def install_project(
                 decode_payload_file(entry),
                 int(entry["mode"]),
             )
-        for legacy_stub in legacy_stubs:
-            _remove_path(legacy_stub)
-
         if artifact != runtime_target:
             with tempfile.NamedTemporaryFile(
                 "wb",
@@ -671,7 +620,6 @@ def install_project(
         "removed_skills": removed_skills,
         "removed_shared_files": removed_shared_files,
         "removed_managed_files": removed_managed_files,
-        "removed_legacy_stubs": len(legacy_stubs),
         "runtime": runtime_relative,
         "manifest": INSTALL_MANIFEST_PATH.as_posix(),
         "hosts": ["codex", "cursor", "claude-code"],

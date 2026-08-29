@@ -190,7 +190,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "历史聊天",
             "Custom Instructions",
             "如果 Mutation 会影响 managed block / Bootstrap，则再读 ref13",
-            "影响 Runtime、Project Payload、Bundle、路由 metadata/Stable ID、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性或旧 Stub 迁移时，再读 ref14",
+            "影响 Runtime、Project Payload、Bundle、路由 metadata/Stable ID、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性或 v3 安装 ownership 时，再读 ref14",
         ):
             self.assertIn(marker, ref16, f"ref16 未守恒旧 Router 的源仓库维护规则：{marker}")
 

@@ -32,7 +32,7 @@
 
 ```text
 Runtime
-→ Project Payload、Reference Stub、加密 canonical Reference、MCP 原文加载和项目级安装
+→ Project Payload、加密 canonical Reference、MCP 原文加载和项目级安装
 ```
 
 专业 Skill 不复制 Runtime 实现规则；Runtime 也不重新解释 Coding / Review / Docs / Figma 的专业语义。
@@ -102,8 +102,8 @@ Core SKILL.md / Router / 必要运行资产
 canonical references/*.md
 → 源仓库唯一完整正文
 → 构建时逐字 hash + AES-GCM 加密
-→ 目标项目只保存同名 Stub
-→ MCP agent_skills_load_context 返回 canonical_text
+→ 目标项目不安装 Reference 或 Stub
+→ MCP 按当前路由令牌返回 required canonical_text
 ```
 
 不能因为加密 onefile 存在就宣称可抵御机器 Owner、调试器、内存转储、Hook 或专业逆向。
@@ -125,7 +125,7 @@ runtime/README.md
 
 根 `AGENTS.md`、本 `MAINTENANCE.md`、Router、`SKILL.md`、References、Change 都是 Agent/治理规则，不是额外的人类用户手册。
 
-正式 Skill 不维护辅助 README；规则由 `SKILL.md + references + metadata/assets` 承担。维护历史由 Git、PR 和 `.agents/changes/archive/` 承担，不再平行维护 ChangeLog/Release 流水账文档。
+正式 Skill 不维护辅助 README；规则由 `SKILL.md + references + metadata/assets` 承担。维护历史只由 Git 与 PR 承担，不再在仓库中保留历史 Change archive、ChangeLog 或 Release 流水账文档。
 
 Docs Skill 仍然是目标项目技术文档工作流；“本仓库不保留 docs/ 目录”不等于删除 Docs Skill。
 
@@ -142,7 +142,7 @@ coding-change/v1
 - 当前 Change 不能把自己当 Requirement Source；
 - `completion_gate: required` 时，进入 `ready_for_review` 前 Requirement Traceability 全部 satisfied、Completion Audit 全部完成；
 - CI 绿色不能替代上游需求完整性、独立 Review 或文档影响审计；
-- `done` Change 不得留在 active，合并并完成 main 新鲜验证后再通过独立归档变更移入 archive。
+- `done` Change 不得留在 active；集成并完成 main 新鲜验证后删除当前 Change，由 Git/PR 保留历史，不复制到 archive。
 
 ## 7. 内容守恒
 
@@ -168,7 +168,7 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、Coding 锚�
 - canonical Reference 原始 UTF-8 bytes → SHA/size/source_digest → 加密 Bundle → 解密 `canonical_text` 逐字守恒；
 - Project Payload 独立 `payload_digest`，不拿 Reference digest 冒充 Core/资产完整性；
 - Payload 排除 canonical Reference 正文、tests 和维护 README，同时保留 Router、Core 和其他必要运行资产；
-- Stub 只保存 ID、Expected SHA256 和 MCP 加载协议，不复制摘要正文；
+- 目标项目不安装 canonical Reference 或 Stub；required 原文只由当前 Runtime 路由令牌加载；
 - `.agents/agent-skills-install.json` 只承担 ownership/version 导航；
 - 首次同名未认领 Skill fail closed；升级只修改旧 manifest 明确认领项；
 - `AGENTS.md` managed marker 外文本、项目自有 Skill、其他 MCP server 和宿主配置保持；
@@ -221,7 +221,7 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、Coding 锚�
 - Contract/API/Schema/Migration/依赖变化；
 - Docs Impact；
 - 实际测试/CI/Review 证据；
-- Git 分支、提交、PR、merge、main CI、Change archive；
+- Git 分支、提交、PR、merge、main CI 与当前 Change 清理状态；
 - 未验证项和剩余风险。
 
 禁止只回复“已完成”或“测试通过”。

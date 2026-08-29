@@ -184,52 +184,34 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.assertFalse((self.target / INSTALL_MANIFEST_PATH).exists())
         self.assertFalse((self.target / ".agents/runtime").exists())
 
-    def test_old_install_manifest_schema_is_rejected_without_compatibility(self) -> None:
-        """用户已明确不兼容旧版本，因此 v1 manifest 必须直接拒绝而不是猜 ownership。"""
+    def test_non_v3_install_manifest_schemas_are_rejected_without_compatibility(self) -> None:
+        """安装器只接受当前 v3 manifest，不保留任何旧 schema 兼容入口。"""
         manifest = self.target / INSTALL_MANIFEST_PATH
         manifest.parent.mkdir(parents=True)
-        manifest.write_text(
-            json.dumps({"schema": "agent-skills-install/v1", "skills": ["coding"]}),
-            encoding="utf-8",
-        )
-        with self.assertRaisesRegex(ValueError, "schema 不受支持"):
-            install_project(self.target, self._payload(), self.runtime_artifact, release_version="2.0.0")
-        self.assertFalse((self.target / "AGENTS.md").exists())
-        self.assertFalse((self.target / ".agents/runtime").exists())
+        for schema in ("agent-skills-install/v1", "agent-skills-install/v2", "agent-skills-install/v4"):
+            with self.subTest(schema=schema):
+                manifest.write_text(
+                    json.dumps(
+                        {
+                            "schema": schema,
+                            "skills": ["coding"],
+                            "shared_files": ["ROUTER.md"],
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                with self.assertRaisesRegex(ValueError, "schema 不受支持"):
+                    install_project(
+                        self.target,
+                        self._payload(),
+                        self.runtime_artifact,
+                        release_version="2.0.0",
+                    )
+                self.assertFalse((self.target / "AGENTS.md").exists())
+                self.assertFalse((self.target / ".agents/runtime").exists())
 
-    def test_v2_upgrade_removes_only_recognizable_stubs_and_preserves_project_files(self) -> None:
-        """v2→v3 只清理固定旧 Stub，保留同一 Skill 内项目自有 Reference 与其他资产。"""
-        coding = self.target / ".agents" / "skills" / "coding"
-        references = coding / "references"
-        references.mkdir(parents=True)
-        (coding / "SKILL.md").write_text("# old managed coding\n", encoding="utf-8")
-        legacy_stub = references / "01_规则.md"
-        legacy_stub.write_text(
-            "# Agent Skills Runtime Reference\n\n"
-            "- Runtime ID: `coding.reference.01`\n"
-            "- Expected SHA256: `fixture`\n\n"
-            "调用 agent_skills_load_context。\n",
-            encoding="utf-8",
-        )
-        project_reference = references / "99_项目规则.md"
-        project_reference.write_text("# project-owned reference\n", encoding="utf-8")
-        project_asset = coding / "project-owned.txt"
-        project_asset.write_text("keep-project-asset\n", encoding="utf-8")
-        router = self.target / ROUTER_RELATIVE
-        router.write_text("# old managed router\n", encoding="utf-8")
-        manifest = self.target / INSTALL_MANIFEST_PATH
-        manifest.parent.mkdir(parents=True, exist_ok=True)
-        manifest.write_text(
-            json.dumps(
-                {
-                    "schema": "agent-skills-install/v2",
-                    "skills": ["coding"],
-                    "shared_files": ["ROUTER.md"],
-                }
-            ),
-            encoding="utf-8",
-        )
-
+    def test_install_result_has_no_legacy_migration_surface(self) -> None:
+        """当前安装结果只描述 v3 行为，不保留旧 Stub 迁移字段。"""
         result = install_project(
             self.target,
             self._payload(),
@@ -237,13 +219,7 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
             release_version="2.0.0",
         )
 
-        self.assertEqual(result["removed_legacy_stubs"], 1)
-        self.assertFalse(legacy_stub.exists())
-        self.assertEqual(project_reference.read_text(encoding="utf-8"), "# project-owned reference\n")
-        self.assertEqual(project_asset.read_text(encoding="utf-8"), "keep-project-asset\n")
-        installed = json.loads(manifest.read_text(encoding="utf-8"))
-        self.assertEqual(installed["schema"], "agent-skills-install/v3")
-        self.assertFalse(any("/references/" in path for path in installed["managed_files"]))
+        self.assertNotIn("removed_legacy_stubs", result)
 
     def test_v3_upgrade_preserves_project_reference_inside_managed_skill(self) -> None:
         """v3 逐文件 ownership 升级不能删除安装后新增的项目自有 Reference。"""

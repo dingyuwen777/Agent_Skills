@@ -421,17 +421,7 @@ manifest 记录 Release、`source_digest`、`payload_digest`、公开 Skill/`sha
 
 首次安装遇到未认领的同名正式 Skill 目录或 `ROUTER.md` 仍必须在任何写入前失败关闭。不同名项目 Skill、项目自有 `.agents` 内容、AGENTS marker 外文本和其他 MCP server 永不因普通升级而清理。
 
-### v2 → v3 一次性迁移
-
-当前安装器只兼容读取旧 `agent-skills-install/v2` 作为一次性安全迁移输入：
-
-- v2 明确认领的 Skill Core/shared file 同名路径可由新 Payload 升级；
-- `references/` 下只有同时满足旧 Runtime Stub 固定标题、Runtime ID、Expected SHA256 和旧 `agent_skills_load_context` 标记的文件才可清理；
-- 其他项目自有 Reference、资产和 `.agents` 内容全部保留；
-- v1、损坏 manifest、未知 schema 或无法证明 ownership 时失败关闭；
-- 迁移成功后写入 v3 `managed_files`，后续只按逐文件 ownership 工作。
-
-旧 Stub 识别只为清理历史安装产物，不代表当前 Project Payload 仍生成或使用 Stub。
+安装器只接受 `agent-skills-install/v3`。v1、v2、未知或损坏 manifest 全部失败关闭；实现中不保留旧 schema 解析、目录级 ownership 推断、旧 Stub 识别或自动清理分支。需要从旧安装切换时，由项目 Owner 在当前安装器之外先备份并显式处理旧安装边界。
 ## 14. AGENTS / `.gitignore` / 宿主配置保护
 
 项目安装还会建立：
@@ -458,17 +448,17 @@ Codex workspace trust 以及 Cursor/Claude 的首次确认属于宿主安全边�
 安装器修改项目研发入口，必须先完整预检，再进入可恢复写入：
 
 1. 验证 Project Payload v2、path/hash/size/mode/shared files/no-reference 边界；
-2. 校验 v2/v3 install manifest、逐文件 ownership、同名冲突、符号链接、AGENTS/host marker 和 JSON/TOML 边界；
-3. 对全部新/旧 managed files、可识别旧 Stub、Runtime、manifest 和受管文本保留原始 bytes/权限快照；
+2. 校验 v3 install manifest、逐文件 ownership、同名冲突、符号链接、AGENTS/host marker 和 JSON/TOML 边界；
+3. 对全部新/旧 managed files、Runtime、manifest 和受管文本保留原始 bytes/权限快照；
 4. 每个受管文件使用同目录临时文件 + 原子替换，不移动或替换整棵 Skill 目录；
-5. 只删除旧 v3 明确认领且新 Payload 已删除的文件，以及 v2 可证明的旧 Stub；
+5. 只删除旧 v3 明确认领且新 Payload 已删除的文件；
 6. 安装 Runtime 并验证 artifact SHA256；
 7. 写入 AGENTS、`.gitignore`、宿主配置和 v3 manifest；
-8. 任一步异常时恢复本轮 touched 文件、旧 Stub、Runtime、manifest 与受管文本快照。
+8. 任一步异常时恢复本轮 touched 文件、Runtime、manifest 与受管文本快照。
 
 目标路径任一上级是符号链接、目标是特殊文件、manifest 损坏或 ownership 不可证明时必须失败关闭。回滚不得使用 `git reset --hard`、`git clean`、强制推送或历史重写。
 
-普通文件系统不是数据库事务；实现必须把所有可预检失败前移，并让故障注入测试证明 Router 写入失败、Runtime hash 失败和 v2 Stub 清理后的恢复行为。
+普通文件系统不是数据库事务；实现必须把所有可预检失败前移，并让故障注入测试证明 Router 写入失败和 Runtime hash 失败后的恢复行为。
 ## 16. 构建与验证
 
 Builder 固定顺序：
@@ -496,7 +486,7 @@ Builder 固定顺序：
 6. status/self-test 不泄露 Reference count/ID/filename/path/loaded IDs；
 7. 真实 MCP `tools/list` 恰为六个 Tool，中文 property 可调用，route→submit→load→checkpoint 成功；
 8. 同一 task 多次 route 只能单调扩展，旧 token/任意 ID load/未知词汇失败关闭，未知事实保守扩大；
-9. 首次安装、无参数安装、显式 target、v3 升级、v2 Stub 迁移、项目自有 Reference 保留、同名冲突、符号链接和 rollback；
+9. 首次安装、无参数安装、显式 target、v3 升级、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、符号链接和 rollback；
 10. `VERSION`、`source_commit`、Bundle/Task Route/Routing Manifest/MCP/Project Payload/install schema、三个 digest 与 artifact identity 一致。
 
 Routing Conformance Benchmark 必须永久覆盖 Greenfield、Fact Recovery、L1/L2/L3、Feature/Bug/Incident/Refactor/Performance/Schema、Frontend/Figma/Docs/Review、多 Agent/多 Change、Dependency/CI/Git/PR/Release、Runtime/Project Payload/Skill Mutation/Security、unknown 和复杂组合。最低门禁是 `Expected Required ⊆ Actual Required`；每次修改 trigger/依赖/风险下限都同步审查正例、必要反例和 ambiguous case，并力求 `Expected == Actual`。
@@ -538,8 +528,8 @@ AES-GCM 和 onefile 只减少普通明文浏览面并检测静态篡改，不是
 ```text
 校验当前平台 artifact / SHA256
 → 校验 Bundle v2 / Project Payload v2 / routing identity
-→ 读取 v3 manifest，或按第 13 节一次性读取 v2
-→ 预检 managed_files / 旧 Stub / 项目自有内容 / host config
+→ 只读取并校验 v3 manifest
+→ 预检 managed_files / 项目自有内容 / host config
 → 逐文件原子升级 Runtime + Core + Router + managed 配置
 → 写入 v3 manifest
 → status / self-test / MCP / install smoke

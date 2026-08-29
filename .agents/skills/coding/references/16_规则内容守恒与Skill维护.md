@@ -182,7 +182,7 @@ dingyuwen777/Agent_Skills
 → 本次真正受影响 Skill 的 SKILL.md / references
 ```
 
-如果 Mutation 会影响 managed block / Bootstrap，则再读 ref13；影响 Runtime、Project Payload、Bundle、路由 metadata/Stable ID、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性或旧 Stub 迁移时，再读 ref14。随后按 Agent_Skills Maintenance/Coding 当前的 Change、TDD、独立 Review、CI、PR、main 新鲜 CI 和 archive 门禁执行，不建立一套 Mutation 专用平行交付流程。
+如果 Mutation 会影响 managed block / Bootstrap，则再读 ref13；影响 Runtime、Project Payload、Bundle、路由 metadata/Stable ID、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性或 v3 安装 ownership 时，再读 ref14。随后按 Agent_Skills Maintenance/Coding 当前的 Change、TDD、独立 Review、CI、PR、main 新鲜 CI 和 Change 清理门禁执行，不建立一套 Mutation 专用平行交付流程。
 
 普通 Runtime Router 不承担本节的源仓库维护触发。Custom Instructions、Project instructions 等宿主提示只可以把维护者的相应意图引导回 Agent_Skills 当前根 `AGENTS.md`，不能替代这里的 canonical 内容、权限和交付门禁。当前宿主只有只读 GitHub 能力、没有 Agent_Skills 源仓库权限、没有所需写权限或不能执行仓库要求的 PR/CI 门禁时，明确报告未同步/未交付，不得改本地安装副本冒充 canonical 写入，也不得口头声称“已同步”。
 
@@ -259,7 +259,7 @@ Router 当前 Catalog / Handoff
 规则：
 
 - 删除前证明该 Skill 的仍有效规则已经迁入新的正式 Owner，或明确其能力确实整体退役；不能把“目录删了”当内容守恒证据；
-- 清除所有指向不存在 Skill 的 **live 引用** 和 Handoff；历史 Change/archive 中的旧路径保留为历史事实，不为追求全文搜索零结果改写历史；
+- 清除所有指向不存在 Skill 的 **live 引用** 和 Handoff；既有历史只由项目当前正式 Git/PR 或已批准历史载体承担，不为追求全文搜索零结果改写历史提交；
 - Runtime/Project Payload 必须通过动态发现自然停止分发该 Skill，不为删除操作新增反向静态黑名单；
 - 目标项目中同名但未被 Agent_Skills install manifest 认领的项目自有 Skill 仍受项目 Ownership 保护，不能因为 canonical Skill 删除而清理；
 - 永久测试证明新 Catalog/Bundle/Payload 不再包含已删除 Skill，并保持其他 Skills 不受影响。
@@ -324,7 +324,7 @@ Skill Mutation 完成前至少形成：
 → targeted tests
 → full self-contained tests
 → 独立 Review
-→ CI / PR / main 新鲜 CI / archive
+→ CI / PR / main 新鲜 CI / 当前 Change 清理
 ```
 
 Custom Instructions、Project instructions 或目标项目中的安装副本只可以帮助触发/提供上下文，不能替代上述 canonical 源码与交付证据。没有 Agent_Skills 所需读写权限或无法执行仓库门禁时，明确标记未同步/未交付，不得把本地修改或自然语言答复冒充 canonical Skill 已更新。
