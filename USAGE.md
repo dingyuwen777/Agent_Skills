@@ -1,12 +1,10 @@
 # Agent_Skills 使用说明
 
-这份文件是 Agent_Skills **最终使用者唯一需要阅读的人类说明**。
+Agent_Skills 按项目安装。选择与你操作系统匹配的可执行文件，在项目根目录运行即可。
 
-你只需要从维护者提供的正式 Release 交付资产中取得当前操作系统的 Runtime binary、`USAGE.md` 和 `SHA256SUMS`，不需要访问 Agent_Skills 源仓库，也不需要了解 Skill 的构建、分发或维护过程。
+安装和基础运行无需预装 Python。如具体任务需要额外环境，工具会明确提示；未满足条件的检查不会被当作已经完成。
 
-**安装和 MCP Runtime 本身不需要 Python。** 部分 Coding 流程可能需要 Python 执行项目发现或机器校验。如果目标项目或当前 Coding Agent 环境没有可用 Python，Agent 必须按已安装规则使用明确的 **fallback**；无法执行的机器检查必须标记为未验证，不能假装已经通过。
-
-## 1. 取得正确的文件
+## 1. 获取文件
 
 每个正式版本提供：
 
@@ -18,13 +16,13 @@ USAGE.md
 SHA256SUMS
 ```
 
-按系统选择一个 binary：
+按系统选择一个可执行文件：
 
 - Windows：`agent-skills-mcp-v<VERSION>-windows.exe`
 - Linux：`agent-skills-mcp-v<VERSION>-linux`
 - macOS：`agent-skills-mcp-v<VERSION>-macos`
 
-建议同时取得 `SHA256SUMS` 并校验文件完整性。
+建议同时使用 `SHA256SUMS` 校验文件完整性。
 
 Windows PowerShell：
 
@@ -38,11 +36,11 @@ Linux：
 sha256sum ./agent-skills-mcp-v<VERSION>-linux
 ```
 
-macOS 可以使用系统可用的 SHA-256 校验工具，并与 `SHA256SUMS` 中对应记录比较。
+macOS 使用系统可用的 SHA-256 校验工具，并与 `SHA256SUMS` 中对应记录比较。
 
-## 2. 安装到一个项目
+## 2. 安装到项目
 
-Agent_Skills 是**项目级安装**。在某个项目根目录执行安装，只会为这个项目建立 Agent_Skills 运行环境，不会全局修改其他项目。
+在目标项目根目录运行对应文件。安装只作用于当前项目，不会全局修改其他项目。
 
 ### Windows
 
@@ -67,25 +65,25 @@ chmod +x /path/to/agent-skills-mcp-v<VERSION>-macos
 /path/to/agent-skills-mcp-v<VERSION>-macos
 ```
 
-无参数运行时，binary 默认对**当前工作目录**执行安装或升级。
+无参数运行时，默认安装或更新当前工作目录中的 Agent_Skills。
 
-也可以显式指定项目。下面用 `agent-skills-mcp` 代表你拿到的当前平台 binary：
+也可以显式指定项目。下面用 `agent-skills-mcp` 代表当前平台的可执行文件：
 
 ```text
 agent-skills-mcp install --target <目标项目根目录> --json
 ```
 
-安装成功后即可在该项目中使用 Agent_Skills。项目原有规则和项目自己的开发配置会继续保留；如果安装器发现无法安全接管的冲突，会停止并报告，而不是猜测性覆盖。
+安装成功后即可在该项目中使用。已有项目配置会尽量保留；如果检测到无法安全处理的冲突，安装会停止并给出错误信息。
 
-## 3. 安装后怎么使用
+## 3. 开始使用
 
-安装完成后，不需要记忆 Agent_Skills 的内部规则。继续在 Codex、Cursor、Claude Code 或其他能够读取项目规则并连接项目 MCP 的 Coding Agent 中，用自然语言描述任务即可。
+安装完成后，在 Codex、Cursor、Claude Code 或其他支持项目 MCP 的开发工具中打开该项目，然后直接用自然语言描述任务。
 
 ### 开发 / Bug / 重构
 
 ```text
 基于当前仓库真实实现完成这个功能。
-先恢复项目规则和实际代码，再按当前 Agent Skills 完成实现、验证、Review 和交付。
+先恢复项目规则和实际代码，再完成实现、验证和交付。
 ```
 
 ### Code Review
@@ -113,94 +111,88 @@ agent-skills-mcp install --target <目标项目根目录> --json
 按这个 Figma 替换当前对应页面：<链接>
 ```
 
-Agent 会依据当前项目规则和已安装的 Agent_Skills 自动选择正确工作流。你不需要手工指定内部规则文件。
-
 ## 4. Codex、Cursor、Claude Code
 
-安装器会在**当前项目范围**内配置 Agent Skills MCP 入口，并尽量保留项目已有的其他配置。
+首次打开项目时，开发工具可能要求确认项目 Trust、Approval 或 MCP 权限。按工具自身提示完成确认即可。
 
-宿主可能要求你对当前项目或 MCP 做首次 Trust / Approval。按 Codex、Cursor、Claude Code 自己的正常安全提示确认即可；Agent_Skills 不会绕过宿主的安全确认。
+如果安装成功后没有识别到 Agent_Skills：
 
-如果安装成功但 Coding Agent 没有识别到 Agent_Skills：
+1. 关闭并重新打开当前项目，或新建一次 Agent 会话；
+2. 检查是否有未确认的 Trust / Approval 提示；
+3. 运行下面的状态检查；
+4. 如果自检失败，在项目根目录重新运行当前版本的可执行文件。
 
-1. 关闭并重新打开当前项目或新建一次 Agent 会话；
-2. 检查宿主是否提示项目 Trust / MCP Approval；
-3. 运行下面的 Runtime 状态检查；
-4. 如果自检失败，重新使用同一版本 binary 安装一次。
+## 5. 状态检查
 
-## 5. 检查 Runtime 状态
-
-查看当前 binary 的版本和运行状态：
+查看当前版本和运行状态：
 
 ```text
 agent-skills-mcp status --json
 ```
 
-执行完整性自检：
+执行自检：
 
 ```text
 agent-skills-mcp self-test --json
 ```
 
-如果命令返回错误，不要忽略错误继续假设安装正常。先按错误提示处理，再重新运行自检。
+如果命令返回错误，先按错误信息处理，再重新运行自检。
 
 ## 6. 升级
 
-同一当前安装格式下的后续正式版本，升级不需要先卸载旧版本：
+升级到新版本：
 
-1. 从维护者提供的新版本正式 Release 资产中取得当前平台的新 binary 和 `SHA256SUMS`；
+1. 获取当前平台的新版本可执行文件和 `SHA256SUMS`；
 2. 校验文件完整性；
-3. 在同一个目标项目根目录运行新 binary；
-4. 安装成功后重新运行 `status --json` 和 `self-test --json`；
-5. 如果宿主已经打开，建议重新建立一次 Coding Agent / MCP 会话。
-
-升级只应更新 Agent_Skills 自己管理的内容；项目自有规则和其他开发配置不应因为普通升级被整体清理。
-
-**当前版本不承诺从历史不兼容开发版的项目安装状态直接原地升级。** 如果运行新 binary 时明确报告旧安装状态不受支持，不要强制删除项目文件或绕过冲突；应按维护者提供的当前版本重新接入说明处理。
-
-## 7. 回滚
-
-回滚仅适用于使用**同一当前安装格式**的正式版本：
-
-1. 从维护者提供的历史正式 Release 资产中取得兼容版本的同平台 binary 和 checksum；
-2. 校验文件；
-3. 在目标项目根目录运行该版本 binary；
+3. 在同一个项目根目录运行新版本；
 4. 运行 `status --json` 和 `self-test --json`；
-5. 重新建立 Coding Agent / MCP 会话。
+5. 重新打开项目或新建一次 Agent 会话。
 
-不要只手工替换项目内 Agent_Skills 文件的一部分；不同版本混用可能导致运行状态不一致。历史不兼容开发版不在当前自动回滚范围内。
+如果升级过程中报告版本不支持、配置冲突或其他错误，不要强制覆盖或手工删除未知项目文件，按错误信息处理后再重试。
 
-## 8. 常见失败
+## 7. 回退
 
-### 已存在同名 Skill 或配置冲突
+需要回到之前的版本时：
 
-首次安装时，如果项目已经存在与 Agent_Skills 冲突、但无法证明可以安全覆盖的内容，安装会停止。先确认冲突内容归属，再决定如何处理，不要直接强制删除项目文件。
+1. 获取需要回退到的同平台版本及其校验文件；
+2. 校验文件完整性；
+3. 在目标项目根目录运行该版本；
+4. 运行 `status --json` 和 `self-test --json`；
+5. 重新打开项目或新建一次 Agent 会话。
 
-### 项目规则边界损坏
+不要手工混合不同版本的 Agent_Skills 文件。如果目标版本明确拒绝当前项目状态，应停止操作并根据错误信息处理。
 
-如果安装器报告项目规则中的 Agent Skills 管理边界缺失、重复或顺序错误，应先修复该边界，再重新运行安装。安装器不会猜测哪段项目规则可以覆盖。
+## 8. 常见问题
 
-### 旧安装状态不受支持
+### 安装时报告冲突
 
-如果新 binary 明确报告当前项目中的历史 Agent_Skills 安装状态或版本不受支持，不要尝试强制覆盖、手工拼接不同版本文件或绕过错误。当前版本不承担历史不兼容开发版的自动迁移；按维护者提供的当前版本重新接入说明处理。
+如果安装因为项目中已有内容或配置冲突而停止，不要直接强制覆盖。先查看错误信息，确认冲突文件属于当前项目还是 Agent_Skills，再决定如何处理。
 
-### 规则加载或完整性校验失败
+### 安装成功但开发工具没有识别
 
-如果 Coding Agent 报告 Agent_Skills 规则无法加载、版本不一致或完整性校验失败：
+依次尝试：
 
-1. 运行 `status --json`；
-2. 运行 `self-test --json`；
-3. 使用当前版本 binary 在项目根重新安装；
-4. 重新建立 Coding Agent / MCP 会话。
+1. 重新打开项目或新建 Agent 会话；
+2. 完成开发工具提示的 Trust / Approval；
+3. 运行 `status --json`；
+4. 运行 `self-test --json`；
+5. 在项目根目录重新运行当前版本。
 
-在问题解决前，不要要求 Agent 按旧记忆继续执行受影响的规则。
+### 规则加载或完整性检查失败
 
-### 没有可用 Python
+依次运行：
 
-安装和 MCP Runtime 仍可工作，但部分 Coding 流程可能无法执行对应 Python 机器检查。此时 Agent 应使用规则允许的 fallback，并明确哪些检查没有实际运行；不能把“安装成功”当成这些检查已经通过。
+```text
+agent-skills-mcp status --json
+agent-skills-mcp self-test --json
+```
 
-## 9. ChatGPT 网页端
+如果仍失败，在项目根目录重新运行当前版本，然后重新打开开发工具。
 
-当前 Release Runtime 是本地 stdio MCP。纯网页端 ChatGPT 不能直接启动你电脑上的本地进程。
+### 任务提示缺少额外环境
 
-如果使用的宿主只支持远程 MCP，需要另外的 Remote MCP / 安全隧道方案；这不属于当前本地 Release 的使用范围。
+安装和基础运行无需预装 Python。如具体任务需要额外环境，按提示补充对应环境后重新执行该任务即可。
+
+## 9. 网页端说明
+
+本地安装方式适用于能够连接项目 MCP 的开发工具。纯网页会话不能直接运行你电脑上的本地可执行文件。
