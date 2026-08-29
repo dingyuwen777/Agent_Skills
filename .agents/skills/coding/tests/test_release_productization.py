@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 import importlib.util
+import os
+import shutil
+import subprocess
+import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 
@@ -18,6 +23,23 @@ def _load_module(name: str, path: Path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _extract_workflow_run_block(step_name: str) -> str:
+    """从 Release Workflow 中提取指定 step 的 run Shell 正文。"""
+    workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    step_marker = f"      - name: {step_name}\n"
+    step_start = workflow.find(step_marker)
+    if step_start < 0:
+        raise AssertionError(f"Release Workflow 缺少 step：{step_name}")
+    run_marker = "        run: |\n"
+    run_start = workflow.find(run_marker, step_start)
+    if run_start < 0:
+        raise AssertionError(f"Release Workflow step 缺少 run block：{step_name}")
+    run_start += len(run_marker)
+    next_step = workflow.find("\n      - name:", run_start)
+    run_end = len(workflow) if next_step < 0 else next_step
+    return textwrap.dedent(workflow[run_start:run_end]).strip() + "\n"
 
 
 class ReleaseProductizationTest(unittest.TestCase):
@@ -85,6 +107,45 @@ class ReleaseProductizationTest(unittest.TestCase):
             "path: release-assets/agent-skills-mcp-v*-macos",
         ):
             self.assertIn(marker, workflow)
+
+    @unittest.skipUnless(shutil.which("bash"), "需要 bash 验证 Release Shell 语义")
+    def test_release_checksum_step_hashes_only_expected_assets(self) -> None:
+        """checksum step 必须真实生成四条正式资产校验且不能包含输出文件自身。"""
+        script = _extract_workflow_run_block("Generate SHA256SUMS")
+        version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        expected_assets = (
+            f"agent-skills-mcp-v{version}-linux",
+            f"agent-skills-mcp-v{version}-windows.exe",
+            f"agent-skills-mcp-v{version}-macos",
+            "USAGE.md",
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            release_assets = temp_root / "release-assets"
+            release_assets.mkdir()
+            for index, asset in enumerate(expected_assets):
+                (release_assets / asset).write_bytes(f"release-asset-{index}".encode("utf-8"))
+
+            env = os.environ.copy()
+            env["RELEASE_VERSION"] = version
+            result = subprocess.run(
+                ["bash", "-euo", "pipefail", "-c", script],
+                cwd=temp_root,
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                result.returncode,
+                0,
+                msg=f"checksum step 执行失败\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+            )
+            checksum_lines = (release_assets / "SHA256SUMS").read_text(encoding="utf-8").splitlines()
+            self.assertEqual(len(checksum_lines), 4)
+            self.assertFalse(any(line.endswith("  SHA256SUMS") for line in checksum_lines))
+            for asset in expected_assets:
+                self.assertEqual(sum(line.endswith(f"  {asset}") for line in checksum_lines), 1)
 
     def test_user_guide_is_final_user_only(self) -> None:
         """USAGE 必须是纯用户操作说明，不混入源码维护、内部 Contract 或治理术语。"""
