@@ -19,7 +19,6 @@ RUNTIME_FORBIDDEN_MUTATION_MARKERS = (
     "Skill Mutation",
     CANONICAL_REPOSITORY,
     MAINTENANCE_PATH,
-    "16_规则内容守恒与Skill维护.md",
     "Maintenance Mode",
     "只改当前项目规则",
     "更新 Skill",
@@ -82,7 +81,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         )
         for marker in required:
             self.assertIn(marker, router, f"Runtime Router 丢失普通研发路由：{marker}")
-        for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS:
+        for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + ("16_规则内容守恒与Skill维护.md",):
             self.assertNotIn(forbidden, router, f"Runtime Router 暴露源仓库 Mutation 治理：{forbidden}")
 
     def test_managed_block_is_runtime_bootstrap_without_source_mutation_terms(self) -> None:
@@ -99,6 +98,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         ):
             self.assertIn(marker, managed, f"managed block 缺少普通 Runtime 入口保护：{marker}")
         for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + (
+            "16_规则内容守恒与Skill维护.md",
             "canonical Owner",
             "canonical repository",
             "本地安装副本",
@@ -175,7 +175,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         self.assertNotIn("通过 Router 命中的 **Skill Mutation**", ref16)
 
     def test_project_payload_plaintext_surface_excludes_source_mutation_governance(self) -> None:
-        """真实 Project Payload 的可读明文文件不得携带源仓库 Mutation 治理信息。"""
+        """真实 Project Payload 的可读正文不得携带源仓库 Mutation 治理，Reference Stub 元数据保持现有 Contract。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         entries = {item["path"]: item for item in payload["files"]}
