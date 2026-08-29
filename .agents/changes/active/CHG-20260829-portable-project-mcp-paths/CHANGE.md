@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260829-portable-project-mcp-paths
 title: 修复项目级 MCP 配置绝对路径不可移植
 level: L2
-status: in_progress
+status: ready_for_review
 owner: ChatGPT
 branch: fix/portable-project-mcp-paths
 created: 2026-08-29
@@ -15,12 +15,9 @@ affected_areas:
   - installer
   - host-config
   - tests
-  - coding-rules
 affected_paths:
   - "runtime/agent_skills_runtime/project_installer.py"
-  - ".agents/skills/coding/tests/test_single_binary_project_install.py"
-  - ".agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md"
-  - ".agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md"
+  - ".agents/skills/coding/tests/test_project_mcp_config_portability.py"
 contracts:
   - "Project-local MCP host configuration portability"
 data_changes: []
@@ -32,19 +29,20 @@ data_changes: []
 
 # 成功标准
 
-- [ ] Cursor 项目配置不包含安装机器绝对路径，并使用 Cursor 官方项目根插值定位 `.agents/runtime/`。
-- [ ] Claude Code 项目配置不包含安装机器绝对路径，并使用 Claude Code 官方项目根变量定位 `.agents/runtime/`。
-- [ ] Codex 项目配置不包含安装机器绝对路径，使用项目相对 Runtime command；明确当前 Codex 相对命令仍依赖会话工作目录/宿主实现，不能伪称上游未提供的 workspace placeholder。
-- [ ] Windows `.exe` 与 POSIX 无扩展名 Runtime 都生成正确的宿主 command。
-- [ ] `.agents/agent-skills-install.json` 继续保存项目相对 `runtime`，不改变 install manifest schema、Skill/shared ownership 或 Runtime 安装位置。
-- [ ] 升级已有受管安装时能把旧绝对 command 收敛为新可移植 command，同时保留其他 MCP server、TOML/JSON 用户内容和 managed marker 外文本。
-- [ ] 建立能在旧实现上失败的永久回归，并完成 Red → Green → Review → Ready → PR CI → main CI → 独立归档。
+- [x] Cursor 项目配置不包含安装机器绝对路径，并使用 Cursor 项目根插值定位 `.agents/runtime/`。
+- [x] Claude Code 项目配置不包含安装机器绝对路径，并使用 Claude Code 项目根变量定位 `.agents/runtime/`。
+- [x] Codex 项目配置不包含安装机器绝对路径，使用项目相对 Runtime command；明确相对命令仍依赖 Codex 当前会话/宿主工作目录，不能伪称存在未确认的 workspace placeholder。
+- [x] Windows `.exe` 与 POSIX 无扩展名 Runtime 都生成对应的项目级 Host command。
+- [x] `.agents/agent-skills-install.json` 继续保存项目相对 `runtime`，install manifest schema、Skill/shared ownership 与 Runtime 安装位置不变。
+- [x] 升级已有受管安装时把旧绝对 command 收敛为新可移植 command，同时保留其他 MCP server、TOML/JSON 用户内容和 managed marker 外文本。
+- [x] AGENTS、CLAUDE、`.gitignore`、三个 Host config 和 install manifest 等安装器持久文本均由回归测试锁定，不得写入目标项目绝对目录。
+- [x] 已完成 Red → Green → 独立 Review → Completion Audit 并进入 `ready_for_review`；后续仍需最终 Ready CI、非 Draft PR CI、merge、main 新鲜 CI 与独立归档。
 
 # 范围
 
 - 调整 `project_installer.py` 生成 Cursor、Claude Code、Codex 项目级 MCP command 的方式。
-- 增加 Windows/POSIX 项目安装回归，检查所有持久 Host 配置不泄露目标项目绝对路径。
-- 同步 Coding ref13/ref14 的项目级 MCP 可移植性 Contract。
+- 增加 Windows/POSIX/升级项目安装回归，检查所有安装器持久文本不泄露目标项目绝对路径。
+- 保持既有 Runtime、manifest、AGENTS/CLAUDE bridge、ownership 与回滚 Contract。
 
 # 非目标
 
@@ -58,68 +56,99 @@ data_changes: []
 - Runtime 继续安装到项目内 `.agents/runtime/agent-skills-mcp[.exe]`，且该目录继续被 `.gitignore` 排除。
 - Cursor/Claude/Codex 继续只修改各自 Agent Skills 可证明认领的项目级 MCP 边界。
 - AGENTS、CLAUDE bridge、其他 MCP server、用户 TOML/JSON 内容、manifest ownership 和安装回滚语义保持。
-- 目标项目另一台机器如果没有本地 `.agents/runtime/agent-skills-mcp[.exe]`，不得伪装成无需安装即可运行；需要先运行对应平台安装器。
+- 目标项目另一台机器如果没有本地 `.agents/runtime/agent-skills-mcp[.exe]`，不得伪装成无需安装即可运行；需要先运行对应平台安装器。项目配置可移动，不等于项目本地二进制通过 Git 自动分发。
 
 # 已确认关键决策
 
-采用宿主各自支持的项目根语义，而不是把同一种占位符强行写给三个宿主：
+采用宿主各自支持或当前可证明的项目根语义，而不是把同一种占位符强行写给三个宿主：
 
-- Cursor：`${workspaceFolder}` + `${pathSeparator}`；官方定义为包含 `.cursor/mcp.json` 的项目根。
-- Claude Code：`${CLAUDE_PROJECT_DIR:-.}`；官方说明 stdio MCP 进程具有稳定项目根变量，项目 `.mcp.json` 中引用时需提供默认值。
-- Codex：项目相对 `.agents/runtime/...`；当前 Codex 项目 `.codex/config.toml` 可定义 stdio MCP，但没有与 Cursor/Claude 等价、可在项目配置中稳定展开的 workspace placeholder，因此保留这一上游能力边界并通过实际项目根运行/CI 验证本仓库可控部分。
+- Cursor：`${workspaceFolder}${pathSeparator}.agents${pathSeparator}runtime${pathSeparator}<runtime>`。
+- Claude Code：`${CLAUDE_PROJECT_DIR:-.}/.agents/runtime/<runtime>`。
+- Codex：`.agents/runtime/<runtime>`；当前仓库不假设一个未确认的 Codex workspace placeholder，因此保留“相对 command 由 Codex session/host cwd 解析”的证据边界。
+- install manifest：继续记录 `.agents/runtime/<runtime>`，作为 Agent Skills 自身 ownership/version 导航。
 
 # Requirement Traceability
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | 安装后的项目配置不能绑定安装者电脑绝对路径，换电脑/目录后应保持项目级可移植 | user:2026-08-29-portable-mcp-paths | not_satisfied | 当前 `install_project()` 使用 `runtime_command = str(runtime_target)`，截图与源码均证明三个 Host config 固化绝对路径。 |
-| R2 | 继续保持项目级、单二进制、每台机器本地安装模式 | `.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md` | not_satisfied | Runtime 位置、gitignore、manifest 与 Host ownership 均需回归保持。 |
-| R3 | Runtime/Host config 变化必须匹配真实宿主能力并有跨平台构建/安装证据 | `.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md` | not_satisfied | 需要行为回归、Linux/Windows/macOS 永久 CI 与最终 artifact 项目安装验证。 |
+| R1 | 安装后的项目配置不能绑定安装者电脑绝对路径，换电脑/目录后应保持项目级可移植 | user:2026-08-29-portable-mcp-paths | satisfied | Red run `33236844887` 精确证明旧实现把临时项目绝对路径写入三个 Host command；当前 `install_project()` 已分别生成 Cursor/Claude 项目根 command 与 Codex 项目相对 command。run `33237216737` 的 136 tests 全通过，并扫描全部安装器持久文本确认不含目标项目绝对路径。 |
+| R2 | 继续保持项目级、单二进制、每台机器本地安装模式 | `.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md` | satisfied | `.agents/runtime/agent-skills-mcp[.exe]` 位置、`/.agents/runtime/` gitignore、manifest `runtime` 相对值、AGENTS/CLAUDE bridge 与 ownership 均未改变；run `33237216737` Linux onefile/MCP/project install 成功。 |
+| R3 | Runtime/Host config 变化必须匹配真实宿主能力并有跨平台构建/安装证据 | `.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md` | satisfied | run `33237216737`：136 tests、Linux onefile/status/self-test、真实 stdio MCP、项目安装、Windows package/install、macOS package/install 全部成功；宿主 GUI 本身未在 CI 启动，Codex cwd 差异保留为明确未验证边界。 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | 安装 fixture 检查 Cursor/Claude/Codex 三份 Host config 的 command，旧实现先 Red，新实现无目标绝对路径。 |
-| 接口 / Contract | required | Host config key/args、manifest schema/runtime、managed marker、其他 MCP server 与用户配置保持；同步 ref13/ref14 正式 Contract。 |
-| 集成 / Persistence / Runtime Dependency | required | 临时真实文件系统执行 `install_project()`，覆盖首次安装与已有受管配置升级写回。 |
-| 用户 / Workflow Acceptance | required | 从项目根运行安装器后，配置引用项目本地 Runtime；另一机器需本地运行一次对应平台 binary，但不继承上一机器绝对目录。 |
-| 跨组件 Golden Path | required | 永久 CI 继续执行 onefile → 项目安装 → 项目内 Runtime/MCP smoke，验证新 Host config 未破坏安装闭环。 |
-| External Dependency / Provider Probe | not_applicable | Cursor/Claude/Codex 配置语义使用当前官方文档/上游源码确认；普通 CI 不启动第三方 IDE GUI，真实 GUI 宿主差异作为明确证据边界。 |
-| Build / Package / Runtime | required | Linux onefile/MCP/install + Windows/macOS package/install 永久 CI；不得仅用 Python fixture 声称平台 artifact 可用。 |
-| Docs / Governance / Other | required | ref13/ref14、Change、Completion Audit、独立 Review、Ready Gate、PR/main CI、独立归档。 |
+| 行为 / Unit / Component | required | Red run `33236844887`：136 tests 中仅新增 3 个可移植性测试失败，其余 133 个通过；Green/re-review run `33237216737`：136 tests 全通过。 |
+| 接口 / Contract | required | exact host command、`args=["serve"]`、manifest `runtime`、Windows/POSIX 文件名、其他 MCP server/用户 TOML JSON 保留均有永久断言；schema/ownership 未改。 |
+| 集成 / Persistence / Runtime Dependency | required | 新测试在临时真实文件系统直接执行 `install_project()`，覆盖首次 Windows/POSIX 安装与已有受管配置升级写回。 |
+| 用户 / Workflow Acceptance | required | 安装后的持久文本不再记录安装机器绝对项目路径；另一台机器在自己的项目根运行对应平台 binary 后会生成本机 Runtime 并保持项目级配置。 |
+| 跨组件 Golden Path | required | run `33237216737` 继续执行 onefile → status/self-test → real stdio MCP → project-only install → installed Runtime smoke；Windows/macOS 对应平台 package/install 也成功。 |
+| External Dependency / Provider Probe | not_applicable | 不调用业务外部 Provider。Cursor/Claude/Codex GUI 未作为普通 CI 依赖；宿主差异在 Review 中单独记录，不用静态配置测试冒充真实 GUI Host。 |
+| Build / Package / Runtime | required | run `33237216737` Linux onefile/MCP/install、Windows package/install、macOS package/install 均 success。 |
+| Docs / Governance / Other | required | Change、A1/A2、Completion Audit、独立 Review 与 Ready Gate；现有 ref13/ref14/USAGE 已完整描述项目级安装和本地 Runtime 边界，不需要为内部 command 表达方式重复新增规则。 |
 
 # Completion Audit
 
-- [ ] upstream_re_read：重新核对用户“换电脑可直接使用”的真实边界与每台机器仍需项目级本地安装的既定模式。
-- [ ] change_coverage：逐项检查 Cursor、Claude、Codex、manifest、AGENTS/CLAUDE bridge、gitignore、升级与回滚。
-- [ ] reverse_audit：按 `Release binary → install target → runtime copy → Host config → Host spawn → MCP serve` 反向复核。
-- [ ] unresolved_cleared：R1–R3 无 `not_satisfied`，所有 required 验证有新鲜证据。
+- [x] upstream_re_read：重新核对用户“换电脑可直接使用”的目标，并区分“项目配置不绑定旧机器”与“`.agents/runtime/` 仍需每台机器本地安装一次”两个边界。
+- [x] change_coverage：逐项检查 Cursor、Claude、Codex、manifest、AGENTS、CLAUDE bridge、gitignore、首次安装、升级保留、Windows/POSIX 文件名和 Runtime smoke。
+- [x] reverse_audit：按 `Release binary → install target → runtime copy → Host config → Host spawn → MCP serve` 反向复核；本仓库持久配置不再依赖安装目标绝对目录，Runtime copy/MCP serve 链保持。
+- [x] unresolved_cleared：R1–R3 全部 `satisfied`；required 验证有新鲜证据；无开放 Review Finding。
 
-# 实施任务
+# TDD / 实施与验证证据
 
-1. [Red] 增加 Windows/POSIX Host config 可移植性回归，证明当前绝对路径实现失败。
-2. [Green] 用宿主特定项目根语义生成 command，最小修改安装器。
-3. 同步 ref13/ref14，明确“项目配置可提交/复制，但 Runtime binary 每机本地安装”的边界。
-4. 运行永久 CI、独立 Review、Ready Gate、PR/main CI 与独立归档。
+1. 根因：`install_project()` 已正确生成 `runtime_relative` 给 manifest，但又用 `runtime_command = str(runtime_target)` 把 `target.resolve()` 派生的机器绝对路径写入 Cursor/Claude/Codex 三个 Host config。
+2. Red：新增 `test_project_mcp_config_portability.py`，使用真实临时文件系统调用生产 `install_project()`；run `33236844887` 中 136 tests 只有 Windows、POSIX、升级 3 条新增回归失败，实际值均为绝对路径，原 133 tests 全通过。
+3. Green：只把三家 Host command 改成各自项目级表达；不修改 Runtime copy、manifest schema、ownership、MCP args 或 Project Payload。
+4. Verify Green：run `33236993302` 的 136 tests、Linux onefile/MCP/install、Windows/macOS package/install 全部成功；唯一失败是 Change 当时仍 `in_progress` 的预期 Ready Gate。
+5. Re-review gap：用户明确要求检查“安装之后的所有路径”，因此进一步把 AGENTS、CLAUDE、`.gitignore`、三个 Host config 和 install manifest 纳入绝对项目路径扫描。
+6. Re-verify：run `33237216737` 的 136 tests、Linux onefile/MCP/install、Windows/macOS package/install 全部成功；唯一失败仍是本文件更新前的 `in_progress` Ready Gate。
 
-# 当前证据
+# 独立 Review
 
-- 当前 main `5daaf524c60302bdd30f5d5c3e769a80840a633c`。
-- `project_installer.py` 已把 manifest runtime 写为相对 `runtime_relative`，但 Host configs 使用 `runtime_command = str(runtime_target)`。
-- 用户截图实际生成 `E:\\Desktop\\test\\AIMA_UGC\\.agents\\runtime\\agent-skills-mcp.exe`，与源码路径完全一致。
-- Cursor 当前官方文档支持 `${workspaceFolder}`/`${pathSeparator}` 且项目 `.cursor/mcp.json` 用于项目共享。
-- Claude Code 当前官方文档定义 `CLAUDE_PROJECT_DIR` 为稳定项目根，并说明项目 `.mcp.json` 引用该变量时使用 `${CLAUDE_PROJECT_DIR:-.}`。
-- Codex 当前配置支持项目 `.codex/config.toml` 与 stdio `cwd`，但上游仍存在不同宿主工作目录差异；本 Change 不夸大该边界。
+Review Target：Draft PR #35，base `5daaf524c60302bdd30f5d5c3e769a80840a633c`，生产实现 commit `bd26265101fd0076a3e1204c0dbd401d5a1097db`；后续 `a8ae0f775cbf558b29c4336386b1f30c23b31044` 只扩大永久回归范围。
+
+模式：review-and-fix 后 re-review；用户已明确授权系统检查并修复安装后的路径可移植性。
+
+## A1 上游要求 → Change
+
+- 用户截图明确要求项目安装不能把自己电脑的 `E:\...` 固化到配置中，否则项目移到别人电脑失效；当前 Change 直接覆盖这一可观察目标。
+- 结合既定项目级安装模式，“另一台电脑可用”解释为：团队成员拿对应平台 Release binary，在自己的目标项目根运行一次后即可使用；不把被 gitignore 的 Runtime binary 假装成随 Git 自动存在。
+- 未发现需要切换为全局安装、在线 Runtime、提交 `.agents/runtime/` 或改变 Bundle/MCP Contract 的上游要求。
+
+## A2 Change → 实现 / 测试 / 文档
+
+- 生产 diff 只把一个绝对 `runtime_command` 拆成 Cursor、Claude、Codex 三种项目级 command；其余安装流程不变。
+- 行为回归经历真实 Red→Green，并覆盖 Windows/POSIX、升级旧绝对路径、保留其他 Host 用户配置和所有安装器持久文本绝对路径扫描。
+- `USAGE.md` 已说明按操作系统选择 binary、在目标项目根运行、识别失败时在项目根重跑；ref13/ref14 已说明项目本地 Runtime、gitignore 与 Host ownership。因此本次不修改文档，避免把实现字符串细节复制成第二套规则。
+
+## Host / Portability Responsibility Audit
+
+- Runtime 物理位置：仍为 `.agents/runtime/agent-skills-mcp[.exe]`。
+- Manifest：仍保存项目相对 `runtime`；schema 未改。
+- Cursor：不再含安装机器路径，command 由 workspace project root 组成。
+- Claude Code：不再含安装机器路径，command 使用项目根环境变量并提供 `.` fallback。
+- Codex：不再含安装机器路径，command 为项目相对路径；真实解析仍取决于 Codex 当前 host/session cwd，这是上游边界而不是本仓库虚构 placeholder。
+- Ownership：三个 Host 仍只更新 `agent-skills` 自管边界；其他 server 和用户配置回归保留。
+- Upgrade：旧 manifest 证明 ownership 时，会把旧绝对 command 重写为当前可移植 command。
+- Rollback：text updates 仍在原有 snapshot/restore 事务边界内，未改回滚机制。
+- Cross-OS：Windows installer 写 `.exe`，Linux/macOS installer 写无扩展名；每台机器本地运行当前平台 binary 会重写为本平台 Runtime 名称。
+
+Review 结论：`NO_FINDINGS_WITHIN_SCOPE`。
+
+未验证边界：CI 没有启动真实 Cursor/Claude Code/Codex GUI 来执行这些项目配置；Cursor/Claude 的项目根插值依据当前宿主 Contract，Codex 项目相对 command 仍受 Codex host/session cwd 影响。永久 CI 已证明本仓库安装器、配置字节、最终平台 Runtime 和项目安装链，但不把未运行的 GUI Host 冒充已验证。
 
 # 文档影响
 
-Coding ref13/ref14 需要同步项目 Host config 可移植性约束；`USAGE.md` 的“一台机器在项目根运行对应平台二进制完成安装”使用方式不改变，暂不修改最终用户说明，完成前复核。
+Docs Impact：`not_applicable`。`USAGE.md`、ref13、ref14 已经规定“按项目安装、选择当前操作系统 binary、在项目根运行、Runtime 位于项目 `.agents/runtime/` 且本地忽略”；本次只修正三个 Host config 的机器路径表达，不改变最终用户步骤、Runtime 位置、MCP Tool Contract 或项目 ownership。
 
 # Git / PR / Release 状态
 
 - branch: `fix/portable-project-mcp-paths`
-- PR: 待创建
+- Draft PR: `#35`
+- Red: run `33236844887`
+- Green: run `33236993302`
+- re-review Green: run `33237216737`
 - merge: 未执行
 - main CI: 未执行
 - Release: 本 Change 不自动发布新版本
