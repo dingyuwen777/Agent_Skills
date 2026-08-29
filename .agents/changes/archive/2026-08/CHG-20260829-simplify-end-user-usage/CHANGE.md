@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260829-simplify-end-user-usage
 title: 收敛最终用户说明并移除内部维护术语
 level: L2
-status: ready_for_review
+status: done
 owner: ChatGPT
 branch: docs/simplify-end-user-usage
 created: 2026-08-29
@@ -51,7 +51,7 @@ data_changes: []
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | 最终用户文档不得暴露源仓库和 Skill 构建/分发/维护过程 | user:current-request | satisfied | `USAGE.md` 重写；反泄漏断言在 run #247 通过 |
+| R1 | 最终用户文档不得暴露源仓库和 Skill 构建/分发/维护过程 | user:current-request | satisfied | `USAGE.md` 重写；反泄漏断言在 run #247/#248/#249/#250 通过 |
 | R2 | 系统检查其他正式文档，区分用户文档和维护者文档 | user:current-request | satisfied | Docs targeted audit：README=源码维护入口，runtime/README=Runtime 维护说明，均不进入 Release 用户资产；无需修改 |
 | R3 | 保留最终用户真正需要的安装、使用、升级、回退和排障信息 | USAGE.md | satisfied | Windows/Linux/macOS、SHA256、install/status/self-test、升级/回退、工具识别与排障断言通过 |
 | R4 | Release notes 与随包 USAGE 使用同一干净用户文案 | .github/workflows/release.yml | satisfied | workflow 继续 `cp USAGE.md` 且 `--notes-file USAGE.md`；release contract tests 通过 |
@@ -60,14 +60,14 @@ data_changes: []
 
 | Layer | Required | Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | run #246 Red；run #247 131/131 self-contained tests success |
+| 行为 / Unit / Component | required | run #246 Red；run #247/#248/#249/#250：131/131 self-contained tests success |
 | 接口 / Contract | required | Release notes=`USAGE.md`、三平台资产名称、install/status/self-test CLI 示例保持；相关测试 success |
 | 集成 / Runtime Dependency | not_applicable | Runtime 行为和源码无变化 |
 | 用户 / Workflow Acceptance | required | 从 USAGE 可独立完成获取/校验/安装/使用/升级/回退/排障；人工读者任务反向审计完成 |
 | 跨组件 Golden Path | not_applicable | 无运行时跨组件变更 |
 | External Dependency / Provider Probe | not_applicable | 无外部 Provider |
-| Build / Package / Runtime | required | run #247 Linux onefile/MCP/install success，Windows/macOS package/install success |
-| Docs / Governance / Other | required | Docs Impact=`targeted`；A1/A2、独立 Review、Completion Audit 完成；仅待本 Ready HEAD CI |
+| Build / Package / Runtime | required | run #248/#249/#250 Linux onefile/MCP/install、Windows/macOS package/install 全部 success |
+| Docs / Governance / Other | required | Docs Impact=`targeted`；A1/A2、独立 Review、Completion Audit、Ready Check、feature merge 和 main fresh CI 已完成 |
 
 # TDD / 新鲜证据
 
@@ -89,7 +89,14 @@ PR run #247（`33231619400`），Green HEAD `9f60bb8fb10fbcffafb44f91ca235ca509c
 - Runtime macOS Package build/self-test + project install success；
 - 唯一 failure 为本 Change 当时仍 `status: in_progress` 的预期 Ready Gate。
 
-本治理提交将 Change 切为 `ready_for_review`，必须以新 HEAD 再取得 Ready Check + 三平台 Green 后才能合并。
+最终 Ready HEAD `d66e22a3d143ccc5261ec3c842fec35d2b56fbf1`：
+
+- run #248（`33231726291`）：131/131 tests、Ready Check、Linux onefile/MCP/install、Windows/macOS package/install 全部 success；
+- GitHub 连接器 Draft→Ready mutation 因其自身 GraphQL `Repository.fullDatabaseId` 字段错误失败；未绕过 Draft 门禁；
+- 使用完全相同的 HEAD 创建非 Draft PR #27，Draft PR #26 关闭并保留 Red/Green/Review 历史；
+- run #249（`33231857597`）：替代非 Draft PR 对同一 HEAD 再次完整验证，全部 success；
+- PR #27 正常 merge，merge commit `fc15a3da418c611049e3bc2616ccca5692b04c10`；
+- main run #250（`33231951628`）：131/131 tests、Ready Check、Linux onefile/MCP/install、Windows/macOS package/install 全部 success。
 
 # Docs Impact / 文档域审计
 
@@ -105,7 +112,7 @@ Docs Impact：`targeted`。
 
 # 独立 Review A1 / A2
 
-Review Target：PR #26，base `main@6549ab0f0a4613cd8bbae10904d8670a691f7416`，head `9f60bb8fb10fbcffafb44f91ca235ca509c7087d`。
+Review Target：原 Draft PR #26 / 替代非 Draft PR #27，base `main@6549ab0f0a4613cd8bbae10904d8670a691f7416`，最终 feature HEAD `d66e22a3d143ccc5261ec3c842fec35d2b56fbf1`。
 
 ## A1：上游要求 → 实现
 
@@ -146,7 +153,19 @@ Review 重点复核：
 - [x] 取得 pre-Ready Green run #247。
 - [x] 完成其他正式文档 targeted audit。
 - [x] 完成独立 Review、Requirement Traceability 和 Completion Audit。
-- [ ] 本 `ready_for_review` HEAD 的最终三平台 CI + Ready Check。
-- [ ] PR Draft → Ready → 正常 merge。
-- [ ] merge 后 main 新鲜 CI。
-- [ ] 独立 archive PR + archive 后 main 新鲜 CI。
+- [x] `ready_for_review` HEAD 的最终三平台 CI + Ready Check（run #248）。
+- [x] Draft→Ready 连接器故障后，以同一 HEAD 的非 Draft PR #27 重跑 run #249 并正常 merge。
+- [x] merge 后 main 新鲜 CI（run #250）。
+- [x] 独立 archive 分支以原 blob `82445e98a46f532f071c8dae1b3cc45dde4d4409` 完成 active→archive 字节级移动。
+- [ ] archive PR 永久 CI + merge。
+- [ ] archive merge 后 main 新鲜 CI、Active Change 清空与 archive `status: done` 最终校验。
+
+# 归档交付证据
+
+- Feature Draft PR：#26，关闭未合并，仅因连接器 Draft→Ready mutation 缺陷被替代。
+- Feature PR：#27，正常合并。
+- Feature merge：`fc15a3da418c611049e3bc2616ccca5692b04c10`。
+- Feature main CI：run #250 success。
+- Archive branch：`chore/archive-simplify-end-user-usage`。
+- active→archive 移动复用原 blob `82445e98a46f532f071c8dae1b3cc45dde4d4409`，移动步骤本身字节级守恒；本次只修改归档治理状态与最终证据。
+- Release：本 Change 不创建实际 Release。
