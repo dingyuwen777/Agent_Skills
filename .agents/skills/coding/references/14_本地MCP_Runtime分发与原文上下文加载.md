@@ -115,6 +115,12 @@ Runtime、Project Payload、manifest、测试和 Release **不得维护固定完
 
 Router 是 Skills 根级 shared runtime file，不是新的专业 Skill，也不得复制各 Skill 的完整详细规则；根 `AGENTS.md` 与 `AGENTS.managed.md` 只做 Bootstrap，不再拥有第二套完整 Router。
 
+### 源仓库 Mutation 与普通 Runtime 明文面
+
+源仓库 Mutation 的意图识别与 canonical Ownership 由 Agent_Skills **根 `AGENTS.md`** 独立承担，详细 Skill/Reference 内容守恒继续由 ref16 承担。普通 Runtime 安装给目标项目的 shared Router 与 `AGENTS.managed.md` 不复制这套源仓库 Mutation、canonical repository、Maintenance 或跨仓库同步治理。
+
+这不是建立第二个 Router：`.agents/skills/ROUTER.md` 仍是源码直读与 Runtime 安装共享的普通研发 Router；根 `AGENTS.md` 只在 Agent_Skills 源仓库维护场景增加源仓库专用 Bootstrap。Custom Instructions 可以把维护者意图引导到当前根 `AGENTS.md`，但不进入 Project Payload，也不替代当前源码事实。
+
 Builder 读取 canonical References 时：
 
 - 不修改源文件；
