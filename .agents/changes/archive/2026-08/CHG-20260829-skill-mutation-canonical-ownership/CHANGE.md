@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260829-skill-mutation-canonical-ownership
 title: 建立 Skill Mutation canonical ownership 与跨仓库同步路由
 level: L3
-status: ready_for_review
+status: done
 owner: ChatGPT
 branch: refactor/skill-mutation-canonical-ownership
 created: 2026-08-29
@@ -261,14 +261,30 @@ Docs Impact：`targeted`。
 - [x] 完成独立 Review，修复 Owner 表述 Finding。
 - [x] 取得修复后的 pre-Ready Green run #239。
 - [x] 完成 Requirement Traceability、Validation Matrix、Docs targeted 与 Completion Audit。
-- [ ] 本 `ready_for_review` governance HEAD 的最终三平台 CI + Ready Check。
-- [ ] PR #23 Draft → Ready → 正常 merge。
-- [ ] merge 后 main 新鲜 CI。
-- [ ] 独立 archive PR + archive 后 main 新鲜 CI。
+- [x] Ready HEAD 的最终三平台 CI + Ready Check 已通过；Draft→Ready 连接器故障后使用同一 HEAD 的替代非 Draft PR #24 再次完整通过 CI。
+- [x] PR #24 已正常合并，merge commit `3ab8d45d6e3972d2f29a07d6b3cc04b757fe62d8`；Draft PR #23 已关闭并保留完整开发历史。
+- [x] merge 后 main 新鲜 CI run #243（`33226000575`）三平台全部 success。
+- [x] 已从该 main 创建独立 archive 分支并将本 Change 原文移动到 `archive/2026-08/`；归档 PR/归档后 main CI 由独立归档交付阶段继续验证。
 
 # 交付状态
 
-- Branch：`refactor/skill-mutation-canonical-ownership`。
-- PR：#23 `建立 Skill Mutation canonical ownership`，当前仍为 Draft；只有本 Ready governance HEAD CI 全绿后才能转 Ready。
+- Feature branch：`refactor/skill-mutation-canonical-ownership`；替代非 Draft PR branch：`refactor/skill-mutation-canonical-ownership-ready`。
+- Draft PR #23 因连接器 `markPullRequestReadyForReview` 自身 GraphQL 字段兼容错误无法执行 Draft→Ready，已关闭；没有直接合并 Draft PR。
+- 替代 PR #24 使用与 #23 完全相同 HEAD `117347530a2fe07ca897ddd53d6375667e0d3417`，run #242（`33225886622`）重新完整三平台全绿后正常合并。
+- PR #24 merge commit：`3ab8d45d6e3972d2f29a07d6b3cc04b757fe62d8`。
+- merge 后 main run #243（`33226000575`）：131/131 tests、Linux onefile/MCP/install/Ready、Windows/macOS package/install 全部 success。
 - Release：本 Change 不创建实际 Release。
 - Runtime schema / CLI / MCP / Release assets：无变化。
+
+# 最终交付与归档证据
+
+本节覆盖上文在施工阶段记录的“PR #23 Draft → Ready”等历史计划；原记录保留为过程证据，不再代表最终交付路径。
+
+1. Ready governance HEAD 最初为 `b69f6de9610f17c0a21587dc45c4f6a88a593a89`；run #240（`33225478903`）产品链及三平台均 Green，但 Ready Check 正确发现 R5 Requirement Source 使用描述性文字而不是仓库真实路径。
+2. 只修正 R5 Source 为 `.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md`，没有修改产品规则或放宽 Ready Check；最终 HEAD 为 `117347530a2fe07ca897ddd53d6375667e0d3417`。
+3. run #241（`33225679391`）在该 HEAD 上 131/131 tests、Ready Check 和 Linux/Windows/macOS 最终 artifact 全部 success。
+4. GitHub 连接器的 Draft→Ready mutation 因其自身查询不存在的 `Repository.fullDatabaseId` 字段失败。为不绕过 Draft 门禁，没有直接合并 Draft #23；而是从相同 commit 新建 `refactor/skill-mutation-canonical-ownership-ready`，创建非 Draft PR #24，并重新执行 PR CI。
+5. PR #24 run #242（`33225886622`）再次三平台全部 success，随后按 expected HEAD 正常 merge；merge commit 为 `3ab8d45d6e3972d2f29a07d6b3cc04b757fe62d8`。
+6. merge 后 `main` run #243（`33226000575`）再次全部 success，证明最终 main 状态通过新鲜 CI。
+7. 本独立归档分支从 `main@3ab8d45d6e3972d2f29a07d6b3cc04b757fe62d8` 创建；移动步骤直接复用原 Change blob `2fe18985b5eed289bf3958c68656a6f150299d39`，因此 active→archive 移动本身字节级内容守恒。随后仅把状态更新为 `done`、完成最终交付 checklist 并追加本节证据。
+8. 最终独立 Review 结论保持 `NO_OPEN_FINDINGS_WITHIN_SCOPE`；Requirement Traceability R1–R6 satisfied，Completion Audit 四项全部完成，Docs Impact 为 targeted，无未解决 blocker。
