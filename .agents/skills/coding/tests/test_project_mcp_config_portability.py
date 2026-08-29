@@ -67,7 +67,7 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         return target
 
     def _assert_portable_host_commands(self, target: Path, runtime_name: str) -> None:
-        """断言三个项目级 Host 都只保存可移植 Runtime command。"""
+        """断言全部受管持久文本与三个 Host command 都不绑定目标绝对路径。"""
         cursor = json.loads((target / ".cursor/mcp.json").read_text(encoding="utf-8"))
         claude = json.loads((target / ".mcp.json").read_text(encoding="utf-8"))
         codex = tomllib.loads((target / ".codex/config.toml").read_text(encoding="utf-8"))
@@ -95,6 +95,23 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
             codex["mcp_servers"]["agent-skills"]["command"],
         ):
             self.assertNotIn(absolute_target, command)
+
+        persisted_paths = (
+            Path("AGENTS.md"),
+            Path("CLAUDE.md"),
+            Path(".gitignore"),
+            Path(".cursor/mcp.json"),
+            Path(".mcp.json"),
+            Path(".codex/config.toml"),
+            INSTALL_MANIFEST_PATH,
+        )
+        for relative in persisted_paths:
+            content = (target / relative).read_text(encoding="utf-8")
+            self.assertNotIn(
+                absolute_target,
+                content,
+                msg=f"安装后的持久配置不能包含目标项目绝对路径：{relative.as_posix()}",
+            )
 
     def test_windows_project_host_configs_use_portable_runtime_commands(self) -> None:
         """Windows 项目配置不得固化安装机器盘符和绝对目录。"""
