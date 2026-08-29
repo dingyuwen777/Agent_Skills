@@ -139,3 +139,85 @@ Docs 负责技术文档事实同步与文档质量，不复制第二套 Coding �
 - Runtime 的 Bundle/Payload/Stub/MCP/安装/升级/回滚细节 → Coding ref13/ref14 + Runtime 实现。
 
 不能为了让入口“自包含”再把这些专业细则复制回根 `AGENTS.md`、`AGENTS.managed.md` 或本 Router。
+
+## 11. Skill Mutation / canonical Repository Ownership
+
+本节拥有“**什么时候从目标项目工作切换为 Agent_Skills 本身的维护任务**”这一跨仓库路由。详细的内容守恒、Change、测试、Review、Git/CI 与交付细则仍由 Coding / Maintenance / ref16 承担，不在这里复制第二套研发流程。
+
+### 11.1 Mutation 触发
+
+以下针对 Skill 本身的用户意图都属于 **Skill Mutation**：
+
+- “更新 Skill”“修改 Skill”“新增 Skill”“删除 Skill”“重命名 Skill”；
+- 新增、修改、删除、重命名某个 Reference；
+- 把当前项目中发现的通用规则“同步到 Skill”；
+- 规则迁移、拆分、合并、通用化、Ownership 调整；
+- 修改跨 Skill Router，或与某个 Skill 直接归属的 metadata、assets、scripts、tests。
+
+当当前会话正在处理另一个目标项目，但命中上述意图时，默认 canonical Owner 是：
+
+```text
+dingyuwen777/Agent_Skills
+```
+
+也就是从“用 Agent_Skills 帮助目标项目”切换为“维护 Agent_Skills canonical 源仓库”。目标项目继续作为需求背景、调用链、失败证据和项目约束的事实来源，但不成为通用 Skill 正文 Owner。
+
+如果用户明确说“只改当前项目规则”“不要同步到 Agent_Skills”，或明确指向目标项目自己的 **项目自有 Skill**，则保持目标项目 Ownership，不跨仓库写 Agent_Skills。若现有仓库事实无法安全判断某个 Skill 属于 Agent_Skills 还是项目自有内容，必须先报告 Ownership 不确定并停止相关写入，不猜测性覆盖任一方。
+
+### 11.2 canonical 明文事实源
+
+通用 Agent Skill 的 canonical 明文只来自 Agent_Skills 当前源码仓库中的正式 Owner：
+
+```text
+.agents/skills/<skill>/SKILL.md
+.agents/skills/<skill>/references/*.md
+.agents/skills/ROUTER.md
+以及该 Skill 明确认领的 metadata / assets / scripts / tests
+```
+
+以下都**不是 canonical Skill 写入目标**：
+
+- 目标项目中的 Runtime / Project Payload **本地安装副本**；
+- Reference Stub；
+- MCP 返回结果的旧缓存；
+- 历史聊天、摘要或旧版本复制件；
+- ChatGPT Custom Instructions / Project instructions 中的转述。
+
+Runtime 安装副本和 Stub 用于目标项目运行与加载，不用于反向维护 canonical 规则。需要修改 Skill 时，必须回到 `dingyuwen777/Agent_Skills` 当前目标分支重新读取真实源码；不得直接编辑本地安装副本后声称“Skill 已更新”。
+
+### 11.3 Mutation 固定入口
+
+进入 Agent_Skills Mutation 后，在任何 canonical 写入前至少执行：
+
+```text
+重新读取 Agent_Skills 当前目标分支根 AGENTS.md
+→ .agents/MAINTENANCE.md
+→ .agents/skills/ROUTER.md
+→ .agents/skills/coding/SKILL.md
+→ coding/references/16_规则内容守恒与Skill维护.md
+→ 本次真正受影响 Skill 的 SKILL.md / references
+```
+
+如果 Mutation 会影响 managed block / Bootstrap，则再读 ref13；影响 Runtime、Project Payload、Bundle、Stub、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性时，再读 ref14。随后按 Agent_Skills Maintenance/Coding 的当前 Change、TDD、独立 Review、CI、PR、main 新鲜 CI 和 archive 门禁执行，不建立一套 Mutation 专用的平行交付流程。
+
+当前宿主只有只读 GitHub 能力、没有 Agent_Skills 源仓库权限、没有所需写权限或不能执行仓库要求的 PR/CI 门禁时，明确报告未同步/未交付，不得改本地安装副本冒充 canonical 写入，也不得口头声称“已同步”。
+
+### 11.4 universal 与 project-specific 边界
+
+只有可跨项目、跨业务复用的研发方法、失败处理、验证责任、通用工具/流程规则才进入 Agent_Skills。以下项目特定事实继续由目标项目自己的 AGENTS / Spec / Contract / Schema / Design System /代码等 Owner 管理：
+
+- 具体语言、Runtime、框架、数据库和包管理器选择；
+- 业务字段、Prompt、Provider、平台、Schema/Migration 和数据口径；
+- 项目 CI、部署环境、Release/恢复细节；
+- 品牌、页面尺寸、业务组件、设计 Token、动态字段和业务流程。
+
+当用户明确要求“更新 Skill”，但输入同时混有通用规则与项目特定事实时，先拆分语义：只把可证明可复用的通用部分写入 Agent_Skills；项目特定部分仍留在目标项目 Owner。若没有可安全抽取的通用规则，则不为了满足“同步”字样而污染 Agent_Skills，并明确说明为什么本次没有 canonical Skill 变更。
+
+### 11.5 新增、删除与重命名的 Router 责任
+
+- 新增 Skill：正式入口仍是 `.agents/skills/<name>/SKILL.md`，不得给 Runtime 增加固定白名单；如果本 Router 展示“当前 Catalog”，必须同步可读导航，但该导航永远不是分发白名单。
+- 删除 Skill：必须同步删除/修改 Router 当前 Catalog 与其他 live Handoff/引用，不能留下指向不存在 Skill 的导航。
+- 重命名 Skill：同时视为旧 Skill 删除 + 新 Skill 建立，并把 Reference ID namespace、Runtime 安装路径、Stub、Bundle/Payload、live links 等潜在 Contract 影响交给 ref14/ref16 审查，不能只改目录名。
+- Reference 新增/删除/重命名、规则拆分/合并/通用化的内容守恒细则由 ref16 承担。
+
+Custom Instructions 可以帮助 ChatGPT 在任意会话更早发现本 Router，但它不是本规则的上位事实源；真正的 Mutation 行为以当前目标项目规则、当前 Agent_Skills 源仓库和更高优先级指令为准。
