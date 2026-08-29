@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260829-separate-runtime-mutation-governance
 title: 收敛 Runtime 用户面与 Skill Mutation 源仓库治理边界
 level: L2
-status: ready_for_review
+status: done
 owner: ChatGPT
 branch: fix/runtime-user-surface-mutation-boundary
 created: 2026-08-29
@@ -47,7 +47,7 @@ Agent_Skills 源仓库自身仍完整保留 Skill / Reference 新增、修改、
 - [x] `ref16` 继续完整承担 canonical 明文来源、非 canonical 输入、固定 Mutation 入口、ref13/ref14 条件路由、Skill/Reference 新增删除重命名、跨仓库同步、项目特定事实隔离和内容守恒规则；其入口不再依赖 Runtime Router 的 Mutation 章节。
 - [x] ref13/ref14 明确普通 Runtime 分发面不承载源仓库 Mutation 治理，同时保持 Project Payload / Router / Stub / MCP / install Contract 不变。
 - [x] 永久回归实际构建 Project Payload 并证明安装明文面不再携带源仓库 Mutation 治理；Reference Stub 文件名/ID 等现有元数据 Contract 保持。
-- [x] 完成 Red → Green → 独立 Review → Review Finding Red/Green → Completion Audit；当前进入 `ready_for_review`，后续仍需最终 Ready CI、非 Draft PR CI、merge、main 新鲜 CI 与独立归档。
+- [x] 完成 Red → Green → 独立 Review → Review Finding Red/Green → Final Ready → 非 Draft PR CI → merge → main 新鲜 CI，并通过独立归档分支移出 active、标记 `done`。
 
 # 范围
 
@@ -93,23 +93,23 @@ Custom Instructions 只负责把维护者的 Mutation 意图尽早引导回当�
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | 普通 exe 用户不需要看到 Skill Mutation / canonical Owner / 源仓库维护说明 | user:2026-08-29-runtime-user-surface | satisfied | `.agents/skills/ROUTER.md` 删除 82 行源仓库 Mutation 章节；`AGENTS.managed.md` 改为普通研发入口 + 受管资产保护。run `33240546365` 的 137 tests 全通过，真实 `build_project_payload()` 后扫描 Project Payload 明文文件确认不含源仓库 Mutation 标记。 |
+| R1 | 普通 exe 用户不需要看到 Skill Mutation / canonical Owner / 源仓库维护说明 | user:2026-08-29-runtime-user-surface | satisfied | `.agents/skills/ROUTER.md` 删除 82 行源仓库 Mutation 章节；`AGENTS.managed.md` 改为普通研发入口 + 受管资产保护。最终 Ready run `33240656403`、非 Draft PR #40 run `33240848890`、feature main run `33240920767` 均验证 137 tests 与最终 Project Payload/安装链。 |
 | R2 | Mutation 更适合作为 Owner 侧 Custom Instructions 的薄触发，并由当前源仓库规则承担 canonical 维护 | user:2026-08-29-runtime-user-surface | satisfied | 根 `AGENTS.md` 明确自己是 Mutation 意图/canonical Ownership 的源仓库唯一 Bootstrap Owner，并明确 Custom Instructions 仅作薄触发；ref16 承担完整维护细节。 |
-| R3 | 普通 Runtime 的正常研发路由、Reference 加载和安装 Contract 不能因收敛而丢失 | `.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md` | satisfied | Router 仍保留动态 Skill Catalog、Coding、Reference direct/Stub + `agent_skills_load_context`/SHA/`canonical_text`、Figma/Review/Docs、失败/权限/CI 边界；run `33240546365` 的 Linux onefile/MCP/install、Windows/macOS package/install 均成功。 |
-| R4 | Runtime/Project Payload/Skill 规则重组必须保持内容守恒与三平台 artifact 验证 | `.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md` | satisfied | Review 对旧 Router Mutation 章节逐项反查，发现 canonical 来源清单/ref13-ref14 条件路由遗漏；run `33240460722` 用第 137 条新增测试精确 Red，随后迁入 ref16；run `33240546365` 137 tests 与三平台产品链 Green。 |
+| R3 | 普通 Runtime 的正常研发路由、Reference 加载和安装 Contract 不能因收敛而丢失 | `.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md` | satisfied | Router 仍保留动态 Skill Catalog、Coding、Reference direct/Stub + `agent_skills_load_context`/SHA/`canonical_text`、Figma/Review/Docs、失败/权限/CI 边界；PR #40 run `33240848890` 与 main run `33240920767` 的 Linux onefile/MCP/install、Windows/macOS package/install 均成功。 |
+| R4 | Runtime/Project Payload/Skill 规则重组必须保持内容守恒与三平台 artifact 验证 | `.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md` | satisfied | Review 对旧 Router Mutation 章节逐项反查，发现 canonical 来源清单/ref13-ref14 条件路由遗漏；run `33240460722` 用第 137 条新增测试精确 Red，随后迁入 ref16；最终 Ready/PR/main 三轮三平台产品链均 Green。 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | 初始 Red run `33240068512`：136 tests 中仅新 Ownership 合同 5 条失败，其余 131 通过；实现后 `33240344112` 的 136 tests 全通过；Review Finding Red `33240460722`：137 tests 只有新增内容守恒迁移测试失败；最终 re-review Green `33240546365`：137 tests 全通过。 |
+| 行为 / Unit / Component | required | 初始 Red `33240068512`：136 tests 中仅新 Ownership 合同 5 条失败，其余 131 通过；Review Finding Red `33240460722`：137 tests 只有新增内容守恒迁移测试失败；最终 Ready `33240656403`、PR #40 `33240848890`、main `33240920767` 均 137 tests 全通过。 |
 | 接口 / Contract | required | root AGENTS / Runtime Router / managed block / ref13/ref14/ref16 Ownership 与触发边界有永久断言；Reference Stub filename/ID/SHA/MCP Contract 未修改；Router 仍为唯一 shared Router。 |
 | 集成 / Persistence / Runtime Dependency | required | 测试真实调用 `build_bundle(ROOT)` + `build_project_payload(ROOT,bundle)` 并解码最终 payload 文件；不是只做源文件字符串检查。 |
-| 用户 / Workflow Acceptance | required | `AGENTS.managed.md` 与 Router 普通用户面已收敛；onefile 项目安装后的 AGENTS/Router/Stub/MCP 链在 run `33240546365` 继续成功。 |
-| 跨组件 Golden Path | required | run `33240546365`：Linux onefile build/status/self-test → real stdio MCP → project-only install 全成功；Windows/macOS 对应 package/install 也成功。 |
+| 用户 / Workflow Acceptance | required | `AGENTS.managed.md` 与 Router 普通用户面已收敛；onefile 项目安装后的 AGENTS/Router/Stub/MCP 链在 PR #40 与 feature main 新鲜 CI 继续成功。 |
+| 跨组件 Golden Path | required | Final Ready、PR #40、feature main 均执行 Linux onefile build/status/self-test → real stdio MCP → project-only install；Windows/macOS 对应 package/install 也成功。 |
 | External Dependency / Provider Probe | not_applicable | 不依赖业务第三方 Provider；Custom Instructions 属宿主外部配置，本 Change 不修改产品设置。 |
-| Build / Package / Runtime | required | run `33240546365`：Linux onefile/MCP/install 成功；Runtime Windows Package 成功；Runtime macOS Package 成功。 |
-| Docs / Governance / Other | required | root AGENTS、Router、managed、ref13/ref14/ref16 targeted 同步；A1/A2、内容守恒 Review 与 Completion Audit 已完成；最终 Ready/PR/main/archive 仍按后续门禁执行。 |
+| Build / Package / Runtime | required | Final Ready `33240656403`、PR #40 `33240848890`、feature main `33240920767` 的 Linux onefile/MCP/install、Windows package/install、macOS package/install 均 success。 |
+| Docs / Governance / Other | required | root AGENTS、Router、managed、ref13/ref14/ref16 targeted 同步；A1/A2、内容守恒 Review、Completion Audit、Ready Gate、非 Draft PR、merge、main fresh CI 与独立 archive 均已建立。 |
 
 # Completion Audit
 
@@ -121,16 +121,21 @@ Custom Instructions 只负责把维护者的 Mutation 意图尽早引导回当�
 # TDD / 实施与验证证据
 
 1. 初始 Red：修改 `test_skill_mutation_canonical_ownership.py`，增加 Runtime Router、managed、ref13/ref14、ref16 以及真实 Project Payload 明文面断言。run `33240068512` 共 136 tests，仅 5 条新合同失败，其余 131 条通过。
-2. Green：删除 Router 的 82 行源仓库 Mutation 章节；managed 收敛为普通入口；root AGENTS 改为源仓库 Mutation 唯一 Bootstrap Owner；ref13/ref14/ref16 同步职责。run `33240344112` 的 136 tests 全通过，Linux onefile/MCP/install 与 macOS package/install 成功；Ready Gate 因 Change `in_progress` 预期失败。
+2. Green：删除 Router 的 82 行源仓库 Mutation 章节；managed 收敛为普通入口；root AGENTS 改为源仓库 Mutation 唯一 Bootstrap Owner；ref13/ref14/ref16 同步职责。run `33240344112` 的 136 tests 全通过；产品链 Green，仅 `in_progress` Ready Gate 预期失败。
 3. 测试边界修正：Reference Stub 必须继续保留 canonical filename/ID，所以全 Payload 禁止标记不包含 `16_规则内容守恒与Skill维护.md` 文件名；Router/managed 自身仍禁止这一维护入口，避免通过错误测试破坏 Stub Contract。
 4. 独立 Review 发现内容守恒缺口：旧 Router 11.2/11.3 中 canonical 明文来源、非 canonical 输入、固定 Mutation 入口与 ref13/ref14 条件路由尚未全部迁入源仓库维护 Owner。
-5. Review Finding Red：新增 `test_ref16_preserves_canonical_sources_and_conditional_runtime_routing`；run `33240460722` 共 137 tests，只有该新增测试失败，其余 136 通过，第一缺口为 `.agents/skills/<skill>/SKILL.md` canonical source 列表缺失。
+5. Review Finding Red：新增 `test_ref16_preserves_canonical_sources_and_conditional_runtime_routing`；run `33240460722` 共 137 tests，只有该新增测试失败，其余 136 通过。
 6. Finding 修复：把旧 Router 的 canonical 明文来源、非 canonical 输入、固定入口和 ref13/ref14 条件路由完整迁入 ref16；不恢复到 Runtime Router。
-7. Re-review Green：run `33240546365` 的 137 tests 全通过；Linux onefile/status/self-test、真实 stdio MCP、项目安装成功；Windows/macOS package/install 成功；唯一机器失败为本 Change 更新前 `in_progress` 的预期 Ready Gate。
+7. Re-review Green：run `33240546365` 的 137 tests 与三平台产品链成功；仅本 Change 更新前的 `in_progress` Ready Gate 预期失败。
+8. Final Ready：head `8634e63451f312490bb58d9e29786ee8a66292bc`，run `33240656403` 三个 Job 全部 success，Active Change Ready Gate success。
+9. Draft PR #39 因 GitHub 连接器 `Repository.fullDatabaseId` GraphQL schema 缺陷无法执行 Draft→Ready，已关闭且未合并；没有绕过 Draft 门禁。
+10. 同一 HEAD 创建非 Draft PR #40；run `33240848890` 三个 Job 全部 success，随后使用 `expected_head_sha` 正常合并。
+11. Feature merge commit `55018b969ee89e5721f04f70b68e98a0166c9668`；main push run `33240920767` 三个 Job 全部 success。
+12. 独立归档从 feature main 创建；先原样复制 Change，Active 与初始 Archive blob SHA 均为 `4ad0691c7143e61fdf3b1f247bf9b1f81343062e`，确认字节守恒后才删除 active 并把 archive 标记 `done`。
 
 # 独立 Review
 
-Review Target：Draft PR #39，base `9b0bd3df2575c2ca0db4ed9985dfb5af02d0b59b`，review/fix 后 head `eef03d208f561ee416a159df53aee979e63bc20f`。
+Review Target：Draft PR #39 / 同 HEAD 非 Draft PR #40，base `9b0bd3df2575c2ca0db4ed9985dfb5af02d0b59b`，最终 feature head `8634e63451f312490bb58d9e29786ee8a66292bc`。
 
 模式：review-and-fix；用户已授权按已确认 Ownership 方案修改并完成仓库交付。
 
@@ -183,15 +188,13 @@ Docs Impact：`targeted`。已同步 root `AGENTS.md`、Router、managed templat
 
 # Git / PR / Release 状态
 
-- branch: `fix/runtime-user-surface-mutation-boundary`
-- base: `main@9b0bd3df2575c2ca0db4ed9985dfb5af02d0b59b`
-- Draft PR: `#39`
-- initial Red: `33240068512`
-- pre-review Green: `33240344112`
-- Review Finding Red: `33240460722`
-- re-review Green: `33240546365`
-- final reviewed implementation head: `eef03d208f561ee416a159df53aee979e63bc20f`
-- Ready CI: 待本文件 `ready_for_review` 更新后的新 HEAD
-- merge: 未执行
-- main CI: 未执行
-- Release: 不触发；现有 `v1.0.0` 不修改
+- feature branch: `fix/runtime-user-surface-mutation-boundary`
+- feature base: `main@9b0bd3df2575c2ca0db4ed9985dfb5af02d0b59b`
+- Draft PR #39: closed, unmerged；Draft→Ready 连接器 GraphQL schema 缺陷未绕过。
+- non-Draft PR #40: CI `33240848890` 三个 Job success，已正常合并。
+- final feature head: `8634e63451f312490bb58d9e29786ee8a66292bc`
+- feature merge: `55018b969ee89e5721f04f70b68e98a0166c9668`
+- feature main CI: `33240920767` 三个 Job success。
+- archive branch: `chore/archive-runtime-mutation-governance`；初始 active→archive blob SHA 精确一致后删除 active，本文件已 `status: done`。
+- archive PR/main final CI: 由独立归档 PR 继续验证，不修改产品文件。
+- Release: 未触发；`VERSION` 与现有 `v1.0.0` Release 均未修改。
