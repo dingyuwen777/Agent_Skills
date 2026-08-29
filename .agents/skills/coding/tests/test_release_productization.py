@@ -110,7 +110,7 @@ class ReleaseProductizationTest(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("bash"), "需要 bash 验证 Release Shell 语义")
     def test_release_checksum_step_hashes_only_expected_assets(self) -> None:
-        """checksum step 必须真实生成四条正式资产校验且不能包含输出文件自身。"""
+        """checksum step 必须只校验四个正式资产并排除输出文件与其他临时文件。"""
         script = _extract_workflow_run_block("Generate SHA256SUMS")
         version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
         expected_assets = (
@@ -125,6 +125,7 @@ class ReleaseProductizationTest(unittest.TestCase):
             release_assets.mkdir()
             for index, asset in enumerate(expected_assets):
                 (release_assets / asset).write_bytes(f"release-asset-{index}".encode("utf-8"))
+            (release_assets / "unexpected.tmp").write_text("temporary", encoding="utf-8")
 
             env = os.environ.copy()
             env["RELEASE_VERSION"] = version
@@ -144,6 +145,7 @@ class ReleaseProductizationTest(unittest.TestCase):
             checksum_lines = (release_assets / "SHA256SUMS").read_text(encoding="utf-8").splitlines()
             self.assertEqual(len(checksum_lines), 4)
             self.assertFalse(any(line.endswith("  SHA256SUMS") for line in checksum_lines))
+            self.assertFalse(any(line.endswith("  unexpected.tmp") for line in checksum_lines))
             for asset in expected_assets:
                 self.assertEqual(sum(line.endswith(f"  {asset}") for line in checksum_lines), 1)
 
