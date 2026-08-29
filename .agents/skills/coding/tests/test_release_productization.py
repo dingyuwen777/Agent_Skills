@@ -72,6 +72,20 @@ class ReleaseProductizationTest(unittest.TestCase):
         for obsolete in ("agent-skills-full-kit", "runtime-kit", "--generate-notes"):
             self.assertNotIn(obsolete, workflow.lower() if obsolete == "runtime-kit" else workflow)
 
+    def test_release_upload_sources_are_not_hidden(self) -> None:
+        """三平台 artifact 上传源必须位于非隐藏目录，避免被 upload-artifact 默认排除。"""
+        workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        self.assertNotIn(".release-assets", workflow)
+        for marker in (
+            'cp "${artifact}" "release-assets/agent-skills-mcp-v${RELEASE_VERSION}-linux"',
+            'Copy-Item $artifact "release-assets\\agent-skills-mcp-v$env:RELEASE_VERSION-windows.exe"',
+            'cp "${artifact}" "release-assets/agent-skills-mcp-v${RELEASE_VERSION}-macos"',
+            "path: release-assets/agent-skills-mcp-v*-linux",
+            "path: release-assets/agent-skills-mcp-v*-windows.exe",
+            "path: release-assets/agent-skills-mcp-v*-macos",
+        ):
+            self.assertIn(marker, workflow)
+
     def test_user_guide_is_final_user_only(self) -> None:
         """USAGE 必须是纯用户操作说明，不混入源码维护、内部 Contract 或治理术语。"""
         usage = (ROOT / "USAGE.md").read_text(encoding="utf-8")
