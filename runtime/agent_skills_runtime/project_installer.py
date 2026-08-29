@@ -494,13 +494,21 @@ def install_project(
     for path in text_paths:
         _ensure_path_not_symlink(target, path)
 
-    runtime_command = str(runtime_target)
+    cursor_runtime_command = (
+        "${workspaceFolder}${pathSeparator}.agents${pathSeparator}runtime${pathSeparator}" + runtime_name
+    )
+    claude_runtime_command = f"${{CLAUDE_PROJECT_DIR:-.}}/.agents/runtime/{runtime_name}"
+    codex_runtime_command = runtime_relative
     text_updates = {
         agents_path: _updated_agents_content(target, _existing_bytes(agents_path), payload_files),
         gitignore_path: _updated_gitignore(_existing_bytes(gitignore_path)),
-        cursor_path: _updated_json_mcp(_existing_bytes(cursor_path), runtime_command, owned, ".cursor/mcp.json"),
-        claude_mcp_path: _updated_json_mcp(_existing_bytes(claude_mcp_path), runtime_command, owned, ".mcp.json"),
-        codex_path: _updated_codex_config(_existing_bytes(codex_path), runtime_command, owned),
+        cursor_path: _updated_json_mcp(
+            _existing_bytes(cursor_path), cursor_runtime_command, owned, ".cursor/mcp.json"
+        ),
+        claude_mcp_path: _updated_json_mcp(
+            _existing_bytes(claude_mcp_path), claude_runtime_command, owned, ".mcp.json"
+        ),
+        codex_path: _updated_codex_config(_existing_bytes(codex_path), codex_runtime_command, owned),
         claude_md_path: _updated_claude_md(_existing_bytes(claude_md_path)),
         manifest_path: _build_manifest(project_payload, release_version, runtime_relative),
     }
