@@ -133,3 +133,124 @@ Figma READY / READY_WITH_NOTES
 ```
 
 任一路径断开，都不能用“规则文件仍存在”作为内容守恒完成证据。
+
+## 7. Skill Mutation 与 canonical 仓库内容守恒
+
+本节处理通过 Router 命中的 **Skill Mutation**：新增、修改、删除、重命名 Skill / Reference，规则迁移、拆分、合并、通用化，以及跨仓库把可复用规则同步到 canonical Skill。
+
+通用 Skill 的 canonical 源仓库是：
+
+```text
+dingyuwen777/Agent_Skills
+```
+
+目标项目、Runtime 本地安装副本、Reference Stub、缓存或历史聊天可以提供需求背景与验证证据，但不能取代 Agent_Skills 当前源码作为 canonical 写入事实源。Mutation 执行前必须重新读取 Agent_Skills 当前目标分支真实内容，不能拿目标项目里的旧副本反向覆盖 canonical 规则。
+
+### 7.1 universal 与项目特定事实必须先分离
+
+跨仓库同步前先把输入拆成两类：
+
+```text
+可跨项目复用的研发方法 / 失败处理 / 验证责任 / 通用流程
+→ 可以进入 Agent_Skills canonical Skill
+
+项目特定技术栈 / 业务字段 / Provider / Prompt / Schema / Migration /
+部署环境 / 品牌 / 页面尺寸 / 业务 Design Token / 项目 CI 事实
+→ 留在目标项目正式 Owner
+```
+
+不能因为用户说“同步到 Skill”就把整段项目事实原样搬入通用 Skill。只有能证明跨项目成立的部分才进入 canonical 规则；无法安全抽取通用部分时，不做 Skill 变更并明确说明依据。
+
+### 7.2 新增 Skill
+
+**新增 Skill** 至少检查：
+
+1. 正式入口为 `.agents/skills/<name>/SKILL.md`；目录名、frontmatter `name` 与现有动态发现 Contract 一致；
+2. 不在 Runtime、Project Payload、manifest、Workflow 或测试里新增固定完整 Skill 白名单；正式集合继续从 `.agents/skills/*/SKILL.md` **动态发现**；
+3. 如果 `.agents/skills/ROUTER.md` 展示“当前 Catalog”，同步这个人类可读导航，但明确它不是分发白名单；
+4. 新 Skill 的职责必须与现有 Owner 去重；需要跨 Skill Handoff 时明确触发和回程，不复制另一 Skill 的完整细则；
+5. 新 Skill 有 references 时验证文件名、编号前缀和 Stable Reference ID 唯一性；没有 references 也必须能被 Catalog/Project Payload 正确发现；
+6. 永久测试至少证明 Bundle、公开 Catalog、Project Payload、Installer/manifest 能通过动态发现携带新 Skill；
+7. 新规则不得内嵌来源项目的项目特定事实。
+
+### 7.3 删除 Skill
+
+**删除 Skill** 不是只删一个目录。实施前至少反向检查：
+
+```text
+Router 当前 Catalog / Handoff
+→ Coding / Review / Docs / Figma 或其他 Skill 中的 live 引用
+→ Reference links / Stable ID consumer
+→ Project Payload / Bundle / Installer / manifest 测试
+→ README / Runtime 文档 / Workflow / 测试
+```
+
+规则：
+
+- 删除前证明该 Skill 的仍有效规则已经迁入新的正式 Owner，或明确其能力确实整体退役；不能把“目录删了”当内容守恒证据；
+- 清除所有指向不存在 Skill 的 **live 引用** 和 Handoff；历史 Change/archive 中的旧路径保留为历史事实，不为追求全文搜索零结果改写历史；
+- Runtime/Project Payload 必须通过动态发现自然停止分发该 Skill，不为删除操作新增反向静态黑名单；
+- 目标项目中同名但未被 Agent_Skills install manifest 认领的项目自有 Skill 仍受项目 Ownership 保护，不能因为 canonical Skill 删除而清理；
+- 永久测试证明新 Catalog/Bundle/Payload 不再包含已删除 Skill，并保持其他 Skills 不受影响。
+
+### 7.4 重命名 Skill
+
+**重命名 Skill** 按“旧 Skill 删除 + 新 Skill 建立 + Contract 迁移”处理，不是单纯 `git mv`：
+
+- 更新 `.agents/skills/<name>/SKILL.md` 路径、frontmatter `name`、Router 当前 Catalog 与所有 live 引用；
+- 编号 Reference 的稳定 ID 使用 `<skill>.reference.<两位数字>`，因此 Skill 名变化可能改变 Reference ID namespace；这属于 Runtime Contract 影响，必须读取 ref14 并明确是否存在兼容/迁移要求，不能静默破坏 Stub/MCP consumer；
+- 同步审查 Bundle、Project Payload、Stub、Installer/manifest ownership 和 Release 运行时可达性；
+- 不保留没有明确兼容需求的影子目录、复制件或第二份 canonical Skill；
+- 旧名称若必须暂时兼容，必须把时限、Owner、删除条件和验证写进 Change，不能把兼容复制件无限期保留。
+
+### 7.5 Reference 新增、删除与重命名
+
+**新增 Reference**：
+
+- `SKILL.md` 必须保留能在执行相应动作前命中该 Reference 的明确触发；
+- 编号 Reference 的两位数字前缀在同一 Skill 内唯一，避免 Stable ID 冲突；
+- canonical 原始 UTF-8 bytes、SHA256、size、Bundle exact-text 与 Runtime Stub 加载都进入验证；
+- 新增正文必须真实承载必要细则，不能只为拆文件制造空壳 reference。
+
+**删除 Reference**：
+
+- 先反向检查 `SKILL.md`、其他 references、Router、测试和 live 文档是否仍指向它；
+- 仍有效规则必须先迁到新的 canonical Owner，再删除旧文件；
+- 删除后验证 Bundle/Stub 不再暴露该 Reference，且没有用历史聊天或旧 Stub 继续执行的路径。
+
+**重命名 Reference**：
+
+- 同步更新所有 live 链接；
+- 如果两位数字前缀变化导致 Stable Reference ID 变化，按 Runtime Contract 变化读取 ref14；
+- 不能只改显示文件名却遗漏 Stub、Bundle metadata、测试或触发链。
+
+### 7.6 修改、拆分、合并和通用化
+
+对现有 Skill/Reference 的规则修改继续遵守本文件第 1–5 节：
+
+- 修改规则不得静默丢掉旧触发、例外、失败/停止处理、验证责任、安全和兼容边界；
+- 拆分规则必须保留主入口触发，不能把关键硬规则藏到永远不会被加载的文件；
+- 合并规则只能在逐项证明语义完全覆盖后消除重复；
+- 通用化只允许移除/条件化项目假设，不得降低原规则强度；
+- 从某目标项目抽取规则时，必须再次检查项目特定事实是否已被剥离。
+
+### 7.7 Mutation 完成验证
+
+Skill Mutation 完成前至少形成：
+
+```text
+用户 Mutation 意图
+→ canonical Agent_Skills 当前源码
+→ universal / project-specific Ownership 判断
+→ 受影响 Skill / Reference / Router / Contract
+→ 内容守恒或明确退役依据
+→ live 引用反向检查
+→ 动态发现 / Bundle / Project Payload（适用时）
+→ Runtime Stub / MCP exact-text/hash（适用时）
+→ targeted tests
+→ full self-contained tests
+→ 独立 Review
+→ CI / PR / main 新鲜 CI / archive
+```
+
+Custom Instructions、Project instructions 或目标项目中的安装副本只可以帮助触发/提供上下文，不能替代上述 canonical 源码与交付证据。没有 Agent_Skills 所需读写权限或无法执行仓库门禁时，明确标记未同步/未交付，不得把本地修改或自然语言答复冒充 canonical Skill 已更新。
