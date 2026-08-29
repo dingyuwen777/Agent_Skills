@@ -100,14 +100,14 @@ jobs:
           test -x "${target}/.agents/runtime/agent-skills-mcp"
           python3 scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
 
-          mkdir -p .release-assets
-          cp "${artifact}" ".release-assets/agent-skills-mcp-v${RELEASE_VERSION}-linux"
+          mkdir -p release-assets
+          cp "${artifact}" "release-assets/agent-skills-mcp-v${RELEASE_VERSION}-linux"
 
       - name: Upload Linux binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-linux
-          path: .release-assets/agent-skills-mcp-v*-linux
+          path: release-assets/agent-skills-mcp-v*-linux
           if-no-files-found: error
           compression-level: 0
 
@@ -146,14 +146,14 @@ jobs:
           python scripts/runtime_mcp_smoke.py --artifact $installedRuntime --json
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime MCP smoke 失败" }
 
-          New-Item -ItemType Directory -Force -Path .release-assets | Out-Null
-          Copy-Item $artifact ".release-assets\agent-skills-mcp-v$env:RELEASE_VERSION-windows.exe"
+          New-Item -ItemType Directory -Force -Path release-assets | Out-Null
+          Copy-Item $artifact "release-assets\agent-skills-mcp-v$env:RELEASE_VERSION-windows.exe"
 
       - name: Upload Windows binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-windows
-          path: .release-assets/agent-skills-mcp-v*-windows.exe
+          path: release-assets/agent-skills-mcp-v*-windows.exe
           if-no-files-found: error
           compression-level: 0
 
@@ -190,14 +190,14 @@ jobs:
           test -x "${target}/.agents/runtime/agent-skills-mcp"
           python3 scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
 
-          mkdir -p .release-assets
-          cp "${artifact}" ".release-assets/agent-skills-mcp-v${RELEASE_VERSION}-macos"
+          mkdir -p release-assets
+          cp "${artifact}" "release-assets/agent-skills-mcp-v${RELEASE_VERSION}-macos"
 
       - name: Upload macOS binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-macos
-          path: .release-assets/agent-skills-mcp-v*-macos
+          path: release-assets/agent-skills-mcp-v*-macos
           if-no-files-found: error
           compression-level: 0
 
