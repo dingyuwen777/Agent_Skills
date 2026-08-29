@@ -110,7 +110,7 @@ AGENTS.managed.md
 | R2 | 修改/删除规则、Reference、新增/删除/重命名 Skill 等属于同一 Mutation 路由 | user:current-request | satisfied | Router 11.1/11.5 + ref16 第 7 节；对应 Mutation preservation 回归在 run #238/#239 通过 |
 | R3 | Agent_Skills 独立作为 canonical Skill 仓库维护，项目本地不维护第二份 canonical 明文 | user:current-request | satisfied | Router 11.2 明确 canonical/noncanonical；managed block 指向 Router 且禁止本地安装副本反向维护；Project Payload exact-text 回归通过 |
 | R4 | 项目特定事实不能污染通用 Skill，项目自有 Skill/只改项目规则时不跨仓库写 | user:current-request | satisfied | 根 AGENTS 第 4 节、Router 11.1/11.4、ref16 7.1；永久测试覆盖 project-specific / project-owned boundary |
-| R5 | Runtime 安装态继续可用且不变成 Skill 写入 Owner | current ref13/ref14 + Runtime Contract | satisfied | ref13/ref14 保持分发 Owner；Runtime 代码/schema 无 diff；run #238/#239 Linux onefile/MCP/install 和 Windows/macOS package/install 全部通过 |
+| R5 | Runtime 安装态继续可用且不变成 Skill 写入 Owner | .agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md | satisfied | ref13/ref14 保持分发 Owner；Runtime 代码/schema 无 diff；run #238/#239 Linux onefile/MCP/install 和 Windows/macOS package/install 全部通过 |
 | R6 | 无 Agent_Skills 写权限时不得假装已自动同步 | user:current-request + Git/权限边界 | satisfied | 根 AGENTS 4.6、Router 11.3、ref16 7.7 明确 fail closed/未同步；未赋予 Runtime 或 Custom Instructions 新权限 |
 
 # Validation Matrix
