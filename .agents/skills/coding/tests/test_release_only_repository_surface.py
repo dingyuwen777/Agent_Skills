@@ -18,7 +18,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         return (ROOT / relative).read_text(encoding="utf-8")
 
     def test_end_user_has_one_release_usage_document(self) -> None:
-        """最终用户只需要根 USAGE，不应依赖源码维护文档或 Skill README。"""
+        """最终用户只需要根 USAGE，且用户说明不得暴露源码维护或内部 Runtime Contract。"""
         usage = ROOT / "USAGE.md"
         self.assertTrue(usage.is_file(), "缺少最终 Release 用户唯一说明 USAGE.md")
         text = usage.read_text(encoding="utf-8")
@@ -30,24 +30,37 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             "status --json",
             "self-test --json",
             "升级",
-            "回滚",
+            "回退",
             "Codex",
             "Cursor",
             "Claude Code",
         ):
             self.assertIn(marker, text)
         for maintainer_only in (
+            "源仓库",
+            "维护者",
+            "canonical",
+            "Reference Stub",
+            "Runtime Stub",
+            "Project Payload",
+            "managed block",
+            ".agents/",
+            "SKILL.md",
+            "references/",
             "scripts/build_runtime.py",
             "build_full_distribution.py",
             "PyInstaller",
+            "AES-GCM",
+            "onefile",
             ".agents/changes",
             "Completion Audit",
             "Change Archive",
-            "python -m pip",
-            "canonical Reference",
-            "Project Payload",
-            "Runtime Stub",
             "coding/scripts/",
+            "fallback",
+            "历史不兼容开发版",
+            "local stdio",
+            "Remote MCP",
+            "安全隧道",
         ):
             self.assertNotIn(maintainer_only, text)
 
@@ -84,7 +97,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             self.assertFalse((ROOT / relative).exists(), f"旧分发入口仍存在：{relative}")
 
     def test_coding_python_helpers_remain_runtime_assets_without_leaking_internal_paths_to_usage(self) -> None:
-        """单 binary 安装不能误删 Coding helper；最终用户只需知道必要的 Python 前提与降级边界。"""
+        """单 binary 仍携带 Coding helper，但最终用户只看到必要的环境提示，不暴露内部降级设计。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         paths = {entry["path"] for entry in payload["files"]}
@@ -92,10 +105,11 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertIn("coding/scripts/ready_check.py", paths)
 
         usage = self._read("USAGE.md")
-        self.assertIn("安装和 MCP Runtime 本身不需要 Python", usage)
-        self.assertIn("部分 Coding 流程", usage)
-        self.assertIn("没有可用 Python", usage)
-        self.assertIn("fallback", usage)
+        self.assertIn("安装和基础运行无需预装 Python", usage)
+        self.assertIn("如具体任务需要额外环境", usage)
+        self.assertNotIn("部分 Coding 流程", usage)
+        self.assertNotIn("机器检查", usage)
+        self.assertNotIn("fallback", usage)
         self.assertNotIn("coding.py", usage)
         self.assertNotIn("ready_check.py", usage)
 

@@ -73,16 +73,28 @@ class ReleaseProductizationTest(unittest.TestCase):
             self.assertNotIn(obsolete, workflow.lower() if obsolete == "runtime-kit" else workflow)
 
     def test_user_guide_is_final_user_only(self) -> None:
-        """USAGE 必须是最终用户操作说明，不混入源码构建和 Change 治理。"""
+        """USAGE 必须是纯用户操作说明，不混入源码维护、内部 Contract 或治理术语。"""
         usage = (ROOT / "USAGE.md").read_text(encoding="utf-8")
-        for marker in ("Windows", "Linux", "macOS", "升级", "回滚", "status --json", "self-test --json"):
+        for marker in ("Windows", "Linux", "macOS", "升级", "回退", "status --json", "self-test --json"):
             self.assertIn(marker, usage)
         for maintainer_only in (
+            "源仓库",
+            "维护者",
+            "canonical",
+            "Reference Stub",
+            "Project Payload",
+            "managed block",
+            ".agents/",
+            "SKILL.md",
             "scripts/build_runtime.py",
             ".agents/changes",
             "Completion Audit",
             "PyInstaller",
-            "python -m pip",
+            "AES-GCM",
+            "onefile",
+            "fallback",
+            "local stdio",
+            "Remote MCP",
         ):
             self.assertNotIn(maintainer_only, usage)
 
