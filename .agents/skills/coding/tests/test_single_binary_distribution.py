@@ -9,7 +9,8 @@ from pathlib import Path
 
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime.crypto import encrypt_bundle, generate_bundle_key
-from runtime.agent_skills_runtime.project_payload import build_project_payload, decode_payload_file
+from runtime.agent_skills_runtime.project_payload import build_project_payload
+from runtime.agent_skills_runtime import server
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -32,8 +33,8 @@ BUILD_RUNTIME = _load_module("single_binary_builder_under_test", BUILD_RUNTIME_P
 class SingleBinaryDistributionTest(unittest.TestCase):
     """验证 Runtime 正式分发已收敛为自包含 binary，而不是外部 Runtime Kit。"""
 
-    def test_embedded_payload_contains_all_skills_and_only_reference_stubs(self) -> None:
-        """构建时必须把全部动态 Skill payload 与加密 Reference 一起嵌入 binary material。"""
+    def test_embedded_payload_contains_all_skill_cores_and_no_reference_stubs(self) -> None:
+        """Project Payload 必须动态包含 Skill Core，但不能复制任何 Reference 或 Stub。"""
         bundle = build_bundle(ROOT)
         project_payload = build_project_payload(ROOT, bundle)
         serialized_bundle = json.dumps(bundle, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -49,20 +50,16 @@ class SingleBinaryDistributionTest(unittest.TestCase):
         self.assertEqual(restored_payload["skills"], project_payload["skills"])
         self.assertEqual(restored_payload["payload_digest"], project_payload["payload_digest"])
         self.assertEqual(embedded.RELEASE_VERSION, "1.2.3")
+        self.assertIsNone(embedded.SOURCE_COMMIT)
         paths = {str(entry["path"]): entry for entry in restored_payload["files"]}
         for skill in project_payload["skills"]:
             self.assertIn(f"{skill}/SKILL.md", paths)
 
-        canonical_by_path = {
-            f"{entry['skill']}/references/{entry['filename']}": entry for entry in bundle["references"]
-        }
-        for path, reference in canonical_by_path.items():
-            self.assertIn(path, paths)
-            stub_text = decode_payload_file(paths[path]).decode("utf-8")
-            self.assertIn(reference["id"], stub_text)
-            self.assertIn(reference["sha256"], stub_text)
-            self.assertIn("agent_skills_load_context", stub_text)
-            self.assertNotIn(reference["content"], stub_text)
+        self.assertFalse(any("/references/" in path for path in paths))
+        payload_text = json.dumps(restored_payload, ensure_ascii=False)
+        self.assertNotIn("路由清单", payload_text)
+        for reference in bundle["references"]:
+            self.assertNotIn(reference["content"], payload_text)
 
     def test_runtime_builder_has_no_external_runtime_kit_install_path(self) -> None:
         """正式 Runtime Builder 不得继续生成 Python 安装脚本或外部 payload Kit。"""
@@ -74,6 +71,24 @@ class SingleBinaryDistributionTest(unittest.TestCase):
         self.assertNotIn("runtime-kit", source)
         self.assertIn("PROJECT_PAYLOAD_B64", source)
         self.assertIn("build_project_payload", source)
+
+    def test_embedded_source_commit_preserves_null_and_rejects_invalid_identity(self) -> None:
+        """非 Git build 的 null 不能变成字符串，非法 commit 也不能进入公开 Runtime identity。"""
+        self.assertIsNone(server._normalise_source_commit(None))
+        self.assertEqual(server._normalise_source_commit("a" * 40), "a" * 40)
+        with self.assertRaises(ValueError):
+            server._normalise_source_commit("None")
+
+    def test_generated_entrypoint_forces_utf8_before_chinese_cli_json(self) -> None:
+        """onefile 入口必须在调用 server.main 前固定 UTF-8，避免 Windows 中文 JSON 键损坏。"""
+        with tempfile.TemporaryDirectory() as directory:
+            entrypoint = Path(directory) / "entrypoint.py"
+            BUILD_RUNTIME._write_entrypoint(entrypoint)
+            text = entrypoint.read_text(encoding="utf-8")
+
+        self.assertIn('sys.stdout.reconfigure(encoding="utf-8")', text)
+        self.assertIn('sys.stderr.reconfigure(encoding="utf-8")', text)
+        self.assertLess(text.index("reconfigure"), text.index("main()"))
 
 
 if __name__ == "__main__":

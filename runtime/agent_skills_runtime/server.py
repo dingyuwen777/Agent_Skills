@@ -6,6 +6,7 @@ import argparse
 import base64
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any, Mapping, Sequence
 
@@ -19,11 +20,23 @@ from .runtime import RuntimeStore
 _STORE: RuntimeStore | None = None
 _PROJECT_PAYLOAD: dict[str, Any] | None = None
 _RELEASE_VERSION: str | None = None
+_SOURCE_COMMIT: str | None = None
+_COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+
+
+def _normalise_source_commit(value: Any) -> str | None:
+    """保留非 Git build 的 null，并校验可公开的完整 source commit。"""
+    if value is None:
+        return None
+    commit = str(value).strip().lower()
+    if not _COMMIT_PATTERN.fullmatch(commit):
+        raise ValueError("内嵌 source_commit 必须是 null 或 40 位十六进制 commit")
+    return commit
 
 
 def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
     """从构建时内嵌内容恢复 RuntimeStore、Project Payload 与 Release Version。"""
-    global _STORE, _PROJECT_PAYLOAD, _RELEASE_VERSION
+    global _STORE, _PROJECT_PAYLOAD, _RELEASE_VERSION, _SOURCE_COMMIT
     if _STORE is not None and _PROJECT_PAYLOAD is not None and _RELEASE_VERSION is not None:
         return _STORE, _PROJECT_PAYLOAD, _RELEASE_VERSION
     try:
@@ -32,6 +45,7 @@ def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
             BUNDLE_KEY_B64,
             PROJECT_PAYLOAD_B64,
             RELEASE_VERSION,
+            SOURCE_COMMIT,
         )
     except ImportError as error:
         raise RuntimeError("当前源码树没有内嵌 Runtime/Project Payload；请先执行 scripts/build_runtime.py") from error
@@ -58,10 +72,12 @@ def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
         raise RuntimeError("内嵌 release_version 不能为空")
     _PROJECT_PAYLOAD = project_payload
     _RELEASE_VERSION = release_version
+    _SOURCE_COMMIT = _normalise_source_commit(SOURCE_COMMIT)
     _STORE = RuntimeStore(
         bundle,
         release_version=release_version,
         payload_digest=str(project_payload["payload_digest"]),
+        source_commit=_SOURCE_COMMIT,
     )
     return _STORE, _PROJECT_PAYLOAD, _RELEASE_VERSION
 
@@ -91,36 +107,41 @@ def create_mcp_server():
     mcp = MCPServer(
         "Agent Skills Runtime",
         instructions=(
-            "提供 Agent_Skills canonical Reference 上下文。"
-            "先依据目标项目 AGENTS 与 Core Skill 判断命中的逻辑 Reference ID，"
-            "再调用 agent_skills_load_context；返回的 canonical_text 是正式原文，不能用 stub 或旧记忆替代。"
+            "提供 Agent_Skills Runtime Mode 的同源路由与 canonical Reference 完整原文。"
+            "先读取公开 route contract，开始任务并提交中文 Task Route，再只按当前路由令牌加载 required Context。"
+            "完整原文是正式规则；不得用旧记忆、摘要或目标项目同名 Reference 替代。"
         ),
     )
 
     @mcp.tool()
     def agent_skills_status() -> dict[str, Any]:
-        """返回 Runtime/Skill/Bundle 版本、源摘要和当前任务状态，不返回规则正文。"""
+        """返回必要版本身份与任务汇总状态，不枚举 Reference、文件名或路径。"""
         return _load_embedded_store().status()
 
     @mcp.tool()
-    def agent_skills_manifest(skill: str | None = None) -> dict[str, Any]:
-        """列出指定 Skill 的 Reference 逻辑 ID、文件名、SHA256 和大小，不返回正文。"""
-        return _load_embedded_store().manifest(skill)
+    def agent_skills_route_contract() -> dict[str, Any]:
+        """返回当前中文 Task Route 词汇与公开 Skill，不返回私有 Reference mapping。"""
+        return _load_embedded_store().route_contract()
 
     @mcp.tool()
-    def agent_skills_start_task(task_id: str, phase: str = "planning") -> dict[str, Any]:
-        """开始或重置当前研发任务，并清空此前任务已经加载的 Reference 状态。"""
-        return _load_embedded_store().start_task(task_id, phase)
+    def agent_skills_start_task(任务标识: str, 阶段: str = "规划") -> dict[str, Any]:
+        """开始或显式重置当前任务，并清空此前 task 的 route 与披露状态。"""
+        return _load_embedded_store().start_task(任务标识, 阶段)
 
     @mcp.tool()
-    def agent_skills_load_context(ids: list[str]) -> dict[str, Any]:
-        """按稳定逻辑 ID 返回 canonical Reference 原文与 SHA256，并记录为当前任务已加载。"""
-        return _load_embedded_store().load_context(ids)
+    def agent_skills_submit_route(任务标识: str, 任务路由: dict[str, Any]) -> dict[str, Any]:
+        """校验中文 Task Route，并计算单调扩展后的 required Context 与不透明路由令牌。"""
+        return _load_embedded_store().submit_route(任务标识, 任务路由)
 
     @mcp.tool()
-    def agent_skills_checkpoint(required_ids: list[str], phase: str | None = None) -> dict[str, Any]:
-        """检查当前阶段要求的 Reference 是否全部加载，并报告 missing_ids。"""
-        return _load_embedded_store().checkpoint(required_ids, phase)
+    def agent_skills_load_required_context(路由令牌: str, 重新加载: bool = False) -> dict[str, Any]:
+        """只返回当前 route required 的完整原文；默认跳过本 task 已加载 Context。"""
+        return _load_embedded_store().load_required_context(路由令牌, reload=重新加载)
+
+    @mcp.tool()
+    def agent_skills_checkpoint(路由令牌: str, 阶段: str | None = None) -> dict[str, Any]:
+        """检查 Runtime 内部 required Context 是否全加载，并可更新当前阶段。"""
+        return _load_embedded_store().checkpoint(路由令牌, 阶段)
 
     return mcp
 
@@ -155,11 +176,10 @@ def _self_test_payload() -> dict[str, Any]:
     result = store.self_test()
     result.update(
         {
-            "ok": True,
-            "release_version": release_version,
-            "payload_schema": project_payload["schema"],
-            "payload_digest": project_payload["payload_digest"],
-            "payload_file_count": len(project_payload["files"]),
+            "通过": True,
+            "Release版本": release_version,
+            "Payload协议": project_payload["schema"],
+            "Payload摘要": project_payload["payload_digest"],
         }
     )
     return result

@@ -3,6 +3,14 @@ name: coding
 description: 面向不同项目形态、研发阶段和编程语言的可靠软件研发工作流。先恢复仓库当前事实，再按项目形态、研发阶段/任务类型、编程语言/工具链和风险等级 L1-L3 组合路由；依据真实 Contract、Schema、数据、模块边界和项目规则执行需求设计、功能开发、Bug 修复、重构、Review、CI、Git 与交付验证。保留可失效项目导航、Git 可见 Change、Requirement Traceability、Completion Audit、Red-Green-Refactor、根因调试、分层验证、多人协作和新鲜证据门禁。Use for repository onboarding, greenfield bootstrap, planning, implementation, debugging, refactoring, review, verified delivery, release work, and parallel human or agent coding across languages and project types.
 ---
 
+<!-- agent-routing:v1
+{
+  "协议": "Agent Skills Skill路由/v1",
+  "Skill": "coding",
+  "触发": {"任一": [{"包含": {"维度": "执行模式", "取值": ["只读分析", "诊断", "方案", "实现", "审查", "验证", "Git", "发布", "运维"]}}, {"包含": {"维度": "项目形态", "取值": ["Greenfield", "CLI", "前端Web", "后端服务", "全栈应用", "移动应用", "桌面应用"]}}, {"包含": {"维度": "风险", "取值": ["L1", "L2", "L3"]}}, {"包含": {"维度": "授权", "取值": ["允许只读", "允许修改项目", "允许测试", "允许 Git", "允许发布"]}}]}
+}
+-->
+
 # Coding
 
 把自然语言研发请求转化为一个可追溯、可验证的交付闭环：
@@ -172,7 +180,7 @@ Greenfield 表示工程事实尚未建立或只建立了一部分。此时先确
 | 多人、多 Agent、多个分支或 Active Change 并行 | [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md) |
 | Review、Ready、交付或准备表达完成结论 | [11_两阶段复核与完成前验证.md](references/11_两阶段复核与完成前验证.md) |
 | 首次安装/升级 Agent_Skills、创建/补充目标项目 AGENTS 或修复 managed block | [13_目标项目安装与AGENTS_Bootstrap.md](references/13_目标项目安装与AGENTS_Bootstrap.md) |
-| Runtime Bundle/Stub/MCP/Kit 或 `--mode runtime` 分发 | [14_本地MCP_Runtime分发与原文上下文加载.md](references/14_本地MCP_Runtime分发与原文上下文加载.md) |
+| Runtime Bundle/Routing Manifest/Task Route/MCP/Project Payload/安装升级或 Release identity | [14_本地MCP_Runtime分发与原文上下文加载.md](references/14_本地MCP_Runtime分发与原文上下文加载.md) |
 | Git/PR/Release/Delivery、依赖变化、安全边界、最终交付报告或宿主能力降级 | [15_Git交付依赖安全与宿主能力边界.md](references/15_Git交付依赖安全与宿主能力边界.md) |
 | Skill/reference/模板/项目 Overlay 的精简、重组、拆分、合并、改名、迁移或通用化 | [16_规则内容守恒与Skill维护.md](references/16_规则内容守恒与Skill维护.md) |
 

@@ -15,7 +15,8 @@ from typing import Any, Mapping
 from .project_payload import decode_payload_file, validate_project_payload
 
 
-INSTALL_SCHEMA = "agent-skills-install/v2"
+INSTALL_SCHEMA = "agent-skills-install/v3"
+LEGACY_INSTALL_SCHEMA = "agent-skills-install/v2"
 INSTALL_MANIFEST_PATH = Path(".agents") / "agent-skills-install.json"
 AGENTS_MANAGED_START = "<!-- agent-skills:managed:start -->"
 AGENTS_MANAGED_END = "<!-- agent-skills:managed:end -->"
@@ -28,6 +29,12 @@ RUNTIME_IGNORE_RULE = "/.agents/runtime/"
 SKILL_ROUTER_ASSET = "ROUTER.md"
 _SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _CODEX_SERVER_PATTERN = re.compile(r"(?m)^\s*\[mcp_servers\.agent-skills\]\s*$")
+_LEGACY_STUB_MARKERS = (
+    "# Agent Skills Runtime Reference",
+    "Runtime ID:",
+    "Expected SHA256:",
+    "agent_skills_load_context",
+)
 _FACT_SOURCE_NAMES = {
     "AGENTS.md",
     "CONTRIBUTING.md",
@@ -245,7 +252,7 @@ def _load_install_manifest(path: Path) -> dict[str, Any] | None:
         manifest = json.loads(path.read_text(encoding="utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ValueError("现有 Agent Skills install manifest 损坏，拒绝猜测 managed ownership") from error
-    if not isinstance(manifest, dict) or manifest.get("schema") != INSTALL_SCHEMA:
+    if not isinstance(manifest, dict) or manifest.get("schema") not in {INSTALL_SCHEMA, LEGACY_INSTALL_SCHEMA}:
         raise ValueError("现有 Agent Skills install manifest schema 不受支持")
     skills = manifest.get("skills")
     if not isinstance(skills, list):
@@ -255,7 +262,57 @@ def _load_install_manifest(path: Path) -> dict[str, Any] | None:
         raise ValueError("现有 Agent Skills install manifest skills 不是稳定唯一 Skill 列表")
     manifest["skills"] = normalized
     manifest["shared_files"] = _normalise_shared_files(manifest.get("shared_files"), "现有 Agent Skills install manifest")
+    if manifest["schema"] == INSTALL_SCHEMA:
+        managed_files = manifest.get("managed_files")
+        if not isinstance(managed_files, list):
+            raise ValueError("现有 Agent Skills install manifest managed_files 无效")
+        normalized_files = [_safe_managed_file(str(item)) for item in managed_files]
+        if normalized_files != sorted(set(normalized_files)):
+            raise ValueError("现有 Agent Skills install manifest managed_files 必须唯一且稳定排序")
+        manifest["managed_files"] = normalized_files
+    else:
+        manifest["managed_files"] = []
     return manifest
+
+
+def _safe_managed_file(value: str) -> str:
+    """校验 install manifest 中相对 `.agents/skills` 的受管文件路径。"""
+    if "\\" in value:
+        raise ValueError(f"受管文件路径不能包含反斜杠：{value!r}")
+    candidate = PurePosixPath(value)
+    if not value or value.startswith("/") or candidate.is_absolute():
+        raise ValueError(f"受管文件路径必须是相对路径：{value!r}")
+    if any(part in {"", ".", ".."} for part in candidate.parts) or ":" in candidate.parts[0]:
+        raise ValueError(f"受管文件路径包含非法跳转或盘符：{value!r}")
+    return candidate.as_posix()
+
+
+def _is_legacy_stub(path: Path) -> bool:
+    """只识别旧 Runtime 固定格式 Stub，避免把项目自有 Reference 当作迁移垃圾。"""
+    if path.is_symlink() or not path.is_file():
+        return False
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return False
+    return all(marker in text for marker in _LEGACY_STUB_MARKERS) and text.startswith(
+        "# Agent Skills Runtime Reference"
+    )
+
+
+def _legacy_stub_paths(skills_root: Path, skills: list[str]) -> list[Path]:
+    """在旧 v2 manifest 认领的 Skill 内动态找出可证明的旧 Runtime Stubs。"""
+    found: list[Path] = []
+    for skill in skills:
+        references = skills_root / skill / "references"
+        if not references.exists():
+            continue
+        if references.is_symlink() or not references.is_dir():
+            raise ValueError(f"旧 Runtime Reference 目录必须是普通目录：{references}")
+        for path in sorted(references.rglob("*.md"), key=lambda item: item.as_posix()):
+            if _is_legacy_stub(path):
+                found.append(path)
+    return found
 
 
 def _ensure_path_not_symlink(root: Path, path: Path) -> None:
@@ -380,22 +437,6 @@ def _remove_path(path: Path) -> None:
         raise ValueError(f"无法安全删除特殊受管路径：{path}")
 
 
-def _stage_skills(staging: Path, payload: Mapping[str, Any]) -> Path:
-    """把 Project Payload 完整写入临时 Skills 树，切换前不触碰目标正式目录。"""
-    skills_stage = staging / "skills"
-    skills_stage.mkdir(parents=True)
-    for entry in payload["files"]:
-        relative = PurePosixPath(str(entry["path"]))
-        destination = skills_stage.joinpath(*relative.parts)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        content = decode_payload_file(entry)
-        destination.write_bytes(content)
-        mode = entry.get("mode")
-        if isinstance(mode, int):
-            os.chmod(destination, mode)
-    return skills_stage
-
-
 def _restore_file(path: Path, snapshot: tuple[bytes, int] | None) -> None:
     """回滚一个文本/Runtime 普通文件到安装前字节和权限；原先不存在则删除。"""
     if snapshot is None:
@@ -426,6 +467,7 @@ def _build_manifest(
         "payload_digest": str(payload["payload_digest"]),
         "skills": [str(item) for item in payload["skills"]],
         "shared_files": [str(item) for item in payload["shared_files"]],
+        "managed_files": sorted(str(entry["path"]) for entry in payload["files"]),
         "runtime": runtime_relative,
         "host_configs": [".codex/config.toml", ".cursor/mcp.json", ".mcp.json", "CLAUDE.md"],
     }
@@ -465,6 +507,8 @@ def install_project(
     old_manifest = _load_install_manifest(manifest_path)
     old_skills = list(old_manifest["skills"]) if old_manifest is not None else []
     old_shared_files = list(old_manifest["shared_files"]) if old_manifest is not None else []
+    old_managed_files = set(old_manifest["managed_files"]) if old_manifest is not None else set()
+    legacy_v2 = old_manifest is not None and old_manifest["schema"] == LEGACY_INSTALL_SCHEMA
     owned = old_manifest is not None
 
     for skill in sorted(set(old_skills) | set(new_skills)):
@@ -484,6 +528,33 @@ def install_project(
             raise ValueError(f"受管共享路径必须是普通文件：{shared_path}")
 
     payload_files = _payload_files(project_payload)
+    new_managed_files = sorted(_safe_managed_file(path) for path in payload_files)
+    if new_managed_files != sorted(set(new_managed_files)):
+        raise ValueError("Project Payload 受管文件路径必须唯一且稳定排序")
+    legacy_stubs = _legacy_stub_paths(skills_root, old_skills) if legacy_v2 else []
+
+    def legacy_v2_claims(relative: str) -> bool:
+        """判断旧 v2 目录级 manifest 是否足以证明同名 core/shared 文件可升级覆盖。"""
+        parts = PurePosixPath(relative).parts
+        if len(parts) == 1:
+            return relative in old_shared_files
+        return parts[0] in old_skills and (len(parts) < 2 or parts[1] != "references")
+
+    managed_targets = {
+        relative: skills_root.joinpath(*PurePosixPath(relative).parts)
+        for relative in sorted(set(new_managed_files) | old_managed_files)
+    }
+    for relative, path in managed_targets.items():
+        _ensure_path_not_symlink(target, path)
+        if path.exists() and (path.is_symlink() or not path.is_file()):
+            raise ValueError(f"受管文件目标必须是普通文件：{path}")
+        if (
+            relative in new_managed_files
+            and path.exists()
+            and relative not in old_managed_files
+            and not legacy_v2_claims(relative)
+        ):
+            raise ValueError(f"目标项目已存在未被 Agent Skills manifest 认领的同名文件：{relative}")
     agents_path = target / "AGENTS.md"
     gitignore_path = target / ".gitignore"
     cursor_path = target / ".cursor" / "mcp.json"
@@ -514,83 +585,80 @@ def install_project(
     }
     snapshots = {path: _snapshot_file(path) for path in text_paths}
     runtime_snapshot = _snapshot_file(runtime_target)
+    managed_snapshot_paths = set(managed_targets.values()) | set(legacy_stubs)
+    managed_snapshots = {path: _snapshot_file(path) for path in managed_snapshot_paths}
     removed_skills = sorted(set(old_skills) - set(new_skills))
     removed_shared_files = sorted(set(old_shared_files) - set(new_shared_files))
+    removed_managed_files = sorted(old_managed_files - set(new_managed_files))
 
     agents_root.mkdir(parents=True, exist_ok=True)
     skills_root.mkdir(parents=True, exist_ok=True)
     runtime_target.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix=".agent-skills-project-stage-", dir=agents_root) as stage_name:
-        with tempfile.TemporaryDirectory(prefix=".agent-skills-project-backup-", dir=agents_root) as backup_name:
-            stage_root = Path(stage_name)
-            backup_root = Path(backup_name)
-            staged_skills = _stage_skills(stage_root, project_payload)
-            backup_skills = backup_root / "skills"
-            backup_shared = backup_root / "shared"
-            backup_skills.mkdir()
-            backup_shared.mkdir()
-            switched_skills: list[str] = []
-            switched_shared: list[str] = []
+    try:
+        for relative in removed_managed_files:
+            _remove_path(managed_targets[relative])
+        for entry in project_payload["files"]:
+            relative = _safe_managed_file(str(entry["path"]))
+            _atomic_write(
+                managed_targets[relative],
+                decode_payload_file(entry),
+                int(entry["mode"]),
+            )
+        for legacy_stub in legacy_stubs:
+            _remove_path(legacy_stub)
+
+        if artifact != runtime_target:
+            with tempfile.NamedTemporaryFile(
+                "wb",
+                dir=runtime_target.parent,
+                prefix=runtime_name + ".",
+                delete=False,
+            ) as stream:
+                staged_runtime = Path(stream.name)
+                with artifact.open("rb") as source_stream:
+                    shutil.copyfileobj(source_stream, stream)
             try:
-                for skill in sorted(set(old_skills) | set(new_skills)):
-                    target_skill = skills_root / skill
-                    backup_skill = backup_skills / skill
-                    if target_skill.exists():
-                        target_skill.rename(backup_skill)
-                    switched_skills.append(skill)
-                    if skill in new_skills:
-                        (staged_skills / skill).rename(target_skill)
+                if os.name != "nt":
+                    os.chmod(staged_runtime, artifact.stat().st_mode)
+                os.replace(staged_runtime, runtime_target)
+            finally:
+                if staged_runtime.exists():
+                    staged_runtime.unlink()
+        if _sha256_file(runtime_target) != _sha256_file(artifact):
+            raise RuntimeError("项目 Runtime 安装后的 SHA256 与当前 artifact 不一致")
 
-                for relative in sorted(set(old_shared_files) | set(new_shared_files)):
-                    target_shared = skills_root / relative
-                    backup_path = backup_shared / relative
-                    backup_path.parent.mkdir(parents=True, exist_ok=True)
-                    if target_shared.exists():
-                        target_shared.rename(backup_path)
-                    switched_shared.append(relative)
-                    if relative in new_shared_files:
-                        (staged_skills / relative).rename(target_shared)
-
-                if artifact != runtime_target:
-                    staged_runtime = stage_root / runtime_name
-                    shutil.copy2(artifact, staged_runtime)
-                    if os.name != "nt":
-                        os.chmod(staged_runtime, artifact.stat().st_mode)
-                    os.replace(staged_runtime, runtime_target)
-                if _sha256_file(runtime_target) != _sha256_file(artifact):
-                    raise RuntimeError("项目 Runtime 安装后的 SHA256 与当前 artifact 不一致")
-
-                for path, content in text_updates.items():
-                    _atomic_write(path, content)
-            except Exception:
-                for path in reversed(text_paths):
-                    try:
-                        _restore_file(path, snapshots[path])
-                    except Exception:
-                        pass
+        for path, content in text_updates.items():
+            _atomic_write(path, content)
+        for skill in removed_skills:
+            skill_root = skills_root / skill
+            if not skill_root.exists() or not skill_root.is_dir() or skill_root.is_symlink():
+                continue
+            directories = [path for path in skill_root.rglob("*") if path.is_dir() and not path.is_symlink()]
+            for directory in sorted(directories, key=lambda item: len(item.parts), reverse=True):
                 try:
-                    _restore_file(runtime_target, runtime_snapshot)
-                except Exception:
+                    directory.rmdir()
+                except OSError:
                     pass
-                for relative in reversed(switched_shared):
-                    target_shared = skills_root / relative
-                    backup_path = backup_shared / relative
-                    try:
-                        _remove_path(target_shared)
-                        if backup_path.exists():
-                            backup_path.rename(target_shared)
-                    except Exception:
-                        pass
-                for skill in reversed(switched_skills):
-                    target_skill = skills_root / skill
-                    backup_skill = backup_skills / skill
-                    try:
-                        _remove_path(target_skill)
-                        if backup_skill.exists():
-                            backup_skill.rename(target_skill)
-                    except Exception:
-                        pass
-                raise
+            try:
+                skill_root.rmdir()
+            except OSError:
+                pass
+    except Exception:
+        for path in reversed(text_paths):
+            try:
+                _restore_file(path, snapshots[path])
+            except Exception:
+                pass
+        try:
+            _restore_file(runtime_target, runtime_snapshot)
+        except Exception:
+            pass
+        for path in sorted(managed_snapshot_paths, key=lambda item: len(item.parts), reverse=True):
+            try:
+                _restore_file(path, managed_snapshots[path])
+            except Exception:
+                pass
+        raise
 
     return {
         "ok": True,
@@ -602,6 +670,8 @@ def install_project(
         "shared_files": new_shared_files,
         "removed_skills": removed_skills,
         "removed_shared_files": removed_shared_files,
+        "removed_managed_files": removed_managed_files,
+        "removed_legacy_stubs": len(legacy_stubs),
         "runtime": runtime_relative,
         "manifest": INSTALL_MANIFEST_PATH.as_posix(),
         "hosts": ["codex", "cursor", "claude-code"],

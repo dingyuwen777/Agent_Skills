@@ -21,12 +21,17 @@ SOURCE_ROOT = Path(__file__).resolve().parents[1]
 if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
-from runtime.agent_skills_runtime.catalog import build_bundle, public_manifest, serialize_bundle
+from runtime.agent_skills_runtime.catalog import build_bundle, serialize_bundle
 from runtime.agent_skills_runtime.crypto import encrypt_bundle, generate_bundle_key
+from runtime.agent_skills_runtime.project_installer import INSTALL_SCHEMA
 from runtime.agent_skills_runtime.project_payload import build_project_payload
+from runtime.agent_skills_runtime.routing import ROUTING_MANIFEST_PROTOCOL, TASK_ROUTE_PROTOCOL
+from runtime.agent_skills_runtime.runtime import MCP_TOOL_CONTRACT_PROTOCOL
 
 
 VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
+COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+RELEASE_IDENTITY_SCHEMA = "agent-skills-runtime-release-identity/v1"
 
 
 def _read_release_version(source_root: str | Path) -> str:
@@ -50,6 +55,32 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _source_commit(source_root: str | Path) -> str | None:
+    """解析当前 Git HEAD，并要求正式 CI 的 GITHUB_SHA 与实际源码完全一致。"""
+    root = Path(source_root).resolve()
+    result = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    head = result.stdout.strip().lower() if result.returncode == 0 else ""
+    if head and not COMMIT_PATTERN.fullmatch(head):
+        raise RuntimeError("git rev-parse HEAD 未返回合法完整 commit")
+    github_sha = os.environ.get("GITHUB_SHA", "").strip().lower()
+    if github_sha:
+        if not COMMIT_PATTERN.fullmatch(github_sha):
+            raise ValueError("GITHUB_SHA 必须是 40 位小写十六进制 commit")
+        if not head:
+            raise RuntimeError("正式 GitHub build 无法读取当前源码 HEAD")
+        if github_sha != head:
+            raise RuntimeError("GITHUB_SHA 与当前源码 HEAD 不一致")
+        return github_sha
+    return head or None
+
+
 def _serialize_project_payload(payload: Mapping[str, Any]) -> bytes:
     """把已经验证的 Project Payload 序列化为确定性 UTF-8 JSON。"""
     return json.dumps(dict(payload), ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -61,6 +92,7 @@ def _write_embedded_payload(
     envelope: bytes,
     project_payload: Mapping[str, Any],
     release_version: str,
+    source_commit: str | None = None,
 ) -> None:
     """仅在临时构建副本中写入加密 Reference、Project Payload 与版本，不修改源仓库。"""
     project_payload_b64 = base64.b64encode(_serialize_project_payload(project_payload)).decode("ascii")
@@ -70,6 +102,7 @@ def _write_embedded_payload(
         f'BUNDLE_CIPHERTEXT_B64 = "{base64.b64encode(envelope).decode("ascii")}"\n'
         f'PROJECT_PAYLOAD_B64 = "{project_payload_b64}"\n'
         f'RELEASE_VERSION = {release_version!r}\n'
+        f'SOURCE_COMMIT = {source_commit!r}\n'
     )
     (package_root / "_embedded_payload.py").write_text(content, encoding="utf-8", newline="\n")
 
@@ -102,16 +135,31 @@ def _artifact_path(output_dir: Path, name: str) -> Path:
     return output_dir / f"{name}{suffix}"
 
 
+def _write_entrypoint(path: Path) -> None:
+    """生成在导入 Server 前固定标准流 UTF-8 的 onefile 入口。"""
+    path.write_text(
+        "import sys\n"
+        "if hasattr(sys.stdout, 'reconfigure'):\n"
+        '    sys.stdout.reconfigure(encoding="utf-8")\n'
+        '    sys.stderr.reconfigure(encoding="utf-8")\n'
+        "from agent_skills_runtime.server import main\n"
+        "raise SystemExit(main())\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
 def build_runtime(
     source_root: str | Path,
     output_dir: str | Path,
     name: str = "agent-skills-mcp",
 ) -> dict[str, Any]:
-    """构建加密 Bundle + Project Payload 的自包含 onefile Runtime 与公开 manifest。"""
+    """构建自包含 onefile Runtime 与仅供本地/CI 校验的 Release identity。"""
     source = Path(source_root).resolve()
     output = Path(output_dir).resolve()
     output.mkdir(parents=True, exist_ok=True)
     release_version = _read_release_version(source)
+    source_commit = _source_commit(source)
     bundle = build_bundle(source)
     project_payload = build_project_payload(source, bundle)
     serialized = serialize_bundle(bundle)
@@ -127,13 +175,16 @@ def build_runtime(
             package_copy,
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo", "_embedded_payload.py"),
         )
-        _write_embedded_payload(package_copy, key, envelope, project_payload, release_version)
-        entrypoint = temp_root / "entrypoint.py"
-        entrypoint.write_text(
-            "from agent_skills_runtime.server import main\nraise SystemExit(main())\n",
-            encoding="utf-8",
-            newline="\n",
+        _write_embedded_payload(
+            package_copy,
+            key,
+            envelope,
+            project_payload,
+            release_version,
+            source_commit,
         )
+        entrypoint = temp_root / "entrypoint.py"
+        _write_entrypoint(entrypoint)
         command = [
             sys.executable,
             "-m",
@@ -171,29 +222,44 @@ def build_runtime(
     status = _run_json_command([str(artifact), "status", "--json"])
     self_test = _run_json_command([str(artifact), "self-test", "--json"])
     expected_digest = str(bundle["source_digest"])
+    expected_routing_digest = str(bundle["routing_digest"])
     expected_payload_digest = str(project_payload["payload_digest"])
-    if status.get("source_digest") != expected_digest or self_test.get("source_digest") != expected_digest:
+    if status.get("Source摘要") != expected_digest or self_test.get("Source摘要") != expected_digest:
         raise RuntimeError("构建产物 source_digest 与当前 canonical References 不一致")
-    if status.get("payload_digest") != expected_payload_digest or self_test.get("payload_digest") != expected_payload_digest:
+    if status.get("Routing摘要") != expected_routing_digest or self_test.get("Routing摘要") != expected_routing_digest:
+        raise RuntimeError("构建产物 routing_digest 与当前 canonical metadata 不一致")
+    if status.get("Payload摘要") != expected_payload_digest or self_test.get("Payload摘要") != expected_payload_digest:
         raise RuntimeError("构建产物 payload_digest 与当前 Project Payload 不一致")
-    if status.get("skills") != project_payload["skills"] or self_test.get("skills") != project_payload["skills"]:
+    if status.get("Skill") != project_payload["skills"] or self_test.get("Skill") != project_payload["skills"]:
         raise RuntimeError("构建产物 Skill Catalog 与当前 Project Payload 不一致")
-    if status.get("release_version") != release_version or self_test.get("release_version") != release_version:
+    if status.get("Release版本") != release_version or self_test.get("Release版本") != release_version:
         raise RuntimeError("构建产物 release_version 与根 VERSION 不一致")
-    if self_test.get("ok") is not True:
+    if status.get("Source提交") != source_commit or self_test.get("Source提交") != source_commit:
+        raise RuntimeError("构建产物 source_commit 与当前构建源码不一致")
+    if status.get("Install协议") != INSTALL_SCHEMA or self_test.get("Install协议") != INSTALL_SCHEMA:
+        raise RuntimeError("构建产物 install manifest schema 与当前安装器不一致")
+    if self_test.get("通过") is not True:
         raise RuntimeError("构建产物 self-test 未通过")
 
-    manifest = public_manifest(bundle)
-    manifest.update(
-        {
-            "release_version": release_version,
-            "artifact": artifact.name,
-            "artifact_sha256": _sha256_file(artifact),
-            "project_payload_schema": project_payload["schema"],
-            "payload_digest": expected_payload_digest,
-            "payload_file_count": len(project_payload["files"]),
-        }
-    )
+    manifest = {
+        "schema": RELEASE_IDENTITY_SCHEMA,
+        "release_version": release_version,
+        "source_commit": source_commit,
+        "artifact": artifact.name,
+        "artifact_sha256": _sha256_file(artifact),
+        "bundle_schema": bundle["schema"],
+        "bundle_version": bundle["bundle_version"],
+        "TaskRoute协议": TASK_ROUTE_PROTOCOL,
+        "RoutingManifest协议": ROUTING_MANIFEST_PROTOCOL,
+        "MCP工具契约协议": MCP_TOOL_CONTRACT_PROTOCOL,
+        "source_digest": expected_digest,
+        "Routing摘要": expected_routing_digest,
+        "project_payload_schema": project_payload["schema"],
+        "install_manifest_schema": INSTALL_SCHEMA,
+        "payload_digest": expected_payload_digest,
+        "skills": list(project_payload["skills"]),
+        "skill_count": len(project_payload["skills"]),
+    }
     manifest_path = output / f"{name}.manifest.json"
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -205,12 +271,13 @@ def build_runtime(
         "manifest": str(manifest_path),
         "artifact_sha256": manifest["artifact_sha256"],
         "release_version": release_version,
+        "source_commit": source_commit,
         "source_digest": expected_digest,
+        "routing_digest": expected_routing_digest,
         "payload_digest": expected_payload_digest,
         "payload_file_count": len(project_payload["files"]),
         "skills": list(project_payload["skills"]),
         "skill_count": len(project_payload["skills"]),
-        "reference_count": manifest["reference_count"],
         "bundle_version": manifest["bundle_version"],
     }
 

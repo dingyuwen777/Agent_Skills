@@ -9,6 +9,12 @@ from pathlib import Path
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime.project_installer import INSTALL_MANIFEST_PATH, install_project
 from runtime.agent_skills_runtime.project_payload import build_project_payload
+from runtime.agent_skills_runtime.routing import REFERENCE_ROUTE_PROTOCOL, SKILL_ROUTE_PROTOCOL
+
+
+def _routing_block(payload: dict[str, object]) -> str:
+    """把 MCP 安装 fixture 的路由对象编码为 Markdown 注释块。"""
+    return "<!-- agent-routing:v1\n" + json.dumps(payload, ensure_ascii=False) + "\n-->\n"
 
 
 class ProjectMcpConfigPortabilityTest(unittest.TestCase):
@@ -31,10 +37,29 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
             encoding="utf-8",
         )
         (coding / "SKILL.md").write_text(
-            "---\nname: coding\ndescription: fixture\n---\n\n# coding\n",
+            "---\nname: coding\ndescription: fixture\n---\n\n"
+            + _routing_block(
+                {
+                    "协议": SKILL_ROUTE_PROTOCOL,
+                    "Skill": "coding",
+                    "触发": {"包含": {"维度": "能力", "取值": ["coding"]}},
+                }
+            )
+            + "# coding\n",
             encoding="utf-8",
         )
-        (references / "01_规则.md").write_text("canonical-coding\n", encoding="utf-8")
+        (references / "01_规则.md").write_text(
+            _routing_block(
+                {
+                    "协议": REFERENCE_ROUTE_PROTOCOL,
+                    "标识": "coding.reference.01",
+                    "触发": {"包含": {"维度": "能力", "取值": ["coding"]}},
+                    "依赖": [],
+                }
+            )
+            + "canonical-coding\n",
+            encoding="utf-8",
+        )
         (assets / "AGENTS.managed.md").write_text(
             "<!-- agent-skills:managed:start -->\n"
             "## Agent Skills\n"

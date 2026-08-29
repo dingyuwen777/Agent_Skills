@@ -5,29 +5,18 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-import re
 from typing import Any, Iterable, Mapping
 
+from .routing import compile_routing, validate_routing_manifest
 from .skill_catalog import discover_skills, iter_reference_files
 
 
-BUNDLE_SCHEMA = "agent-skills-runtime-bundle/v1"
-MANIFEST_SCHEMA = "agent-skills-runtime-manifest/v1"
-_NUMBERED_REFERENCE = re.compile(r"^(\d{2})_")
+BUNDLE_SCHEMA = "agent-skills-runtime-bundle/v2"
 
 
 def _sha256_bytes(payload: bytes) -> str:
     """计算原始字节的 SHA256 十六进制摘要。"""
     return hashlib.sha256(payload).hexdigest()
-
-
-def _reference_id(skill: str, filename: str) -> str:
-    """根据 Skill 与 Reference 文件名生成稳定逻辑 ID。"""
-    match = _NUMBERED_REFERENCE.match(filename)
-    if match:
-        return f"{skill}.reference.{match.group(1)}"
-    suffix = hashlib.sha256(filename.encode("utf-8")).hexdigest()[:12]
-    return f"{skill}.reference.file-{suffix}"
 
 
 def _source_digest(entries: Iterable[Mapping[str, Any]]) -> str:
@@ -44,8 +33,16 @@ def _source_digest(entries: Iterable[Mapping[str, Any]]) -> str:
         ),
         key=lambda entry: entry["id"],
     )
-    payload = json.dumps(material, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    payload = json.dumps(
+        material, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
     return _sha256_bytes(payload)
+
+
+def _bundle_version(source_digest: str, routing_digest: str) -> str:
+    """根据独立的 source/routing digest 生成稳定 Bundle 版本。"""
+    material = f"{BUNDLE_SCHEMA}\n{source_digest}\n{routing_digest}\n".encode("utf-8")
+    return _sha256_bytes(material)[:16]
 
 
 def build_bundle(source_root: str | Path) -> dict[str, Any]:
@@ -53,6 +50,10 @@ def build_bundle(source_root: str | Path) -> dict[str, Any]:
     root = Path(source_root).resolve()
     skills = discover_skills(root)
     skill_names = [skill.name for skill in skills]
+    routing_manifest = compile_routing(root)
+    routing_by_path = {
+        str(entry["源路径"]): entry for entry in routing_manifest["引用"]
+    }
     entries: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     for skill, reference in iter_reference_files(skills):
@@ -61,11 +62,14 @@ def build_bundle(source_root: str | Path) -> dict[str, Any]:
             content = payload.decode("utf-8")
         except UnicodeDecodeError as error:
             raise ValueError(f"Reference 不是合法 UTF-8：{reference}") from error
-        reference_id = _reference_id(skill, reference.name)
+        source_path = reference.relative_to(root).as_posix()
+        routing_entry = routing_by_path.get(source_path)
+        if routing_entry is None:
+            raise ValueError(f"Reference 缺少已编译路由身份：{source_path}")
+        reference_id = str(routing_entry["标识"])
         if reference_id in seen_ids:
             raise ValueError(f"Reference Runtime ID 重复：{reference_id}")
         seen_ids.add(reference_id)
-        source_path = reference.relative_to(root).as_posix()
         entries.append(
             {
                 "id": reference_id,
@@ -78,12 +82,15 @@ def build_bundle(source_root: str | Path) -> dict[str, Any]:
             }
         )
     digest = _source_digest(entries)
+    routing_digest = str(routing_manifest["路由摘要"])
     bundle = {
         "schema": BUNDLE_SCHEMA,
-        "bundle_version": digest[:16],
+        "bundle_version": _bundle_version(digest, routing_digest),
         "source_digest": digest,
+        "routing_digest": routing_digest,
         "skills": skill_names,
         "references": entries,
+        "路由清单": routing_manifest,
     }
     validate_bundle(bundle)
     return bundle
@@ -93,6 +100,13 @@ def validate_bundle(bundle: Mapping[str, Any]) -> None:
     """严格验证 Bundle schema、动态 Skill Catalog、Reference 原文摘要、ID 和源摘要。"""
     if bundle.get("schema") != BUNDLE_SCHEMA:
         raise ValueError(f"不支持的 Runtime Bundle schema：{bundle.get('schema')!r}")
+    routing_manifest = bundle.get("路由清单")
+    if not isinstance(routing_manifest, Mapping):
+        raise ValueError("Runtime Bundle 缺少私有路由清单")
+    validate_routing_manifest(routing_manifest)
+    routing_digest = str(routing_manifest["路由摘要"])
+    if str(bundle.get("routing_digest")) != routing_digest:
+        raise ValueError("Runtime Bundle routing_digest 与私有路由清单不一致")
     skills = bundle.get("skills")
     if not isinstance(skills, list) or not skills:
         raise ValueError("Runtime Bundle skills 必须是非空列表")
@@ -100,6 +114,9 @@ def validate_bundle(bundle: Mapping[str, Any]) -> None:
     if normalized_skills != sorted(set(normalized_skills)):
         raise ValueError("Runtime Bundle skills 必须唯一并按名称稳定排序")
     skill_set = set(normalized_skills)
+    route_skills = [str(entry["Skill"]) for entry in routing_manifest["技能"]]
+    if route_skills != normalized_skills:
+        raise ValueError("Runtime Bundle Skill Catalog 与私有路由清单不一致")
 
     references = bundle.get("references")
     if not isinstance(references, list):
@@ -109,7 +126,15 @@ def validate_bundle(bundle: Mapping[str, Any]) -> None:
     for raw_entry in references:
         if not isinstance(raw_entry, Mapping):
             raise ValueError("Runtime Bundle reference 必须是 object")
-        required = ("id", "skill", "filename", "source_path", "sha256", "size", "content")
+        required = (
+            "id",
+            "skill",
+            "filename",
+            "source_path",
+            "sha256",
+            "size",
+            "content",
+        )
         missing = [field for field in required if field not in raw_entry]
         if missing:
             raise ValueError(f"Runtime Bundle reference 缺少字段：{', '.join(missing)}")
@@ -139,14 +164,33 @@ def validate_bundle(bundle: Mapping[str, Any]) -> None:
     expected_digest = _source_digest(normalized)
     if str(bundle.get("source_digest")) != expected_digest:
         raise ValueError("Runtime Bundle source_digest 与 Reference 内容不一致")
-    if str(bundle.get("bundle_version")) != expected_digest[:16]:
-        raise ValueError("Runtime Bundle bundle_version 与 source_digest 不一致")
+    route_references = {str(entry["标识"]): entry for entry in routing_manifest["引用"]}
+    if set(route_references) != seen_ids:
+        raise ValueError("Runtime Bundle Reference 集合与私有路由清单不一致")
+    for entry in references:
+        route_entry = route_references[str(entry["id"])]
+        if (
+            str(route_entry["Skill"]) != str(entry["skill"])
+            or str(route_entry["文件名"]) != str(entry["filename"])
+            or str(route_entry["源路径"]) != str(entry["source_path"])
+        ):
+            raise ValueError(
+                f"Runtime Bundle Reference 身份与私有路由清单不一致：{entry['id']}"
+            )
+    if str(bundle.get("bundle_version")) != _bundle_version(
+        expected_digest, routing_digest
+    ):
+        raise ValueError(
+            "Runtime Bundle bundle_version 与 source/routing digest 不一致"
+        )
 
 
 def serialize_bundle(bundle: Mapping[str, Any]) -> bytes:
     """把已验证 Bundle 序列化为稳定 UTF-8 JSON 字节。"""
     validate_bundle(bundle)
-    return json.dumps(bundle, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return json.dumps(
+        bundle, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
 
 
 def deserialize_bundle(payload: bytes) -> dict[str, Any]:
@@ -159,35 +203,3 @@ def deserialize_bundle(payload: bytes) -> dict[str, Any]:
         raise ValueError("Runtime Bundle 顶层必须是 object")
     validate_bundle(decoded)
     return decoded
-
-
-def public_manifest(bundle: Mapping[str, Any], skill: str | None = None) -> dict[str, Any]:
-    """生成不包含 Reference 正文的动态 Skill/Reference Runtime Manifest。"""
-    validate_bundle(bundle)
-    skills = [str(item) for item in bundle["skills"]]
-    if skill is not None and skill not in skills:
-        raise ValueError(f"未知 Skill：{skill}")
-    references = []
-    for entry in bundle["references"]:
-        if skill is not None and entry["skill"] != skill:
-            continue
-        references.append(
-            {
-                "id": entry["id"],
-                "skill": entry["skill"],
-                "filename": entry["filename"],
-                "source_path": entry["source_path"],
-                "sha256": entry["sha256"],
-                "size": entry["size"],
-            }
-        )
-    return {
-        "schema": MANIFEST_SCHEMA,
-        "bundle_schema": bundle["schema"],
-        "bundle_version": bundle["bundle_version"],
-        "source_digest": bundle["source_digest"],
-        "skills": skills if skill is None else [skill],
-        "skill_count": len(skills) if skill is None else 1,
-        "reference_count": len(references),
-        "references": references,
-    }

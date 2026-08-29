@@ -13,7 +13,7 @@ GitHub Release
 
 最终用户入口见 [`USAGE.md`](USAGE.md)。
 
-> **源码可见性边界**：如果完整 `SKILL.md` / canonical `references/*.md` 只允许维护者查看，本 GitHub 仓库必须设置为 **Private**。Runtime 的加密与 Stub 机制不能替代仓库访问控制。
+> **源码可见性边界**：如果完整 `SKILL.md` / canonical `references/*.md` 只允许维护者查看，本 GitHub 仓库必须设置为 **Private**。Runtime 的加密与按任务渐进式披露不能替代仓库访问控制。
 >
 > 私有仓库的 Release 仍受该仓库 read 权限控制。**如果接收者不应获得源码权限，不要为了让他下载 Release 而授予本源仓库 read 权限。** 维护者应从私有源仓库取得并校验 Release 资产后，通过内部制品库、文件服务或独立的 release-only 仓库/渠道向最终使用者分发。
 
@@ -61,24 +61,21 @@ references/*.md
 → 唯一完整 Reference 正文
 ```
 
-正式 Runtime 构建时：
+两种使用模式共享同一 canonical Markdown 和 committed 路由元数据：
 
 ```text
-Skills 根级 ROUTER.md
-+ Native Core / 必要运行资产
-→ Project Payload
-→ 安装到目标项目
+Source Mode
+→ 按当前 metadata 的并集/依赖/风险语义确定 required References
+→ 直接读取源仓库中的完整 canonical 原文
 
-canonical references/*.md
-→ 逐字 hash
-→ AES-GCM 加密嵌入 onefile Runtime
-
-目标项目 references/
-→ 只安装同名 Stub
-→ 命中后由本地 MCP 返回 canonical_text
+Runtime Mode
+→ ROUTER.md + Native Core / 必要运行资产进入 no-Stub Project Payload
+→ canonical References + 私有 Routing Manifest 认证加密嵌入 onefile
+→ 宿主提交中文 Task Route
+→ 本地 MCP 只返回当前 route required 的完整原文
 ```
 
-Runtime 不是第二套规则系统，也不摘要或重写 canonical References。
+Runtime 不安装 `references/` 或公开 Reference manifest，不接受任意 ID 加载。它不是第二套规则系统，也不摘要或重写 canonical References；Task Route 是宿主与 Runtime 的内部协议，不要求用户维护。
 
 ## 3. AI 入口职责
 
@@ -99,7 +96,7 @@ Runtime 不是第二套规则系统，也不摘要或重写 canonical References
 
 [`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md) 是源码直读与 Runtime 安装两种模式共同使用的唯一跨 Skill Router。
 
-源码直读时，命中的 canonical Reference 直接从本源仓库读取；Runtime 安装态命中 Stub 时，通过项目本地 MCP 的 `agent_skills_load_context` 取得并校验 `canonical_text`。
+源码直读时，required Reference 直接从本源仓库读取；Runtime 安装态通过 `agent_skills_route_contract → start_task → submit_route → load_required_context → checkpoint` 获取本任务最低必需的完整 Context。
 
 ### 目标项目 `AGENTS.md` managed block
 
@@ -175,6 +172,10 @@ python3 .agents/skills/coding/scripts/ready_check.py --root . --require-active-r
 
 根 [`VERSION`](VERSION) 是版本事实源。
 
+每个平台构建都会把真实 `source_commit`、Bundle/Task Route/Routing/MCP/Project Payload/install 协议、`source_digest`、`routing_digest` 和 `payload_digest` 写入 Runtime/Release identity；GitHub build 要求 `source_commit` 与 `GITHUB_SHA` 和 checkout HEAD 一致。公开 identity 不包含 Reference ID、文件名、路径、数量或私有路由映射。
+
+网页端读当前 `main`、本地使用当前最新 Release 属于“最新规则模式”，发布间隙可能短暂不完全同版；需要严格复现时，Source Mode 必须切到 Runtime identity 对应的 Release tag/source commit，不能把旧 Runtime 与更新后的 `main` 声称为同一版本。
+
 正式发布通过 [`.github/workflows/release.yml`](.github/workflows/release.yml) 手工触发：
 
 ```text
@@ -186,7 +187,7 @@ main
 → 创建不可覆盖的 tag / GitHub Release
 ```
 
-源仓库 Release 资产固定为三平台 binary、`USAGE.md` 与 `SHA256SUMS`。Release 页面说明直接使用 `USAGE.md`，不自动把维护 commit / PR 历史生成给最终使用者。最终交付给不具备源仓库权限的用户时，只复制这些 Release 资产，不暴露源仓库访问权。
+源仓库 Release 资产固定为三平台 binary、`USAGE.md` 与 `SHA256SUMS`。构建期 identity manifest 只在 CI 内校验后删除；版本与 digest 身份仍可通过 binary 的 `status --json` 读取。Release 页面说明直接使用 `USAGE.md`，不自动把维护 commit / PR 历史生成给最终使用者。最终交付给不具备源仓库权限的用户时，只复制这些 Release 资产，不暴露源仓库访问权。
 
 ## 7. 继续阅读
 

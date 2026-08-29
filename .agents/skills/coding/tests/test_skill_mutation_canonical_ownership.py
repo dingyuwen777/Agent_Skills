@@ -16,7 +16,6 @@ REF14_PATH = ".agents/skills/coding/references/14_本地MCP_Runtime分发与原�
 REF16_PATH = ".agents/skills/coding/references/16_规则内容守恒与Skill维护.md"
 CANONICAL_REPOSITORY = "dingyuwen777/Agent_Skills"
 RUNTIME_FORBIDDEN_MUTATION_MARKERS = (
-    "Skill Mutation",
     CANONICAL_REPOSITORY,
     MAINTENANCE_PATH,
     "Maintenance Mode",
@@ -60,16 +59,17 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         for marker in required:
             self.assertIn(marker, root_agents, f"根 AGENTS 缺少源仓库 Mutation Contract：{marker}")
 
-    def test_runtime_router_keeps_normal_routing_but_excludes_source_mutation_governance(self) -> None:
-        """普通 Runtime Router 保留研发路由，但不得承载源仓库 Mutation 维护信息。"""
+    def test_runtime_router_keeps_mutation_signal_but_excludes_detailed_source_governance(self) -> None:
+        """Runtime Router 可导航 Mutation，但详细 canonical 治理仍只属于源仓库 Owner。"""
         router = self._read(ROUTER_PATH)
         required = (
             ".agents/skills/*/SKILL.md",
             ".agents/skills/coding/SKILL.md",
             "项目自己的",
-            "agent_skills_load_context",
+            "agent_skills_route_contract",
+            "agent_skills_load_required_context",
             "SHA256",
-            "canonical_text",
+            "完整原文",
             ".agents/skills/figma/SKILL.md",
             "READY / READY_WITH_NOTES / NOT_READY",
             ".agents/skills/review/SKILL.md",
@@ -81,6 +81,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         )
         for marker in required:
             self.assertIn(marker, router, f"Runtime Router 丢失普通研发路由：{marker}")
+        self.assertIn("| Skill Mutation |", router)
         for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + ("16_规则内容守恒与Skill维护.md",):
             self.assertNotIn(forbidden, router, f"Runtime Router 暴露源仓库 Mutation 治理：{forbidden}")
 
@@ -106,7 +107,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "ready_for_review",
             "Completion Audit",
             "Red →",
-            "agent_skills_load_context",
+            "agent_skills_load_required_context",
         ):
             self.assertNotIn(forbidden, managed, f"managed block 暴露维护者专用语义：{forbidden}")
 
@@ -133,7 +134,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         ref14 = self._read(REF14_PATH)
         for marker in (
             "Runtime 安装自己的",
-            "目标项目里的 canonical Reference 只安装同名 Stub",
+            "目标项目不安装 canonical Reference 或 Stub",
             "Project Payload",
             "源仓库 Mutation",
             "普通 Runtime",
@@ -142,7 +143,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         for marker in (
             "Agent_Skills 源仓库 .agents/skills/*/SKILL.md",
             "canonical references/*.md",
-            "目标项目 Reference Stub",
+            "Runtime Mode 不在目标项目创建同名 Reference",
             "Project Payload",
             "源仓库 Mutation",
             "根 `AGENTS.md`",
@@ -170,7 +171,8 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "内容守恒",
         ):
             self.assertIn(marker, ref16, f"ref16 缺少 Mutation 内容守恒规则：{marker}")
-        self.assertIn("<skill>.reference.<两位数字>", ref16)
+        self.assertIn("显式、全局唯一 Stable ID", ref16)
+        self.assertIn("文件编号只服务可读排序，不生成身份", ref16)
         self.assertIn("Runtime Contract", ref16)
         self.assertNotIn("通过 Router 命中的 **Skill Mutation**", ref16)
 
@@ -188,12 +190,12 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "历史聊天",
             "Custom Instructions",
             "如果 Mutation 会影响 managed block / Bootstrap，则再读 ref13",
-            "影响 Runtime、Project Payload、Bundle、Stub、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性时，再读 ref14",
+            "影响 Runtime、Project Payload、Bundle、路由 metadata/Stable ID、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性或旧 Stub 迁移时，再读 ref14",
         ):
             self.assertIn(marker, ref16, f"ref16 未守恒旧 Router 的源仓库维护规则：{marker}")
 
     def test_project_payload_plaintext_surface_excludes_source_mutation_governance(self) -> None:
-        """真实 Project Payload 的可读正文不得携带源仓库 Mutation 治理，Reference Stub 元数据保持现有 Contract。"""
+        """真实 Project Payload 的可读正文不得携带源仓库 Mutation 治理或 Reference/Stub。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         entries = {item["path"]: item for item in payload["files"]}
@@ -201,14 +203,9 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         managed_entry = entries.get("coding/assets/AGENTS.managed.md")
         self.assertIsNotNone(router_entry)
         self.assertIsNotNone(managed_entry)
-        self.assertEqual(
-            decode_payload_file(router_entry).decode("utf-8"),
-            self._read(ROUTER_PATH),
-        )
-        self.assertEqual(
-            decode_payload_file(managed_entry).decode("utf-8"),
-            self._read(MANAGED_PATH),
-        )
+        self.assertEqual(decode_payload_file(router_entry), (ROOT / ROUTER_PATH).read_bytes())
+        self.assertEqual(decode_payload_file(managed_entry), (ROOT / MANAGED_PATH).read_bytes())
+        self.assertFalse(any("/references/" in path for path in entries))
 
         for path, entry in entries.items():
             raw = decode_payload_file(entry)

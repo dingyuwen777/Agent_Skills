@@ -61,6 +61,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             "local stdio",
             "Remote MCP",
             "安全隧道",
+            ".manifest.json",
         ):
             self.assertNotIn(maintainer_only, text)
 
@@ -143,14 +144,16 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             self.assertIn(".agents/skills/ROUTER.md", text)
         self.assertIn(".agents/MAINTENANCE.md", root_agents)
         self.assertIn("不得复制到目标项目", root_agents)
-        self.assertNotIn("agent_skills_load_context", managed)
+        self.assertNotIn("agent_skills_load_required_context", managed)
         self.assertNotIn(".agents/skills/figma/SKILL.md", managed)
         self.assertNotIn(".agents/skills/review/SKILL.md", managed)
         self.assertNotIn(".agents/skills/docs/SKILL.md", managed)
 
         for marker in (
             ".agents/skills/coding/SKILL.md",
-            "agent_skills_load_context",
+            "agent_skills_route_contract",
+            "agent_skills_submit_route",
+            "agent_skills_load_required_context",
             ".agents/skills/figma/SKILL.md",
             ".agents/skills/review/SKILL.md",
             ".agents/skills/docs/SKILL.md",
@@ -183,16 +186,21 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         ):
             self.assertNotIn(obsolete, readme)
 
-    def test_release_publishes_usage_and_uses_it_as_release_notes(self) -> None:
-        """正式 Release 必须随三平台 binary 发布 USAGE，并避免自动生成维护过程型 notes。"""
+    def test_release_validates_identity_but_publishes_only_binaries_and_usage(self) -> None:
+        """正式 Release 校验 identity，但只发布三平台 binary/USAGE/checksum。"""
         workflow = self._read(".github/workflows/release.yml")
         self.assertIn("USAGE.md", workflow)
         self.assertIn("--notes-file", workflow)
         self.assertNotIn("--generate-notes", workflow)
+        self.assertIn("rm release-assets/*.manifest.json", workflow)
+        self.assertIn('test "$(wc -l < SHA256SUMS)" -eq 4', workflow)
         for binary in (
             "agent-skills-mcp-v${RELEASE_VERSION}-linux",
-            "agent-skills-mcp-v$env:RELEASE_VERSION-windows.exe",
+            '"agent-skills-mcp-v$env:RELEASE_VERSION-windows"',
             "agent-skills-mcp-v${RELEASE_VERSION}-macos",
+            "linux.manifest.json",
+            "windows.manifest.json",
+            "macos.manifest.json",
         ):
             self.assertIn(binary, workflow)
         for forbidden in (
@@ -209,8 +217,9 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertIn('relative.name == "README.md"', payload)
         self.assertIn('relative.parts[0] == "references"', payload)
         self.assertIn('SHARED_RUNTIME_FILES = ("ROUTER.md",)', payload)
-        self.assertIn("render_reference_stub", payload)
-        self.assertIn("agent_skills_load_context", payload)
+        self.assertNotIn("render_reference_stub", payload)
+        self.assertNotIn("agent_skills_load_context", payload)
+        self.assertIn("Project Payload 不得包含 Runtime Reference 或 Stub", payload)
 
 
 if __name__ == "__main__":

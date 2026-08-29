@@ -1,3 +1,7 @@
+<!-- agent-routing:v1
+{"协议":"Agent Skills Reference路由/v1","标识":"figma.reference.05","触发":{"包含":{"维度":"意图","取值":["Figma baseline-ready","设计转代码"]}},"依赖":["figma.reference.01","figma.reference.02"]}
+-->
+
 # Figma Design-to-Code 交付门禁
 
 这份 reference 负责判断一个 Figma 页面是否已经可以作为 Codex、Coding Agent 或人工开发者的正式开发基线，并定义用户要求“按这个 Figma 替换/实现现有页面”时如何安全交接到目标项目的研发工作流。

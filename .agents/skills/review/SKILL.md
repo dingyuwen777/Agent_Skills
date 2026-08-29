@@ -3,6 +3,10 @@ name: review
 description: 面向不同项目形态、编程语言和工具链的独立代码审查与测试充分性验证工作流。Review 不维护第二套编码规范；同仓存在 Coding Skill 时，先读取 Coding 并以其为唯一研发规范源，再独立重建需求与风险、审查 diff/实现/测试/文档、从测试专家视角设计最少充分验证、输出有证据的 Findings。支持 review-only、review-and-test、review-and-fix，并在修复时返回 Coding、修复后 re-review。Use for code review, pull request review, audit, test adequacy analysis, independent verification, regression-risk analysis, and review-driven fix loops across languages and project types.
 ---
 
+<!-- agent-routing:v1
+{"协议":"Agent Skills Skill路由/v1","Skill":"review","触发":{"任一":[{"包含":{"维度":"执行模式","取值":["审查"]}},{"包含":{"维度":"意图","取值":["代码审查","Review-only","Review-and-test","Review-and-fix","独立复核"]}}]}}
+-->
+
 # Review
 
 Review 的职责不是再写一遍“怎样开发”，而是作为**独立审查者 + 测试专家**回答：

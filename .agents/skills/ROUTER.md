@@ -54,81 +54,148 @@ Review、Docs、Figma 不复制第二套 Coding 研发规则；Coding 也不复�
 
 `coding` 是当前研发主流程的核心锚点；改变这一上位入口关系属于独立架构变化，不能因为新增 Skill 就静默改变。
 
-## 4. Reference 的两种加载模式
+## 4. 双模式同源路由与 Reference 加载
 
-### 4.1 源码直接读取模式
+Source Mode 与 Runtime Mode 共享同一套 canonical `SKILL.md + references/*.md`、嵌入式中文路由元数据、显式 Stable Reference ID、依赖、风险下限和版本身份。两种模式只改变 required Context 的取得通路，不改变规则语义。
 
-当 Agent（例如 ChatGPT 网页端通过 GitHub）能够访问 Agent_Skills 源仓库，且命中的 `references/<file>.md` 是完整 canonical Markdown 时：
+### 4.1 路由不是单选分类
+
+先把当前已确认任务事实按稳定维度组合：
 
 ```text
-SKILL.md
-→ 命中 Reference
-→ 直接读取 Agent_Skills 源仓库中的 canonical Reference
-→ 以该文件当前完整正文作为正式规则
+执行模式 / 项目形态 / 阶段 / 风险 / 工具链
+范围 / 意图 / 治理 / 能力 / 授权
 ```
 
-不得使用历史聊天中的旧版本、摘要、转述或记忆替代当前 canonical 文件。
+多个事实同时命中时取 Skill/Reference **并集**，再展开依赖闭包并应用最高风险下限；不能挑一个“主类型”丢掉其他 required Context。事实仍未知时必须明确列入未知项并保守扩大，不能在信息不足时选择狭窄路线。
 
-### 4.2 Runtime 安装模式
+`授权` 只记录宿主/用户当前明确给出的边界，不能因为路由中出现“允许 Git/发布”就自行获得真实权限。
 
-当目标项目中的同名 Reference 是 Agent Skills Runtime Stub 时：
+### 4.2 Source Mode：直接读取 canonical 原文
 
-1. 必须按 Stub 指示调用项目本地 Agent Skills MCP 的 `agent_skills_load_context`；
-2. 使用 Stub 中的稳定 ID 请求正文；
-3. 比较 MCP 返回的 `SHA256` 与 Stub 的 Expected SHA256；
-4. 把返回的 `canonical_text` 当作该 Reference 的完整正式原文；
-5. MCP 不可用、ID 不存在、SHA256 不一致、没有 `canonical_text` 或原文无法取得时，必须明确报告，并停止依赖该 Reference 的动作；
-6. 不得把 Stub、旧缓存、旧记忆或自己补写的摘要当成 canonical 规则正文。
+当 Agent 能访问 Agent_Skills 源仓库时：
 
-这两种模式只改变 Reference **如何取得**，不改变同一 Skill/Reference 的正式语义。
+```text
+任务事实
+→ 当前 canonical metadata 的同一匹配/并集/依赖/风险语义
+→ 命中 Skill Core 与 required References
+→ 直接读取源仓库中每个 required Reference 的当前完整原文
+```
 
-## 5. Bootstrap / Runtime 专项路由
+不得使用历史聊天、摘要、旧缓存或目标项目中的安装副本替代当前 canonical 文件。Source Mode 不启动用户电脑上的本地 Runtime，也不调用 Runtime MCP。
 
-如果任务是首次安装、升级 Agent_Skills、创建/补充目标项目 `AGENTS.md` 或修复 Agent Skills managed block，必须读取：
+### 4.3 Runtime Mode：Task Route → required Context
+
+Runtime 安装到目标项目后，Project Payload 只包含本 Router、Skill Core 和运行资产，**不包含 `references/` 或 Stub**。因此不得尝试打开本地同名 Reference。
+
+宿主模型应按顺序调用：
+
+```text
+agent_skills_route_contract
+→ agent_skills_start_task
+→ 根据目标项目当前事实构造中文 Task Route
+→ agent_skills_submit_route
+→ agent_skills_load_required_context(路由令牌)
+→ 使用返回的完整原文
+→ 事实变化时追加 submit_route 并加载新增 Context
+→ agent_skills_checkpoint
+```
+
+Task Route 是 Agent/Runtime 内部协议，不是用户日常配置；用户继续用自然语言描述任务。公共 route contract 只给出当前中文维度/取值与公开 Skill，不会枚举私有 Reference mapping。
+
+同一 task 的 route 只能单调扩展；只有显式 `start_task` 新任务才能清空。`load_required_context` 默认只返回尚未加载的新 required Context，不能请求任意 ID。`checkpoint` 只汇总 Runtime 内部缺失数量，不能冒充 Requirement Traceability、Completion Audit、Review、Docs、测试或 CI。
+
+每个返回 Context 的 `SHA256`、字节数和完整原文都必须通过当前 Bundle 完整性校验；失败时不得使用摘要、缓存或其他路径内容代替。
+
+### 4.4 版本、失败与停止
+
+同一次任务使用的 Router、Skill Core、Runtime、Bundle、routing identity 和 Project Payload 必须来自同一 Release。协议/digest 不一致、路由词汇非法、令牌失效、required Context 无法取得或完整性失败时，明确报告并停止依赖相应规则的动作；不得降级成旧记忆或自写摘要。
+
+## 5. 低歧义组合示例
+
+下表只演示怎样组合事实和进入 Owner，不替代各 Skill 的正式规则，也不是固定 Reference 白名单。Source Mode 必须读取表中 Owner 当前命中的 canonical 原文；Runtime Mode 先通过公共 route contract 取得当前合法词汇，再提交所列信号。实际发现更多事实时，两种模式都按并集追加 required Context。
+
+| 案例 | 命中原因与叠加 | Source Mode 读取 | Runtime Mode 任务信号 |
+| --- | --- | --- | --- |
+| L1 机械修改 | 已确认行为、接口、数据和验收不变；只叠加事实恢复与 L1 验证，不创建 L2/L3 Change | Coding Core + canonical 任务路由规则；只读当前项目直接事实 | `执行模式=实现；风险=L1` |
+| L2 Feature | 新增可观察行为；叠加 Change、设计实施、Validation Matrix 和 Completion Gate | Coding Core + Feature、Change、验证与完成门禁 canonical References | `执行模式=实现；阶段=功能开发；风险=L2；治理=存在活动变更,要求完成门禁；能力=测试` |
+| L3 public API | 修改公共消费者 Contract；在 Feature 上叠加公共边界、兼容、独立 Review 和交付验证 | Coding Core + L3 Change、Contract、验证、完成与 Review canonical References | `执行模式=方案,实现；阶段=需求设计,功能开发；风险=L3；范围=公共契约,API` |
+| Schema Migration | writer/reader 与历史数据都会受影响；叠加 Schema、Migration、回滚和真实依赖验证 | Coding Core + Contract/Schema/Migration、Change、验证与完成 canonical References | `执行模式=方案,实现；阶段=需求设计；风险=L3；范围=Schema,Migration` |
+| Bug / Failure / Incident | 先复现并证伪根因；修复时叠加回归测试，Incident 再叠加运维/恢复边界 | Coding Core + 根因调试、风险对应 Change/验证/完成 canonical References | `执行模式=诊断,实现；阶段=缺陷修复`；Incident 追加 `运维,故障处置,L3` |
+| Refactor / Performance | 必须先证明行为不变或性能根因；叠加基线、目标度量和回归验证 | Coding Core + 根因/设计实施、Change 与验证 canonical References | `执行模式=诊断,实现；阶段=重构` 或 `性能优化；风险=L2/L3` |
+| Frontend | 真实范围包含用户界面；叠加前端状态、Contract 和用户工作流，但不因 `package.json` 推断 React/Figma | Coding Core + Frontend/Design-to-Code；真实存在 Web/API 边界时再读分层验证 canonical References | `执行模式=实现；项目形态=前端Web；阶段=功能开发；范围=前端；风险=L2` |
+| Figma review-only | 用户只要求设计审查且无写授权；叠加 Figma 事实审计与 Review 输出，不进入生产实现 | Coding Core + Figma Skill 及审查/Findings/layout canonical References；适用时进入 Review Skill | `执行模式=审查；意图=Figma review-only；能力=Figma；授权=允许只读` |
+| Figma review-and-fix | 已授权修改设计；叠加 Figma 审查、修复、写后复核，完成后回 Coding | Coding Core + Figma Skill 的审查/修复/可用性 canonical References | `执行模式=实现；意图=Figma review-and-fix；能力=Figma；授权=允许修改项目` |
+| Figma baseline-ready | 目标是正式 Design-to-Code 基线；叠加真实系统映射、设计系统、Prototype、Ready 门禁 | Coding Core + Figma Skill 的 baseline-ready 全部命中 canonical References | `执行模式=方案；意图=Figma baseline-ready；能力=Figma；风险=L2/L3` |
+| Figma → Code | 既有设计又要生产实现；先完成 Figma Ready，再返回 Coding 叠加前端、测试、Review 和交付 | Coding Core + Figma baseline/Design-to-Code + Coding Frontend canonical References | `执行模式=实现；项目形态=前端Web；阶段=功能开发；范围=前端；意图=设计转代码；能力=Figma,测试` |
+| Docs not_applicable | 代码/行为变化经事实确认不影响任何正式文档；只记录依据，不进入 Docs | Coding 当前命中 canonical References；不读取 Docs Skill | 不提交 Docs 意图；保留实际实现/验证信号 |
+| Docs targeted | 只有局部 README/API/配置说明受影响；叠加 Docs targeted 和事实同步 | Coding Core + Docs Skill 当前 targeted canonical References | `执行模式=实现；意图=Docs targeted` |
+| Docs full | 核心架构、公开 Contract 或多份正式文档变化；叠加完整事实恢复、编写、审查和回到 Coding | Coding Core + Docs Skill 全量命中 canonical References | `执行模式=实现；意图=Docs full；风险=L2/L3` |
+| Code Review / Audit | 用户显式审查或 Coding 要求独立 Review；叠加需求重建、Findings、测试充分性与 re-review | Coding 完成/验证 canonical References + Review Skill 当前命中 canonical References | `执行模式=审查；阶段=审查；意图=代码审查`，需要测试/修复时追加对应意图与授权 |
+| Dependency / Runtime Upgrade | 版本、锁文件或 Runtime 变化；叠加工具链、兼容、安全、构建和回滚，不因有新版本自动升级 | Coding Core + 工具链；涉及 Agent_Skills Runtime 时再读安装/Runtime canonical References | `执行模式=实现；意图=依赖升级` 或 `Runtime 升级；工具链=已确认；风险=L2/L3` |
+| Git / PR / Release | 进入交付且真实授权已确认；叠加完成验证、Git/CI/Release 边界，路由标签不授予权限 | Coding Core + 完成前验证、Git/交付 canonical References；需要时进入 Review | `执行模式=Git,验证` 或 `发布；阶段=交付；意图=PR Ready/Git 交付/Release；能力=Git；授权=允许 Git/允许发布`，且授权值只能来自上位事实 |
+| Runtime / Project Payload | 修改 Bundle、Task Route、MCP、安装或分发；叠加 L3 Contract、no-Stub、ownership、artifact 与三平台验证 | Coding Core + Bootstrap 安装 + Runtime 分发 canonical References | `执行模式=实现；风险=L3；范围=Runtime,Runtime Bundle/Project Payload,MCP；意图=Runtime Bundle/Project Payload` |
+| Skill Mutation | 改变 Skill/Reference 正文、trigger、Owner 或结构；叠加内容守恒、Stable ID、Conformance 与独立 Review | 根 AGENTS + Maintenance + Router + Coding Core + Skill Mutation + 受影响 Skill canonical 原文 | `执行模式=实现；意图=Skill Mutation；治理=要求完成门禁；风险=L2/L3` |
+| Greenfield | 尚无可靠 Manifest/lock/架构事实；叠加目标/硬约束确认与最小可验证工程基线，不套用示例技术栈 | Coding Core + 项目发现/Greenfield/任务路由 canonical References | `执行模式=方案；项目形态=Greenfield；阶段=仓库初始化；风险=L2`，未知维度显式列入 `未知项` |
+| 复杂多 Skill 叠加 | 例如 L3 Figma→Code 同时改 API、Docs、Review 并准备 PR；必须取 Coding、Figma、Docs、Review 与 Git 全部并集 | Coding Core + 四个专业 Skill 当前命中 canonical References + 完成/交付 References | 同时提交 `实现,审查,验证,Git`、真实项目形态/范围、`L3`、`设计转代码,Docs full,Review-and-fix,Git 交付`、治理/能力/授权事实 |
+
+## 6. Bootstrap / Runtime 专项路由
+
+- 触发：首次安装/升级 Agent_Skills、创建/补充目标项目 `AGENTS.md`、修复 managed block，或修改 Bundle、Routing、MCP、Project Payload、install manifest 与宿主 MCP 配置。
+- 必须动作：先恢复当前安装/ownership/schema/宿主配置事实，再读取对应完整 canonical Reference；不得自由重写项目 Overlay、managed ownership 或 Runtime Contract。
+- 不适用：普通业务功能、文档或设计任务没有触及这些安装/Runtime 边界时，不进入本专项路由。
+- 交接：Bootstrap/managed block 进入 Coding ref13；Runtime/分发边界在此基础上进入 Coding ref14。
+- 返回：完成安装/Runtime 实现与真实 smoke 后回到 Coding 的验证、Review、Git/交付流程。
+- 失败关闭：schema、ownership、artifact、required Context 或宿主能力无法验证时，停止写入/交付，不猜测迁移或降级为旧 Runtime 通路。
+
+Bootstrap/managed block 必须读取：
 
 ```text
 .agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md
 ```
 
-如果任务涉及本地 MCP Runtime 构建/Release/项目安装/升级、Project Payload、Reference Stub、Bundle、installation manifest 或宿主 MCP 配置，还必须读取：
+涉及本地 MCP Runtime 构建/Release/项目安装/升级、Project Payload、Routing Manifest/Task Route、Bundle、installation manifest 或宿主 MCP 配置，还必须读取：
 
 ```text
 .agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md
 ```
 
-不得自由重写项目 Overlay、managed ownership 或 Runtime Contract。
+## 7. Figma 路由
 
-## 6. Figma 路由
+- 触发：任务涉及 Figma 创建、修改、整理、审查、设计系统、Prototype、正式设计基线验收，或按 Figma 实现/替换页面。
+- 必须动作：读取并执行 Figma Skill；Figma 负责设计事实、Canvas/Prototype、设计修复和 `READY / READY_WITH_NOTES / NOT_READY`。
+- 不适用：没有 Figma/design-to-code 事实的普通 Frontend、CLI、Backend 或文档任务不进入 Figma。
+- 交接：Coding 保留研发主流程，把设计事实/审查/修复交给 `.agents/skills/figma/SKILL.md`。
+- 返回：达到 `READY / READY_WITH_NOTES` 后回到 Coding 完成真实代码、测试、Review、CI、Git 与交付；review-only 输出完成后也回到 Coding/用户边界。
+- 失败关闭：Figma Skill/required Reference 无法读取、工具事实不足或结果为 `NOT_READY` 时，不得把已知缺陷写入生产实现，也不得把 Figma Ready 冒充代码/PR/Release Ready。
 
-如果任务涉及 Figma 创建、修改、整理、审查、设计系统、Prototype、正式设计基线验收，或者按 Figma 实现/替换页面，且 `.agents/skills/figma/SKILL.md` 存在：
+## 8. Review 路由
 
-1. 必须按 Coding 的任务路由读取并执行 Figma Skill；
-2. Figma 负责设计事实、Canvas/Prototype、设计修复和 `READY / READY_WITH_NOTES / NOT_READY`；
-3. `NOT_READY` 时不得把已知设计缺陷直接写入生产实现；
-4. 达到 `READY / READY_WITH_NOTES` 后再回到 Coding，完成真实代码、测试、Review、CI、Git 与交付；
-5. Figma Ready 不能冒充代码、PR 或 Release Ready。
+- 触发：Coding 判断需要独立 Review，用户显式要求 Code Review/Audit，或当前 L2/L3 Change/PR Ready 门禁要求 Review。
+- 必须动作：读取 Review Skill，独立重建上游要求与风险，审查 Findings、测试充分性和 re-review；不得把作者清单或绿色测试当作需求全集。
+- 不适用：纯事实恢复且没有审查请求/门禁，或经项目规则确认的隔离 L1 机械任务，不机械进入独立 Review。
+- 交接：Coding 把当前 Review Target、base/head、授权、上游事实和新鲜验证交给 `.agents/skills/review/SKILL.md`。
+- 返回：确认 Finding 需要修复时回到 Coding 建立失败证据并最小修复，随后返回 Review re-review；无 Finding 时回到 Coding 完成交付结论。
+- 失败关闭：Review Skill/required Reference、目标 diff 或关键上游事实不可得时，不得声称已独立审查或可合并。
 
-## 7. Review 路由
+## 9. Docs 路由
 
-Coding Skill 判断需要独立 Review，或用户显式要求 Code Review / Audit，且 `.agents/skills/review/SKILL.md` 存在时，必须读取并按 Review Skill 执行。
+- 触发：Coding 判断存在文档影响，或用户显式要求技术文档审查、事实同步、编写或更新。
+- 必须动作：读取 Docs Skill，先从代码/Contract/Schema/配置等当前事实判断 `not_applicable`、`targeted` 或 `full`，再同步受影响正式文档。
+- 不适用：已用当前差异和文档事实证明行为、接口、配置、架构和用户操作均未受影响时，记录依据并保持 Docs `not_applicable`。
+- 交接：Coding 把实现事实、Docs Impact 和受影响文档域交给 `.agents/skills/docs/SKILL.md`；默认不机械扫描全部 Markdown。
+- 返回：文档同步/审查完成后回到 Coding 的实现一致性与交付验证；若 Docs 发现代码/Contract 缺陷，先回 Coding 修复事实再更新文档。
+- 失败关闭：Docs Skill/required Reference 或实现事实不可得时，不得写推测性说明、迎合 Bug 或宣称文档已同步。
 
-Review 负责独立 Findings、测试充分性和 re-review，不维护第二套 Coding 研发规则；发现问题需要修复时回到 Coding 主流程处理并重新验证。
+## 10. 失败、冲突与权限边界
 
-## 8. Docs 路由
-
-Coding Skill 判断存在文档影响，或用户显式要求技术文档审查、事实同步、编写或更新，且 `.agents/skills/docs/SKILL.md` 存在时，必须读取并按 Docs Skill 执行。
-
-Docs 负责技术文档事实同步与文档质量，不复制第二套 Coding 研发规范；默认只读取受影响文档域，不机械扫描所有 Markdown。
-
-## 9. 失败、冲突与权限边界
-
-- 某个必需 Skill、Router 或 Reference 文件缺失、无法读取，或者 Runtime Stub 无法取得并验证 canonical 原文时，明确报告真实阻塞，不得假装已经遵守；
+- 某个必需 Skill、Router 或 Reference 缺失、无法读取或不可验证，或者 Runtime route/required Context 无法取得并验证完整原文时，明确报告真实阻塞，不得假装已经遵守；
 - 通用 Skill 与更高优先级指令或更具体项目规则存在冲突时，遵守更高优先级和更具体规则；无法安全解析冲突时停止受影响动作并提请 Owner，而不是自行选择有利解释；
 - 不绕过目标项目已有 CI、Branch Protection、PR、Release、Migration、安全或其他质量门禁；
 - 没有相应授权时，不自动获得创建/切换分支、修改文件、提交、推送、创建 PR、合并、发布、部署、数据库写入或其他外部副作用权限；
 - 不覆盖项目已有工作，不用 `git reset --hard`、`git clean -fd`、强制推送或历史重写制造“干净状态”。
 
-## 10. Router 自身的维护边界
+## 11. Router 自身的维护边界
 
 本文件只拥有**跨 Skill 的发现、入口、加载和 Handoff**。以下细节必须继续留在各自 Owner：
 
@@ -136,6 +203,6 @@ Docs 负责技术文档事实同步与文档质量，不复制第二套 Coding �
 - Review 的 Findings、测试审查与 re-review 方法 → Review；
 - Docs 的文档事实、范围与写作/审查方法 → Docs；
 - Figma 的 Canvas、Prototype、Owner、状态、Ready、失败处理与写后复核 → Figma；
-- Runtime 的 Bundle/Payload/Stub/MCP/安装/升级/回滚细节 → Coding ref13/ref14 + Runtime 实现。
+- Runtime 的 Bundle/Routing/Task Route/Payload/MCP/安装/升级/回滚细节 → Coding ref13/ref14 + Runtime 实现。
 
 不能为了让入口“自包含”再把这些专业细则复制回根 `AGENTS.md`、`AGENTS.managed.md` 或本 Router。

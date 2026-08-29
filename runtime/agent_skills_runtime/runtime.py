@@ -1,15 +1,27 @@
-"""维护 Agent Skills Runtime Reference 上下文和任务阶段状态。"""
+"""维护 Agent Skills Runtime 的中文 Task Route 与渐进式原文上下文状态。"""
 
 from __future__ import annotations
 
+import secrets
 from threading import RLock
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
-from .catalog import public_manifest, validate_bundle
+from .catalog import validate_bundle
+from .project_installer import INSTALL_SCHEMA
+from .routing import (
+    ROUTING_MANIFEST_PROTOCOL,
+    TASK_ROUTE_PROTOCOL,
+    evaluate_route,
+    public_route_contract,
+)
+
+
+MCP_TOOL_CONTRACT_PROTOCOL = "Agent Skills MCP工具契约/v2"
+_RISK_ORDER = {"L1": 1, "L2": 2, "L3": 3}
 
 
 class RuntimeStore:
-    """在进程内持有已验证 Bundle，并按逻辑 ID 提供 canonical Reference 原文。"""
+    """在进程内持有私有路由清单，并只披露当前任务 required canonical Context。"""
 
     def __init__(
         self,
@@ -17,128 +29,167 @@ class RuntimeStore:
         *,
         release_version: str | None = None,
         payload_digest: str | None = None,
+        source_commit: str | None = None,
     ) -> None:
-        """复制已验证 Bundle 索引，并记录可选 Release/Project Payload 元数据。"""
+        """复制已验证 Bundle 索引，并记录 Release/Project Payload 身份。"""
         validate_bundle(bundle)
         self._bundle = dict(bundle)
+        self._routing_manifest = dict(bundle["路由清单"])
         self._entries = {str(entry["id"]): dict(entry) for entry in bundle["references"]}
         self._release_version = release_version
         self._payload_digest = payload_digest
+        self._source_commit = source_commit
         self._lock = RLock()
         self._task_id: str | None = None
         self._phase: str | None = None
+        self._route_token: str | None = None
+        self._required_ids: set[str] = set()
+        self._matched_skills: set[str] = set()
         self._loaded_ids: set[str] = set()
+        self._minimum_risk = "L1"
+        self._had_unknown = False
 
-    def _normalize_ids(self, ids: Sequence[str], *, allow_empty: bool = False) -> list[str]:
-        """校验 Reference ID 列表，去重并保持调用者给出的顺序。"""
-        normalized: list[str] = []
-        seen: set[str] = set()
-        for raw_id in ids:
-            reference_id = str(raw_id).strip()
-            if not reference_id:
-                raise ValueError("Reference ID 不能为空")
-            if reference_id not in self._entries:
-                raise ValueError(f"未知 Reference ID：{reference_id}")
-            if reference_id not in seen:
-                seen.add(reference_id)
-                normalized.append(reference_id)
-        if not normalized and not allow_empty:
-            raise ValueError("至少需要一个 Reference ID")
-        return normalized
+    def _require_task(self) -> None:
+        """确认调用发生在显式建立的当前任务中。"""
+        if self._task_id is None:
+            raise ValueError("尚未开始任务；请先调用 agent_skills_start_task")
+
+    def _require_current_token(self, route_token: str) -> None:
+        """校验调用者持有当前任务最新的不透明路由令牌。"""
+        normalized = str(route_token).strip()
+        if not normalized or self._route_token is None or not secrets.compare_digest(normalized, self._route_token):
+            raise ValueError("路由令牌无效、已过期或不属于当前任务")
 
     def status(self) -> dict[str, Any]:
-        """返回 Runtime、Skill、源摘要和当前任务状态，不泄露 Reference 正文。"""
+        """返回必要版本身份和汇总任务状态，不枚举 Reference 或路径。"""
         with self._lock:
+            missing_count = len(self._required_ids - self._loaded_ids)
             return {
-                "runtime": "agent-skills-runtime",
-                "release_version": self._release_version,
-                "bundle_schema": self._bundle["schema"],
-                "bundle_version": self._bundle["bundle_version"],
-                "source_digest": self._bundle["source_digest"],
-                "payload_digest": self._payload_digest,
-                "skills": list(self._bundle["skills"]),
-                "skill_count": len(self._bundle["skills"]),
-                "reference_count": len(self._entries),
-                "task_id": self._task_id,
-                "phase": self._phase,
-                "loaded_ids": sorted(self._loaded_ids),
+                "协议": MCP_TOOL_CONTRACT_PROTOCOL,
+                "Runtime": "agent-skills-runtime",
+                "Release版本": self._release_version,
+                "Source提交": self._source_commit,
+                "Bundle协议": self._bundle["schema"],
+                "Bundle版本": self._bundle["bundle_version"],
+                "TaskRoute协议": TASK_ROUTE_PROTOCOL,
+                "RoutingManifest协议": ROUTING_MANIFEST_PROTOCOL,
+                "Install协议": INSTALL_SCHEMA,
+                "Source摘要": self._bundle["source_digest"],
+                "Routing摘要": self._bundle["routing_digest"],
+                "Payload摘要": self._payload_digest,
+                "Skill": list(self._bundle["skills"]),
+                "Skill数量": len(self._bundle["skills"]),
+                "当前任务存在": self._task_id is not None,
+                "当前路由已建立": self._route_token is not None,
+                "已加载上下文数量": len(self._loaded_ids),
+                "缺失上下文数量": missing_count,
             }
 
     def self_test(self) -> dict[str, Any]:
-        """重新校验 Bundle 完整性并返回不含正文的自检结果。"""
+        """重新校验 Bundle 完整性并返回与 status 同边界的自检结果。"""
         validate_bundle(self._bundle)
-        status = self.status()
-        return {
-            "ok": True,
-            "release_version": status["release_version"],
-            "bundle_schema": status["bundle_schema"],
-            "bundle_version": status["bundle_version"],
-            "source_digest": status["source_digest"],
-            "payload_digest": status["payload_digest"],
-            "skills": status["skills"],
-            "skill_count": status["skill_count"],
-            "reference_count": status["reference_count"],
-        }
+        result = self.status()
+        result["通过"] = True
+        return result
 
-    def manifest(self, skill: str | None = None) -> dict[str, Any]:
-        """按 Skill 返回可发现的 Reference 元数据，不返回 canonical_text。"""
-        return public_manifest(self._bundle, skill)
+    def route_contract(self) -> dict[str, Any]:
+        """返回动态公开中文词汇与 Skill，不返回私有 Reference mapping。"""
+        return public_route_contract(self._routing_manifest)
 
-    def start_task(self, task_id: str, phase: str = "planning") -> dict[str, Any]:
-        """开始或重置一个任务，清空此前任务已加载 Reference 状态。"""
-        normalized_task = task_id.strip()
-        normalized_phase = phase.strip()
+    def start_task(self, task_id: str, phase: str = "规划") -> dict[str, Any]:
+        """开始或显式重置任务，清空此前 task 的 route 与披露状态。"""
+        normalized_task = str(task_id).strip()
+        normalized_phase = str(phase).strip()
         if not normalized_task:
-            raise ValueError("task_id 不能为空")
+            raise ValueError("任务标识不能为空")
         if not normalized_phase:
-            raise ValueError("phase 不能为空")
+            raise ValueError("阶段不能为空")
         with self._lock:
             self._task_id = normalized_task
             self._phase = normalized_phase
+            self._route_token = None
+            self._required_ids.clear()
+            self._matched_skills.clear()
             self._loaded_ids.clear()
-            return self.status()
+            self._minimum_risk = "L1"
+            self._had_unknown = False
+            return {
+                "任务标识": self._task_id,
+                "当前阶段": self._phase,
+                "当前路由已建立": False,
+                "已加载上下文数量": 0,
+            }
 
-    def load_context(self, ids: Sequence[str]) -> dict[str, Any]:
-        """返回请求 Reference 的 canonical 原文和完整性摘要，并记录为当前任务已加载。"""
-        normalized = self._normalize_ids(ids)
-        contexts = []
+    def submit_route(self, task_id: str, task_route: Mapping[str, Any]) -> dict[str, Any]:
+        """校验并求值中文 Task Route，再与同一 task 已有 required 集合做单调并集。"""
+        normalized_task = str(task_id).strip()
         with self._lock:
-            for reference_id in normalized:
+            self._require_task()
+            if normalized_task != self._task_id:
+                raise ValueError("任务标识与当前任务不一致；切换任务必须显式 start_task")
+            evaluated = evaluate_route(self._routing_manifest, task_route)
+            self._required_ids.update(str(item) for item in evaluated["必需Reference"])
+            self._matched_skills.update(str(item) for item in evaluated["命中Skill"])
+            evaluated_risk = str(evaluated["最低风险"])
+            if _RISK_ORDER[evaluated_risk] > _RISK_ORDER[self._minimum_risk]:
+                self._minimum_risk = evaluated_risk
+            self._had_unknown = self._had_unknown or bool(evaluated["存在未知项"])
+            self._route_token = secrets.token_urlsafe(32)
+            missing_count = len(self._required_ids - self._loaded_ids)
+            return {
+                "任务标识": self._task_id,
+                "路由令牌": self._route_token,
+                "命中Skill": sorted(self._matched_skills),
+                "必需上下文数量": len(self._required_ids),
+                "需要加载上下文": missing_count > 0,
+                "缺失上下文数量": missing_count,
+                "最低风险": self._minimum_risk,
+                "存在未知项": self._had_unknown,
+            }
+
+    def load_required_context(self, route_token: str, *, reload: bool = False) -> dict[str, Any]:
+        """只返回当前 route required Context；默认仅返回本 task 尚未加载的完整原文。"""
+        with self._lock:
+            self._require_task()
+            self._require_current_token(route_token)
+            selected = self._required_ids if reload else self._required_ids - self._loaded_ids
+            contexts: list[dict[str, Any]] = []
+            for reference_id in sorted(selected):
                 entry = self._entries[reference_id]
                 contexts.append(
                     {
-                        "id": reference_id,
-                        "skill": entry["skill"],
-                        "filename": entry["filename"],
-                        "source_path": entry["source_path"],
-                        "sha256": entry["sha256"],
-                        "size": entry["size"],
-                        "canonical_text": entry["content"],
+                        "标识": reference_id,
+                        "Skill": entry["skill"],
+                        "SHA256": entry["sha256"],
+                        "字节数": entry["size"],
+                        "完整原文": entry["content"],
                     }
                 )
-                self._loaded_ids.add(reference_id)
+            self._loaded_ids.update(selected)
             return {
-                "task_id": self._task_id,
-                "phase": self._phase,
-                "contexts": contexts,
+                "任务标识": self._task_id,
+                "上下文": contexts,
+                "本次加载上下文数量": len(contexts),
+                "已加载上下文数量": len(self._loaded_ids),
+                "缺失上下文数量": len(self._required_ids - self._loaded_ids),
             }
 
-    def checkpoint(self, required_ids: Sequence[str], phase: str | None = None) -> dict[str, Any]:
-        """检查当前任务是否已加载指定 Reference，并可安全更新当前阶段标识。"""
-        normalized = self._normalize_ids(required_ids, allow_empty=True)
+    def checkpoint(self, route_token: str, phase: str | None = None) -> dict[str, Any]:
+        """依据 Runtime 内部 required/loaded 状态执行阶段检查，不接受 required IDs。"""
         with self._lock:
+            self._require_task()
+            self._require_current_token(route_token)
             if phase is not None:
-                normalized_phase = phase.strip()
+                normalized_phase = str(phase).strip()
                 if not normalized_phase:
-                    raise ValueError("phase 不能为空")
+                    raise ValueError("阶段不能为空")
                 self._phase = normalized_phase
-            loaded = [reference_id for reference_id in normalized if reference_id in self._loaded_ids]
-            missing = [reference_id for reference_id in normalized if reference_id not in self._loaded_ids]
+            missing_count = len(self._required_ids - self._loaded_ids)
             return {
-                "task_id": self._task_id,
-                "phase": self._phase,
-                "required_ids": normalized,
-                "loaded_ids": loaded,
-                "missing_ids": missing,
-                "ok": not missing,
+                "任务标识": self._task_id,
+                "通过": missing_count == 0,
+                "缺失上下文数量": missing_count,
+                "已加载上下文数量": len(self._loaded_ids),
+                "当前阶段": self._phase,
+                "最低风险": self._minimum_risk,
             }

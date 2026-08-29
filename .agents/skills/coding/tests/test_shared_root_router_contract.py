@@ -27,7 +27,7 @@ class SharedRootRouterContractTest(unittest.TestCase):
         for marker in (
             ".agents/skills/*/SKILL.md",
             ".agents/skills/coding/SKILL.md",
-            "agent_skills_load_context",
+            "agent_skills_load_required_context",
             "READY / READY_WITH_NOTES / NOT_READY",
             "Branch Protection",
         ):
@@ -81,8 +81,9 @@ class SharedRootRouterContractTest(unittest.TestCase):
 
             self.assertTrue((target / ".agents/skills/ROUTER.md").is_file())
             manifest = (target / INSTALL_MANIFEST_PATH).read_text(encoding="utf-8")
-            self.assertIn('"schema": "agent-skills-install/v2"', manifest)
+            self.assertIn('"schema": "agent-skills-install/v3"', manifest)
             self.assertIn('"shared_files"', manifest)
+            self.assertIn('"managed_files"', manifest)
             self.assertIn('"ROUTER.md"', manifest)
             self.assertIn(".agents/skills/ROUTER.md", (target / "AGENTS.md").read_text(encoding="utf-8"))
 

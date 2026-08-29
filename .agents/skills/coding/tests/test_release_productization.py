@@ -7,6 +7,8 @@ import subprocess
 import tempfile
 import textwrap
 import unittest
+from types import SimpleNamespace
+from unittest import mock
 from pathlib import Path
 
 
@@ -53,12 +55,33 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertEqual(builder._read_release_version(ROOT), version)
 
     def test_runtime_builder_embeds_project_payload_and_version(self) -> None:
-        """Runtime Builder 同时保持 Reference 与 Project Payload 两个完整性域。"""
+        """Runtime Builder 同时保持 Source/Routing/Project Payload 身份与版本。"""
         source = RUNTIME_BUILDER_PATH.read_text(encoding="utf-8")
-        for marker in ("source_digest", "payload_digest", "PROJECT_PAYLOAD_B64", "VERSION"):
+        for marker in (
+            "source_digest",
+            "routing_digest",
+            "payload_digest",
+            "SOURCE_COMMIT",
+            "RELEASE_IDENTITY_SCHEMA",
+            "install_manifest_schema",
+            "PROJECT_PAYLOAD_B64",
+            "VERSION",
+        ):
             self.assertIn(marker, source)
         self.assertNotIn("build_distribution_kit", source)
         self.assertNotIn("runtime-kit", source.lower())
+
+    def test_formal_build_requires_github_sha_to_match_real_head(self) -> None:
+        """正式 GitHub build 必须把 source_commit 绑定到实际 checkout，拒绝伪造或错配。"""
+        builder = _load_module("runtime_source_commit", RUNTIME_BUILDER_PATH)
+        head = "a" * 40
+        completed = SimpleNamespace(returncode=0, stdout=head + "\n")
+        with mock.patch.object(builder.subprocess, "run", return_value=completed):
+            with mock.patch.dict(os.environ, {"GITHUB_SHA": head}, clear=True):
+                self.assertEqual(builder._source_commit(ROOT), head)
+            with mock.patch.dict(os.environ, {"GITHUB_SHA": "b" * 40}, clear=True):
+                with self.assertRaisesRegex(RuntimeError, "GITHUB_SHA 与当前源码 HEAD 不一致"):
+                    builder._source_commit(ROOT)
 
     def test_release_workflow_is_manual_and_immutable(self) -> None:
         """Release 只允许 main 手工输入 v<VERSION>，且已存在 tag/Release 时拒绝覆盖。"""
@@ -78,16 +101,28 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertNotIn("\n  push:\n", workflow)
         self.assertEqual(workflow.count("contents: write"), 1)
 
-    def test_release_publishes_three_binaries_usage_and_checksums(self) -> None:
-        """最终 Release 只面向使用者发布三平台 binary、USAGE 和 checksum。"""
+    def test_release_publishes_only_three_binaries_usage_and_checksums(self) -> None:
+        """Identity 只作构建验证；最终 Release 仍只发布三平台 binary、USAGE 和 checksum。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for marker in (
             "agent-skills-mcp-v${RELEASE_VERSION}-linux",
-            "agent-skills-mcp-v$env:RELEASE_VERSION-windows.exe",
+            '"agent-skills-mcp-v$env:RELEASE_VERSION-windows"',
             "agent-skills-mcp-v${RELEASE_VERSION}-macos",
+            "linux.manifest.json",
+            "windows.manifest.json",
+            "macos.manifest.json",
+            "agent-skills-runtime-release-identity/v1",
+            ".source_commit == $commit",
+            '."TaskRoute协议" == "Agent Skills 任务路由/v1"',
+            '."RoutingManifest协议" == "Agent Skills 路由清单/v1"',
+            '."MCP工具契约协议" == "Agent Skills MCP工具契约/v2"',
+            '.install_manifest_schema == "agent-skills-install/v3"',
+            '."Routing摘要" | test',
+            "artifact_sha256",
             "USAGE.md",
             "SHA256SUMS",
             "--notes-file USAGE.md",
+            'rm release-assets/*.manifest.json',
             'test "$(wc -l < SHA256SUMS)" -eq 4',
         ):
             self.assertIn(marker, workflow)
@@ -99,18 +134,21 @@ class ReleaseProductizationTest(unittest.TestCase):
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         self.assertNotIn(".release-assets", workflow)
         for marker in (
-            'cp "${artifact}" "release-assets/agent-skills-mcp-v${RELEASE_VERSION}-linux"',
-            'Copy-Item $artifact "release-assets\\agent-skills-mcp-v$env:RELEASE_VERSION-windows.exe"',
-            'cp "${artifact}" "release-assets/agent-skills-mcp-v${RELEASE_VERSION}-macos"',
-            "path: release-assets/agent-skills-mcp-v*-linux",
-            "path: release-assets/agent-skills-mcp-v*-windows.exe",
-            "path: release-assets/agent-skills-mcp-v*-macos",
+            'cp "${artifact}" "release-assets/${name}"',
+            'Copy-Item $artifact "release-assets\\$name.exe"',
+            'Copy-Item $identity "release-assets\\$name.manifest.json"',
+            "release-assets/agent-skills-mcp-v*-linux",
+            "release-assets/agent-skills-mcp-v*-linux.manifest.json",
+            "release-assets/agent-skills-mcp-v*-windows.exe",
+            "release-assets/agent-skills-mcp-v*-windows.manifest.json",
+            "release-assets/agent-skills-mcp-v*-macos",
+            "release-assets/agent-skills-mcp-v*-macos.manifest.json",
         ):
             self.assertIn(marker, workflow)
 
-    @unittest.skipUnless(shutil.which("bash"), "需要 bash 验证 Release Shell 语义")
+    @unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "需要非 Windows bash 验证 Release Shell 语义")
     def test_release_checksum_step_hashes_only_expected_assets(self) -> None:
-        """checksum step 必须只校验四个正式资产并排除输出文件与其他临时文件。"""
+        """checksum step 必须只校验四个正式输入资产并排除 identity、输出与临时文件。"""
         script = _extract_workflow_run_block("Generate SHA256SUMS")
         version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
         expected_assets = (
@@ -125,6 +163,9 @@ class ReleaseProductizationTest(unittest.TestCase):
             release_assets.mkdir()
             for index, asset in enumerate(expected_assets):
                 (release_assets / asset).write_bytes(f"release-asset-{index}".encode("utf-8"))
+            (release_assets / f"agent-skills-mcp-v{version}-linux.manifest.json").write_text(
+                "{}", encoding="utf-8"
+            )
             (release_assets / "unexpected.tmp").write_text("temporary", encoding="utf-8")
 
             env = os.environ.copy()
@@ -135,6 +176,8 @@ class ReleaseProductizationTest(unittest.TestCase):
                 env=env,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=False,
             )
             self.assertEqual(
@@ -146,6 +189,7 @@ class ReleaseProductizationTest(unittest.TestCase):
             self.assertEqual(len(checksum_lines), 4)
             self.assertFalse(any(line.endswith("  SHA256SUMS") for line in checksum_lines))
             self.assertFalse(any(line.endswith("  unexpected.tmp") for line in checksum_lines))
+            self.assertFalse(any(line.endswith(".manifest.json") for line in checksum_lines))
             for asset in expected_assets:
                 self.assertEqual(sum(line.endswith(f"  {asset}") for line in checksum_lines), 1)
 
@@ -172,6 +216,7 @@ class ReleaseProductizationTest(unittest.TestCase):
             "fallback",
             "local stdio",
             "Remote MCP",
+            ".manifest.json",
         ):
             self.assertNotIn(maintainer_only, usage)
 

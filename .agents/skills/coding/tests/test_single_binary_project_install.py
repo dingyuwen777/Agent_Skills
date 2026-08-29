@@ -10,9 +10,15 @@ from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime import project_installer as INSTALLER
 from runtime.agent_skills_runtime.project_installer import INSTALL_MANIFEST_PATH, install_project
 from runtime.agent_skills_runtime.project_payload import build_project_payload
+from runtime.agent_skills_runtime.routing import REFERENCE_ROUTE_PROTOCOL, SKILL_ROUTE_PROTOCOL
 
 
 ROUTER_RELATIVE = Path(".agents/skills/ROUTER.md")
+
+
+def _routing_block(payload: dict[str, object]) -> str:
+    """把安装 fixture 的路由对象编码为 canonical Markdown 注释块。"""
+    return "<!-- agent-routing:v1\n" + json.dumps(payload, ensure_ascii=False) + "\n-->\n"
 
 
 class SingleBinaryProjectInstallTest(unittest.TestCase):
@@ -29,7 +35,7 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         skills_root = self.source / ".agents" / "skills"
         skills_root.mkdir(parents=True)
         (skills_root / "ROUTER.md").write_text(
-            "# Router\n\n读取 `.agents/skills/coding/SKILL.md`，命中 Runtime Stub 时使用 `agent_skills_load_context`。\n",
+            "# Router\n\nRuntime Mode 先提交 Task Route，再使用 `agent_skills_load_required_context`。\n",
             encoding="utf-8",
         )
         self.runtime_artifact = self.root / "agent-skills-mcp.exe"
@@ -48,10 +54,29 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         references = skill / "references"
         references.mkdir(parents=True)
         (skill / "SKILL.md").write_text(
-            f"---\nname: {name}\ndescription: fixture\n---\n\n# {name}\n",
+            f"---\nname: {name}\ndescription: fixture\n---\n\n"
+            + _routing_block(
+                {
+                    "协议": SKILL_ROUTE_PROTOCOL,
+                    "Skill": name,
+                    "触发": {"包含": {"维度": "能力", "取值": [name]}},
+                }
+            )
+            + f"# {name}\n",
             encoding="utf-8",
         )
-        (references / "01_规则.md").write_text(f"canonical-{name}\n", encoding="utf-8")
+        (references / "01_规则.md").write_text(
+            _routing_block(
+                {
+                    "协议": REFERENCE_ROUTE_PROTOCOL,
+                    "标识": f"{name}.reference.01",
+                    "触发": {"包含": {"维度": "能力", "取值": [name]}},
+                    "依赖": [],
+                }
+            )
+            + f"canonical-{name}\n",
+            encoding="utf-8",
+        )
         if with_bootstrap_assets:
             assets = skill / "assets"
             assets.mkdir()
@@ -99,17 +124,18 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.assertIn("<!-- agent-skills:managed:start -->", agents)
         self.assertIn(".agents/skills/ROUTER.md", agents)
         self.assertTrue((self.target / ROUTER_RELATIVE).is_file())
-        self.assertIn("agent_skills_load_context", (self.target / ROUTER_RELATIVE).read_text(encoding="utf-8"))
+        self.assertIn("agent_skills_load_required_context", (self.target / ROUTER_RELATIVE).read_text(encoding="utf-8"))
         self.assertIn("KEEP-CLAUDE", (self.target / "CLAUDE.md").read_text(encoding="utf-8"))
         self.assertIn("@AGENTS.md", (self.target / "CLAUDE.md").read_text(encoding="utf-8"))
         self.assertEqual((self.target / ".agents/runtime/agent-skills-mcp.exe").read_bytes(), b"runtime-v1")
         manifest = json.loads((self.target / INSTALL_MANIFEST_PATH).read_text(encoding="utf-8"))
-        self.assertEqual(manifest["schema"], "agent-skills-install/v2")
+        self.assertEqual(manifest["schema"], "agent-skills-install/v3")
         self.assertEqual(manifest["skills"], ["coding", "docs", "review"])
         self.assertEqual(manifest["shared_files"], ["ROUTER.md"])
         self.assertEqual(manifest["release_version"], "1.2.3")
-        self.assertNotIn("canonical-coding", (self.target / ".agents/skills/coding/references/01_规则.md").read_text(encoding="utf-8"))
-        self.assertIn("agent_skills_load_context", (self.target / ".agents/skills/coding/references/01_规则.md").read_text(encoding="utf-8"))
+        self.assertIn("coding/SKILL.md", manifest["managed_files"])
+        self.assertFalse(any("/references/" in path for path in manifest["managed_files"]))
+        self.assertFalse((self.target / ".agents/skills/coding/references/01_规则.md").exists())
         cursor_data = json.loads(cursor.read_text(encoding="utf-8"))
         self.assertEqual(cursor_data["mcpServers"]["other"]["command"], "other")
         self.assertEqual(cursor_data["mcpServers"]["agent-skills"]["args"], ["serve"])
@@ -171,6 +197,66 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.assertFalse((self.target / "AGENTS.md").exists())
         self.assertFalse((self.target / ".agents/runtime").exists())
 
+    def test_v2_upgrade_removes_only_recognizable_stubs_and_preserves_project_files(self) -> None:
+        """v2→v3 只清理固定旧 Stub，保留同一 Skill 内项目自有 Reference 与其他资产。"""
+        coding = self.target / ".agents" / "skills" / "coding"
+        references = coding / "references"
+        references.mkdir(parents=True)
+        (coding / "SKILL.md").write_text("# old managed coding\n", encoding="utf-8")
+        legacy_stub = references / "01_规则.md"
+        legacy_stub.write_text(
+            "# Agent Skills Runtime Reference\n\n"
+            "- Runtime ID: `coding.reference.01`\n"
+            "- Expected SHA256: `fixture`\n\n"
+            "调用 agent_skills_load_context。\n",
+            encoding="utf-8",
+        )
+        project_reference = references / "99_项目规则.md"
+        project_reference.write_text("# project-owned reference\n", encoding="utf-8")
+        project_asset = coding / "project-owned.txt"
+        project_asset.write_text("keep-project-asset\n", encoding="utf-8")
+        router = self.target / ROUTER_RELATIVE
+        router.write_text("# old managed router\n", encoding="utf-8")
+        manifest = self.target / INSTALL_MANIFEST_PATH
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text(
+            json.dumps(
+                {
+                    "schema": "agent-skills-install/v2",
+                    "skills": ["coding"],
+                    "shared_files": ["ROUTER.md"],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = install_project(
+            self.target,
+            self._payload(),
+            self.runtime_artifact,
+            release_version="2.0.0",
+        )
+
+        self.assertEqual(result["removed_legacy_stubs"], 1)
+        self.assertFalse(legacy_stub.exists())
+        self.assertEqual(project_reference.read_text(encoding="utf-8"), "# project-owned reference\n")
+        self.assertEqual(project_asset.read_text(encoding="utf-8"), "keep-project-asset\n")
+        installed = json.loads(manifest.read_text(encoding="utf-8"))
+        self.assertEqual(installed["schema"], "agent-skills-install/v3")
+        self.assertFalse(any("/references/" in path for path in installed["managed_files"]))
+
+    def test_v3_upgrade_preserves_project_reference_inside_managed_skill(self) -> None:
+        """v3 逐文件 ownership 升级不能删除安装后新增的项目自有 Reference。"""
+        install_project(self.target, self._payload(), self.runtime_artifact, release_version="1.2.3")
+        project_reference = self.target / ".agents/skills/coding/references/99_项目规则.md"
+        project_reference.parent.mkdir(parents=True)
+        project_reference.write_text("# keep project reference\n", encoding="utf-8")
+        (self.source / ROUTER_RELATIVE).write_text("# Router v2\n", encoding="utf-8")
+
+        install_project(self.target, self._payload(), self.runtime_artifact, release_version="1.3.0")
+
+        self.assertEqual(project_reference.read_text(encoding="utf-8"), "# keep project reference\n")
+
     def test_upgrade_removes_only_previous_managed_skill_and_keeps_project_skill(self) -> None:
         """Release 删除 Skill 时只删除旧 manifest 明确认领项，未知项目 Skill 永久保留。"""
         self._write_skill("security")
@@ -203,8 +289,8 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.assertEqual(manifest["shared_files"], ["ROUTER.md"])
         self.assertEqual(manifest["release_version"], "1.3.0")
 
-    def test_staged_shared_router_rename_failure_restores_previous_router(self) -> None:
-        """旧 Router 已移入备份后 staged Router 切换失败，也必须恢复旧 Router 与旧 manifest。"""
+    def test_managed_router_write_failure_restores_previous_router(self) -> None:
+        """新 Router 写入失败时必须恢复旧 Router、受管文件与旧 manifest。"""
         install_project(self.target, self._payload(), self.runtime_artifact, release_version="1.2.3")
         target_router = (self.target / ROUTER_RELATIVE).resolve()
         old_router = target_router.read_bytes()
@@ -212,22 +298,19 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
 
         (self.source / ROUTER_RELATIVE).write_text("# Router v2\n", encoding="utf-8")
         second_payload = self._payload()
-        original_rename = Path.rename
+        original_atomic_write = INSTALLER._atomic_write
+        failed = False
 
-        def controlled_rename(source_path: Path, destination: Path) -> Path:
-            """只在 staged ROUTER.md 即将替换正式 Router 时制造切换失败。"""
-            source = Path(source_path)
-            target = Path(destination)
-            if (
-                source.name == "ROUTER.md"
-                and ".agent-skills-project-stage-" in source.as_posix()
-                and target.resolve() == target_router
-            ):
-                raise OSError("fixture staged router rename failure")
-            return original_rename(source, target)
+        def controlled_atomic_write(path: Path, content: bytes, mode: int | None = None) -> None:
+            """只在新 Router 第一次写入时制造失败，随后允许回滚恢复。"""
+            nonlocal failed
+            if Path(path).resolve() == target_router and not failed:
+                failed = True
+                raise OSError("fixture managed router write failure")
+            original_atomic_write(path, content, mode)
 
-        with patch.object(Path, "rename", new=controlled_rename):
-            with self.assertRaisesRegex(OSError, "staged router rename failure"):
+        with patch.object(INSTALLER, "_atomic_write", side_effect=controlled_atomic_write):
+            with self.assertRaisesRegex(OSError, "managed router write failure"):
                 install_project(self.target, second_payload, self.runtime_artifact, release_version="1.3.0")
 
         self.assertTrue(target_router.is_file())

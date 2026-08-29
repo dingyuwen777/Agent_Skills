@@ -88,8 +88,10 @@ jobs:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           set -euo pipefail
-          python3 scripts/build_runtime.py --output-dir .runtime-dist --json
-          artifact="${GITHUB_WORKSPACE}/.runtime-dist/agent-skills-mcp"
+          name="agent-skills-mcp-v${RELEASE_VERSION}-linux"
+          python3 scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --json
+          artifact="${GITHUB_WORKSPACE}/.runtime-dist/${name}"
+          identity="${GITHUB_WORKSPACE}/.runtime-dist/${name}.manifest.json"
           "${artifact}" status --json
           "${artifact}" self-test --json
           python3 scripts/runtime_mcp_smoke.py --artifact "${artifact}" --json
@@ -101,13 +103,16 @@ jobs:
           python3 scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
 
           mkdir -p release-assets
-          cp "${artifact}" "release-assets/agent-skills-mcp-v${RELEASE_VERSION}-linux"
+          cp "${artifact}" "release-assets/${name}"
+          cp "${identity}" "release-assets/${name}.manifest.json"
 
       - name: Upload Linux binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-linux
-          path: release-assets/agent-skills-mcp-v*-linux
+          path: |
+            release-assets/agent-skills-mcp-v*-linux
+            release-assets/agent-skills-mcp-v*-linux.manifest.json
           if-no-files-found: error
           compression-level: 0
 
@@ -129,8 +134,10 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
-          python scripts/build_runtime.py --output-dir .runtime-dist --json
-          $artifact = (Resolve-Path .\.runtime-dist\agent-skills-mcp.exe).Path
+          $name = "agent-skills-mcp-v$env:RELEASE_VERSION-windows"
+          python scripts/build_runtime.py --output-dir .runtime-dist --name $name --json
+          $artifact = (Resolve-Path ".\.runtime-dist\$name.exe").Path
+          $identity = (Resolve-Path ".\.runtime-dist\$name.manifest.json").Path
           & $artifact status --json
           if ($LASTEXITCODE -ne 0) { throw "Windows Runtime status 失败" }
           & $artifact self-test --json
@@ -147,13 +154,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime MCP smoke 失败" }
 
           New-Item -ItemType Directory -Force -Path release-assets | Out-Null
-          Copy-Item $artifact "release-assets\agent-skills-mcp-v$env:RELEASE_VERSION-windows.exe"
+          Copy-Item $artifact "release-assets\$name.exe"
+          Copy-Item $identity "release-assets\$name.manifest.json"
 
       - name: Upload Windows binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-windows
-          path: release-assets/agent-skills-mcp-v*-windows.exe
+          path: |
+            release-assets/agent-skills-mcp-v*-windows.exe
+            release-assets/agent-skills-mcp-v*-windows.manifest.json
           if-no-files-found: error
           compression-level: 0
 
@@ -178,8 +188,10 @@ jobs:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           set -euo pipefail
-          python3 scripts/build_runtime.py --output-dir .runtime-dist --json
-          artifact="${GITHUB_WORKSPACE}/.runtime-dist/agent-skills-mcp"
+          name="agent-skills-mcp-v${RELEASE_VERSION}-macos"
+          python3 scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --json
+          artifact="${GITHUB_WORKSPACE}/.runtime-dist/${name}"
+          identity="${GITHUB_WORKSPACE}/.runtime-dist/${name}.manifest.json"
           "${artifact}" status --json
           "${artifact}" self-test --json
           python3 scripts/runtime_mcp_smoke.py --artifact "${artifact}" --json
@@ -191,13 +203,16 @@ jobs:
           python3 scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
 
           mkdir -p release-assets
-          cp "${artifact}" "release-assets/agent-skills-mcp-v${RELEASE_VERSION}-macos"
+          cp "${artifact}" "release-assets/${name}"
+          cp "${identity}" "release-assets/${name}.manifest.json"
 
       - name: Upload macOS binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-macos
-          path: release-assets/agent-skills-mcp-v*-macos
+          path: |
+            release-assets/agent-skills-mcp-v*-macos
+            release-assets/agent-skills-mcp-v*-macos.manifest.json
           if-no-files-found: error
           compression-level: 0
 
@@ -237,13 +252,57 @@ jobs:
           test "$(tr -d '\r\n' < VERSION)" = "${RELEASE_VERSION}"
           expected=(
             "agent-skills-mcp-v${RELEASE_VERSION}-linux"
+            "agent-skills-mcp-v${RELEASE_VERSION}-linux.manifest.json"
             "agent-skills-mcp-v${RELEASE_VERSION}-windows.exe"
+            "agent-skills-mcp-v${RELEASE_VERSION}-windows.manifest.json"
             "agent-skills-mcp-v${RELEASE_VERSION}-macos"
+            "agent-skills-mcp-v${RELEASE_VERSION}-macos.manifest.json"
             "USAGE.md"
           )
           for asset in "${expected[@]}"; do
             test -f "release-assets/${asset}" || { echo "missing release asset: ${asset}" >&2; exit 1; }
           done
+          binaries=(
+            "agent-skills-mcp-v${RELEASE_VERSION}-linux"
+            "agent-skills-mcp-v${RELEASE_VERSION}-windows.exe"
+            "agent-skills-mcp-v${RELEASE_VERSION}-macos"
+          )
+          identities=(
+            "agent-skills-mcp-v${RELEASE_VERSION}-linux.manifest.json"
+            "agent-skills-mcp-v${RELEASE_VERSION}-windows.manifest.json"
+            "agent-skills-mcp-v${RELEASE_VERSION}-macos.manifest.json"
+          )
+          for index in "${!binaries[@]}"; do
+            binary="${binaries[$index]}"
+            identity="${identities[$index]}"
+            jq -e \
+              --arg version "${RELEASE_VERSION}" \
+              --arg commit "${GITHUB_SHA}" \
+              --arg artifact "${binary}" \
+              '.schema == "agent-skills-runtime-release-identity/v1"
+               and .release_version == $version
+               and .source_commit == $commit
+               and .artifact == $artifact
+               and .bundle_schema == "agent-skills-runtime-bundle/v2"
+               and (.bundle_version | test("^[0-9a-f]{16}$"))
+               and ."TaskRoute协议" == "Agent Skills 任务路由/v1"
+               and ."RoutingManifest协议" == "Agent Skills 路由清单/v1"
+               and ."MCP工具契约协议" == "Agent Skills MCP工具契约/v2"
+               and .project_payload_schema == "agent-skills-project-payload/v2"
+               and .install_manifest_schema == "agent-skills-install/v3"
+               and (.source_digest | test("^[0-9a-f]{64}$"))
+               and (."Routing摘要" | test("^[0-9a-f]{64}$"))
+               and (.payload_digest | test("^[0-9a-f]{64}$"))' \
+              "release-assets/${identity}" >/dev/null
+            recorded_sha="$(jq -r '.artifact_sha256' "release-assets/${identity}")"
+            actual_sha="$(sha256sum "release-assets/${binary}" | awk '{print $1}')"
+            test "${recorded_sha}" = "${actual_sha}" || {
+              echo "Release identity artifact SHA256 不一致：${binary}" >&2
+              exit 1
+            }
+          done
+          # Identity manifest 只用于跨平台构建校验；正式 Release 资产面保持三平台 binary。
+          rm release-assets/*.manifest.json
           if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
             echo "tag 已存在，拒绝覆盖：${RELEASE_TAG}" >&2
             exit 1

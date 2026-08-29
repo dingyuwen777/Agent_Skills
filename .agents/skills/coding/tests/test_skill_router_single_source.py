@@ -33,7 +33,7 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertIn(MAINTENANCE_PATH, root_agents)
 
         self.assertNotIn("## 8. Runtime 维护不变量", root_agents)
-        self.assertNotIn("agent_skills_load_context", managed)
+        self.assertNotIn("agent_skills_load_required_context", managed)
         self.assertNotIn(".agents/skills/figma/SKILL.md", managed)
         self.assertNotIn(".agents/skills/review/SKILL.md", managed)
         self.assertNotIn(".agents/skills/docs/SKILL.md", managed)
@@ -45,9 +45,11 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
             ".agents/skills/*/SKILL.md",
             ".agents/skills/coding/SKILL.md",
             "项目自己的",
-            "agent_skills_load_context",
+            "agent_skills_route_contract",
+            "agent_skills_submit_route",
+            "agent_skills_load_required_context",
             "SHA256",
-            "canonical_text",
+            "完整原文",
             ".agents/skills/figma/SKILL.md",
             "READY / READY_WITH_NOTES / NOT_READY",
             ".agents/skills/review/SKILL.md",
@@ -64,6 +66,42 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         for skill in ("coding", "review", "docs", "figma"):
             self.assertIn(f"`{skill}`", router)
         self.assertIn("不是分发白名单", router)
+
+    def test_router_covers_required_low_ambiguity_dual_mode_examples(self) -> None:
+        """Router 必须逐类给出命中/叠加、Source 读取和 Runtime 信号示例。"""
+        router = self._read(ROUTER_PATH)
+        for header in ("命中原因与叠加", "Source Mode 读取", "Runtime Mode 任务信号"):
+            self.assertIn(header, router)
+        for example in (
+            "L1 机械修改",
+            "L2 Feature",
+            "L3 public API",
+            "Schema Migration",
+            "Bug / Failure / Incident",
+            "Refactor / Performance",
+            "Frontend",
+            "Figma review-only",
+            "Figma review-and-fix",
+            "Figma baseline-ready",
+            "Figma → Code",
+            "Docs not_applicable",
+            "Docs targeted",
+            "Docs full",
+            "Code Review / Audit",
+            "Dependency / Runtime Upgrade",
+            "Git / PR / Release",
+            "Runtime / Project Payload",
+            "Skill Mutation",
+            "Greenfield",
+            "复杂多 Skill 叠加",
+        ):
+            self.assertIn(f"| {example} |", router, f"Router 缺少低歧义示例：{example}")
+
+    def test_router_cross_skill_handoffs_have_explicit_closure_fields(self) -> None:
+        """Runtime/Figma/Review/Docs 路由必须显式说明完整交接闭环。"""
+        router = self._read(ROUTER_PATH)
+        for field in ("触发：", "必须动作：", "不适用：", "交接：", "返回：", "失败关闭："):
+            self.assertGreaterEqual(router.count(field), 4, f"跨 Skill 路由缺少字段：{field}")
 
     def test_maintenance_preserves_source_repository_governance(self) -> None:
         """根 AGENTS 迁出的维护规则必须在专属 Maintenance Owner 中继续可达。"""
@@ -96,8 +134,8 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
             None,
         )
         self.assertIsNotNone(entry, "Project Payload 没有分发 canonical Router 共享运行资产")
-        installed_router = decode_payload_file(entry).decode("utf-8")
-        self.assertEqual(installed_router, self._read(ROUTER_PATH))
+        installed_router = decode_payload_file(entry)
+        self.assertEqual(installed_router, (ROOT / ROUTER_PATH).read_bytes())
 
     def test_runtime_reference_preserves_web_direct_and_local_stdio_boundary(self) -> None:
         """网页端源码直读不能被误写成本地 stdio MCP 已连接，Remote MCP 仍是另一部署形态。"""
@@ -112,7 +150,8 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
             "安全隧道",
         ):
             self.assertIn(marker, runtime_reference)
-        self.assertIn("不经过 Reference Stub / `agent_skills_load_context`", runtime_reference)
+        self.assertIn("该路径是源码直接读取模式", runtime_reference)
+        self.assertIn("不调用本地六个 MCP Tool", runtime_reference)
 
 
 if __name__ == "__main__":

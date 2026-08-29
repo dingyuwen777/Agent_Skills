@@ -1,3 +1,7 @@
+<!-- agent-routing:v1
+{"协议":"Agent Skills Reference路由/v1","标识":"review.reference.02","触发":{"包含":{"维度":"意图","取值":["代码审查","Review-only","Review-and-test","Review-and-fix","独立复核"]}},"依赖":["review.reference.01"]}
+-->
+
 # Findings 与严重度
 
 Review 的输出目标不是“挑出很多问题”，而是提供可定位、可触发、可验证、可行动的 Findings。

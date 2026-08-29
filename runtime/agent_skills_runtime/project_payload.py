@@ -23,27 +23,6 @@ def _sha256_bytes(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def render_reference_stub(entry: Mapping[str, Any]) -> str:
-    """按 canonical Reference 元数据生成不含正文的 Runtime Stub。"""
-    return (
-        "# Agent Skills Runtime Reference\n\n"
-        "此文件是正式 Reference 的 **Runtime 入口**，不包含规则正文，也不能替代正式规则。\n\n"
-        f"- Runtime ID: `{entry['id']}`\n"
-        f"- Canonical file: `{entry['filename']}`\n"
-        f"- Expected SHA256: `{entry['sha256']}`\n\n"
-        "在执行本 Reference 对应动作前，必须调用本地 Agent Skills MCP 工具 "
-        "`agent_skills_load_context`，并传入：\n\n"
-        "```json\n"
-        f"{{\"ids\":[\"{entry['id']}\"]}}\n"
-        "```\n\n"
-        "必须把返回对象中的 `canonical_text` 作为本 Reference 的**完整正式原文**继续执行；"
-        "不得摘要、凭印象补写或只使用本 stub。还必须确认返回的 `sha256` 与上面的 "
-        "`Expected SHA256` 一致。\n\n"
-        "如果 MCP 不可用、Reference ID 不存在、返回 hash 不一致或无法取得 `canonical_text`，"
-        "明确报告并停止依赖本 Reference 的动作；不得假装已经读取并遵守该 Reference。\n"
-    )
-
-
 def _encode_file(path: str, payload: bytes, mode: int = 0o644) -> dict[str, Any]:
     """把一个项目文件编码为稳定、可校验且保留权限的 Payload 条目。"""
     return {
@@ -104,13 +83,6 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
     if bundle_skills != skill_names:
         raise ValueError("Project Payload Skill Catalog 与 Runtime Bundle 不一致")
 
-    references_by_skill: dict[str, list[Mapping[str, Any]]] = {name: [] for name in skill_names}
-    for entry in bundle.get("references", []):
-        skill = str(entry["skill"])
-        if skill not in references_by_skill:
-            raise ValueError(f"Runtime Bundle 包含未知 Skill Reference：{skill}")
-        references_by_skill[skill].append(entry)
-
     files: list[dict[str, Any]] = []
     skills_root = root / ".agents" / "skills"
     shared_files = list(SHARED_RUNTIME_FILES)
@@ -134,10 +106,6 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
             relative = path.relative_to(skills_root).as_posix()
             mode = stat.S_IMODE(path.stat().st_mode)
             files.append(_encode_file(relative, path.read_bytes(), mode))
-
-        for reference in sorted(references_by_skill[skill.name], key=lambda item: str(item["filename"])):
-            relative = f"{skill.name}/references/{reference['filename']}"
-            files.append(_encode_file(relative, render_reference_stub(reference).encode("utf-8"), 0o644))
 
     files.sort(key=lambda item: str(item["path"]))
     payload = {
@@ -233,6 +201,8 @@ def validate_project_payload(payload: Mapping[str, Any]) -> None:
             continue
         if pure.parts[0] not in skill_names:
             raise ValueError(f"Project Payload 文件不属于正式 Skill：{path}")
+        if len(pure.parts) > 1 and pure.parts[1] == "references":
+            raise ValueError(f"Project Payload 不得包含 Runtime Reference 或 Stub：{path}")
         if len(pure.parts) == 2 and pure.name == "SKILL.md":
             skill_roots_with_entry.add(pure.parts[0])
     if shared_entries != set(shared_files):

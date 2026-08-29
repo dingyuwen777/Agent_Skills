@@ -3,8 +3,9 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from runtime.agent_skills_runtime.catalog import build_bundle, public_manifest
+from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime.project_payload import build_project_payload
+from runtime.agent_skills_runtime.routing import public_route_contract
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -113,14 +114,14 @@ class UniversalFigmaSkillTest(unittest.TestCase):
     def test_real_repository_distribution_discovers_figma_automatically(self) -> None:
         """正式 Figma Skill 自动进入 Bundle、公开 Catalog 和 Project Payload。"""
         bundle = build_bundle(ROOT)
-        manifest = public_manifest(bundle)
+        contract = public_route_contract(bundle["路由清单"])
         payload = build_project_payload(ROOT, bundle)
-        self.assertIn("figma", manifest["skills"])
+        self.assertIn("figma", contract["Skill"])
         self.assertIn("figma", payload["skills"])
         self.assertTrue(any(entry["skill"] == "figma" for entry in bundle["references"]))
         payload_paths = {entry["path"] for entry in payload["files"]}
         self.assertIn("figma/SKILL.md", payload_paths)
-        self.assertIn("figma/references/07_页面布局与真实可用性审计.md", payload_paths)
+        self.assertFalse(any("/references/" in path for path in payload_paths))
 
 
 if __name__ == "__main__":

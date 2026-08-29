@@ -1,3 +1,7 @@
+<!-- agent-routing:v1
+{"协议":"Agent Skills Reference路由/v1","标识":"docs.reference.04","触发":{"任一":[{"包含":{"维度":"意图","取值":["文档同步","代码文档 Handoff"]}},{"包含":{"维度":"治理","取值":["跨 Skill Handoff"]}}]},"依赖":["docs.reference.01"]}
+-->
+
 # 与 Coding 协作
 
 Docs 和 Coding 解决的是两个不同问题：

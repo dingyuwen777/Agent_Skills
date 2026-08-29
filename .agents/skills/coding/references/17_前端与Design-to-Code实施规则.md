@@ -1,3 +1,7 @@
+<!-- agent-routing:v1
+{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.17","触发":{"任一":[{"包含":{"维度":"项目形态","取值":["前端Web","全栈应用","移动应用","桌面应用"]}},{"包含":{"维度":"范围","取值":["前端","UI"]}},{"包含":{"维度":"意图","取值":["设计转代码"]}}]},"依赖":["coding.reference.02","coding.reference.05","coding.reference.07"]}
+-->
+
 # 前端与 Design-to-Code 实施规则
 
 这份 reference 处理 Frontend / Web UI / Design-to-Code / Figma-to-code / 设计稿转代码等真正进入代码实现阶段的任务。

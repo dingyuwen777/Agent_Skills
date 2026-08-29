@@ -3,6 +3,10 @@ name: docs
 description: 面向软件项目技术文档的事实同步、审查、编写和更新工作流。先恢复当前仓库真实事实，再按文档影响选择 not_applicable、targeted 或 full；从第一性原理解释为什么存在、解决什么问题、数据或调用怎么流、当前代码在哪实现，再解释必要术语。术语使用白话，最小例子只在能帮助理解时使用；是否引用代码路径、表名、类名、函数名、接口名或配置项，以能否帮助理解/定位且不会制造第二套事实为判断标准。Use for documentation review, documentation updates, technical writing, README/architecture/API/operations guides, and code-documentation synchronization.
 ---
 
+<!-- agent-routing:v1
+{"协议":"Agent Skills Skill路由/v1","Skill":"docs","触发":{"包含":{"维度":"意图","取值":["文档审查","文档编写","文档更新","文档同步","Docs targeted","Docs full"]}}}
+-->
+
 # Docs
 
 Docs 的目标不是“让 Markdown 看起来更完整”，而是让读者能够**正确理解当前系统，并知道真实实现在哪里**。

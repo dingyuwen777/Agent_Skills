@@ -16,14 +16,25 @@ if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
 from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, evaluate_route
 
 
 EXPECTED_TOOLS = {
     "agent_skills_status",
-    "agent_skills_manifest",
+    "agent_skills_route_contract",
     "agent_skills_start_task",
-    "agent_skills_load_context",
+    "agent_skills_submit_route",
+    "agent_skills_load_required_context",
     "agent_skills_checkpoint",
+}
+
+EXPECTED_PROPERTIES = {
+    "agent_skills_status": set(),
+    "agent_skills_route_contract": set(),
+    "agent_skills_start_task": {"任务标识", "阶段"},
+    "agent_skills_submit_route": {"任务标识", "任务路由"},
+    "agent_skills_load_required_context": {"路由令牌", "重新加载"},
+    "agent_skills_checkpoint": {"路由令牌", "阶段"},
 }
 
 
@@ -47,6 +58,21 @@ def _structured_result(result: Any) -> dict[str, Any]:
     raise RuntimeError("MCP Tool 未返回可解析的结构化 object")
 
 
+def _json_keys(value: Any) -> set[str]:
+    """递归收集 JSON object 键，避免把合法中文取值误判成私有字段。"""
+    if isinstance(value, dict):
+        keys = {str(key) for key in value}
+        for item in value.values():
+            keys.update(_json_keys(item))
+        return keys
+    if isinstance(value, list):
+        keys: set[str] = set()
+        for item in value:
+            keys.update(_json_keys(item))
+        return keys
+    return set()
+
+
 async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
     """启动真实 stdio MCP 子进程，验证 tools/list 与 canonical Reference 原文读取链。"""
     try:
@@ -63,52 +89,115 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
         tool_names = {tool.name for tool in tools_result.tools}
         if tool_names != EXPECTED_TOOLS:
             raise RuntimeError(f"MCP Tool Contract 不一致：actual={sorted(tool_names)}")
+        for tool in tools_result.tools:
+            schema = getattr(tool, "input_schema", None)
+            if schema is None:
+                schema = getattr(tool, "inputSchema", None)
+            properties = schema.get("properties", {}) if isinstance(schema, dict) else {}
+            if set(properties) != EXPECTED_PROPERTIES[tool.name]:
+                raise RuntimeError(
+                    f"MCP 中文参数 schema 不一致：{tool.name} actual={sorted(properties)}"
+                )
 
         status = _structured_result(await client.call_tool("agent_skills_status", {}))
-        if status.get("source_digest") != expected_bundle["source_digest"]:
+        if status.get("Source摘要") != expected_bundle["source_digest"]:
             raise RuntimeError("MCP status source_digest 与 canonical source 不一致")
+        status_keys = _json_keys(status)
+        for forbidden in (
+            "reference_count",
+            "loaded_ids",
+            "filename",
+            "source_path",
+            "references",
+            "引用",
+            "标识",
+            "文件名",
+            "源路径",
+        ):
+            if forbidden in status_keys:
+                raise RuntimeError(f"MCP status 泄露被禁止字段：{forbidden}")
 
-        manifest = _structured_result(await client.call_tool("agent_skills_manifest", {}))
-        references = manifest.get("references")
-        if not isinstance(references, list) or not references:
-            raise RuntimeError("MCP manifest 没有 Reference 元数据")
-        first_id = str(references[0]["id"])
-        expected_entry = expected_by_id.get(first_id)
-        if expected_entry is None:
-            raise RuntimeError(f"MCP manifest 返回未知 Reference：{first_id}")
+        contract = _structured_result(await client.call_tool("agent_skills_route_contract", {}))
+        contract_text = json.dumps(contract, ensure_ascii=False)
+        if ".reference." in contract_text:
+            raise RuntimeError("MCP route contract 泄露 Stable Reference ID")
+        contract_keys = _json_keys(contract)
+        for forbidden in ("source_path", "filename", "标识", "文件名", "源路径", "依赖", "最低风险"):
+            if forbidden in contract_keys:
+                raise RuntimeError(f"MCP route contract 泄露私有路由信息：{forbidden}")
+
+        task_route = {
+            "协议": TASK_ROUTE_PROTOCOL,
+            "信号": {
+                "执行模式": ["实现"],
+                "阶段": ["功能开发"],
+                "风险": ["L2"],
+                "意图": ["Runtime 安装"],
+                "能力": ["测试"],
+                "授权": ["允许修改项目"],
+            },
+            "未知项": [],
+            "依据": ["真实 MCP smoke"],
+        }
+        expected_route = evaluate_route(expected_bundle["路由清单"], task_route)
 
         _structured_result(
             await client.call_tool(
                 "agent_skills_start_task",
-                {"task_id": "runtime-smoke", "phase": "verification"},
+                {"任务标识": "runtime-smoke", "阶段": "验证"},
             )
         )
-        loaded = _structured_result(
-            await client.call_tool("agent_skills_load_context", {"ids": [first_id]})
+        submitted = _structured_result(
+            await client.call_tool(
+                "agent_skills_submit_route",
+                {"任务标识": "runtime-smoke", "任务路由": task_route},
+            )
         )
-        contexts = loaded.get("contexts")
-        if not isinstance(contexts, list) or len(contexts) != 1:
-            raise RuntimeError("MCP load_context 未返回唯一目标 Reference")
-        context = contexts[0]
-        if context.get("canonical_text") != expected_entry["content"]:
-            raise RuntimeError("MCP load_context canonical_text 与源 Reference 不一致")
-        if context.get("sha256") != expected_entry["sha256"]:
-            raise RuntimeError("MCP load_context sha256 与源 Reference 不一致")
+        route_token = submitted.get("路由令牌")
+        if not isinstance(route_token, str) or not route_token:
+            raise RuntimeError("MCP submit_route 未返回有效路由令牌")
+        if submitted.get("必需上下文数量") != len(expected_route["必需Reference"]):
+            raise RuntimeError("MCP submit_route required Context 数量与唯一求值器不一致")
+
+        loaded = _structured_result(
+            await client.call_tool("agent_skills_load_required_context", {"路由令牌": route_token})
+        )
+        contexts = loaded.get("上下文")
+        if not isinstance(contexts, list) or len(contexts) != len(expected_route["必需Reference"]):
+            raise RuntimeError("MCP load_required_context 未返回完整 required Context")
+        for context in contexts:
+            reference_id = str(context.get("标识"))
+            expected_entry = expected_by_id.get(reference_id)
+            if expected_entry is None or reference_id not in expected_route["必需Reference"]:
+                raise RuntimeError(f"MCP load_required_context 返回非 required Reference：{reference_id}")
+            if context.get("完整原文") != expected_entry["content"]:
+                raise RuntimeError("MCP required Context 完整原文与 canonical source 不一致")
+            if context.get("SHA256") != expected_entry["sha256"]:
+                raise RuntimeError("MCP required Context SHA256 与 canonical source 不一致")
+            if "文件名" in context or "源路径" in context:
+                raise RuntimeError("MCP required Context 不应返回文件名或源路径")
+
+        repeated = _structured_result(
+            await client.call_tool("agent_skills_load_required_context", {"路由令牌": route_token})
+        )
+        if repeated.get("上下文") != []:
+            raise RuntimeError("MCP load_required_context 默认没有跳过已加载 Context")
 
         checkpoint = _structured_result(
             await client.call_tool(
                 "agent_skills_checkpoint",
-                {"required_ids": [first_id], "phase": "verification"},
+                {"路由令牌": route_token, "阶段": "完成前检查"},
             )
         )
-        if checkpoint.get("ok") is not True or checkpoint.get("missing_ids"):
-            raise RuntimeError("MCP checkpoint 未识别已经加载的 Reference")
+        if checkpoint.get("通过") is not True or checkpoint.get("缺失上下文数量") != 0:
+            raise RuntimeError("MCP checkpoint 未识别已经加载的 required Context")
 
     return {
         "ok": True,
         "artifact": str(artifact),
         "source_digest": expected_bundle["source_digest"],
-        "reference_id": first_id,
+        "routing_digest": expected_bundle["routing_digest"],
+        "required_context_count": len(expected_route["必需Reference"]),
         "tool_count": len(EXPECTED_TOOLS),
     }
 
@@ -141,7 +230,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print(
                 f"ok=true source_digest={result['source_digest']} "
-                f"reference_id={result['reference_id']} tool_count={result['tool_count']}"
+                f"routing_digest={result['routing_digest']} tool_count={result['tool_count']}"
             )
         return 0
     except (FileNotFoundError, OSError, RuntimeError, ValueError) as error:
