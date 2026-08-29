@@ -43,4 +43,4 @@
 6. 如果无法从当前仓库事实安全判断 Skill Ownership，或当前宿主没有 Agent_Skills 所需读取/写入权限，必须明确报告并停止对应写入，不得通过修改本地安装副本或口头声称“已同步”来绕过；
 7. Custom Instructions、Project instructions 或其他宿主提示可以作为进入本入口的触发器，但不是 canonical Skill 正文，也不会自动授予 GitHub 写入、PR、merge 或 Release 权限。
 
-完整的 Mutation 触发、canonical Ownership、项目事实防污染和维护流程由 `.agents/skills/ROUTER.md` 与 `.agents/MAINTENANCE.md` 负责，本 Bootstrap 不复制第二套详细规则。
+完整的 Mutation 触发与 canonical Ownership 由 `.agents/skills/ROUTER.md` 唯一负责；Mutation 的内容守恒细则由 `coding/references/16_规则内容守恒与Skill维护.md` 负责；进入 Agent_Skills 后的 Change、Review、CI、PR、main 验证与归档继续由 `.agents/MAINTENANCE.md` / Coding 现有交付规则负责。本 Bootstrap 不复制第二套详细规则。
