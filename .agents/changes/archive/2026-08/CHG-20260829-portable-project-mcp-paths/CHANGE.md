@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260829-portable-project-mcp-paths
 title: 修复项目级 MCP 配置绝对路径不可移植
 level: L2
-status: ready_for_review
+status: done
 owner: ChatGPT
 branch: fix/portable-project-mcp-paths
 created: 2026-08-29
@@ -36,7 +36,7 @@ data_changes: []
 - [x] `.agents/agent-skills-install.json` 继续保存项目相对 `runtime`，install manifest schema、Skill/shared ownership 与 Runtime 安装位置不变。
 - [x] 升级已有受管安装时把旧绝对 command 收敛为新可移植 command，同时保留其他 MCP server、TOML/JSON 用户内容和 managed marker 外文本。
 - [x] AGENTS、CLAUDE、`.gitignore`、三个 Host config 和 install manifest 等安装器持久文本均由回归测试锁定，不得写入目标项目绝对目录。
-- [x] 已完成 Red → Green → 独立 Review → Completion Audit 并进入 `ready_for_review`；后续仍需最终 Ready CI、非 Draft PR CI、merge、main 新鲜 CI 与独立归档。
+- [x] 已完成 Red → Green → 独立 Review → Ready → 非 Draft PR CI → merge → main 新鲜 CI；通过独立归档分支移入 archive。
 
 # 范围
 
@@ -72,21 +72,21 @@ data_changes: []
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
 | R1 | 安装后的项目配置不能绑定安装者电脑绝对路径，换电脑/目录后应保持项目级可移植 | user:2026-08-29-portable-mcp-paths | satisfied | Red run `33236844887` 精确证明旧实现把临时项目绝对路径写入三个 Host command；当前 `install_project()` 已分别生成 Cursor/Claude 项目根 command 与 Codex 项目相对 command。run `33237216737` 的 136 tests 全通过，并扫描全部安装器持久文本确认不含目标项目绝对路径。 |
-| R2 | 继续保持项目级、单二进制、每台机器本地安装模式 | `.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md` | satisfied | `.agents/runtime/agent-skills-mcp[.exe]` 位置、`/.agents/runtime/` gitignore、manifest `runtime` 相对值、AGENTS/CLAUDE bridge 与 ownership 均未改变；run `33237216737` Linux onefile/MCP/project install 成功。 |
-| R3 | Runtime/Host config 变化必须匹配真实宿主能力并有跨平台构建/安装证据 | `.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md` | satisfied | run `33237216737`：136 tests、Linux onefile/status/self-test、真实 stdio MCP、项目安装、Windows package/install、macOS package/install 全部成功；宿主 GUI 本身未在 CI 启动，Codex cwd 差异保留为明确未验证边界。 |
+| R2 | 继续保持项目级、单二进制、每台机器本地安装模式 | `.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md` | satisfied | `.agents/runtime/agent-skills-mcp[.exe]` 位置、`/.agents/runtime/` gitignore、manifest `runtime` 相对值、AGENTS/CLAUDE bridge 与 ownership 均未改变；final PR run `33237428450` 与 main run `33237519731` 的真实项目安装链均成功。 |
+| R3 | Runtime/Host config 变化必须匹配真实宿主能力并有跨平台构建/安装证据 | `.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md` | satisfied | final PR run `33237428450` 与 main run `33237519731`：136 tests、Linux onefile/status/self-test、真实 stdio MCP、项目安装、Windows package/install、macOS package/install 全部成功；宿主 GUI 本身未在 CI 启动，Codex cwd 差异保留为明确未验证边界。 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | Red run `33236844887`：136 tests 中仅新增 3 个可移植性测试失败，其余 133 个通过；Green/re-review run `33237216737`：136 tests 全通过。 |
+| 行为 / Unit / Component | required | Red run `33236844887`：136 tests 中仅新增 3 个可移植性测试失败，其余 133 个通过；final PR/main CI 的 136 tests 全通过。 |
 | 接口 / Contract | required | exact host command、`args=["serve"]`、manifest `runtime`、Windows/POSIX 文件名、其他 MCP server/用户 TOML JSON 保留均有永久断言；schema/ownership 未改。 |
 | 集成 / Persistence / Runtime Dependency | required | 新测试在临时真实文件系统直接执行 `install_project()`，覆盖首次 Windows/POSIX 安装与已有受管配置升级写回。 |
 | 用户 / Workflow Acceptance | required | 安装后的持久文本不再记录安装机器绝对项目路径；另一台机器在自己的项目根运行对应平台 binary 后会生成本机 Runtime 并保持项目级配置。 |
-| 跨组件 Golden Path | required | run `33237216737` 继续执行 onefile → status/self-test → real stdio MCP → project-only install → installed Runtime smoke；Windows/macOS 对应平台 package/install 也成功。 |
+| 跨组件 Golden Path | required | final PR/main CI 继续执行 onefile → status/self-test → real stdio MCP → project-only install → installed Runtime smoke；Windows/macOS 对应平台 package/install 也成功。 |
 | External Dependency / Provider Probe | not_applicable | 不调用业务外部 Provider。Cursor/Claude/Codex GUI 未作为普通 CI 依赖；宿主差异在 Review 中单独记录，不用静态配置测试冒充真实 GUI Host。 |
-| Build / Package / Runtime | required | run `33237216737` Linux onefile/MCP/install、Windows package/install、macOS package/install 均 success。 |
-| Docs / Governance / Other | required | Change、A1/A2、Completion Audit、独立 Review 与 Ready Gate；现有 ref13/ref14/USAGE 已完整描述项目级安装和本地 Runtime 边界，不需要为内部 command 表达方式重复新增规则。 |
+| Build / Package / Runtime | required | final PR run `33237428450` 和 main run `33237519731` 的 Linux onefile/MCP/install、Windows package/install、macOS package/install 均 success。 |
+| Docs / Governance / Other | required | Change、A1/A2、Completion Audit、独立 Review、Ready Gate、非 Draft PR、merge、main fresh CI 与独立 archive；现有 ref13/ref14/USAGE 已完整描述项目级安装和本地 Runtime 边界。 |
 
 # Completion Audit
 
@@ -103,10 +103,13 @@ data_changes: []
 4. Verify Green：run `33236993302` 的 136 tests、Linux onefile/MCP/install、Windows/macOS package/install 全部成功；唯一失败是 Change 当时仍 `in_progress` 的预期 Ready Gate。
 5. Re-review gap：用户明确要求检查“安装之后的所有路径”，因此进一步把 AGENTS、CLAUDE、`.gitignore`、三个 Host config 和 install manifest 纳入绝对项目路径扫描。
 6. Re-verify：run `33237216737` 的 136 tests、Linux onefile/MCP/install、Windows/macOS package/install 全部成功；唯一失败仍是本文件更新前的 `in_progress` Ready Gate。
+7. Final Ready：HEAD `bbffc26b3f416a7d7ec21199c551f4adae6de86a` 的 run `33237333549` 三个 Job 全部 success，Ready Gate success。
+8. Non-Draft PR：PR #36 使用相同 HEAD，run `33237428450` 三个 Job 全部 success。
+9. Main：PR #36 merge commit `c581643bfa9214c835da7b4533791d67bc1b275e`；main push run `33237519731` 三个 Job 全部 success。
 
 # 独立 Review
 
-Review Target：Draft PR #35，base `5daaf524c60302bdd30f5d5c3e769a80840a633c`，生产实现 commit `bd26265101fd0076a3e1204c0dbd401d5a1097db`；后续 `a8ae0f775cbf558b29c4336386b1f30c23b31044` 只扩大永久回归范围。
+Review Target：Draft PR #35 / 同 HEAD 非 Draft PR #36，base `5daaf524c60302bdd30f5d5c3e769a80840a633c`，final feature HEAD `bbffc26b3f416a7d7ec21199c551f4adae6de86a`。
 
 模式：review-and-fix 后 re-review；用户已明确授权系统检查并修复安装后的路径可移植性。
 
@@ -145,10 +148,9 @@ Docs Impact：`not_applicable`。`USAGE.md`、ref13、ref14 已经规定“按�
 # Git / PR / Release 状态
 
 - branch: `fix/portable-project-mcp-paths`
-- Draft PR: `#35`
-- Red: run `33236844887`
-- Green: run `33236993302`
-- re-review Green: run `33237216737`
-- merge: 未执行
-- main CI: 未执行
-- Release: 本 Change 不自动发布新版本
+- Draft PR #35：因 GitHub 连接器 Draft→Ready GraphQL schema 缺陷关闭，未合并。
+- Final PR #36：非 Draft，同一 final HEAD，CI run `33237428450` 全绿。
+- feature merge: `c581643bfa9214c835da7b4533791d67bc1b275e`
+- main CI: run `33237519731` 全绿。
+- archive branch: `chore/archive-portable-project-mcp-paths`
+- Release: 本 Change 未自动发布新版本；已有 Release 资产不会因 main 代码变化自动更新。
