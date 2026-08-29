@@ -144,11 +144,45 @@ Figma READY / READY_WITH_NOTES
 dingyuwen777/Agent_Skills
 ```
 
-目标项目、Runtime 本地安装副本、Reference Stub、缓存或历史聊天可以提供需求背景与验证证据，但不能取代 Agent_Skills 当前源码作为 canonical 写入事实源。Mutation 执行前必须重新读取 Agent_Skills 当前目标分支根 `AGENTS.md`、Maintenance、Coding 以及本次受影响的正式 Skill / Reference；不能拿目标项目里的旧副本反向覆盖 canonical 规则。
+### 7.1 canonical 明文事实源
 
-普通 Runtime Router 不承担本节的源仓库维护触发。Custom Instructions、Project instructions 等宿主提示只可以把维护者的相应意图引导回 Agent_Skills 当前根 `AGENTS.md`，不能替代这里的 canonical 内容、权限和交付门禁。
+通用 Agent Skill 的 canonical 明文只来自 Agent_Skills 当前源码仓库中的正式 Owner：
 
-### 7.1 universal 与项目特定事实必须先分离
+```text
+.agents/skills/<skill>/SKILL.md
+.agents/skills/<skill>/references/*.md
+.agents/skills/ROUTER.md
+以及该 Skill 明确认领的 metadata / assets / scripts / tests
+```
+
+以下都**不是 canonical Skill 写入目标**：
+
+- 目标项目中的 Runtime / Project Payload 本地安装副本；
+- Reference Stub；
+- MCP 返回结果的旧缓存；
+- 历史聊天、摘要或旧版本复制件；
+- Custom Instructions / Project instructions 中的转述。
+
+这些目标项目资产、缓存或宿主提示可以提供需求背景与验证证据，但不能取代 Agent_Skills 当前源码作为 canonical 写入事实源。不得直接编辑本地安装副本后声称“Skill 已更新”。
+
+### 7.2 Mutation 固定入口与条件路由
+
+进入 Agent_Skills Mutation 后，在任何 canonical 写入前至少执行：
+
+```text
+重新读取 Agent_Skills 当前目标分支根 AGENTS.md
+→ .agents/MAINTENANCE.md
+→ .agents/skills/ROUTER.md
+→ .agents/skills/coding/SKILL.md
+→ coding/references/16_规则内容守恒与Skill维护.md
+→ 本次真正受影响 Skill 的 SKILL.md / references
+```
+
+如果 Mutation 会影响 managed block / Bootstrap，则再读 ref13；影响 Runtime、Project Payload、Bundle、Stub、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性时，再读 ref14。随后按 Agent_Skills Maintenance/Coding 当前的 Change、TDD、独立 Review、CI、PR、main 新鲜 CI 和 archive 门禁执行，不建立一套 Mutation 专用平行交付流程。
+
+普通 Runtime Router 不承担本节的源仓库维护触发。Custom Instructions、Project instructions 等宿主提示只可以把维护者的相应意图引导回 Agent_Skills 当前根 `AGENTS.md`，不能替代这里的 canonical 内容、权限和交付门禁。当前宿主只有只读 GitHub 能力、没有 Agent_Skills 源仓库权限、没有所需写权限或不能执行仓库要求的 PR/CI 门禁时，明确报告未同步/未交付，不得改本地安装副本冒充 canonical 写入，也不得口头声称“已同步”。
+
+### 7.3 universal 与项目特定事实必须先分离
 
 跨仓库同步前先把输入拆成两类：
 
@@ -163,7 +197,7 @@ dingyuwen777/Agent_Skills
 
 不能因为用户说“同步到 Skill”就把整段项目事实原样搬入通用 Skill。只有能证明跨项目成立的部分才进入 canonical 规则；无法安全抽取通用部分时，不做 Skill 变更并明确说明依据。
 
-### 7.2 新增 Skill
+### 7.4 新增 Skill
 
 **新增 Skill** 至少检查：
 
@@ -175,7 +209,7 @@ dingyuwen777/Agent_Skills
 6. 永久测试至少证明 Bundle、公开 Catalog、Project Payload、Installer/manifest 能通过动态发现携带新 Skill；
 7. 新规则不得内嵌来源项目的项目特定事实。
 
-### 7.3 删除 Skill
+### 7.5 删除 Skill
 
 **删除 Skill** 不是只删一个目录。实施前至少反向检查：
 
@@ -195,7 +229,7 @@ Router 当前 Catalog / Handoff
 - 目标项目中同名但未被 Agent_Skills install manifest 认领的项目自有 Skill 仍受项目 Ownership 保护，不能因为 canonical Skill 删除而清理；
 - 永久测试证明新 Catalog/Bundle/Payload 不再包含已删除 Skill，并保持其他 Skills 不受影响。
 
-### 7.4 重命名 Skill
+### 7.6 重命名 Skill
 
 **重命名 Skill** 按“旧 Skill 删除 + 新 Skill 建立 + Contract 迁移”处理，不是单纯 `git mv`：
 
@@ -205,7 +239,7 @@ Router 当前 Catalog / Handoff
 - 不保留没有明确兼容需求的影子目录、复制件或第二份 canonical Skill；
 - 旧名称若必须暂时兼容，必须把时限、Owner、删除条件和验证写进 Change，不能把兼容复制件无限期保留。
 
-### 7.5 Reference 新增、删除与重命名
+### 7.7 Reference 新增、删除与重命名
 
 **新增 Reference**：
 
@@ -226,7 +260,7 @@ Router 当前 Catalog / Handoff
 - 如果两位数字前缀变化导致 Stable Reference ID 变化，按 Runtime Contract 变化读取 ref14；
 - 不能只改显示文件名却遗漏 Stub、Bundle metadata、测试或触发链。
 
-### 7.6 修改、拆分、合并和通用化
+### 7.8 修改、拆分、合并和通用化
 
 对现有 Skill/Reference 的规则修改继续遵守本文件第 1–5 节：
 
@@ -236,7 +270,7 @@ Router 当前 Catalog / Handoff
 - 通用化只允许移除/条件化项目假设，不得降低原规则强度；
 - 从某目标项目抽取规则时，必须再次检查项目特定事实是否已被剥离。
 
-### 7.7 Mutation 完成验证
+### 7.9 Mutation 完成验证
 
 Skill Mutation 完成前至少形成：
 
