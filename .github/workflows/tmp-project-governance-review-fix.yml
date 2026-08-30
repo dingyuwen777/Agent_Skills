@@ -1,0 +1,57 @@
+name: Temporary Project Governance Review Fix
+
+on:
+  push:
+    branches:
+      - feat/project-governance-bootstrap
+    paths:
+      - .github/workflows/tmp-project-governance-review-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: feat/project-governance-bootstrap
+      - name: Apply review fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one patch anchor, found {count}")
+              file.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          skill = ".agents/skills/coding/SKILL.md"
+          old = """Greenfield 仓库即使暂时为空，也先确认仓库根、当前 Git 状态、目标运行/交付环境和用户已确认约束；没有既有代码时不伪造“当前架构”，而是把尚待建立的工程事实标成待决策或待实现。\n\n#### 4.2.1 首次接入的 Project Governance Bootstrap\n\n当目标项目已经安装/可访问 Agent_Skills，且出现以下任一情况时，在**任何实质性生产代码修改之前**先完成 Project Governance Bootstrap：\n\n- 项目首次接入 Agent_Skills；\n- 根 `AGENTS.md` 不存在、仍标记 Project Governance Bootstrap“状态：待校准”，或已有项目规则从未按当前仓库事实做过首次校准；\n- 当前自然语言研发任务暴露技术栈、模块职责、Contract/Schema、开发验证入口、CI/Release/部署等长期治理事实可能已与 `AGENTS.md` 漂移；\n- 用户明确要求创建、刷新或校准项目规则。\n\n执行时必须读取 [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) 与 [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md)。普通自然语言开发、修复或重构请求本身即可触发该前置流程，用户不需要记忆额外内部命令。Runtime binary 只负责机械安装；仓库语义调查由当前宿主大模型完成。\n\n如果当前任务已授权修改项目，则宿主大模型先做有界事实调查，只在 Agent Skills 自管区之外创建或校准项目自己的 `AGENTS.md` Overlay；完成后把项目自有治理状态标记为“状态：已校准”，**重新读取最终 `AGENTS.md`**，再回到同一任务**继续原始研发任务**。如果当前任务只有只读授权，则只能在会话内完成调查并报告治理未校准，不得写 `AGENTS.md`。\n\n首次校准不是每个任务都重跑的全仓审计。状态已校准且没有长期治理事实变化时，只做廉价漂移检查并直接进入本次任务；只有受影响的长期事实变化时才 targeted 更新对应 Overlay 内容。\n"""
+          new = """Greenfield 仓库即使暂时为空，也先确认仓库根、当前 Git 状态、目标运行/交付环境和用户已确认约束；没有既有代码时不伪造“当前架构”，而是把尚待建立的工程事实标成待决策或待实现。目标项目**首次接入** Agent_Skills、治理状态待校准或长期**治理事实**疑似漂移时，按 ref01 + ref12 在**任何实质性生产代码修改之前**完成 `Project Governance Bootstrap`：写授权下校准项目 Overlay、重读最终 `AGENTS.md` 后**继续原始研发任务**；只有只读授权时在会话内完成最少充分调查、不写项目规则并**继续原始只读任务**。普通后续任务没有长期治理变化时不重复全量校准。\n"""
+          replace_once(skill, old, new)
+
+          ref = ".agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md"
+          old = """普通只读分析、Review、文档审计或功能开发，如果用户没有授权项目规则写入，不因为发现 `AGENTS.md` 缺失就自动创建或修改文件。权限边界仍按 Coding 主规则执行。\n"""
+          new = """普通只读分析、Review、文档审计或功能开发，如果用户没有授权项目规则写入，不因为发现 `AGENTS.md` 缺失就自动创建或修改文件。首次治理确有必要时，只在当前会话内完成最少充分的有界事实调查，明确 `AGENTS.md` 治理状态未持久化，然后**继续原始只读任务**；权限边界仍按 Coding 主规则执行。\n"""
+          replace_once(ref, old, new)
+
+          usage = "USAGE.md"
+          old = """第一次在一个已有项目中使用 Agent_Skills 时，建议先让当前大模型完成一次 `Project Governance Bootstrap`（项目规则初始化/校准）。这一步不是让安装程序猜项目架构，而是让**当前正在帮助你开发这个项目的大模型**先调查项目真实情况，再创建或修正项目自己的 `AGENTS.md`。\n"""
+          new = """首次接入任意项目时，当前大模型应先完成一次 `Project Governance Bootstrap`（项目规则初始化/校准），再进入实质性开发；Greenfield 和已有项目都适用。这一步不是让安装程序猜项目架构，而是让**当前正在帮助你开发这个项目的大模型**先调查项目真实情况，再创建或修正项目自己的 `AGENTS.md`。\n"""
+          replace_once(usage, old, new)
+          PY
+          git diff --check
+          python -m unittest discover -s .agents/skills/coding/tests -p 'test_project_governance_bootstrap.py' -v
+          python -m unittest discover -s .agents/skills/coding/tests -p 'test_coding_progressive_disclosure.py' -v
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .agents/skills/coding/SKILL.md .agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md USAGE.md
+          git commit -m "修正项目治理Bootstrap Review边界"
+          git push origin HEAD:feat/project-governance-bootstrap
