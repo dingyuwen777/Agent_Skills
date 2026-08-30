@@ -127,6 +127,51 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         ):
             self.assertIn(marker, handoff)
 
+    def test_existing_frontend_figma_update_is_delta_driven(self) -> None:
+        """已有页面按新 Figma 更新时必须以现有实现为基线做差异驱动增量修改。"""
+        handoff = self._read(FIGMA_ROOT / "references/05_Design-to-Code交付门禁.md")
+        implementation = self._read(CODING_ROOT / "references/16_前端与Design-to-Code实施规则.md")
+        for marker in (
+            "Existing Implementation Delta Gate", "现有实现基线", "新 Figma 差异",
+            "最小增量修改", "不默认整页重写", "保留正确业务行为",
+        ):
+            self.assertIn(marker, handoff)
+        for marker in ("差异驱动", "返回 Figma Skill", "授权 Figma 回写"):
+            self.assertIn(marker, implementation)
+
+    def test_backend_contract_changes_sync_back_to_figma_annotation(self) -> None:
+        """后端/Contract 与前端设计不一致时必须按正式机器 Owner 修正并同步 Annotation。"""
+        mapping = self._read(FIGMA_ROOT / "references/02_业务能力与真实系统映射.md")
+        for marker in (
+            "Backend / Contract → Annotation Sync", "当前正式机器事实 Owner",
+            "当前后端实现符合正式 Contract", "同步 Figma Annotation",
+            "后端实现违反正式 Contract", "Pending Figma Sync",
+        ):
+            self.assertIn(marker, mapping)
+
+    def test_implementation_drift_back_sync_requires_authoritative_decision(self) -> None:
+        """实现偏移只有成为正式长期事实后才能回写 Figma，不能把 Bug 自动设计化。"""
+        handoff = self._read(FIGMA_ROOT / "references/05_Design-to-Code交付门禁.md")
+        for marker in (
+            "Bidirectional Design Sync Gate", "不能把偶然实现偏移",
+            "有 Figma 写权限", "SYNCHRONIZED_PENDING_HUMAN_REVIEW",
+            "HUMAN_VERIFIED", "人工确认",
+        ):
+            self.assertIn(marker, handoff)
+
+    def test_figma_sync_report_is_mandatory_human_review_output(self) -> None:
+        """Design-to-Code 结束必须强制输出 Figma 修改位置、事实依据和人工复核包。"""
+        handoff = self._read(FIGMA_ROOT / "references/05_Design-to-Code交付门禁.md")
+        skill = self._read(FIGMA_ROOT / "SKILL.md")
+        for marker in (
+            "Figma Sync & Human Review", "Figma File / Page / Section / Frame / Node",
+            "Before → After", "事实来源 / 原因", "人工复核重点",
+            "Pending Figma Sync", "必须输出",
+        ):
+            self.assertIn(marker, handoff)
+        for marker in ("Figma Sync & Human Review", "SYNCHRONIZED_PENDING_HUMAN_REVIEW"):
+            self.assertIn(marker, skill)
+
     def test_canvas_geometry_audit_distinguishes_intentional_overlap(self) -> None:
         """Canvas 几何审计必须机器识别非预期相交，同时允许有明确语义的浮层重叠。"""
         layout = self._read(FIGMA_ROOT / "references/07_页面布局与真实可用性审计.md")
