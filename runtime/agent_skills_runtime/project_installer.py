@@ -151,6 +151,14 @@ def _payload_asset(payload_files: Mapping[str, bytes], path: str) -> str:
     return _validate_utf8(content, path)
 
 
+def _project_agents_managed_text(payload_files: Mapping[str, bytes]) -> str:
+    """把源模板 Router 链接转换为写入项目根 AGENTS 后仍可点击的目标。"""
+    text = _payload_asset(payload_files, "coding/assets/AGENTS.managed.md")
+    source_link = "[`.agents/skills/ROUTER.md`](../../ROUTER.md)"
+    project_link = "[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)"
+    return text.replace(source_link, project_link)
+
+
 def _normalise_shared_files(raw: Any, label: str) -> list[str]:
     """校验 Skills 根级共享文件 ownership 清单并返回稳定列表。"""
     if not isinstance(raw, list) or not raw:
@@ -196,7 +204,7 @@ def _fact_sources(root: Path) -> str:
 def _updated_agents_content(root: Path, existing: bytes | None, payload_files: Mapping[str, bytes]) -> bytes:
     """按 Coding Bootstrap Contract 创建或增量更新根 AGENTS.md，并预检统一 Router 运行资产。"""
     _payload_asset(payload_files, SKILL_ROUTER_ASSET)
-    managed_text = _payload_asset(payload_files, "coding/assets/AGENTS.managed.md").rstrip("\r\n")
+    managed_text = _project_agents_managed_text(payload_files).rstrip("\r\n")
     if existing is None:
         template = Template(_payload_asset(payload_files, "coding/assets/AGENTS.template.md"))
         rendered = template.substitute(

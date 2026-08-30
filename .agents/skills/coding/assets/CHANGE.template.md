@@ -74,9 +74,9 @@ $data_changes
 | Build / Package / Runtime | not_applicable | 构建、打包、安装、镜像、target 或启动行为可能受影响时验证正式产物/运行入口 |
 | Docs / Governance / Other | not_applicable | 文档、配置、生成物、架构/Owner、Secret、Policy、Change/Ready 等专项证据 |
 
-通用规则见 `.agents/skills/coding/references/07_通用验证与证据策略.md`。
+通用规则见 [`.agents/skills/coding/references/07_通用验证与证据策略.md`](../../../skills/coding/references/07_通用验证与证据策略.md)。
 
-项目存在 UI/API/Persistence/External Dependency 专项边界时，在保持语义责任不变的前提下按 `.agents/skills/coding/references/08_分层测试与验收策略.md` 映射为更具体层名，例如：
+项目存在 UI/API/Persistence/External Dependency 专项边界时，在保持语义责任不变的前提下按 [`.agents/skills/coding/references/08_分层测试与验收策略.md`](../../../skills/coding/references/08_分层测试与验收策略.md) 映射为更具体层名，例如：
 
 ```text
 用户 / Workflow Acceptance
@@ -134,7 +134,7 @@ External Dependency / Provider Probe
 
 ## 计划
 
-- Validation Matrix：按 `.agents/skills/coding/references/07_通用验证与证据策略.md` 选择通用维度；存在专项 profile 时再叠加专项策略
+- Validation Matrix：按 [`.agents/skills/coding/references/07_通用验证与证据策略.md`](../../../skills/coding/references/07_通用验证与证据策略.md) 选择通用维度；存在专项 profile 时再叠加专项策略
 - 目标测试：
 - 相关测试：
 - 静态检查/构建：

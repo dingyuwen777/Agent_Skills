@@ -715,7 +715,7 @@ Greenfield Web 默认首选推荐 Vue，但不强制迁移已有项目
 
 ## 19. Figma Skill 的 READY Handoff 是正式 Figma-to-code 前置门禁
 
-本 reference 负责**真正进入生产代码后的实现**，不负责重新审查 Figma Canvas、Prototype 或设计基线。只要输入来自正式 Figma，且同仓存在 `.agents/skills/figma/SKILL.md`，在执行本 reference 的实现步骤前必须先按 `02_跨项目研发任务路由.md` 进入 Figma Skill。
+本 reference 负责**真正进入生产代码后的实现**，不负责重新审查 Figma Canvas、Prototype 或设计基线。只要输入来自正式 Figma，且同仓存在 [`.agents/skills/figma/SKILL.md`](../../figma/SKILL.md)，在执行本 reference 的实现步骤前必须先按 [`02_跨项目研发任务路由.md`](02_跨项目研发任务路由.md) 进入 Figma Skill。
 
 标准顺序：
 

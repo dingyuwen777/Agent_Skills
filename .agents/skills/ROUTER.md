@@ -33,10 +33,10 @@
 
 | Skill | 当前职责 | 正式入口 |
 | --- | --- | --- |
-| `coding` | 通用研发、调试、验证、Change、Git/CI/交付与跨 Skill 主流程 | `.agents/skills/coding/SKILL.md` |
-| `review` | 独立 Review、Findings、测试充分性与 re-review | `.agents/skills/review/SKILL.md` |
-| `docs` | 技术文档事实同步、审查、编写与更新 | `.agents/skills/docs/SKILL.md` |
-| `figma` | Figma 设计事实、Canvas/Prototype、设计系统、Ready 与 Design-to-Code 交接 | `.agents/skills/figma/SKILL.md` |
+| `coding` | 通用研发、调试、验证、Change、Git/CI/交付与跨 Skill 主流程 | [`.agents/skills/coding/SKILL.md`](coding/SKILL.md) |
+| `review` | 独立 Review、Findings、测试充分性与 re-review | [`.agents/skills/review/SKILL.md`](review/SKILL.md) |
+| `docs` | 技术文档事实同步、审查、编写与更新 | [`.agents/skills/docs/SKILL.md`](docs/SKILL.md) |
+| `figma` | Figma 设计事实、Canvas/Prototype、设计系统、Ready 与 Design-to-Code 交接 | [`.agents/skills/figma/SKILL.md`](figma/SKILL.md) |
 
 这些名称只是当前 Catalog，**不是分发白名单**。新增合法 `.agents/skills/<name>/SKILL.md` 后，Runtime、Project Payload、manifest、测试和 Release 仍应依赖动态发现，而不是要求在 Bootstrap 里同步另一份固定名单。
 
@@ -47,7 +47,7 @@ Review、Docs、Figma 不复制第二套 Coding 研发规则；Coding 也不复�
 处理代码分析、方案设计、功能开发、Bug 修复、重构、测试、Review、文档、Figma、Git、CI、PR、Release 或交付任务时：
 
 1. 先按第 1 节恢复当前目标项目事实，只读取与当前任务直接相关的最少充分内容；
-2. 然后必须读取 `.agents/skills/coding/SKILL.md`，按项目形态、研发阶段/任务类型、实际语言/工具链和 L1/L2/L3 风险完成任务路由；
+2. 然后必须读取 [`.agents/skills/coding/SKILL.md`](coding/SKILL.md)，按项目形态、研发阶段/任务类型、实际语言/工具链和 L1/L2/L3 风险完成任务路由；
 3. Coding Skill 要求读取某个 `references/` 文件时，必须在执行对应动作前取得该 Reference 的完整正式原文，不能只读 `SKILL.md` 后凭印象补流程；
 4. 只有任务命中其他专业 Skill 时才进入对应 `SKILL.md`，不机械读取全部 Skills 或全部 References；
 5. 能由当前目标项目仓库确认的事实先自行检查，不从历史聊天、旧缓存或 Skill 示例猜当前实现。
@@ -150,22 +150,18 @@ Task Route 是 Agent/Runtime 内部协议，不是用户日常配置；用户继
 
 Bootstrap/managed block 必须读取：
 
-```text
-.agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md
-```
+[`.agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md`](coding/references/12_目标项目安装与AGENTS_Bootstrap.md)
 
 涉及本地 MCP Runtime 构建/Release/项目安装/升级、Project Payload、Routing Manifest/Task Route、Bundle、installation manifest 或宿主 MCP 配置，还必须读取：
 
-```text
-.agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md
-```
+[`.agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md`](coding/references/13_本地MCP_Runtime分发与原文上下文加载.md)
 
 ## 7. Figma 路由
 
 - 触发：任务涉及 Figma 创建、修改、整理、审查、设计系统、Prototype、正式设计基线验收，或按 Figma 实现/替换页面。
 - 必须动作：读取并执行 Figma Skill；Figma 负责设计事实、Canvas/Prototype、设计修复和 `READY / READY_WITH_NOTES / NOT_READY`。
 - 不适用：没有 Figma/design-to-code 事实的普通 Frontend、CLI、Backend 或文档任务不进入 Figma。
-- 交接：Coding 保留研发主流程，把设计事实/审查/修复交给 `.agents/skills/figma/SKILL.md`。
+- 交接：Coding 保留研发主流程，把设计事实/审查/修复交给 [`.agents/skills/figma/SKILL.md`](figma/SKILL.md)。
 - 返回：达到 `READY / READY_WITH_NOTES` 后回到 Coding 完成真实代码、测试、Review、CI、Git 与交付；review-only 输出完成后也回到 Coding/用户边界。
 - 失败关闭：Figma Skill/required Reference 无法读取、工具事实不足或结果为 `NOT_READY` 时，不得把已知缺陷写入生产实现，也不得把 Figma Ready 冒充代码/PR/Release Ready。
 
@@ -174,7 +170,7 @@ Bootstrap/managed block 必须读取：
 - 触发：Coding 判断需要独立 Review，用户显式要求 Code Review/Audit，或当前 L2/L3 Change/PR Ready 门禁要求 Review。
 - 必须动作：读取 Review Skill，独立重建上游要求与风险，审查 Findings、测试充分性和 re-review；不得把作者清单或绿色测试当作需求全集。
 - 不适用：纯事实恢复且没有审查请求/门禁，或经项目规则确认的隔离 L1 机械任务，不机械进入独立 Review。
-- 交接：Coding 把当前 Review Target、base/head、授权、上游事实和新鲜验证交给 `.agents/skills/review/SKILL.md`。
+- 交接：Coding 把当前 Review Target、base/head、授权、上游事实和新鲜验证交给 [`.agents/skills/review/SKILL.md`](review/SKILL.md)。
 - 返回：确认 Finding 需要修复时回到 Coding 建立失败证据并最小修复，随后返回 Review re-review；无 Finding 时回到 Coding 完成交付结论。
 - 失败关闭：Review Skill/required Reference、目标 diff 或关键上游事实不可得时，不得声称已独立审查或可合并。
 
@@ -183,7 +179,7 @@ Bootstrap/managed block 必须读取：
 - 触发：Coding 判断存在文档影响，或用户显式要求技术文档审查、事实同步、编写或更新。
 - 必须动作：读取 Docs Skill，先从代码/Contract/Schema/配置等当前事实判断 `not_applicable`、`targeted` 或 `full`，再同步受影响正式文档。
 - 不适用：已用当前差异和文档事实证明行为、接口、配置、架构和用户操作均未受影响时，记录依据并保持 Docs `not_applicable`。
-- 交接：Coding 把实现事实、Docs Impact 和受影响文档域交给 `.agents/skills/docs/SKILL.md`；默认不机械扫描全部 Markdown。
+- 交接：Coding 把实现事实、Docs Impact 和受影响文档域交给 [`.agents/skills/docs/SKILL.md`](docs/SKILL.md)；默认不机械扫描全部 Markdown。
 - 返回：文档同步/审查完成后回到 Coding 的实现一致性与交付验证；若 Docs 发现代码/Contract 缺陷，先回 Coding 修复事实再更新文档。
 - 失败关闭：Docs Skill/required Reference 或实现事实不可得时，不得写推测性说明、迎合 Bug 或宣称文档已同步。
 

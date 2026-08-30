@@ -23,10 +23,10 @@ GitHub Release
 
 | Skill | 职责 | 正式入口 |
 | --- | --- | --- |
-| `coding` | 研发、调试、验证、Git/CI/交付与跨 Skill 主流程 | `.agents/skills/coding/SKILL.md` |
-| `review` | 独立 Code Review、Findings 与测试充分性审查 | `.agents/skills/review/SKILL.md` |
-| `docs` | 技术文档事实同步、审查、编写与更新 | `.agents/skills/docs/SKILL.md` |
-| `figma` | Figma 设计事实、Canvas/Prototype、Ready 与 Design-to-Code 交接 | `.agents/skills/figma/SKILL.md` |
+| `coding` | 研发、调试、验证、Git/CI/交付与跨 Skill 主流程 | [`.agents/skills/coding/SKILL.md`](.agents/skills/coding/SKILL.md) |
+| `review` | 独立 Code Review、Findings 与测试充分性审查 | [`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md) |
+| `docs` | 技术文档事实同步、审查、编写与更新 | [`.agents/skills/docs/SKILL.md`](.agents/skills/docs/SKILL.md) |
+| `figma` | Figma 设计事实、Canvas/Prototype、Ready 与 Design-to-Code 交接 | [`.agents/skills/figma/SKILL.md`](.agents/skills/figma/SKILL.md) |
 
 这四个名称只是当前事实，不是永久白名单。正式 Skill 始终从：
 
@@ -84,11 +84,11 @@ Runtime 不安装 `references/` 或公开 Reference manifest，不接受任意 I
 根 [`AGENTS.md`](AGENTS.md) 是 Agent 进入本仓库时的**薄 Bootstrap**：
 
 - ChatGPT 网页端 / GitHub 直接使用 Agent_Skills 帮助另一个项目时，先要求读取目标项目自己的规则和真实事实，再进入唯一 Router；
-- 当前任务是在维护 Agent_Skills 源仓库本身时，进入 `.agents/MAINTENANCE.md`，再按 Router / Coding 执行。
+- 当前任务是在维护 Agent_Skills 源仓库本身时，进入 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md)，再按 Router / Coding 执行。
 
 它不再保存第二套完整 Router 或完整源仓库维护规则，也不得复制到目标项目。
 
-### `.agents/MAINTENANCE.md`
+### [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md)
 
 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md) 是 Agent_Skills **源仓库自身**的开发、Review、测试、CI、Git、Release、内容守恒和 Runtime 维护规则。普通外部项目任务不读取它。
 
@@ -100,9 +100,9 @@ Runtime 不安装 `references/` 或公开 Reference manifest，不接受任意 I
 
 ### 目标项目 `AGENTS.md` managed block
 
-Runtime 安装后，`.agents/skills/coding/assets/AGENTS.managed.md` 只作为目标项目里的**薄 Bootstrap**：它要求先遵守目标项目事实，再读取本地 `.agents/skills/ROUTER.md`。Coding / Figma / Review / Docs 和 Reference 详细路由不再复制进 managed block。
+Runtime 安装后，[`.agents/skills/coding/assets/AGENTS.managed.md`](.agents/skills/coding/assets/AGENTS.managed.md) 只作为目标项目里的**薄 Bootstrap**：它要求先遵守目标项目事实，再读取本地 [`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)。Coding / Figma / Review / Docs 和 Reference 详细路由不再复制进 managed block。
 
-### `USAGE.md`
+### [`USAGE.md`](USAGE.md)
 
 [`USAGE.md`](USAGE.md) 是唯一最终用户人类说明，负责下载、安装、使用、升级、回滚和排障。
 
@@ -196,7 +196,7 @@ main
 
 Release workflow 对 Release Immutability 采用 fail-closed：如果 GitHub 仓库没有启用该设置，就在正式构建前失败并提示维护者先在仓库 Settings 的 Releases 设置中启用，不创建不完整或可变的正式 Release。
 
-源仓库 Release 资产固定为三平台 binary、`USAGE.md` 与 `SHA256SUMS`。构建期 identity manifest 只在 CI 内校验后删除；版本与 digest 身份仍可通过 binary 的 `status --json` 读取。Release 页面说明直接使用 `USAGE.md`，不自动把维护 commit / PR 历史生成给最终使用者。最终交付给不具备源仓库权限的用户时，只复制这些 Release 资产，不暴露源仓库访问权。
+源仓库 Release 资产固定为三平台 binary、[`USAGE.md`](USAGE.md) 与 `SHA256SUMS`。构建期 identity manifest 只在 CI 内校验后删除；版本与 digest 身份仍可通过 binary 的 `status --json` 读取。Release 页面说明直接使用 [`USAGE.md`](USAGE.md)，不自动把维护 commit / PR 历史生成给最终使用者。最终交付给不具备源仓库权限的用户时，只复制这些 Release 资产，不暴露源仓库访问权。
 
 ## 7. 继续阅读
 

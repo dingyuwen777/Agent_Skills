@@ -39,9 +39,7 @@ Reason: <具体事实依据>
 
 Coding 读取：
 
-```text
-.agents/skills/docs/SKILL.md
-```
+[`.agents/skills/docs/SKILL.md`](../SKILL.md)
 
 并提供最少充分交接信息：
 
@@ -113,9 +111,9 @@ code_issue_detected
 
 然后执行反向硬路由：
 
-- 如果同仓存在 `.agents/skills/coding/SKILL.md`，在任何实现代码修改之前**必须读取**该 Skill，并切回 Coding 的完整需求、风险、调试/TDD、验证、Review、Git 和完成门禁；
+- 如果同仓存在 [`.agents/skills/coding/SKILL.md`](../../coding/SKILL.md)，在任何实现代码修改之前**必须读取**该 Skill，并切回 Coding 的完整需求、风险、调试/TDD、验证、Review、Git 和完成门禁；
 - Docs 自己不得用文档规则直接修实现，也不得因为用户同时要求“修文档”就绕过 Coding；
-- 如果 `.agents/skills/coding/SKILL.md` 不存在、无法读取，或当前任务没有代码修改授权，则只报告 `code_issue_detected` 和证据，不修改实现；
+- 如果 [`.agents/skills/coding/SKILL.md`](../../coding/SKILL.md) 不存在、无法读取，或当前任务没有代码修改授权，则只报告 `code_issue_detected` 和证据，不修改实现；
 - Coding 完成修复并取得新鲜验证后，再执行：
 
 ```text
