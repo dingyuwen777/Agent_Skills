@@ -15,28 +15,34 @@ RUNTIME_REFERENCE_PATH = ".agents/skills/coding/references/13_本地MCP_Runtime�
 
 
 class SkillRouterSingleSourceTest(unittest.TestCase):
-    """验证 Skill Router 只有一个正式正文，并同时服务源码直读与 Runtime 安装入口。"""
+    """验证 Skill Router 只有一个正式正文，并区分源码直读与 Runtime 用户可见入口。"""
 
     def _read(self, relative: str) -> str:
         """读取仓库 UTF-8 文本，供入口职责和内容守恒断言使用。"""
         return (ROOT / relative).read_text(encoding="utf-8")
 
-    def test_root_and_managed_agents_are_thin_bootstraps_to_same_router(self) -> None:
-        """根 AGENTS 与目标 managed block 都只能导航到同一个 Router，不再复制详细路由。"""
+    def test_source_agents_use_router_while_runtime_managed_uses_governance_mcp(self) -> None:
+        """Source Mode 显式导航 Router；Runtime managed 只暴露项目治理能力，不复制或暴露内部导航。"""
         root_agents = self._read("AGENTS.md")
         managed = self._read(MANAGED_PATH)
         self.assertTrue((ROOT / ROUTER_PATH).is_file(), "缺少唯一 canonical Skill Router")
         self.assertTrue((ROOT / MAINTENANCE_PATH).is_file(), "缺少 Agent_Skills 源仓库维护规则")
 
-        for text in (root_agents, managed):
-            self.assertIn(ROUTER_PATH, text)
+        self.assertIn(ROUTER_PATH, root_agents)
         self.assertIn(MAINTENANCE_PATH, root_agents)
-
         self.assertNotIn("## 8. Runtime 维护不变量", root_agents)
+
+        self.assertNotIn(ROUTER_PATH, managed)
+        self.assertNotIn(".agents/skills/", managed)
         self.assertNotIn("agent_skills_load_required_context", managed)
         self.assertNotIn(".agents/skills/figma/SKILL.md", managed)
         self.assertNotIn(".agents/skills/review/SKILL.md", managed)
         self.assertNotIn(".agents/skills/docs/SKILL.md", managed)
+        self.assertIn("研发治理 MCP", managed)
+        self.assertIn("Runtime Mode", managed)
+        self.assertIn("用户可见", managed)
+        self.assertIn("代码修改", managed)
+        self.assertIn("文档同步", managed)
 
     def test_router_preserves_high_value_routing_and_failure_semantics(self) -> None:
         """旧 managed block 的高价值触发、失败和权限规则必须完整迁入唯一 Router。"""
@@ -124,8 +130,8 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertIn(ROUTER_PATH, maintenance)
         self.assertNotIn("当前正式 Skill：", maintenance)
 
-    def test_project_payload_distributes_router_exactly_as_runtime_asset(self) -> None:
-        """根级 Router 必须原样进入 Project Payload，使安装后的 managed block 指向真实本地文件。"""
+    def test_project_payload_distributes_router_exactly_as_internal_runtime_asset(self) -> None:
+        """根级 Router 必须原样进入 Project Payload，继续作为内部共享运行资产而非根用户入口。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         self.assertEqual(payload["shared_files"], ["ROUTER.md"])
