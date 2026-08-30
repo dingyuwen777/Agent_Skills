@@ -30,7 +30,7 @@ GitHub 的 Draft 状态只是托管平台工作流状态，不能成为必须由
 │  → Red / Green / Review / CI
 │  → 完成门禁后自动切换 Ready
 │
-└─ 未验证、不可用，或当前宿主已出现 fullDatabaseId 等 Ready GraphQL 故障
+└─ 未验证、不可用，或当前宿主已确认无法自动完成 Ready
    → 不创建 Draft PR
    → 直接创建普通 PR
    → 在 Agent 流程与 PR 描述中将其视为“逻辑未就绪”
@@ -40,8 +40,9 @@ GitHub 的 Draft 状态只是托管平台工作流状态，不能成为必须由
 硬规则：
 
 - 当前宿主的 Draft → Ready 能力没有经过当前工具版本验证时，不为了保持界面上的 Draft 形式引入人工依赖；优先使用普通 PR + 逻辑未就绪门禁；
-- 一旦当前宿主调用 Ready 时明确出现 `Field 'fullDatabaseId' doesn't exist on type 'Repository'` 或等价已确认的宿主 GraphQL schema 故障，记录一次真实失败证据，**不得循环重试同一失败 GraphQL，也不得要求用户手动点击 `Ready for review`**；
-- 如果已经创建 Draft PR 后才发现自动 Ready 不可用，且当前授权允许关闭/创建 PR，则自动关闭原 Draft PR，以**相同 head/base** 创建普通 PR；在新 PR 描述中保留原 PR 链接、Red/Green/Review 证据与迁移原因，并重新运行新 PR 的 fresh CI；不得把旧 PR 的绿色状态直接当作新 PR 的当前证据；
+- 一旦调用 Ready 返回 `Field 'fullDatabaseId' doesn't exist on type 'Repository'` 或等价的宿主 GraphQL 返回查询错误，**不能直接推断 Ready mutation 失败**。先记录一次真实错误，再**先重新读取 PR 当前状态**；不得循环重试同一失败 GraphQL，也**不得要求用户手动点击 `Ready for review`**；
+- **如果已经 `draft=false`**，按“Ready 副作用已生效、返回结果查询失败”处理；保留错误证据，继续重新确认 CI、mergeable、当前 head SHA、reviewed head 和保护规则，不关闭或重建 PR；
+- **只有仍为 Draft**，才把自动 Ready 视为当前宿主不可用。若当前授权允许关闭/创建 PR，则自动关闭原 Draft PR，以**相同 head/base** 创建普通 PR；在新 PR 描述中保留原 PR 链接、Red/Green/Review 证据与迁移原因，并**重新运行新 PR 的 fresh CI**；不得把旧 PR 的绿色状态直接当作新 PR 的当前证据；
 - 普通 PR 处于“逻辑未就绪”期间，不因为 `draft=false` 就提前请求合并；仍必须完成项目规定的 Requirement Traceability / Completion Audit、Review、CI、文档和其他 Ready 门禁；
 - 真正准备合并前重新读取 PR，**重新确认 `draft=false`、CI 和当前 head SHA**；同时确认 mergeable、Branch Protection/Ruleset、required checks 和当前 reviewed head 没有漂移；
 - GitHub PR 的真正 merge 一律使用 GitHub **REST merge**；宿主接口支持时必须携带 `expected_head_sha`，把审查/验证过的 head 绑定到 merge 动作；如果当前 REST merge 能力无法提供等价 head guard，则停止并报告宿主能力缺口，不用不带防漂移条件的其他 merge 通路冒充等价；
@@ -57,28 +58,18 @@ GitHub 的 Draft 状态只是托管平台工作流状态，不能成为必须由
 → 创建 Draft PR
 → Red / Green / Review / CI
 → 自动 Ready
+→ 如果 Ready API 返回异常，先重读 PR 状态
+   ├─ draft=false → 继续，不重建 PR
+   └─ 仍为 Draft → 自动关闭 Draft，并以相同 head/base 创建普通 PR后重新跑 fresh CI
 → 重新确认 draft=false / CI / head SHA / mergeable
 → REST merge + expected_head_sha
 → main fresh CI
 → Change archive
 
-宿主 Ready 能力不可靠或已命中 fullDatabaseId
+宿主 Ready 能力已确认不可用
 → 创建普通 PR（逻辑未就绪）
 → Red / Green / Review / CI
 → 重新确认 draft=false / CI / head SHA / mergeable
-→ REST merge + expected_head_sha
-→ main fresh CI
-→ Change archive
-```
-
-若旧 Draft 已经存在后才发现故障：
-
-```text
-关闭原 Draft PR
-→ 相同 head/base 创建普通 PR
-→ 保留旧 PR/证据链接
-→ 重新运行新 PR 的 fresh CI
-→ 完成同一 Review/Ready 门禁
 → REST merge + expected_head_sha
 → main fresh CI
 → Change archive
