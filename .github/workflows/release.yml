@@ -408,3 +408,16 @@ jobs:
             }
           done
           gh release view "${RELEASE_TAG}" --json tagName,targetCommitish,isDraft,isPrerelease,url,assets
+
+      - name: Cleanup failed draft Release
+        if: failure()
+        env:
+          RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          is_draft="$(gh release view "${RELEASE_TAG}" --json isDraft --jq '.isDraft' 2>/dev/null || true)"
+          if [ "${is_draft}" = "true" ]; then
+            echo "清理本次失败后遗留的未发布 Draft Release：${RELEASE_TAG}"
+            gh release delete "${RELEASE_TAG}" --cleanup-tag --yes
+          fi
