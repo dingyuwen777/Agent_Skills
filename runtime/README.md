@@ -96,7 +96,9 @@ agent-skills-mcp install --target <project-root>
 - 目标项目 `AGENTS.md` managed block 只做薄 Bootstrap，并指向 `.agents/skills/ROUTER.md`；
 - Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产和未认领 shared file 保留；
-- 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、manifest 与受管文本。
+- Codex 同名 MCP table 存在但 managed marker 缺失时，即使 install manifest 仍存在也 fail closed，不猜测 table ownership；
+- 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、manifest 与受管文本；
+- 如果回滚本身有任何失败，必须同时报告原始安装异常与未恢复路径/原因，不能静默吞掉 rollback failure。
 
 正式 Skill 仍通过动态 Catalog 分发；Skills 根级共享文件只通过 Project Payload 的显式 `shared_files` Contract 分发，二者职责不混淆。
 
@@ -122,16 +124,35 @@ agent_skills_checkpoint
 安装维护者构建依赖：
 
 ```bash
-python3 -m pip install -r runtime/requirements-build.txt
+python -m pip install -r runtime/requirements-build.txt
 ```
 
-构建当前平台 onefile：
+构建当前平台 development onefile：
 
 ```bash
-python3 scripts/build_runtime.py --output-dir dist --json
+python scripts/build_runtime.py --output-dir dist --json
 ```
 
-构建器会读取根 `VERSION` 和真实 source commit，动态发现 Skill/Reference，编译 canonical metadata，构建/加密 Bundle v2 与 no-Stub Project Payload，生成当前平台 artifact，并执行 `status` / `self-test` 校验。构建目录中的 `.manifest.json` 是 CI 校验用 Release identity，不包含 Reference Catalog，也不作为正式 GitHub Release 资产发布。
+未传 `--release-version` 时，Builder 使用 `0.0.0-dev` 作为明确的 development identity；该值只用于本地/PR/main 常规构建，不代表任何正式 Release。
+
+正式 Release 不读取仓库根版本文件。`.github/workflows/release.yml` 从用户输入的 `v<SemVer>` tag 派生无 `v` 的 `release_version`，然后三平台统一显式调用：
+
+```text
+scripts/build_runtime.py ... --release-version <SemVer>
+```
+
+构建器读取显式版本和真实 source commit，动态发现 Skill/Reference，编译 canonical metadata，构建/加密 Bundle v2 与 no-Stub Project Payload，生成当前平台 artifact，并执行 `status` / `self-test` 校验。构建目录中的 `.manifest.json` 是 CI 校验用 Release identity，不包含 Reference Catalog，也不作为正式 GitHub Release 资产发布。
+
+Builder 的维护者 JSON 输出还包含聚合 `context_budget`：
+
+```text
+router_bytes
+skill_core_bytes
+reference_bytes_by_skill
+base_router_plus_core_bytes
+```
+
+它只量化 Router / Skill Core / canonical Reference 的聚合字节成本，不列出单个 Reference ID、文件名、路径或触发映射，也不改变 Runtime `status/self-test` 的公开披露合同。
 
 “最新规则模式”允许网页端 Source Mode 读取当前 `main`、本地 Runtime 使用当前最新 Release，但二者在发布间隙可能短暂不同步；“精确复现模式”必须让 Source Mode 读取 Runtime `status --json` 中 `source_commit` 对应的 Release tag/commit，并使用同一 Release Runtime。
 
@@ -152,19 +173,19 @@ dist/agent-skills-mcp.manifest.json
 ## 6. 真实 MCP 验证
 
 ```bash
-python3 scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
+python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 ```
 
 该 smoke 使用真实 stdio MCP client 验证六个 Tool、中文 input schema、route contract、submit、required Context exact-text/hash 和 checkpoint，不用内部 Python 函数调用冒充 MCP 边界。
 
 ## 7. 永久 CI
 
-`.github/workflows/skill-tests.yml` 负责持续验证：
+`.github/workflows/skill-tests.yml` 固定使用 Python `3.12.10` 构建三平台 Runtime，并持续验证：
 
 - self-contained unit/preservation/portability tests；
 - 唯一 Skills 根级 Router / 双 Bootstrap / Maintenance 职责与 Project Payload shared-file 分发；
 - metadata compiler/evaluator、Routing Conformance、private manifest/encryption parity；
-- install v3 ownership、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突和失败回滚；
+- install v3 ownership、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、Codex marker 缺失 fail-closed 和失败/回滚诊断；
 - Linux onefile build/status/self-test；
 - real stdio MCP；
 - project-only single-binary 首次安装、升级和无参数安装；
@@ -173,13 +194,15 @@ python3 scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 - macOS onefile + 项目安装；
 - Active Change Ready Check。
 
-不同平台必须使用对应 Runner，不能把一个平台的 PyInstaller artifact 当跨平台二进制。
+普通永久 CI 构建必须得到 `release_version=0.0.0-dev`，不能冒充正式版本。不同平台必须使用对应 Runner，不能把一个平台的 PyInstaller artifact 当跨平台二进制。
 
 ## 8. 正式 Release
 
-正式 Release 由根 `.github/workflows/release.yml` 从 `main` 手工构建。最终用户资产和使用方式以根 [`USAGE.md`](../USAGE.md) 为准。
+正式 Release 由根 `.github/workflows/release.yml` 从 `main` 手工构建。输入 `v<SemVer>` tag 后，workflow 将同一 `release_version` 显式传入 Linux/Windows/macOS Builder；Release preflight 会重新运行完整 self-contained tests 与 Ready Check。
 
-本文件不维护第二份最终用户教程，也不记录 Change/PR/Release 历史流水账。
+正式 Release 要求仓库已经启用 GitHub Release Immutability。workflow 会在创建任何 Release 前检查该设置；未启用时 fail closed。所有三平台 artifact / identity 完成验证后，workflow 先创建 Draft Release、上传完整正式资产并核对资产集合，再 Publish，并在发布后校验 tag、资产与 immutable 状态。
+
+最终用户资产和使用方式以根 [`USAGE.md`](../USAGE.md) 为准。本文件不维护第二份最终用户教程，也不记录 Change/PR/Release 历史流水账。
 
 ## 9. 安全边界
 
