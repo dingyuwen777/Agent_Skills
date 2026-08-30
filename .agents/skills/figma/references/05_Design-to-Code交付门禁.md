@@ -173,7 +173,7 @@ SDK / client 名称
 
 ## 6.3 当前系统缺少设计能力时的分支
 
-发现 Figma 需要的字段、动作、状态或 API 在当前系统不存在时，不机械“后端优先”删掉设计，也不机械“Figma 优先”造实现。先分类：
+发现 Figma 需要的字段、动作、状态或 API 在当前系统不存在时，不机械“后端优先”删掉设计，也不机械“Figma优先”造实现。先分类：
 
 ```text
 已批准但尚未实现
@@ -245,6 +245,48 @@ Annotation 不复制完整 OpenAPI/Schema，而只写实现所需的关键边界
 
 Annotation 的视觉边界、归属、安全距离、说明容器、相邻画板间距和 zoom-out Canvas 可读性继续由 [07_页面布局与真实可用性审计.md](07_页面布局与真实可用性审计.md) 唯一维护；本文件不复制第二套具体像素规则。
 
+## 7.2 Annotation Development Readiness Gate
+
+`baseline-ready` 以及带写权限的 `review-and-fix` 必须对会影响生产实现的关键动态和非显然节点执行 **Annotation Development Readiness Gate**。这里的目标不是追求“每个 Node 都有注释”，而是让实现方不会因为缺少机器映射、状态语义或特殊约束而猜实现。
+
+先执行最小 **Annotation Coverage Audit**：
+
+```text
+UI / Node / 状态
+→ 是否存在实现歧义？
+→ 是否需要 Annotation？
+→ 当前真实来源 / Owner / Contract
+→ 当前 Annotation：正确 / 缺失 / 过期 / 重复
+→ 动作：保留 / 补齐 / 修正 / 合并 / 删除无意义重复
+```
+
+至少覆盖适用的动态 Select/Radio、DatePicker/DateRange、动态表格/KPI、按钮动作、异步任务、权限驱动状态、默认值、刷新语义、Loading/Empty/Error/Disabled 以及实现方无法从 Component/Prototype/Design Context/正式 Contract 可靠推导的约束。
+
+处理规则：
+
+```text
+关键 Annotation 缺失或错误 + 有 Figma 写权限
+→ 回到目标项目当前真实事实源验证
+→ 补齐 / 修正 Annotation
+→ 合并重复说明
+→ Canvas-level Review
+→ Fresh Screenshot / Design Context re-review（适用时）
+→ 再判断 READY
+
+关键 Annotation 缺失或错误 + 无 Figma 写权限
+→ 形成 Finding
+→ 会导致误实现时不得 READY
+→ 只有不影响正确实施的差异才可进入 READY_WITH_NOTES
+```
+
+注释去重采用“最少充分”而不是“越多越安全”：
+
+- **公共事实只写一次**，由一个业务区域的说明组、Figma 原生 Annotation、公共 Component 或正式 Owner 承载；
+- **状态稿只写差异**，不要在 Normal/Loading/Empty/Error 等画板复制同一份公共 API/Owner 说明；
+- 已由公共 Component、Prototype、Design Context 或正式 Contract 无歧义表达的事实不机械重复；
+- 删除或合并重复 Annotation 前先确认没有丢失触发条件、状态差异、权限、时间、错误或异步语义；
+- Annotation 里的机器事实仍必须按真实系统映射规则校验，不能因为“已经写在 Figma”就视为正确。
+
 ---
 
 # 8. 导航和未来 IA
@@ -312,6 +354,7 @@ Figma Frame 是设计基准，不自动等于生产固定像素。
 
 - 真实系统不支持设计行为；
 - 动态字段事实源不明；
+- 关键 Annotation 缺失、错误或与真实机器事实冲突；
 - Prototype 会回弹旧数据；
 - 关键公共组件是假复用；
 - 相同业务逻辑被要求多页面复制；
@@ -338,6 +381,9 @@ Figma Frame 是设计基准，不自动等于生产固定像素。
 [ ] 用户输入/动作都有真实系统映射或 Future 标识
 [ ] 动态数据来源明确
 [ ] 示例数据不冒充生产事实
+[ ] Annotation Development Readiness / Coverage Audit 已完成
+[ ] 必要 Annotation 的机器事实与当前真实 Contract / SDK / 实现边界一致
+[ ] 重复 / 无意义 Annotation 已在不丢语义前提下收敛
 [ ] 页面尺寸 / Viewport / 响应式边界明确
 [ ] 正常状态无图片/文字/标注/控件无意重叠
 [ ] 公共组件真实复用
@@ -397,7 +443,7 @@ Figma Skill 的 `READY` 只证明设计可以实施，不证明代码已经实�
 → 形成 Coding Handoff
 → 立即切入目标项目 Coding 工作流
 → Coding 按项目规则实施、验证、Review、CI、Git/交付
-→ 实现完成后用 Figma 做 targeted re-review
+→ 实现完成后执行 Implementation ↔ Figma Conformance Gate
 ```
 
 ### Handoff 前必须重新定位现有实现
@@ -481,16 +527,50 @@ Git / PR / Merge / Release
 
 本 reference 只负责把**已经 Ready 的设计事实**完整交过去，不再维护第二套研发流程。
 
-### 实现完成后的 Figma 回验
+### Implementation ↔ Figma Conformance Gate
 
-目标项目的代码验证完成后，至少按适用边界做 targeted re-review：
+目标项目的代码验证完成后，Design-to-Code 还不能仅凭“页面能运行”或 CI 绿色宣称设计实施闭环。必须执行 **Implementation ↔ Figma Conformance Gate**，把实际运行页面/Screen、正式 Figma 和真实系统边界重新对齐。
+
+按当前项目适用边界至少审查六个域：
 
 ```text
-实际运行页面 / Screen
-↔ Fresh Figma Screenshot
-↔ 关键 Prototype / 状态规格
-↔ Shared Component / 业务 Owner
-↔ 动态数据和真实系统动作
+Visual / Interaction / State / Data/Contract / Responsive / Component/Owner
 ```
 
-如果实现过程中因为真实系统约束需要改变已批准设计，应同步回设计/长期事实源，不能让 Figma 和生产实现长期分叉。
+- **Visual**：页面结构、信息层级、布局、间距、字体/颜色/图标语义、Modal/Drawer/表格/表单等是否符合正式设计；不把浏览器渲染、字体度量等合理平台差异机械判成失败。
+- **Interaction**：Button、Select、Tabs、筛选、保存/取消、Drawer/Modal、Dropdown/Tooltip、分页/滚动等实际行为是否与 Prototype/正式交互语义一致。
+- **State**：Normal/Data、Loading、Empty、Error、Disabled、Permission 以及真实业务命中的异步状态是否一致，不为了截图相似删除正确状态。
+- **Data/Contract**：字段语义、格式、真实来源、空值/错误/权限、默认值和机器边界与当前 Contract/SDK/Store/Runtime 一致；**动态示例值不做字面相等比较**，不能因为生产数据不是 Figma 示例就判定失败。
+- **Responsive**：实际目标 Viewport/Screen/Window 下的断点、滚动、安全区、长文本和极端数据是否保持设计意图，不把 Figma 基准 Frame 写死成生产尺寸。
+- **Component/Owner**：实际实现继续复用目标项目正确的 Shared/Feature/Domain Owner，Figma 也继续使用正确的公共 Component/Property/Token，不出现双边各复制一套。
+
+最低证据按项目真实能力选择，例如实际运行页面/Screenshot、关键用户流程、目标 Figma Fresh Screenshot/Prototype/Design Context、Contract/SDK/Store 事实和现有测试。Figma Skill 不复制 Coding 的测试、CI、PR 细则，但要求回验所依据的代码/运行结果是当前实现的新鲜证据。
+
+```text
+代码验证通过
++
+Implementation ↔ Figma Conformance 通过
+→ 才能把 Design-to-Code 实施闭环描述为完成
+```
+
+发现漂移时先定位 **Drift Owner**，不能默认“Figma 永远赢”或“当前代码永远赢”：
+
+```text
+生产实现偏离正式 Figma / 已批准需求，而正式 Contract 支持设计
+→ 返回 Coding 修前端 / 实现
+
+Figma 已经过期，当前正式 Requirement / Contract / 正确实现已变化
+→ 按 Figma Owner-first 规则更新设计、Annotation、Prototype 或公共组件
+
+后端 / SDK / Store 违反正式 Contract 或已批准需求
+→ 返回 Coding 修真实机器 Owner
+
+正式需求已经改变
+→ 同步 Requirement / Contract / Figma / Code 的受影响事实源
+
+无法判断谁过期
+→ 回到 Requirement / Contract / Owner 决策门禁
+→ 不静默选择
+```
+
+修复后重新执行受影响域的 targeted re-review。任何因为真实系统约束、批准需求变化或实现修正形成的长期决定，都要同步到对应正式事实源，**不能让 Figma 和生产实现长期分叉**。
