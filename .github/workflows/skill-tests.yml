@@ -6,7 +6,6 @@ on:
       - "AGENTS.md"
       - "README.md"
       - "USAGE.md"
-      - "VERSION"
       - ".gitignore"
       - ".agents/**"
       - "runtime/**"
@@ -19,7 +18,6 @@ on:
       - "AGENTS.md"
       - "README.md"
       - "USAGE.md"
-      - "VERSION"
       - ".gitignore"
       - ".agents/**"
       - "runtime/**"
@@ -39,15 +37,20 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+
       - name: Python version
-        run: python3 --version
+        run: python --version
 
       - name: Install Runtime build dependencies
-        run: python3 -m pip install -r runtime/requirements-build.txt
+        run: python -m pip install -r runtime/requirements-build.txt
 
       - name: Compile maintained scripts and Runtime
         run: >-
-          python3 -m py_compile
+          python -m py_compile
           .agents/skills/coding/scripts/coding.py
           .agents/skills/coding/scripts/ready_check.py
           scripts/build_runtime.py
@@ -63,29 +66,29 @@ jobs:
 
       - name: Smoke maintained CLI entrypoints
         run: |
-          python3 .agents/skills/coding/scripts/coding.py bootstrap --help
-          python3 scripts/build_runtime.py --help
-          python3 scripts/runtime_mcp_smoke.py --help
+          python .agents/skills/coding/scripts/coding.py bootstrap --help
+          python scripts/build_runtime.py --help
+          python scripts/runtime_mcp_smoke.py --help
 
       - name: Run self-contained tests
         run: >-
-          python3 -m unittest discover
+          python -m unittest discover
           -s .agents/skills/coding/tests
           -p 'test_*.py'
           -v
 
       - name: Build and self-test onefile Runtime
         run: |
-          python3 scripts/build_runtime.py --output-dir .runtime-dist --json
+          python scripts/build_runtime.py --output-dir .runtime-dist --json
           .runtime-dist/agent-skills-mcp status --json
           .runtime-dist/agent-skills-mcp self-test --json
-          VERSION="$(tr -d '\r\n' < VERSION)"
-          grep -Fq "\"release_version\": \"${VERSION}\"" .runtime-dist/agent-skills-mcp.manifest.json
+          grep -Fq '"release_version": "0.0.0-dev"' .runtime-dist/agent-skills-mcp.manifest.json
+          grep -Fq '"python_version": "3.12.10"' .runtime-dist/agent-skills-mcp.manifest.json
           test ! -e .runtime-dist/agent-skills-mcp-runtime-kit.zip
 
       - name: Verify real stdio MCP contract
         run: >-
-          python3 scripts/runtime_mcp_smoke.py
+          python scripts/runtime_mcp_smoke.py
           --artifact .runtime-dist/agent-skills-mcp
           --json
 
@@ -116,7 +119,7 @@ jobs:
           grep -Fq "/.agents/runtime/" "${target}/.gitignore"
           test "$(grep -c '<!-- agent-skills:managed:start -->' "${target}/AGENTS.md")" -eq 1
           "${target}/.agents/runtime/agent-skills-mcp" status --json
-          python3 scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
+          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
 
           cd "${no_args_target}"
           "${artifact}"
@@ -127,18 +130,23 @@ jobs:
 
       - name: Verify active Coding Change
         run: >-
-          python3 .agents/skills/coding/scripts/ready_check.py
+          python .agents/skills/coding/scripts/ready_check.py
           --root .
           --require-active-ready
 
   runtime-windows-package:
     name: Runtime Windows Package
-    runs-on: windows-latest
+    runs-on: windows-2025
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
 
       - name: Python version
         run: python --version
@@ -154,9 +162,9 @@ jobs:
           .\.runtime-dist\agent-skills-mcp.exe self-test --json
           python scripts/runtime_mcp_smoke.py --artifact .\.runtime-dist\agent-skills-mcp.exe --json
           if (Test-Path .\.runtime-dist\agent-skills-mcp-runtime-kit.zip) { throw "不应生成 Windows Runtime Kit" }
-          $version = (Get-Content VERSION -Raw).Trim()
           $manifest = Get-Content .\.runtime-dist\agent-skills-mcp.manifest.json -Raw | ConvertFrom-Json
-          if ($manifest.release_version -ne $version) { throw "Runtime manifest release_version 与 VERSION 不一致" }
+          if ($manifest.release_version -ne "0.0.0-dev") { throw "普通 CI Runtime manifest 必须使用 development version" }
+          if ($manifest.python_version -ne "3.12.10") { throw "Runtime manifest Python 版本不是 3.12.10" }
 
       - name: Verify Windows project-only single-binary installation
         shell: pwsh
@@ -227,24 +235,26 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+
       - name: Python version
-        run: python3 --version
+        run: python --version
 
       - name: Install Runtime build dependencies
-        run: |
-          python3 -m venv .venv-runtime
-          .venv-runtime/bin/python -m pip install -r runtime/requirements-build.txt
-          echo "${GITHUB_WORKSPACE}/.venv-runtime/bin" >> "${GITHUB_PATH}"
+        run: python -m pip install -r runtime/requirements-build.txt
 
       - name: Build and self-test macOS onefile Runtime
         run: |
-          python3 scripts/build_runtime.py --output-dir .runtime-dist --json
+          python scripts/build_runtime.py --output-dir .runtime-dist --json
           .runtime-dist/agent-skills-mcp status --json
           .runtime-dist/agent-skills-mcp self-test --json
-          python3 scripts/runtime_mcp_smoke.py --artifact .runtime-dist/agent-skills-mcp --json
+          python scripts/runtime_mcp_smoke.py --artifact .runtime-dist/agent-skills-mcp --json
           test ! -e .runtime-dist/agent-skills-mcp-runtime-kit.zip
-          VERSION="$(tr -d '\r\n' < VERSION)"
-          grep -Fq "\"release_version\": \"${VERSION}\"" .runtime-dist/agent-skills-mcp.manifest.json
+          grep -Fq '"release_version": "0.0.0-dev"' .runtime-dist/agent-skills-mcp.manifest.json
+          grep -Fq '"python_version": "3.12.10"' .runtime-dist/agent-skills-mcp.manifest.json
 
       - name: Verify macOS project-only single-binary installation
         run: |
@@ -271,7 +281,7 @@ jobs:
           grep -Fq '"ROUTER.md"' "${target}/.agents/agent-skills-install.json"
           test ! -e "${target}/.agents/skills/coding/references"
           "${target}/.agents/runtime/agent-skills-mcp" status --json
-          python3 scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
+          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
 
           cd "${no_args_target}"
           "${artifact}"
