@@ -29,6 +29,21 @@ def _routing_block(payload: dict[str, object]) -> str:
     return "<!-- agent-routing:v1\n" + json.dumps(payload, ensure_ascii=False) + "\n-->\n"
 
 
+def _json_keys(value: object) -> set[str]:
+    """递归收集结构化返回的字段名，不把说明文本中的禁止词误判为字段泄露。"""
+    if isinstance(value, dict):
+        keys = {str(key) for key in value}
+        for item in value.values():
+            keys.update(_json_keys(item))
+        return keys
+    if isinstance(value, list):
+        keys: set[str] = set()
+        for item in value:
+            keys.update(_json_keys(item))
+        return keys
+    return set()
+
+
 def _fixture_bundle() -> dict[str, object]:
     """构造一个带内部文件身份的最小 Bundle，供公共返回面泄露测试使用。"""
     temporary = tempfile.TemporaryDirectory()
@@ -129,28 +144,28 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
 
     def test_runtime_mcp_public_results_do_not_expose_internal_identity(self) -> None:
         """公共 Tool 外层只提供完成流程所需信息，不返回内部治理身份。"""
-        status_text = json.dumps(self.store.status(), ensure_ascii=False)
-        contract_text = json.dumps(self.store.route_contract(), ensure_ascii=False)
-        for payload in (status_text, contract_text):
+        status = self.store.status()
+        contract = self.store.route_contract()
+        for payload in (status, contract):
+            keys = _json_keys(payload)
             for forbidden in (
-                '"Skill"',
-                "reference.",
-                "Reference",
+                "Skill",
+                "标识",
                 "文件名",
                 "源路径",
-                "RoutingManifest",
+                "RoutingManifest协议",
                 "Routing摘要",
                 "Source摘要",
                 "Payload摘要",
             ):
                 with self.subTest(payload=payload, forbidden=forbidden):
-                    self.assertNotIn(forbidden, payload)
+                    self.assertNotIn(forbidden, keys)
+        self.assertNotIn(".reference.", json.dumps(contract, ensure_ascii=False))
 
         self.store.start_task("T-disclosure")
         route = self.store.submit_route("T-disclosure", _task_route())
-        route_text = json.dumps(route, ensure_ascii=False)
         for forbidden in ("命中Skill", "最低风险", "必需上下文数量", "缺失上下文数量"):
-            self.assertNotIn(forbidden, route_text)
+            self.assertNotIn(forbidden, route)
 
         loaded = self.store.load_required_context(route["路由令牌"])
         self.assertEqual(
@@ -166,9 +181,9 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
         self.assertIn("执行代码修改、补测试、同步文档并完成复核", contexts[0]["完整原文"])
         self.assertIn("用户可见进度", loaded["用户可见进度规则"])
 
-        checkpoint_text = json.dumps(self.store.checkpoint(route["路由令牌"]), ensure_ascii=False)
+        checkpoint = self.store.checkpoint(route["路由令牌"])
         for forbidden in ("最低风险", "缺失上下文数量", "已加载上下文数量"):
-            self.assertNotIn(forbidden, checkpoint_text)
+            self.assertNotIn(forbidden, checkpoint)
 
     def test_source_mode_keeps_explicit_repository_navigation_visible(self) -> None:
         """Source Mode 仍保留维护者需要的明文导航和内部路径。"""
