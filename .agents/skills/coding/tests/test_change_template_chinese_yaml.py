@@ -97,15 +97,15 @@ class ChangeTemplateChineseYamlTest(unittest.TestCase):
                 data_changes=[],
                 depends_on=["CHG-20260829-parent"],
             )
-            content = path.read_text(encoding="utf-8")
-            self.assertIn("schema: coding-change/v1", content)
-            self.assertIn("status: proposed", content)
-            self.assertIn("completion_gate: required", content)
-            self.assertIn('depends_on: ["CHG-20260829-parent"]', content)
-            self.assertIn('affected_areas: ["治理"]', content)
-            self.assertIn('affected_paths: ["README.md"]', content)
-            self.assertIn('contracts: ["coding-change/v1"]', content)
-            self.assertIn("data_changes: []", content)
+            metadata = CODING.read_change_metadata(path)
+            self.assertEqual(metadata["schema"], "coding-change/v1")
+            self.assertEqual(metadata["status"], "proposed")
+            self.assertEqual(metadata["completion_gate"], "required")
+            self.assertEqual(metadata["depends_on"], ["CHG-20260829-parent"])
+            self.assertEqual(metadata["affected_areas"], ["治理"])
+            self.assertEqual(metadata["affected_paths"], ["README.md"])
+            self.assertEqual(metadata["contracts"], ["coding-change/v1"])
+            self.assertEqual(metadata["data_changes"], [])
 
 
 if __name__ == "__main__":
