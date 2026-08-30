@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: "CHG-20260830-docs-reference-link-rule"
 title: "固化文档引用路径与可点击链接规范"
 level: L2
-status: proposed
+status: ready_for_review
 owner: "dingyuwen777"
 branch: "feat/docs-reference-link-rule"
 created: 2026-08-30
@@ -30,13 +30,13 @@ data_changes: []
 
 # 成功标准
 
-- [ ] Docs Core 明确要求仓库内具体文档引用使用“完整路径 label + 可点击链接”。
-- [ ] 详细写作规则明确使用项目/仓库相对路径作为可读 label，href 使用从当前文档可解析的相对目标。
-- [ ] 明确链接目标必须真实存在；模板/生成型文档必须按最终输出位置验证相对链接。
-- [ ] 明确不得把命令、目录树、glob、占位路径、协议/流程示例、生成路径等机械转换成链接。
-- [ ] Review / Fix / Update 流程主动检查引用路径、链接目标和误链接风险。
-- [ ] 新增 preservation 回归，防止以后从 Docs Skill 中静默删除上述规则。
-- [ ] 不修改 Docs/Coding routing metadata、Stable Reference ID、依赖、风险下限或 Runtime 协议。
+- [x] Docs Core 明确要求仓库内具体文档引用使用“完整仓库相对路径 + 可点击链接”。
+- [x] 详细写作规则明确 link label 使用完整仓库相对路径，link target 使用从当前文档位置可解析的相对目标。
+- [x] 明确链接目标必须真实存在；模板/生成型文档必须按最终输出位置验证相对链接。
+- [x] 明确不得把命令、目录树、glob、占位路径、协议/流程示例、生成路径等机械转换成链接。
+- [x] Review / Fix / Update 流程主动检查引用路径、链接目标和误链接风险。
+- [x] 新增 preservation 回归，防止以后从 Docs Skill 中静默删除上述规则。
+- [x] 不修改 Docs/Coding routing metadata、Stable Reference ID、依赖、风险下限或 Runtime 协议。
 
 # 范围
 
@@ -62,46 +62,86 @@ data_changes: []
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | 把文档引用路径与链接要求更新到 Agent_Skills Skill | user:docs-reference-link-skill | not_satisfied | 待 Docs Skill Core/References 修改 |
-| R2 | 引用仓库内具体文档时显示完整路径并提供可点击链接 | user:path-and-clickable-link | not_satisfied | 待写作规范与回归 |
-| R3 | 不机械链接命令、glob、占位路径等非导航内容 | user:preserve-non-navigation-content | not_satisfied | 待例外规则与 Review 回归 |
-| R4 | 按仓库 Skill Mutation 门禁完成 Review、CI、PR、main fresh CI 与 Change 清理 | .agents/MAINTENANCE.md | not_satisfied | 待交付闭环 |
+| R1 | 把文档引用路径与链接要求更新到 Agent_Skills Skill | user:docs-reference-link-skill | satisfied | `.agents/skills/docs/SKILL.md` 新增全局固定原则；ref02/ref03 承担详细写作与审查规则 |
+| R2 | 引用仓库内具体文档时显示完整路径并提供可点击链接 | user:path-and-clickable-link | satisfied | Docs Core 明确“完整仓库相对路径 + 可点击链接”；ref02 分离 link label、relative target、目标存在性和最终生成位置验证 |
+| R3 | 不机械链接命令、glob、占位路径等非导航内容 | user:preserve-non-navigation-content | satisfied | ref02 明确命令、目录树、glob、placeholder、协议/流程、生成路径、代码字面量的非导航例外；ref03 Review 主动检查误链接 |
+| R4 | 按仓库 Skill Mutation 门禁完成 Review、CI、PR、main fresh CI 与 Change 清理 | .agents/MAINTENANCE.md | explicitly_deferred | PR #51 已建立；Ready 后仍需最终 PR CI、非 Draft 合并、main fresh CI 和独立 Active Change 清理，不能在合并前伪报完成 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | Docs Skill preservation 测试经历 Red → Green |
-| 接口 / Contract | required | routing metadata / Stable ID / dependency / risk floor 不变 |
-| 集成 / Runtime Dependency | required | 永久 CI 证明 Bundle/Runtime/Project install 未受规则正文变化破坏 |
-| 用户 / Workflow Acceptance | required | Docs Core + 写作 + Review 三层均可从文档任务命中并执行该规则 |
-| 跨组件 Golden Path | required | 现有永久 onefile → MCP → project install 链保持 Green |
-| External Dependency / Provider Probe | not_applicable | 无外部 Provider 变化 |
-| Build / Package / Runtime | required | Linux/Windows/macOS 永久 Runtime CI |
-| Docs / Governance / Other | required | 内容守恒 Review、Ready Check、PR/main fresh CI |
+| 行为 / Unit / Component | required | Red run `33297530864`：173 tests 中仅新增 Docs preservation 用例失败；Green 后 clean run `33297719927` self-contained tests step success |
+| 接口 / Contract | required | 最终 PR changed-files 仅 Change、Docs Core/ref02/ref03 和 `test_docs_skill.py`；routing metadata / Stable ID / dependency / risk floor 未修改 |
+| 集成 / Runtime Dependency | required | clean run `33297719927`：Linux onefile/status/self-test、real stdio MCP、project install 全部 success |
+| 用户 / Workflow Acceptance | required | Docs Core 对所有文档任务提供硬原则；ref02 对 Write/Update 提供可执行格式；ref03 对 Review/Fix/Update 提供检查项 |
+| 跨组件 Golden Path | required | clean run `33297719927`：现有 onefile → MCP → project install 链保持 Green |
+| External Dependency / Provider Probe | not_applicable | 无外部 Provider、网络 Contract 或现时服务事实变化 |
+| Build / Package / Runtime | required | clean run `33297719927`：Runtime Windows Package success、Runtime macOS Package success |
+| Docs / Governance / Other | required | Skill Mutation 内容守恒 Review `NO_FINDINGS_WITHIN_SCOPE`；clean run 的唯一 Job 失败为本 Change 当时仍 `proposed` 的 Ready Gate |
 
 # Completion Audit
 
-- [ ] upstream_re_read：Ready 前重新读取用户要求、AGENTS、Maintenance、Coding、Skill Mutation、Docs Core 与受影响 References。
-- [ ] change_coverage：Core、写作、Review 和 preservation test 均覆盖用户要求。
-- [ ] reverse_audit：从文档编写/更新/审查意图反查该规则始终可达，且 Coding/Router 不复制第二套细则。
-- [ ] unresolved_cleared：所有 not_satisfied 清零，交付后置步骤有明确状态。
+- [x] upstream_re_read：Ready 前重新读取用户要求、当前分支 AGENTS、Maintenance、两阶段复核、Skill Mutation、Docs Core/ref02/ref03、Review Skill/执行流程/测试充分性规则。
+- [x] change_coverage：Core、写作、Review 和 preservation test 均覆盖用户要求；没有把规则只留在 Agent_Skills 仓库静态链接扫描里。
+- [x] reverse_audit：文档审查/编写/更新意图由现有 Docs metadata 命中 Docs Core，Core 再明确指向 ref02/ref03；Coding/Router 保持 Handoff Owner，没有复制第二套详细写作规则。
+- [x] unresolved_cleared：R1–R3 satisfied；R4 仅保留必须发生在 Ready 后的正式交付生命周期 `explicitly_deferred`；无 `not_satisfied`。
 
 # 任务
 
-- [x] 读取当前 main 的 AGENTS、Maintenance、Router、Coding、Skill Mutation、Runtime canonical Owner 与 Docs 当前规则。
-- [ ] 新增 preservation Red，证明当前 Docs Skill 尚未明确固化该要求。
-- [ ] 修改 Docs Core、写作 Reference、Review/Update Reference。
-- [ ] 全量测试、三平台 Runtime CI、独立 Review、Ready Check。
-- [ ] 非 Draft PR 正常合并；main fresh CI 后删除 Active Change。
+- [x] 读取当前 main/feature 的 AGENTS、Maintenance、Router、Coding、Skill Mutation、Runtime canonical Owner 与 Docs 当前规则。
+- [x] 新增 preservation Red：run `33297530864` 中原有回归保持通过，仅新用例因 Docs 尚未固化规则失败。
+- [x] 修改 Docs Core、写作 Reference、Review/Update Reference。
+- [x] clean implementation HEAD 运行全量测试、三平台 Runtime 产品链并完成独立 Review；pre-Ready 唯一失败为 Change 状态门禁。
+- [ ] 最终 Ready HEAD 永久 CI 全绿后将 PR #51 转非 Draft并正常合并；main fresh CI 后删除 Active Change。
 
 # 验证
 
-## 计划
+## TDD / 新鲜证据
 
-- 目标：`python -m unittest .agents/skills/coding/tests/test_docs_skill.py -v`
-- 全量：`python -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v`
-- 永久 CI：Skill Tests + Windows/macOS Runtime Package/Install。
+1. **Red — run `33297530864`**
+   - `Ran 173 tests`，只有 `test_repository_document_references_keep_path_and_clickable_link` 失败；
+   - 失败原因是当前 Docs Core 尚不存在“完整仓库相对路径 + 可点击链接”；
+   - 其余既有测试均通过。
+2. **目标 Green — temporary validation run `33297664453`**
+   - 确定性补丁应用成功；
+   - `test_docs_skill.py` preservation 目标测试通过；
+   - `git diff --check` 通过；
+   - 一次性 patcher/workflow 随后已全部删除，不在最终 PR diff。
+3. **Clean pre-Ready CI — run `33297719927`**
+   - self-contained tests success；
+   - Linux onefile/status/self-test、real stdio MCP、project install success；
+   - Runtime Windows Package success；
+   - Runtime macOS Package success；
+   - Skill Tests Job 唯一失败为 `status: proposed` 的预期 Active Change Ready Gate。
+
+# 独立 Review
+
+Review Target：PR #51 / `main@eee1f83822dc114eccb6da2098db3cd3078f0248 → feat/docs-reference-link-rule@fd2f90c8cc2fcac63d657902d9a20220893a0bf7`。
+
+模式：review-and-fix（用户已授权更新并交付 Skill）。
+
+重点风险：
+
+- 是否把通用文档写作规则错误塞到 Coding/Router，形成第二套 Owner；
+- 是否只要求“有链接”而隐藏了用户要求的完整文档路径；
+- 是否误把命令、目录树、glob、占位路径和协议示例全部链接化；
+- 是否允许猜测不存在的文档 target，产生看似可点击的死链；
+- 模板源码位置可点但最终生成位置失效；
+- 是否修改 routing metadata、Stable ID、依赖、风险下限或 Runtime Contract；
+- preservation test 是否只验证当前 Agent_Skills 仓库偶然格式，而没有验证 Docs Skill 的跨项目语义。
+
+结论：`NO_FINDINGS_WITHIN_SCOPE`。
+
+re-review 结果：
+
+- Docs Core 新原则让任意文档审查/编写/更新任务都先看到“完整路径 + 可点击链接”硬规则；
+- ref02 明确 label、target、目标存在性、最终输出位置、fail-closed 和非导航例外；
+- ref03 覆盖 Review/Write/Update/Source-of-truth safety，能发现缺路径、不可点击、dead target 和过度链接化；
+- Coding/Router 未改，详细规则继续只有 Docs 一个 Owner；
+- Docs SKILL/ref02/ref03 的现有 routing metadata 未改；
+- 永久测试直接检查 Docs Skill 语义标记，与仓库自身 `test_markdown_navigation_links.py` 的静态 Markdown 质量 Owner 分离；
+- 无 blocker、major 或确定性 minor Finding。
 
 # 文档影响
 
@@ -116,5 +156,5 @@ data_changes: []
 # 交付
 
 - Branch：`feat/docs-reference-link-rule`。
-- PR：待创建。
+- PR：#51（当前 Draft，待最终 Ready CI 后转 Ready）。
 - Release：不创建。
