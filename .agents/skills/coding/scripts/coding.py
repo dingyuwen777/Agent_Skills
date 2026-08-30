@@ -784,13 +784,13 @@ def _bootstrap_fact_sources(root: Path) -> str:
 
 
 def _managed_asset_text() -> str:
-    """把源模板 Router 链接转换为写入项目根 AGENTS 后仍可点击的目标。"""
+    """读取 Runtime/项目 Bootstrap 的薄 managed block，并拒绝重新引入内部治理导航。"""
     text = _asset_text("AGENTS.managed.md")
-    source_link = "[`.agents/skills/ROUTER.md`](../../ROUTER.md)"
-    project_link = "[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)"
-    if text.count(source_link) != 1:
-        raise ValueError("AGENTS.managed.md Router 链接模板不符合预期")
-    return text.replace(source_link, project_link)
+    if text.count(AGENTS_MANAGED_START) != 1 or text.count(AGENTS_MANAGED_END) != 1:
+        raise ValueError("AGENTS.managed.md managed marker 不完整或重复")
+    if ".agents/skills/" in text or "ROUTER.md" in text:
+        raise ValueError("AGENTS.managed.md 不得暴露 Runtime 内部治理路径")
+    return text
 
 
 def _managed_block(newline: bytes) -> bytes:
@@ -1051,7 +1051,7 @@ def create_change(
     data_changes: Sequence[str] = (),
     depends_on: Sequence[str] = (),
 ) -> Path:
-    """在解析后的 Coding carrier 中以独占目录创建 `coding-change/v1` CHANGE.md。"""
+    """在解析后的 Coding carrier 中以独占目录创建 `coding-change/v1` L2/L3 Change。"""
     _validate_change_id(change_id)
     normalised_level = level.upper()
     if normalised_level not in {"L2", "L3"}:
