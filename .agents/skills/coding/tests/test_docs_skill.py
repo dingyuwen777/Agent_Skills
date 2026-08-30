@@ -45,7 +45,8 @@ class DocsSkillIntegrationTest(unittest.TestCase):
         workflow = self._read(".agents/skills/docs/references/03_审查编写与修复流程.md")
 
         self.assertIn("完整仓库相对路径 + 可点击链接", skill)
-        self.assertIn("[`docs/architecture.md`](../architecture.md)", writing)
+        self.assertIn("link label 使用完整仓库相对路径", writing)
+        self.assertIn("link target 使用从当前文档位置可解析的相对路径", writing)
         self.assertIn("不得只写不可点击的 inline-code 路径", writing)
         self.assertIn("最终输出位置重新验证", writing)
         self.assertIn("误把命令、目录树、glob、占位路径", workflow)
