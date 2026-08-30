@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -80,6 +82,26 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertIn("Codex 打开项目或会话期间", usage)
         self.assertIn("不是系统后台服务", usage)
         self.assertIn("关闭或重载项目", usage)
+
+    def test_stdio_server_exits_after_host_closes_stdin(self) -> None:
+        """宿主关闭 stdio 输入后，serve 进程必须结束而不是脱离宿主继续常驻。"""
+        process = subprocess.Popen(
+            [sys.executable, "-m", "runtime.agent_skills_runtime.server", "serve"],
+            cwd=ROOT,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        self.assertIsNotNone(process.stdin)
+        process.stdin.close()
+        try:
+            return_code = process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+            self.fail("stdio 已关闭但 Runtime serve 进程仍未退出")
+        stderr = process.stderr.read().decode("utf-8", errors="replace") if process.stderr else ""
+        self.assertEqual(return_code, 0, stderr)
 
 
 if __name__ == "__main__":
