@@ -3,6 +3,7 @@ name: Runtime Package Tests
 on:
   pull_request:
     paths:
+      - ".gitattributes"
       - "runtime/**"
       - "scripts/build_runtime.py"
       - "scripts/runtime_mcp_smoke.py"
@@ -12,6 +13,7 @@ on:
     branches:
       - main
     paths:
+      - ".gitattributes"
       - "runtime/**"
       - "scripts/build_runtime.py"
       - "scripts/runtime_mcp_smoke.py"
