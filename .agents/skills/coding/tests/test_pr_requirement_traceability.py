@@ -64,6 +64,13 @@ class PullRequestRequirementTraceabilityTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
 
+    def test_requirement_source_supports_project_formal_identifiers_without_forcing_issue(self) -> None:
+        """已有 Spec/OpenSpec 等正式载体时，PR 应能直接追溯稳定标识而不是被迫新建 Issue。"""
+        text = self._reference_text()
+        self.assertIn("Requirement-Source: <项目正式稳定标识>", text)
+        self.assertIn("GitHub Issue", text)
+        self.assertIn("不为了建立追溯关系再创建重复 Issue", text)
+
     def test_pr_review_route_loads_traceability_reference(self) -> None:
         """用户自然语言审查 PR 时必须自动加载需求追溯规则。"""
         result = self._evaluate(
