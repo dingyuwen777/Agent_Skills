@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 CODING_ROOT = ROOT / ".agents/skills/coding"
-REFERENCE_PATH = CODING_ROOT / "references/17_前端与Design-to-Code实施规则.md"
+REFERENCE_PATH = CODING_ROOT / "references/16_前端与Design-to-Code实施规则.md"
 
 
 class FrontendDesignToCodeRulesTest(unittest.TestCase):
@@ -19,7 +19,7 @@ class FrontendDesignToCodeRulesTest(unittest.TestCase):
     def test_main_skill_routes_frontend_and_design_to_code_tasks(self) -> None:
         """Frontend/UI/Design-to-Code 实现任务必须从主 Skill 命中新专项 reference。"""
         skill = self._read("SKILL.md")
-        self.assertIn("17_前端与Design-to-Code实施规则.md", skill)
+        self.assertIn("16_前端与Design-to-Code实施规则.md", skill)
         self.assertIn("Frontend", skill)
         self.assertIn("Design-to-Code", skill)
 
@@ -71,7 +71,7 @@ class FrontendDesignToCodeRulesTest(unittest.TestCase):
         self.assertFalse((CODING_ROOT / "README.md").exists())
         skill = self._read("SKILL.md")
         reference = REFERENCE_PATH.read_text(encoding="utf-8")
-        self.assertIn("17_前端与Design-to-Code实施规则.md", skill)
+        self.assertIn("16_前端与Design-to-Code实施规则.md", skill)
         self.assertIn("Greenfield", reference)
         self.assertIn("Vue", reference)
         self.assertIn("Page / Screen Owner", reference)

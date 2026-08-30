@@ -151,13 +151,13 @@ Task Route 是 Agent/Runtime 内部协议，不是用户日常配置；用户继
 Bootstrap/managed block 必须读取：
 
 ```text
-.agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md
+.agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md
 ```
 
 涉及本地 MCP Runtime 构建/Release/项目安装/升级、Project Payload、Routing Manifest/Task Route、Bundle、installation manifest 或宿主 MCP 配置，还必须读取：
 
 ```text
-.agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md
+.agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md
 ```
 
 ## 7. Figma 路由

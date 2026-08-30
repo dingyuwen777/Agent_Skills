@@ -11,9 +11,9 @@ ROOT = Path(__file__).resolve().parents[4]
 ROUTER_PATH = ".agents/skills/ROUTER.md"
 MAINTENANCE_PATH = ".agents/MAINTENANCE.md"
 MANAGED_PATH = ".agents/skills/coding/assets/AGENTS.managed.md"
-REF13_PATH = ".agents/skills/coding/references/13_目标项目安装与AGENTS_Bootstrap.md"
-REF14_PATH = ".agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md"
-REF16_PATH = ".agents/skills/coding/references/16_规则内容守恒与Skill维护.md"
+REF13_PATH = ".agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md"
+REF14_PATH = ".agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md"
+REF16_PATH = ".agents/skills/coding/references/15_规则内容守恒与Skill维护.md"
 CANONICAL_REPOSITORY = "dingyuwen777/Agent_Skills"
 RUNTIME_FORBIDDEN_MUTATION_MARKERS = (
     CANONICAL_REPOSITORY,
@@ -82,7 +82,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         for marker in required:
             self.assertIn(marker, router, f"Runtime Router 丢失普通研发路由：{marker}")
         self.assertIn("| Skill Mutation |", router)
-        for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + ("16_规则内容守恒与Skill维护.md",):
+        for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + ("15_规则内容守恒与Skill维护.md",):
             self.assertNotIn(forbidden, router, f"Runtime Router 暴露源仓库 Mutation 治理：{forbidden}")
 
     def test_managed_block_is_runtime_bootstrap_without_source_mutation_terms(self) -> None:
@@ -99,7 +99,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         ):
             self.assertIn(marker, managed, f"managed block 缺少普通 Runtime 入口保护：{marker}")
         for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + (
-            "16_规则内容守恒与Skill维护.md",
+            "15_规则内容守恒与Skill维护.md",
             "canonical Owner",
             "canonical repository",
             "本地安装副本",

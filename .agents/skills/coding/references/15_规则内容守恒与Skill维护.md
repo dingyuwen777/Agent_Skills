@@ -178,7 +178,7 @@ dingyuwen777/Agent_Skills
 → .agents/MAINTENANCE.md
 → .agents/skills/ROUTER.md
 → .agents/skills/coding/SKILL.md
-→ coding/references/16_规则内容守恒与Skill维护.md
+→ coding/references/15_规则内容守恒与Skill维护.md
 → 本次真正受影响 Skill 的 SKILL.md / references
 ```
 

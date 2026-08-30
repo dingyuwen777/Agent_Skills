@@ -43,4 +43,4 @@
 6. 如果无法从当前仓库事实安全判断 Skill Ownership，或当前宿主没有 Agent_Skills 所需读取/写入权限，必须明确报告并停止对应写入，不得通过修改本地安装副本或口头声称“已同步”来绕过；
 7. Custom Instructions、Project instructions 或其他宿主提示可以作为进入本入口的薄触发器，但不是 canonical Skill 正文，也不会自动授予 GitHub 写入、PR、merge 或 Release 权限。
 
-本节是 **Skill Mutation 意图与 canonical Ownership 的源仓库唯一 Bootstrap Owner**。Mutation 的详细内容守恒、Skill/Reference 新增删除重命名与跨仓库同步细则由 `coding/references/16_规则内容守恒与Skill维护.md` 负责；进入 Agent_Skills 后的 Change、Review、CI、PR、main 验证与当前 Change 清理继续由 `.agents/MAINTENANCE.md` / Coding 现有交付规则负责。普通 Runtime 安装给目标项目的 Router 和 managed block 不复制这套源仓库维护治理；Custom Instructions 只需要把相应意图引导回当前根 `AGENTS.md`，再以当前源码事实继续执行。
+本节是 **Skill Mutation 意图与 canonical Ownership 的源仓库唯一 Bootstrap Owner**。Mutation 的详细内容守恒、Skill/Reference 新增删除重命名与跨仓库同步细则由 `coding/references/15_规则内容守恒与Skill维护.md` 负责；进入 Agent_Skills 后的 Change、Review、CI、PR、main 验证与当前 Change 清理继续由 `.agents/MAINTENANCE.md` / Coding 现有交付规则负责。普通 Runtime 安装给目标项目的 Router 和 managed block 不复制这套源仓库维护治理；Custom Instructions 只需要把相应意图引导回当前根 `AGENTS.md`，再以当前源码事实继续执行。

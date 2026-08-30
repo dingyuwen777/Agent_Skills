@@ -3,6 +3,8 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from runtime.agent_skills_runtime.catalog import build_bundle
+
 
 ROOT = Path(__file__).resolve().parents[4]
 SKILL_ROOT = ROOT / ".agents/skills"
@@ -38,20 +40,27 @@ class UniversalizationCleanlinessTest(unittest.TestCase):
         self.assertIn("coding-change/v1", combined)
         self.assertNotIn("rvc-" + "change/v1", combined)
 
-    def test_deleted_reference_twelve_does_not_return(self) -> None:
-        """已删除 reference 12 不应重新出现或被 live 路径引用。"""
+    def test_deleted_stable_reference_twelve_does_not_return(self) -> None:
+        """文件导航可以复用 12 前缀，但已删除的 Stable Reference 12 不得恢复。"""
         references = ROOT / ".agents/skills/coding/references"
-        self.assertFalse(any(path.name.startswith("12_") for path in references.glob("*.md")))
-        self.assertNotIn("references/12_", self._combined_live_text())
+        self.assertTrue((references / "12_目标项目安装与AGENTS_Bootstrap.md").is_file())
+        bundle = build_bundle(ROOT)
+        coding_ids = {
+            str(entry["id"])
+            for entry in bundle["references"]
+            if str(entry["skill"]) == "coding"
+        }
+        self.assertNotIn("coding.reference.12", coding_ids)
+        self.assertIn("coding.reference.13", coding_ids)
 
     def test_current_bootstrap_runtime_delivery_and_preservation_references_are_live(self) -> None:
         """Bootstrap、Runtime、Git 交付与内容守恒规则必须存在且可达。"""
         references = ROOT / ".agents/skills/coding/references"
         names = (
-            "13_目标项目安装与AGENTS_Bootstrap.md",
-            "14_本地MCP_Runtime分发与原文上下文加载.md",
-            "15_Git交付依赖安全与宿主能力边界.md",
-            "16_规则内容守恒与Skill维护.md",
+            "12_目标项目安装与AGENTS_Bootstrap.md",
+            "13_本地MCP_Runtime分发与原文上下文加载.md",
+            "14_Git交付依赖安全与宿主能力边界.md",
+            "15_规则内容守恒与Skill维护.md",
         )
         combined = self._combined_live_text()
         for name in names:

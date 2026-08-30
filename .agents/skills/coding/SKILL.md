@@ -173,16 +173,16 @@ Greenfield 表示工程事实尚未建立或只建立了一部分。此时先确
 | L2/L3、需要需求追踪或已有 Active Change | [04_轻量变更管理.md](references/04_轻量变更管理.md) |
 | 新/当前 Change 使用 Completion Gate | [10_完成定义追溯门禁.md](references/10_完成定义追溯门禁.md) |
 | 开发 Feature、修 Bug、重构、性能或调查失败 | [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md) |
-| Frontend / Web UI / Design-to-Code / Figma-to-code / 设计稿转代码；新增页面、跨页面 UI 或需要选择前端技术方案 | [17_前端与Design-to-Code实施规则.md](references/17_前端与Design-to-Code实施规则.md) |
+| Frontend / Web UI / Design-to-Code / Figma-to-code / 设计稿转代码；新增页面、跨页面 UI 或需要选择前端技术方案 | [16_前端与Design-to-Code实施规则.md](references/16_前端与Design-to-Code实施规则.md) |
 | 需要规划或审计验证证据；新增/修改永久 CI/Workflow 或测试/发布门禁 | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md) |
 | Web/API/PostgreSQL/Provider 等专项边界真实存在 | [08_分层测试与验收策略.md](references/08_分层测试与验收策略.md) |
 | 跨模块、跨消费者、Contract/Schema/Migration/Owner/数据边界 | [06_仓库边界数据交换与条件式约束.md](references/06_仓库边界数据交换与条件式约束.md) |
 | 多人、多 Agent、多个分支或 Active Change 并行 | [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md) |
 | Review、Ready、交付或准备表达完成结论 | [11_两阶段复核与完成前验证.md](references/11_两阶段复核与完成前验证.md) |
-| 首次安装/升级 Agent_Skills、创建/补充目标项目 AGENTS 或修复 managed block | [13_目标项目安装与AGENTS_Bootstrap.md](references/13_目标项目安装与AGENTS_Bootstrap.md) |
-| Runtime Bundle/Routing Manifest/Task Route/MCP/Project Payload/安装升级或 Release identity | [14_本地MCP_Runtime分发与原文上下文加载.md](references/14_本地MCP_Runtime分发与原文上下文加载.md) |
-| Git/PR/Release/Delivery、依赖变化、安全边界、最终交付报告或宿主能力降级 | [15_Git交付依赖安全与宿主能力边界.md](references/15_Git交付依赖安全与宿主能力边界.md) |
-| Skill/reference/模板/项目 Overlay 的精简、重组、拆分、合并、改名、迁移或通用化 | [16_规则内容守恒与Skill维护.md](references/16_规则内容守恒与Skill维护.md) |
+| 首次安装/升级 Agent_Skills、创建/补充目标项目 AGENTS 或修复 managed block | [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md) |
+| Runtime Bundle/Routing Manifest/Task Route/MCP/Project Payload/安装升级或 Release identity | [13_本地MCP_Runtime分发与原文上下文加载.md](references/13_本地MCP_Runtime分发与原文上下文加载.md) |
+| Git/PR/Release/Delivery、依赖变化、安全边界、最终交付报告或宿主能力降级 | [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md) |
+| Skill/reference/模板/项目 Overlay 的精简、重组、拆分、合并、改名、迁移或通用化 | [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md) |
 
 不要要求用户重复提供能够从仓库、缓存或工具确认的信息。只读取当前任务真正需要的事实和 reference，不用“全仓全部读一遍”替代理解调用链。
 
@@ -651,11 +651,11 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 6. Git、依赖、安全、交付与宿主能力边界
 
-只要任务涉及 Git / PR / Release / Delivery、依赖变化、安全边界、最终交付报告，或当前宿主能力不足需要降级，必须读取 [15_Git交付依赖安全与宿主能力边界.md](references/15_Git交付依赖安全与宿主能力边界.md)。原主文件中 Git、依赖、安全、最终报告和能力边界的详细规则已完整迁入该 reference；不能因为本节变短而把它们视为可选建议。
+只要任务涉及 Git / PR / Release / Delivery、依赖变化、安全边界、最终交付报告，或当前宿主能力不足需要降级，必须读取 [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md)。原主文件中 Git、依赖、安全、最终报告和能力边界的详细规则已完整迁入该 reference；不能因为本节变短而把它们视为可选建议。
 
 ## 7. 规则内容守恒与 Skill 维护
 
-当任务会精简、重组、拆分、合并、改名、迁移或通用化 `SKILL.md`、reference、模板或项目 Overlay 时，必须在修改之前读取 [16_规则内容守恒与Skill维护.md](references/16_规则内容守恒与Skill维护.md)。内容守恒仍是硬门禁：只有逐项证明完全等价时才允许消除重复，无法证明时保留原细节。
+当任务会精简、重组、拆分、合并、改名、迁移或通用化 `SKILL.md`、reference、模板或项目 Overlay 时，必须在修改之前读取 [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md)。内容守恒仍是硬门禁：只有逐项证明完全等价时才允许消除重复，无法证明时保留原细节。
 
 ## 10. Review Skill 集成
 
