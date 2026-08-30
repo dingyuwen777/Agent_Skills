@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260830-runtime-disclosure-boundary
 title: Runtime 模式隐藏内部治理细节并保留工程过程可见
 level: L3
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: change/runtime-disclosure-boundary
 created: 2026-08-30
@@ -18,18 +18,20 @@ affected_areas:
 affected_paths:
   - runtime/agent_skills_runtime/runtime.py
   - runtime/agent_skills_runtime/server.py
-  - runtime/agent_skills_runtime/routing.py
+  - scripts/build_runtime.py
+  - scripts/runtime_mcp_smoke.py
   - .agents/skills/coding/assets/AGENTS.managed.md
-  - .agents/skills/coding/SKILL.md
-  - .agents/skills/ROUTER.md
+  - .agents/skills/coding/assets/AGENTS.template.md
+  - .agents/skills/coding/scripts/coding.py
   - .agents/skills/coding/tests/
   - .github/workflows/skill-tests.yml
+  - .agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md
+  - .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md
   - runtime/README.md
   - USAGE.md
-  - .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md
 contracts:
-  - Agent Skills MCP工具契约/v2
-  - Agent Skills 公共路由契约/v1
+  - Agent Skills MCP工具契约/v3
+  - Agent Skills MCP公共路由契约/v2
   - agent-skills-project-payload/v2
 data_changes: []
 ---
@@ -40,12 +42,12 @@ Runtime Mode 继续允许模型向用户展示真实的软件工程处理过程�
 
 # 成功标准
 
-- [ ] Runtime 安装到目标项目后的 managed bootstrap 不再要求用户/模型通过具体 `.agents/skills/...` 路径进入治理流程，也不枚举 Skill/Reference/Router 内部实现。
-- [ ] Runtime MCP 面向宿主模型的 status、route contract、submit/load/checkpoint 返回值不再公开 Skill 列表、命中 Skill、Reference/Stable ID、文件名、路径、hash/size 或最低风险等无需对外的内部身份信息。
-- [ ] Runtime 仍向宿主模型返回本次任务 required 的完整规则正文，不摘要、不改写，且 Bundle 的 hash/size/source/routing 完整性验证保持不变。
-- [ ] Runtime 明文入口与 MCP 指令明确要求：用户可见进度只描述工程活动及其原因，不复述内部治理资产、分类、标识、路径、路由映射或加载明细。
-- [ ] Runtime 下仍可正常表达并执行代码修改、测试、文档同步、Review、Git、CI、兼容性和交付验证；Source Mode 的明文导航、维护能力与仓库内完整规则保持不变。
-- [ ] Linux/Windows/macOS 单二进制安装与真实 stdio MCP smoke 通过，且目标项目不安装 canonical References/Stub 的既有边界保持。
+- [x] Runtime 安装到目标项目后的 managed bootstrap 不再要求用户/模型通过具体 `.agents/skills/...` 路径进入治理流程，也不枚举 Skill/Reference/Router 内部实现。
+- [x] Runtime MCP 面向宿主模型的 status、route contract、submit/load/checkpoint 返回值不再公开 Skill 列表、命中 Skill、Reference/Stable ID、文件名、路径、hash/size 或最低风险等无需对外的内部身份信息。
+- [x] Runtime 仍向宿主模型返回本次任务 required 的完整规则正文，不摘要、不改写，且 Bundle 的 hash/size/source/routing 完整性验证保持不变。
+- [x] Runtime 明文入口与 MCP 指令明确要求：用户可见进度只描述工程活动及其原因，不复述内部治理资产、分类、标识、路径、路由映射或加载明细。
+- [x] Runtime 下仍可正常表达并执行代码修改、测试、文档同步、Review、Git、CI、兼容性和交付验证；Source Mode 的明文导航、维护能力与仓库内完整规则保持不变。
+- [x] Linux/Windows/macOS 单二进制安装与真实 stdio MCP smoke 通过，且目标项目不安装 canonical References/Stub 的既有边界保持。
 
 # 范围
 
@@ -84,6 +86,8 @@ Runtime Mode 继续允许模型向用户展示真实的软件工程处理过程�
 
 MCP 工具名称和调用顺序保持不变，避免宿主配置迁移；收窄返回字段属于有意的公共 Tool Contract 变化，因此按 L3 处理。调用者只能依赖路由令牌、是否还需加载约束、加载正文与 checkpoint 是否通过等完成流程所需字段，不能继续依赖 Skill/Reference 身份或内部风险/摘要字段。
 
+构建侧不再依赖公开 `status/self-test` 枚举详细内部摘要，而是由维护侧基于同一 Bundle、Payload、Release/source identity 计算不可逆完整性指纹，并要求 onefile `self-test` 返回相同指纹；详细构建 identity 仍保留在 CI/Release 构建 manifest，不重新暴露给 Runtime 日常 MCP。
+
 ## Migration / 部署 / 回滚
 
 - Migration：随下一次 Runtime Release 一次性升级项目级 Runtime 与 Project Payload；不迁移目标项目业务数据。
@@ -93,50 +97,52 @@ MCP 工具名称和调用顺序保持不变，避免宿主配置迁移；收窄�
 ## 风险
 
 - 过度删减公共信息可能让宿主无法构造合法任务事实或完成 required Context 加载，因此保留 route contract 的必要任务词汇和不透明路由令牌。
-- 仅收窄 envelope 无法阻止模型从规则正文中看到内部术语，因此 Runtime 入口和工具说明必须同时建立“工程过程可见、治理实现不可见”的输出约束。
-- Source/Runtime 条件规则若写得不清楚可能影响 Source Mode；需要独立回归测试证明 Source Mode 明文导航仍存在。
+- 仅收窄 envelope 无法阻止模型从规则正文中看到内部术语，因此 Runtime 入口和工具说明同时建立“工程过程可见、治理实现不可见”的输出约束。
+- Source/Runtime 条件规则若写得不清楚可能影响 Source Mode；通过独立 Source Mode 回归测试证明明文导航仍存在。
+- 这不是本机机密安全边界：目标机器 Owner、MCP 通信观测、调试器或内存转储仍可能取得内部明文；本次目标仅是正常 Runtime Agent 对话不主动复述治理实现细节。
 
 # Requirement Traceability
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | Runtime 可显示代码、测试、文档、Review、Git/CI 等工程处理过程 | user:runtime-progress-visible | not_satisfied | 尚未验证 |
-| R2 | Runtime 用户可见输出不得显示 Skill/Reference 文件名、内部目录结构和路由细节 | user:runtime-governance-hidden | not_satisfied | 尚未验证 |
-| R3 | Source Mode 使用明文仓库时仍可展示上述治理过程和路径 | user:source-mode-visible | not_satisfied | 尚未验证 |
-| R4 | 不牺牲 required canonical Context 的逐字守恒、完整性和 fail-closed | .agents/MAINTENANCE.md | not_satisfied | 尚未验证 |
-| R5 | 三平台 Runtime 构建、真实 stdio MCP 和项目级安装继续通过 | .agents/MAINTENANCE.md | not_satisfied | 尚未验证 |
+| R1 | Runtime 可显示代码、测试、文档、Review、Git/CI 等工程处理过程 | user:runtime-progress-visible | satisfied | `test_runtime_disclosure_boundary.py`、Runtime managed bootstrap 与 PR #62 当前 HEAD 的三平台项目安装断言均验证工程过程词汇仍可见；CI run 33310015822 对应实现/安装步骤通过。 |
+| R2 | Runtime 用户可见输出不得显示 Skill/Reference 文件名、内部目录结构和路由细节 | user:runtime-governance-hidden | satisfied | `test_runtime_disclosure_boundary.py`、`runtime_mcp_smoke.py` 和 Linux/Windows/macOS 安装断言验证根 AGENTS 与 MCP 公共 envelope 去标识化；CI run 33310015822 对应测试、真实 stdio MCP 和项目安装步骤通过。 |
+| R3 | Source Mode 使用明文仓库时仍可展示上述治理过程和路径 | user:source-mode-visible | satisfied | `test_runtime_disclosure_boundary.py` 及模式感知 Router/Bootstrap 回归测试继续断言源仓库根 AGENTS 与 Router 的明文导航可见；PR #62 当前 HEAD 全量自包含测试通过。 |
+| R4 | 不牺牲 required canonical Context 的逐字守恒、完整性和 fail-closed | .agents/MAINTENANCE.md | satisfied | `test_runtime_bundle.py` 与真实 MCP smoke 逐字比较 canonical Context；onefile build/self-test 使用独立完整性指纹交叉验证，PR #62 当前 HEAD 的 Linux/Windows/macOS 构建和 MCP smoke 通过。 |
+| R5 | 三平台 Runtime 构建、真实 stdio MCP 和项目级安装继续通过 | .agents/MAINTENANCE.md | satisfied | CI run 33310015822：Linux 自包含测试、onefile build/self-test、真实 stdio MCP、项目安装均通过；`Runtime Windows Package` 与 `Runtime macOS Package` jobs 均通过。 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | RuntimeStore 公共返回字段、managed bootstrap 文本和 Source/Runtime 披露边界回归测试 |
-| 接口 / Contract | required | MCP 工具名称/顺序保持，公开返回字段收窄后的 smoke 与调用契约测试 |
-| 集成 / Persistence / Runtime Dependency | required | 构建后的 onefile Runtime 真实 stdio MCP + 项目安装后调用 |
-| 用户 / Workflow Acceptance | required | 目标项目 Runtime 安装后的 AGENTS 只描述工程工作流，不要求读取内部治理路径；工程过程词汇仍可见 |
-| 跨组件 Golden Path | required | source → bundle/payload → onefile → install → stdio MCP → load required Context |
-| External Dependency / Provider Probe | not_applicable | 无第三方业务 Provider 或外部实时事实变化 |
-| Build / Package / Runtime | required | Linux/Windows/macOS package/install jobs 与 onefile self-test |
-| Docs / Governance / Other | required | Change、Runtime 规则、runtime/README、USAGE 与 CI 断言同步 |
+| 行为 / Unit / Component | required | `python -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v` 在 CI run 33310015822 通过；覆盖 RuntimeStore 公共返回字段、managed bootstrap 和 Source/Runtime 披露边界。 |
+| 接口 / Contract | required | `scripts/runtime_mcp_smoke.py` 在真实 stdio MCP 上验证六个工具名称/输入 schema 保持、公共返回字段收窄、exact-text Context 和 checkpoint；三平台 jobs 通过。 |
+| 集成 / Persistence / Runtime Dependency | required | Linux/Windows/macOS 均构建 onefile 并在真实临时项目安装后调用项目内 Runtime status/MCP smoke；CI run 33310015822 通过。 |
+| 用户 / Workflow Acceptance | required | 目标项目安装后的根 `AGENTS.md` 不再出现内部治理导航，同时明确代码修改、测试、文档同步、复核、Git/CI 等用户可见工程过程；三平台安装断言通过。 |
+| 跨组件 Golden Path | required | source → bundle/payload → onefile → install → stdio MCP → exact-text required Context 在 Linux/Windows/macOS CI jobs 完整通过。 |
+| External Dependency / Provider Probe | not_applicable | 无第三方业务 Provider 或外部实时事实变化。 |
+| Build / Package / Runtime | required | CI run 33310015822 的 Linux onefile 与 Windows/macOS package/install jobs 通过；Python 版本仍固定 3.12.10。 |
+| Docs / Governance / Other | required | Runtime Bootstrap、两份 Runtime/Bootstrap canonical Reference、`runtime/README.md`、`USAGE.md`、Change 和 CI 断言已同步；全量回归测试通过。 |
 
 # Completion Audit
 
-- [ ] upstream_re_read：重新读取本轮用户决定、根 AGENTS、MAINTENANCE、Runtime 分发规则及当前实现。
-- [ ] change_coverage：确认实现覆盖 Runtime 可见性与 Source Mode 保留两个方向，没有只做 Prompt 或只做返回字段。
-- [ ] reverse_audit：从目标项目安装入口 → MCP 调用 → required Context → 用户可见进度反向检查泄露面，并复核三平台安装/构建边界。
-- [ ] unresolved_cleared：所有 Requirement Traceability 的 `not_satisfied` 清零。
+- [x] upstream_re_read：重新读取本轮用户决定、根 `AGENTS.md`、`.agents/MAINTENANCE.md`、共享 Router、Bootstrap/Runtime 分发规则、Review 规则以及当前实现和 PR 差异；确认用户要求明确区分 Source Mode 与 Runtime Mode。
+- [x] change_coverage：实现覆盖 managed bootstrap、MCP 公共 envelope、MCP Server 指令/用户可见进度规则、构建完整性证明和回归/三平台安装测试五个层面；Source Mode 明文导航保持，不是仅增加一句 Prompt 或只删返回字段。
+- [x] reverse_audit：从目标项目根 `AGENTS.md` → 项目级治理 MCP → route/required Context → 用户可见进度反向检查泄露面；同时确认内部 Router/Core 仍随 Project Payload 安装、canonical Reference/Stub 仍不安装、完整原文仍逐字返回，并复核 Linux/Windows/macOS 构建和安装链。
+- [x] unresolved_cleared：R1–R5 全部 `satisfied`，没有未决 Requirement；实现已具备独立 Review 条件，Review finding 若出现按 Review 流程处理后再决定 PR Ready。
 
 # 任务
 
 - [x] 调查当前 Runtime、Project Payload、managed bootstrap、MCP 返回面和 CI 安装断言
 - [x] 建立四维任务路由与 L3 变更边界
-- [ ] 先建立 Runtime disclosure 失败测试并确认因当前泄露面失败
-- [ ] 收窄 MCP 公共返回面和 Tool 指令
-- [ ] 修改 Runtime managed bootstrap，并明确 Source/Runtime 披露规则
-- [ ] 更新项目安装/三平台 CI 断言
-- [ ] 同步受影响文档
-- [ ] 运行目标测试、全量自包含测试、onefile build/self-test、真实 stdio MCP、三平台 CI
-- [ ] 完成 Requirement Traceability、Completion Audit 与两阶段 Review
+- [x] 先建立 Runtime disclosure 失败测试并确认因当前泄露面失败
+- [x] 收窄 MCP 公共返回面和 Tool 指令
+- [x] 修改 Runtime managed bootstrap，并明确 Source/Runtime 披露规则
+- [x] 更新项目安装/三平台 CI 断言
+- [x] 同步受影响文档
+- [x] 运行目标测试、全量自包含测试、onefile build/self-test、真实 stdio MCP、三平台 CI
+- [x] 完成 Requirement Traceability 与 Completion Audit，进入独立 Review
+- [ ] 独立 Review / re-review 通过后把 Draft PR 转为 Ready
 
 # 验证
 
@@ -152,16 +158,19 @@ MCP 工具名称和调用顺序保持不变，避免宿主配置迁移；收窄�
 
 ## 新鲜证据
 
-- 尚未执行。
+- Red：CI run 33308466914 在新增 Runtime disclosure 回归测试处按预期失败；同一提交的 Windows/macOS 旧 Runtime 构建基线仍成功，证明失败来自新披露要求而非既有平台基线损坏。
+- Green（实现证据）：CI run 33310015822 当前实现上，自包含 unittest、Linux onefile build/self-test、真实 stdio MCP、项目级单 binary 安装全部通过；Windows 与 macOS package/install jobs 通过。
+- Green（门禁状态）：run 33310015822 的 Linux 最后只因本 Change 当时仍为 `proposed` 被 `--require-active-ready` 拒绝；本文件现已完成 Traceability/Completion Audit 并切换为 `ready_for_review`，需要当前提交的新一轮 CI 重新确认 Ready Check。
 
 # 文档影响
 
-- `runtime/README.md`：需要说明 Runtime 用户可见输出边界和公共 MCP envelope。
-- `USAGE.md`：需要用最终用户语言说明仍会显示工程处理过程，但不会主动展示内部治理资产/路由细节。
-- Runtime 分发 canonical Reference：需要把模式感知披露边界写入唯一 Owner；Source Mode 明文导航保持。
+- `runtime/README.md`：已同步 Source/Runtime 可见性角色、MCP v3 公共 envelope、exact-text 原文边界、不透明完整性指纹和非安全隔离说明。
+- `USAGE.md`：已用最终用户语言说明正常工程处理过程仍会显示，但 Runtime 不主动展示内部治理规则文件、目录/分类与路由细节。
+- `12_目标项目安装与AGENTS_Bootstrap.md`：已把 Runtime 根 managed block 改为项目级治理 MCP 薄入口，同时保留内部 Router/Core 的安装/ownership 职责。
+- `13_本地MCP_Runtime分发与原文上下文加载.md`：已定义模式感知披露边界、MCP v3 Contract、完整原文不得脱敏改写、构建完整性指纹和 Source/Runtime 生命周期。
 
 # 交付
 
-- Commit：待实现
-- PR：待创建
-- 发布：本任务不直接发布；合并后由现有 Release workflow 按正式版本流程发布
+- Branch：`change/runtime-disclosure-boundary`
+- PR：#62，当前保持 Draft，等待本提交 Ready Check 与独立 Review 通过后转 Ready
+- Release：本任务不直接发布；后续合并后仍由现有 Release workflow 按正式版本流程发布
