@@ -127,6 +127,72 @@ API / SDK / CMS / Store / Local DB / Device / Runtime / Config
 - 把示例 ID 当正式业务编号规范；
 - 把示例图片比例当唯一真实比例。
 
+## 6.1 UI → Real-System Preflight
+
+进入 `READY / READY_WITH_NOTES` 和 Coding Handoff 前，对会影响真实行为的关键动态控件执行最小 **UI → Real-System Preflight**。不要求复制整个后端 Schema，但必须能回答：
+
+```text
+UI / 产品语义
+→ UI 事实分类：USER_INPUT / SYSTEM_DYNAMIC / RUNTIME_STATE / ...
+→ 数据或动作的真实 Owner
+→ 当前 Contract / SDK / generated client / Store / Runtime 入口
+→ 默认值 / 可见选项 / 保存资格
+→ Loading / Empty / Error / Permission
+→ 时间语义（适用时）
+```
+
+Select、Radio、DatePicker、DateRange、动态表格、按钮动作、异步任务、权限驱动组件等，只要其中一项会改变生产行为，就不能仅凭画面“看起来合理”跳过预检。
+
+关键映射无法从目标项目当前事实或已批准决定中确认时，**映射不明时不得 `READY`**。应明确标记 `implementation_required`、`NOT_READY` 或上游决策阻塞，而不是让实现方猜。
+
+## 6.2 禁止由 Figma / 生成工具发明生产接口
+
+Figma MCP、Design Context、Annotation、Prototype 或工具参考代码中出现的：
+
+```text
+/api/... 或其它 endpoint
+fetch URL
+Request / Response 字段
+Enum / 状态码
+数据库字段
+mock payload
+SDK / client 名称
+```
+
+只可作为调查线索，**不构成生产 Contract**。
+
+有目标仓库时必须回到当前正式 Contract、OpenAPI/IDL、SDK/generated client、Backend Route/Service、Feature API/Store 和既有消费者确认机器边界。
+
+禁止为了“让页面先跑起来”而：
+
+- 猜一个不存在的 endpoint；
+- 猜 Request/Response 或 Enum；
+- 为设计示例新增平行数据库字段；
+- 绕过 generated client / SDK / Repository / Service；
+- 用永久 mock、前端定时器或本地假状态制造服务器成功。
+
+## 6.3 当前系统缺少设计能力时的分支
+
+发现 Figma 需要的字段、动作、状态或 API 在当前系统不存在时，不机械“后端优先”删掉设计，也不机械“Figma 优先”造实现。先分类：
+
+```text
+已批准但尚未实现
+→ implementation_required
+→ Coding 把范围扩展到真实 Contract / Backend / SDK / Frontend
+→ 完成对应实现和验证后再闭环
+
+未批准设计假设
+→ NOT_READY
+→ 修设计或取得上游批准
+→ 不把假设直接变成生产能力
+
+正式设计、Contract、当前实现互相冲突且无法确认谁过期
+→ 阻塞并回到 Requirement / Contract / Owner 决策门禁
+→ 不静默选择
+```
+
+如果当前代码违反正式 Contract 或已批准设计，应作为 Coding Finding 修实现；不能要求 Figma 迁就已知 Bug。
+
 ---
 
 # 7. Annotation 是设计与机器事实的翻译层
@@ -148,6 +214,36 @@ Annotation：图片 URL 来自当前用户 Profile API / Local Account Store
 ```
 
 Annotation 不复制完整 OpenAPI/Schema，而只写实现所需的关键边界。
+
+## 7.1 Annotation Sufficiency
+
+`Annotation Sufficiency` 的目标是**消除实现歧义**，不是把 Figma 变成第二份代码、OpenAPI 或数据库文档。
+
+关键动态或非显然行为至少检查是否需要说明：
+
+- 数据分类：`SYSTEM_DYNAMIC / RUNTIME_STATE / DESIGN_EXAMPLE / ...`；
+- 数据或动作的真实来源 / Owner；
+- 示例值只用于排版还是属于 `SYSTEM_FIXED`；
+- 默认值来源；
+- 动态 Select/Radio 选项来自哪里；
+- `Future / implementation_required / NOT_READY` 边界；
+- 必要的时间、权限、状态、错误或异步语义；
+- 实现方无法仅从 Component、Prototype、Design Context 和正式 Contract 可靠推导的特殊约束。
+
+不要求为纯视觉、自解释或已经由公共 Component/Design Context/正式 Contract 无歧义表达的元素逐个增加说明。**注释数量本身不是质量指标**。
+
+优先使用：
+
+```text
+一个业务区域一个说明组
+或 Figma 原生 Annotation
+→ 引用真实 Contract / Owner
+→ 只说明实现需要的差异和语义
+```
+
+**不复制完整 OpenAPI / Schema**，不把大量字段定义、接口全文或实现细节散落在 Canvas 四周。
+
+Annotation 的视觉边界、归属、安全距离、说明容器、相邻画板间距和 zoom-out Canvas 可读性继续由 `07_页面布局与真实可用性审计.md` 唯一维护；本文件不复制第二套具体像素规则。
 
 ---
 
