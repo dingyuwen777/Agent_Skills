@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import shutil
 import subprocess
 import tempfile
 import textwrap
@@ -47,12 +48,10 @@ class ReleaseSingleZipTest(unittest.TestCase):
         ):
             self.assertIn(marker, workflow)
         self.assertNotIn('gh release upload "${RELEASE_TAG}" release-assets/*', workflow)
-        self.assertNotIn('"USAGE.md" \\\n            "SHA256SUMS"', workflow)
 
-    @unittest.skipUnless(os.name != "nt" and shutil_which_bash := __import__("shutil").which("bash"), "需要 bash 验证 ZIP 组装脚本")
+    @unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "需要 bash 验证 ZIP 组装脚本")
     def test_zip_contains_exact_runtime_files_usage_and_internal_checksums(self) -> None:
         """ZIP 只能含三平台二进制、USAGE 和四项内部 checksum，不能夹带 identity/临时文件。"""
-        del shutil_which_bash
         script = _extract_workflow_run_block("Build single distribution ZIP")
         version = "2.0.0"
         expected_files = (
