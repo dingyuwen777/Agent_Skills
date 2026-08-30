@@ -63,7 +63,7 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
             self.assertIn(marker, ref16)
 
     def test_github_pr_delivery_avoids_manual_ready_and_uses_rest_merge_guard(self) -> None:
-        """GitHub PR 交付必须在 Ready 能力异常时自动绕开 Draft，并用 REST merge 防止 head 漂移。"""
+        """GitHub PR 交付必须在 Ready 返回异常时先复核真实状态，并用 REST merge 防止 head 漂移。"""
         skill = self._read("SKILL.md")
         delivery = self._read("references/14_Git交付依赖安全与宿主能力边界.md")
         maintenance = MAINTENANCE.read_text(encoding="utf-8")
@@ -75,9 +75,9 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
             "Red / Green / Review / CI",
             "fullDatabaseId",
             "不得要求用户手动点击 `Ready for review`",
-            "不创建 Draft PR",
-            "普通 PR",
-            "逻辑未就绪",
+            "先重新读取 PR 当前状态",
+            "如果已经 `draft=false`",
+            "只有仍为 Draft",
             "关闭原 Draft PR",
             "相同 head/base",
             "重新运行新 PR 的 fresh CI",
