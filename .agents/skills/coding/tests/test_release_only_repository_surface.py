@@ -212,14 +212,19 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         ):
             self.assertNotIn(obsolete, readme)
 
-    def test_release_validates_identity_but_publishes_only_binaries_and_usage(self) -> None:
-        """正式 Release 校验 identity，但只发布三平台 binary/USAGE/checksum。"""
+    def test_release_validates_identity_but_publishes_only_single_zip(self) -> None:
+        """正式 Release 校验三平台 identity，但最终只发布一个版本 ZIP。"""
         workflow = self._read(".github/workflows/release.yml")
         self.assertIn("USAGE.md", workflow)
         self.assertIn("--notes-file", workflow)
         self.assertNotIn("--generate-notes", workflow)
         self.assertIn("rm release-assets/*.manifest.json", workflow)
         self.assertIn('test "$(wc -l < SHA256SUMS)" -eq 4', workflow)
+        self.assertIn("Build single distribution ZIP", workflow)
+        self.assertIn('agent-skills-v${RELEASE_VERSION}.zip', workflow)
+        self.assertIn('agent-skills-v${RELEASE_TAG#v}.zip', workflow)
+        self.assertIn('gh release upload "${RELEASE_TAG}" release-package/agent-skills-v*.zip', workflow)
+        self.assertNotIn('gh release upload "${RELEASE_TAG}" release-assets/*', workflow)
         for binary in (
             "agent-skills-mcp-v${RELEASE_VERSION}-linux",
             '"agent-skills-mcp-v$env:RELEASE_VERSION-windows"',
