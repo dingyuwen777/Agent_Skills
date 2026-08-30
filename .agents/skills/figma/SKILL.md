@@ -263,16 +263,19 @@ NOT_READY
    - 已明确授权修改 Figma → review-and-fix 后重新 baseline-ready
    - 未授权修改 Figma → 报告阻塞，不把已知设计缺陷写入生产代码
 → READY / 可实施的 READY_WITH_NOTES
+→ 如果已有对应页面：先执行 Existing Implementation Delta Gate
 → handoff 到目标项目 Coding 工作流
-→ Coding 负责实现 / 测试 / Review / CI / Git / 交付
+→ Coding 负责最小增量实现 / 测试 / Review / CI / Git / 交付
 → 实现完成后执行 Implementation ↔ Figma Conformance
+→ 正式长期 Drift + 有 Figma 写权限时执行授权 back-sync
+→ 强制输出 Figma Sync & Human Review
 ```
 
 “替换 / 实现 / 重做现有页面”本身表示用户要求修改该目标实现；但 commit、PR、merge、release 等 Git/交付权限仍按目标项目 Coding 工作流和用户明确授权判断，不能从“实现页面”自动扩大。
 
 进入 Coding handoff 后，本 Skill 只提供已经确认的设计事实、动态数据来源、Shared/Feature/Page Owner、Prototype 和状态规格；**不得复制或替代 Coding Skill 的 Change、TDD、验证、CI、Git、PR、Release 规则。**
 
-详细 handoff 见 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md)。
+详细 handoff、已有实现差异更新、back-sync 和人工复核输出见 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md)。
 
 ### D. 短提示词应当足够
 
@@ -619,6 +622,8 @@ baseline-ready 必须执行 Annotation Sufficiency Review。只给实现无法�
 
 `baseline-ready` 还必须执行 **Annotation Development Readiness**：检查必要注释是否完整、正确并与当前真实系统机器事实一致；在 `review-and-fix` 且有 Figma 写权限时补齐/修正关键缺失并收敛重复说明，再重新复核。详细 Coverage、权限分支和去重规则由 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 与 [02_业务能力与真实系统映射.md](references/02_业务能力与真实系统映射.md) 维护。
 
+当真实 Backend/Contract 与前端/Figma Annotation 发生漂移时，先确认当前正式机器事实 Owner：符合正式 Contract 的后端/SDK/consumer 变化要同步前端并在有权限时同步 Figma Annotation；后端违反正式 Contract/已批准需求时修后端，不能让 Figma 迁就 Bug。无写权限时记录 `Pending Figma Sync`。详细分支由 [02_业务能力与真实系统映射.md](references/02_业务能力与真实系统映射.md) 维护。
+
 开发 Annotation 不应压在正式 UI 上，也不能被实现方误读成产品文案。Annotation 与正式 Frame、相邻画板、说明容器之间的间距、归属、分区和 Canvas-level Review 统一由 [07_页面布局与真实可用性审计.md](references/07_页面布局与真实可用性审计.md) 维护；本 Skill 不再维护第二套具体数值。
 
 ---
@@ -651,7 +656,11 @@ Figma MCP/工具返回的参考代码只表达结构意图，不得反向改变�
 → 当前项目实现入口
 ```
 
-生产实现由 Coding 工作流完成后，还必须执行 **Implementation ↔ Figma Conformance**，对实际页面、正式 Figma 与真实 Contract/Backend/SDK/Store 的 Visual、Interaction、State、Data/Contract、Responsive、Component/Owner 六个域做 targeted re-review；代码验证通过本身不等于 Design-to-Code 已闭环。详细 Drift Owner 和回验规则由 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 维护。
+如果当前项目已经有目标 Page/Screen，必须先执行 Existing Implementation Delta Gate：以现有正确实现为基线，只实现新 Figma 经 Requirement/Contract/Owner 确认的真实差异，**不默认整页重写**。
+
+生产实现由 Coding 工作流完成后，还必须执行 **Implementation ↔ Figma Conformance**，对实际页面、正式 Figma 与真实 Contract/Backend/SDK/Store 的 Visual、Interaction、State、Data/Contract、Responsive、Component/Owner 六个域做 targeted re-review；代码验证通过本身不等于 Design-to-Code 已闭环。
+
+发现 Figma 已经过期且差异已经被确认成长期正式事实时，在有 Figma 写权限的任务中按 **Bidirectional Design Sync Gate** 回写真实 Figma Owner；不能把偶然实现偏移或 Bug 自动设计化。任何自动回写完成后先标记 `SYNCHRONIZED_PENDING_HUMAN_REVIEW`，并强制输出 `Figma Sync & Human Review`。详细 Drift Owner、back-sync 和人工复核规则由 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 维护。
 
 ---
 
@@ -811,6 +820,12 @@ Variables / Reactions / Flow / Overlay / Scroll / Hidden State。
 
 `READY / READY_WITH_NOTES / NOT_READY`。
 
+## Figma Sync & Human Review
+
+凡是 Design-to-Code 任务，此项为**强制输出**。本轮实际修改过 Figma 时必须列出具体 File/Page/Section/Frame/Node、Before → After、事实来源/原因、关联实现/Contract、受影响消费者、验证证据和人工复核重点；未修改时也必须说明 `NO_FIGMA_CHANGE_REQUIRED` 或 `Pending Figma Sync` 的依据。
+
+自动回写过 Figma 但尚未取得人工/等价设计审批时，状态必须为 `SYNCHRONIZED_PENDING_HUMAN_REVIEW`；只有明确人工确认或项目已有等价审批证据才能描述为 `HUMAN_VERIFIED`。详细字段和状态定义由 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 唯一维护。
+
 ---
 
 # 18. 常见禁止事项
@@ -840,4 +855,6 @@ Variables / Reactions / Flow / Overlay / Scroll / Hidden State。
 21. 因为演示好看伪造系统执行成功；
 22. 未执行必要验证就宣称“可以交给实现方”；
 23. 已有公共组件时 Detach、复制或重画制造第二 Owner；
-24. 代码实现完成后跳过 Implementation ↔ Figma Conformance，让设计与生产实现长期漂移。
+24. 代码实现完成后跳过 Implementation ↔ Figma Conformance，让设计与生产实现长期漂移；
+25. 把未批准的实现 Bug、临时 workaround 或偶然像素偏移自动回写成 Figma 长期事实；
+26. 实际修改过 Figma 后只说“已同步”，却不输出 `Figma Sync & Human Review` 供人工复核。
