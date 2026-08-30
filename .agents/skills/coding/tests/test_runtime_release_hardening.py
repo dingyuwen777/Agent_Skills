@@ -60,6 +60,25 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
                 True,
             )
 
+    def test_owned_codex_marker_with_duplicate_external_table_fails_closed(self) -> None:
+        """合法 managed block 外再出现同名 table 时 ownership 已歧义，升级不能保留重复 TOML。"""
+        existing = (
+            b"# keep\n\n"
+            + INSTALLER.CODEX_MANAGED_START.encode("utf-8")
+            + b"\n[mcp_servers.agent-skills]\n"
+            + b'command = ".agents/runtime/agent-skills-mcp"\n'
+            + b'args = ["serve"]\n'
+            + INSTALLER.CODEX_MANAGED_END.encode("utf-8")
+            + b"\n\n[mcp_servers.agent-skills]\n"
+            + b'command = "project-owned-duplicate"\n'
+        )
+        with self.assertRaisesRegex(ValueError, "重复|同名 MCP server"):
+            INSTALLER._updated_codex_config(
+                existing,
+                ".agents/runtime/agent-skills-mcp",
+                True,
+            )
+
     def test_install_reports_rollback_failure_instead_of_swallowing_it(self) -> None:
         """安装写入失败且快照恢复也失败时，必须显式报告不完整回滚和原始异常。"""
         bundle = build_bundle(ROOT)
@@ -143,6 +162,26 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
             self.assertIn(required, workflow)
         self.assertLess(workflow.index("python -m unittest discover"), workflow.index("gh release create"))
         self.assertLess(workflow.index("gh release upload"), workflow.index("--draft=false"))
+
+    def test_failed_release_job_cleans_only_unpublished_draft(self) -> None:
+        """Draft 创建/上传失败后必须可重试；失败清理只能删除仍为 Draft 的本次 Release。"""
+        workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        for required in (
+            "Cleanup failed draft Release",
+            "if: failure()",
+            "--json isDraft",
+            'if [ "${is_draft}" = "true" ]',
+            "gh release delete",
+            "--cleanup-tag",
+            "--yes",
+        ):
+            self.assertIn(required, workflow)
+        cleanup_index = workflow.index("Cleanup failed draft Release")
+        publish_index = workflow.index("Publish immutable GitHub Release")
+        self.assertGreater(cleanup_index, publish_index)
+        cleanup = workflow[cleanup_index:]
+        self.assertIn('if [ "${is_draft}" = "true" ]', cleanup)
+        self.assertNotIn('if [ "${is_draft}" = "false" ]', cleanup)
 
     def test_builder_reports_context_footprint_without_reference_details(self) -> None:
         """维护构建输出量化聚合 Context 字节，但不需要公开单个 Reference 身份。"""
