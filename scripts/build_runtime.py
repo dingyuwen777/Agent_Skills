@@ -27,7 +27,10 @@ from runtime.agent_skills_runtime.crypto import encrypt_bundle, generate_bundle_
 from runtime.agent_skills_runtime.project_installer import INSTALL_SCHEMA
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime.routing import ROUTING_MANIFEST_PROTOCOL, TASK_ROUTE_PROTOCOL
-from runtime.agent_skills_runtime.runtime import MCP_TOOL_CONTRACT_PROTOCOL
+from runtime.agent_skills_runtime.runtime import (
+    MCP_TOOL_CONTRACT_PROTOCOL,
+    runtime_integrity_fingerprint,
+)
 
 
 VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
@@ -254,20 +257,16 @@ def build_runtime(
     expected_digest = str(bundle["source_digest"])
     expected_routing_digest = str(bundle["routing_digest"])
     expected_payload_digest = str(project_payload["payload_digest"])
-    if status.get("Source摘要") != expected_digest or self_test.get("Source摘要") != expected_digest:
-        raise RuntimeError("构建产物 source_digest 与当前 canonical References 不一致")
-    if status.get("Routing摘要") != expected_routing_digest or self_test.get("Routing摘要") != expected_routing_digest:
-        raise RuntimeError("构建产物 routing_digest 与当前 canonical metadata 不一致")
-    if status.get("Payload摘要") != expected_payload_digest or self_test.get("Payload摘要") != expected_payload_digest:
-        raise RuntimeError("构建产物 payload_digest 与当前 Project Payload 不一致")
-    if status.get("Skill") != project_payload["skills"] or self_test.get("Skill") != project_payload["skills"]:
-        raise RuntimeError("构建产物 Skill Catalog 与当前 Project Payload 不一致")
+    expected_integrity_fingerprint = runtime_integrity_fingerprint(
+        bundle,
+        release_version=release_version,
+        payload_digest=expected_payload_digest,
+        source_commit=source_commit,
+    )
     if status.get("Release版本") != release_version or self_test.get("Release版本") != release_version:
         raise RuntimeError("构建产物 release_version 与显式构建版本不一致")
-    if status.get("Source提交") != source_commit or self_test.get("Source提交") != source_commit:
-        raise RuntimeError("构建产物 source_commit 与当前构建源码不一致")
-    if status.get("Install协议") != INSTALL_SCHEMA or self_test.get("Install协议") != INSTALL_SCHEMA:
-        raise RuntimeError("构建产物 install manifest schema 与当前安装器不一致")
+    if self_test.get("完整性指纹") != expected_integrity_fingerprint:
+        raise RuntimeError("构建产物完整性指纹与当前源码、路由、Payload 或版本身份不一致")
     if self_test.get("通过") is not True:
         raise RuntimeError("构建产物 self-test 未通过")
 
