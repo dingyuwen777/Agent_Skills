@@ -185,18 +185,18 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 main
 → 输入 v<SemVer>
 → 由 tag 派生 release_version
-→ Preflight 校验 main/tag/Release/Release Immutability + 全量自包含测试 + Ready
+→ Preflight 校验 main/tag/Release + 全量自包含测试 + Ready
 → Linux / Windows / macOS 使用 Python 3.12.10 分别构建并验证
 → 交叉校验 identity / artifact SHA256
 → 创建 Draft Release 并上传完整正式资产
 → 核对 Draft 资产集合
 → Publish
-→ 验证 tag、正式资产与 immutable 状态
+→ 验证 tag 与正式资产
 ```
 
-Release workflow 对 Release Immutability 采用 fail-closed。GitHub 官方的仓库设置检查 API 需要 `Administration: read`，而默认 `GITHUB_TOKEN` 不具备读取该管理设置的权限；因此正式 Release 前必须配置仓库 Actions Secret `RELEASE_SETTINGS_TOKEN`。建议使用只授权 `dingyuwen777/Agent_Skills`、Repository permission 仅设置 `Administration: Read-only` 的 fine-grained PAT。这个 Secret 只用于 Preflight 读取 Immutability 仓库设置，不用于创建 tag、上传资产或 Publish Release；实际发布仍使用当前 workflow 的 `github.token` 和最小 `contents: write` 权限。
+Release workflow 不读取仓库管理设置，也不需要自定义 PAT 或 Actions Secret；tag 检查、Release 创建、资产上传和 Publish 都使用 GitHub Actions 自动提供的 `github.token`，发布 job 只申请 `contents: write`。本仓库的正式发布流程不使用 Release Immutability，因此有仓库管理权限的维护者仍可修改或删除已发布资产；workflow 自身会拒绝覆盖已有 tag/Release，但这不等同于不可变存储。
 
-Preflight 在 Secret 缺失、403 权限不足、404 未启用或其他无法确认状态时都会在三平台正式构建前失败；只有 API 返回 200 且 `enabled=true` 才继续。正式发布后仍会从 GitHub Release API 再验证 `immutable=true`；Draft→资产校验→Publish、tag/资产核对和失败时只清理未发布 Draft 的边界保持不变。
+Draft→资产校验→Publish、发布后的 tag/资产核对和失败时只清理未发布 Draft 的边界保持不变。
 
 源仓库 Release 资产固定为三平台 binary、[`USAGE.md`](USAGE.md) 与 `SHA256SUMS`。构建期 identity manifest 只在 CI 内校验后删除；版本与 digest 身份仍可通过 binary 的 `status --json` 读取。Release 页面说明直接使用 [`USAGE.md`](USAGE.md)，不自动把维护 commit / PR 历史生成给最终使用者。最终交付给不具备源仓库权限的用户时，只复制这些 Release 资产，不暴露源仓库访问权。
 

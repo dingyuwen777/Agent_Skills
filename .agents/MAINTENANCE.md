@@ -208,9 +208,10 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、Coding 锚�
 - 不绕过 Branch Protection、Ruleset、CI 或现有门禁；仓库当前未配置这些机制时也不能用“没有平台强制”替代本仓库自身 PR/CI 流程；
 - 合并后确认 main 指向预期 merge commit，并重新跑 main 新鲜 CI；
 - Release 只从 main 手工运行 `.github/workflows/release.yml`，输入唯一正式版本来源 `v<SemVer>`；仓库不维护第二份根版本文件；
-- Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并确认 Release Immutability 已启用；
+- Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并拒绝覆盖已有 tag/Release；
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
-- 正式资产全部验证后先创建 Draft Release、上传并核对资产集合，再 Publish；发布后核对 tag、资产和 immutable 状态；
+- 正式资产全部验证后先创建 Draft Release、上传并核对资产集合，再 Publish；发布后核对 tag 和资产；
+- Release workflow 不依赖自定义 PAT/Actions Secret，也不读取或要求仓库 Release Immutability 设置；发布使用 GitHub Actions 自动提供的 `github.token` 和最小 `contents: write` 权限；
 - 已存在 tag/Release 不覆盖、不移动；
 - Release 页面说明使用 [`USAGE.md`](../USAGE.md)，不自动把维护 commit/PR 历史暴露给最终用户。
 
