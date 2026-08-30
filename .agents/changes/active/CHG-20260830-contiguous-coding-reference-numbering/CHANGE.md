@@ -75,7 +75,7 @@ data_changes: []
 | R1 | Coding references 编号改为连续 | user:continuous-reference-numbering | satisfied | `test_reference_filename_prefixes_are_contiguous` 通过；当前目录事实为 01–16 |
 | R2 | 同步对应文档内容/引用，改名后不能找不到 | user:continuous-reference-numbering | satisfied | `test_live_navigation_contains_no_old_reference_filenames` 通过；AGENTS/Maintenance/Router/Coding/References/tests 已同步新路径 |
 | R3 | 不把纯文件改名升级成 Stable ID Contract Migration | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | satisfied | `test_renamed_files_preserve_stable_reference_ids`、metadata rename、Routing Conformance、Bundle roundtrip 均通过；IDs 仍为 13–17 |
-| R4 | 按仓库门禁合入 main 并取得 main 新鲜 CI | .agents/MAINTENANCE.md | explicitly_deferred | PR 合并、main fresh CI 与 Active Change 清理属于 Ready 后的交付生命周期步骤，合并前不能伪报完成 |
+| R4 | 按仓库门禁合入 main 并取得 main 新鲜 CI | .agents/MAINTENANCE.md | explicitly_deferred | 非 Draft PR #46 已建立；其最终 HEAD 仍需永久 CI、正常 merge、main fresh CI 与 Active Change 清理，合并前不能伪报完成 |
 
 # Validation Matrix
 
@@ -87,7 +87,7 @@ data_changes: []
 | 用户 / Workflow Acceptance | required | Source Mode live 导航扫描无旧文件名；当前 01–16 文件均真实存在 |
 | 跨组件 Golden Path | required | Linux onefile → status/self-test → real MCP → project install/no-args install 通过 |
 | External Dependency / Provider Probe | not_applicable | 无新的外部 Provider、网络协议或第三方业务依赖变化 |
-| Build / Package / Runtime | required | pre-Ready run `33294613688`：Windows/macOS Package 均 success；Linux 产品链全部 success |
+| Build / Package / Runtime | required | Final Draft Ready run `33294853311`：Skill Tests、Windows/macOS Package 三项 success，含 169 tests 与 Ready Check |
 | Docs / Governance / Other | required | AGENTS/Maintenance/Router/Coding SKILL/相关 Reference 与测试路径同步；独立 Review `NO_FINDINGS_WITHIN_SCOPE` |
 
 # Completion Audit
@@ -104,7 +104,8 @@ data_changes: []
 - [x] 重命名 13–17 为 12–16，并同步所有 live 路径与测试。
 - [x] 跑全量 self-contained tests、Runtime 三平台 pre-Ready CI；Ready Gate 在状态仍为 proposed 时按设计拒绝。
 - [x] 完成独立 Review / re-review、Requirement Traceability 与 Completion Audit，结论 `NO_FINDINGS_WITHIN_SCOPE`。
-- [ ] 在 `ready_for_review` HEAD 取得最终永久三平台 CI，随后非 Draft PR 正常合并，main fresh CI 后删除 Active Change。
+- [x] Draft Ready HEAD `ae0ef7c306b6560be229181381dcb869b4176385` 的 run `33294853311` 三个永久 Job 全部 success；Draft→Ready 因 GitHub 连接器 `Repository.fullDatabaseId` schema 缺陷失败，Draft PR #45 已关闭且未合并。
+- [ ] 非 Draft PR #46 在当前最终 HEAD 取得永久三平台 CI，随后正常合并；main fresh CI 后删除 Active Change。
 
 # 验证
 
@@ -113,11 +114,12 @@ data_changes: []
 - Initial Red run `33293859825`：169 tests 中原有 166 条全部通过，只有新增的连续编号、Stable ID 文件映射、旧路径残留 3 条回归失败，确认 Red 命中目标缺口。
 - First Green run `33294509487`：新 3 条编号回归已经 Green；仅发现 3 个既有测试仍打开旧 Reference 路径，没有业务/路由语义失败。
 - Pre-Ready Green run `33294613688`：169 tests OK；Linux onefile/status/self-test、真实 stdio MCP、project install/repeat/no-args install 全部成功；Runtime Windows Package success；Runtime macOS Package success；Linux主 Job 唯一失败为 Change 仍 `proposed` 的 Ready Gate，符合治理预期。
+- Final Draft Ready run `33294853311`：HEAD `ae0ef7c306b6560be229181381dcb869b4176385`，Skill Tests、Runtime Windows Package、Runtime macOS Package 三项全部 success，包含 169 tests、Ready Check、Linux onefile/MCP/install 与 Windows/macOS package/install。
 - 当前 Runtime build 继续验证 Bundle v2、Project Payload v2、install v3、MCP v2、Task Route/Routing Manifest 与动态 Skill Catalog；没有协议版本修改。
 
 # 独立 Review
 
-Review Target：PR #45 / `main → chore/contiguous-coding-reference-numbering`。
+Review Target：Draft PR #45 及同一实现分支，后续由非 Draft PR #46 承接交付。
 
 重点反查：
 
@@ -147,6 +149,7 @@ Review Target：PR #45 / `main → chore/contiguous-coding-reference-numbering`�
 # 交付
 
 - Branch：`chore/contiguous-coding-reference-numbering`。
-- Draft PR：#45 `整理 Coding Reference 为连续编号`。
+- Draft PR #45：已关闭、未合并；原因是 Draft→Ready GitHub 连接器 GraphQL schema 缺陷，不是仓库/CI 拒绝。
+- 非 Draft PR #46：`整理 Coding Reference 为连续编号`，继续使用同一分支；必须在本次治理提交后的最终 HEAD 自行通过永久 CI 后才合并。
 - Release：本 Change 不创建。
 - Post-merge：必须验证 main fresh CI，再删除当前 Active Change；由 Git/PR 保留历史，不创建 Change archive。
