@@ -24,7 +24,7 @@ jobs:
         run: python .github/scripts/temporary_patch_docs_reference_rule.py
 
       - name: Verify target preservation test
-        run: python -m unittest .agents/skills/coding/tests/test_docs_skill.py -v
+        run: python -m unittest discover -s .agents/skills/coding/tests -p 'test_docs_skill.py' -v
 
       - name: Validate diff
         run: git diff --check
