@@ -100,8 +100,14 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
             process.kill()
             process.wait(timeout=5)
             self.fail("stdio 已关闭但 Runtime serve 进程仍未退出")
-        stderr = process.stderr.read().decode("utf-8", errors="replace") if process.stderr else ""
-        self.assertEqual(return_code, 0, stderr)
+        stdout = process.stdout.read() if process.stdout else b""
+        stderr = process.stderr.read() if process.stderr else b""
+        if process.stdout:
+            process.stdout.close()
+        if process.stderr:
+            process.stderr.close()
+        self.assertEqual(stdout, b"", stdout.decode("utf-8", errors="replace"))
+        self.assertEqual(return_code, 0, stderr.decode("utf-8", errors="replace"))
 
 
 if __name__ == "__main__":
