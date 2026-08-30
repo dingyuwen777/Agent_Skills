@@ -163,6 +163,39 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
         self.assertLess(workflow.index("python -m unittest discover"), workflow.index("gh release create"))
         self.assertLess(workflow.index("gh release upload"), workflow.index("--draft=false"))
 
+    def test_release_immutability_preflight_requires_machine_verified_admin_read_secret(self) -> None:
+        """正式发布前必须用管理员只读 Secret 机器确认 Immutability，不能靠人工勾选放行。"""
+        workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        for required in (
+            "secrets.RELEASE_SETTINGS_TOKEN",
+            'RELEASE_SETTINGS_TOKEN: ${{ secrets.RELEASE_SETTINGS_TOKEN }}',
+            'if [ -z "${RELEASE_SETTINGS_TOKEN}" ]',
+            'case "${immutable_status}" in',
+            "200)",
+            "404)",
+            "403)",
+            "Administration: read",
+            "缺少 RELEASE_SETTINGS_TOKEN",
+            "RELEASE_SETTINGS_TOKEN 权限不足",
+            "当前仓库未启用 GitHub Release Immutability",
+        ):
+            self.assertIn(required, workflow)
+        self.assertEqual(workflow.count("secrets.RELEASE_SETTINGS_TOKEN"), 1)
+        self.assertNotIn("confirm_immutable_releases", workflow)
+        self.assertNotIn("IMMUTABILITY_CONFIRMED", workflow)
+        self.assertNotIn("已接受本次维护者显式确认", workflow)
+        self.assertIn("'.immutable')\" = \"true\"", workflow)
+
+        block_start = workflow.index('          if [ -z "${RELEASE_SETTINGS_TOKEN}" ]')
+        block_end = workflow.index('          echo "tag=${TAG}"', block_start)
+        shell_block = workflow[block_start:block_end]
+        for line in shell_block.splitlines():
+            if line:
+                self.assertTrue(
+                    line.startswith("          "),
+                    f"Release Preflight run block 丢失 YAML 缩进：{line!r}",
+                )
+
     def test_failed_release_job_cleans_only_unpublished_draft(self) -> None:
         """Draft 创建/上传失败后必须可重试；失败清理只能删除仍为 Draft 的本次 Release。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")

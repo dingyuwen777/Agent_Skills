@@ -520,7 +520,7 @@ bundle_version / source_digest / routing_digest / payload_digest
 
 正式 Release 只发布三平台 binary、[`USAGE.md`](../../../../USAGE.md) 与 `SHA256SUMS`；不发布构建期 identity manifest、源包、Python 安装器、Runtime Kit、私有 Routing Manifest 或公开 Reference Catalog。构建期 identity manifest 至少绑定 `release_version`、真实 `source_commit`、artifact 文件名/SHA256、构建 `python_version`、source/routing/payload digest 以及 Bundle/Task Route/Routing Manifest/MCP/Project Payload/install 协议版本；workflow 完成三平台交叉校验后必须在生成 checksum 和 Release 前删除这些 manifest。
 
-Release workflow 必须从 main 构建，在正式构建前校验 tag 不存在、Release 不存在、Release Immutability 已启用，并在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check；三平台使用同一固定 Python 版本，且 identity 必须满足 `source_commit == GITHUB_SHA`、`release_version == tag 去 v 后值`、artifact SHA256 和协议/digest 一致。
+Release workflow 必须从 main 构建，在正式构建前校验 tag 不存在、Release 不存在并**机器确认** Release Immutability 已启用，再在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check。GitHub 官方仓库 Immutability 设置 API 要求 `Administration: read`，默认 `GITHUB_TOKEN` 的普通仓库权限不足以读取这个管理设置，因此正式 Release 必须提供仓库 Actions Secret `RELEASE_SETTINGS_TOKEN`，推荐使用只授权当前仓库且仅具备 `Administration: read` 的 fine-grained PAT；该 Secret 只用于 Preflight 读取设置，不得替代 `github.token` 执行 tag/Release 发布。Secret 缺失、403 权限不足、机器可确认的 404 未启用或其他无法确认状态都必须在正式构建前失败关闭，不能降级为人工勾选或口头确认；只有 API 返回 200 且 `enabled=true` 才继续。三平台继续使用同一固定 Python 版本，且 identity 必须满足 `source_commit == GITHUB_SHA`、`release_version == tag 去 v 后值`、artifact SHA256 和协议/digest 一致。
 
 正式资产完成交叉校验后，workflow 必须先创建 **Draft Release**，上传三平台 binary、[`USAGE.md`](../../../../USAGE.md) 和 `SHA256SUMS`，核对 Draft 资产集合完整后才 Publish；发布后再核对 tag 指向当前 `GITHUB_SHA`、资产集合与 GitHub 返回的 `immutable=true`。Release Immutability 未启用、Draft 上传不完整、identity 不一致或发布后不可验证时必须失败关闭，不能把可变或缺资产的 Release 描述成正式不可变交付。
 

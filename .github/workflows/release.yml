@@ -40,6 +40,7 @@ jobs:
         id: release
         env:
           INPUT_TAG: ${{ inputs.tag }}
+          RELEASE_SETTINGS_TOKEN: ${{ secrets.RELEASE_SETTINGS_TOKEN }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -69,12 +70,44 @@ jobs:
             echo "Release 已存在，拒绝覆盖：${TAG}" >&2
             exit 1
           fi
-          gh api \
-            -H "X-GitHub-Api-Version: 2026-03-10" \
-            "repos/${GITHUB_REPOSITORY}/immutable-releases" >/dev/null || {
+          if [ -z "${RELEASE_SETTINGS_TOKEN}" ]; then
+            echo "缺少 RELEASE_SETTINGS_TOKEN；请在仓库 Actions secrets 中配置仅授权当前仓库且具备 Administration: read 的 fine-grained PAT 后再发布" >&2
+            exit 1
+          fi
+          immutable_response="${RUNNER_TEMP}/immutable-releases.json"
+          if ! immutable_status="$(
+            curl --silent --show-error \
+              --output "${immutable_response}" \
+              --write-out "%{http_code}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${RELEASE_SETTINGS_TOKEN}" \
+              -H "X-GitHub-Api-Version: 2026-03-10" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/immutable-releases"
+          )"; then
+            echo "Release Immutability API 请求失败；无法确认仓库设置，停止发布" >&2
+            exit 1
+          fi
+          case "${immutable_status}" in
+            200)
+              jq -e '.enabled == true' "${immutable_response}" >/dev/null || {
+                echo "Release Immutability API 返回 200，但 enabled 不是 true；停止发布" >&2
+                exit 1
+              }
+              echo "已通过 RELEASE_SETTINGS_TOKEN 机器确认 Release Immutability 已启用"
+              ;;
+            404)
               echo "当前仓库未启用 GitHub Release Immutability；请先在 Settings > Releases 启用后再发布" >&2
               exit 1
-            }
+              ;;
+            403)
+              echo "RELEASE_SETTINGS_TOKEN 权限不足；该 Token 必须仅按需要授权当前仓库并具备 Administration: read" >&2
+              exit 1
+              ;;
+            *)
+              echo "检查 Release Immutability 失败：HTTP ${immutable_status}；无法确认设置，停止发布" >&2
+              exit 1
+              ;;
+          esac
           echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
 
