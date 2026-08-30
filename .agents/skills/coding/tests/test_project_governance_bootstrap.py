@@ -83,6 +83,15 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
         self.assertNotIn("本项目使用 React", template)
         self.assertNotIn("数据库：PostgreSQL", template)
 
+    def test_managed_bootstrap_reads_router_before_governance_route(self) -> None:
+        """Runtime Mode 必须先读取唯一 Router，再通过 Coding 进入项目治理 Bootstrap。"""
+        managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
+        router_step = "必须读取 [`.agents/skills/ROUTER.md`]"
+        governance_step = "Project Governance Bootstrap"
+        self.assertIn(router_step, managed)
+        self.assertIn(governance_step, managed)
+        self.assertLess(managed.index(router_step), managed.index(governance_step))
+
     def test_canonical_runtime_install_creates_pending_governance_agents(self) -> None:
         """真实 canonical Project Payload 安装到新项目后必须落地待校准治理骨架和自然语言入口。"""
         bundle = build_bundle(ROOT)
