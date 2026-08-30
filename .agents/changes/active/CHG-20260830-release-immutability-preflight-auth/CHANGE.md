@@ -79,8 +79,8 @@ GitHub 官方当前文档确认 `GET /repos/{owner}/{repo}/immutable-releases` �
 | R1 | 修复 Release #4 的失败根因和错误提示 | user:fix-release-4 | satisfied | Release #4 `33300984482` 403 根因已复现；workflow 改为专用 Admin-read Secret 并区分 200/404/403/其他状态；Initial Red/Green 与 Review Red/Green 均有证据 |
 | R2 | Release Immutability 必须在 Publish 前机器确认并保持 fail-closed | .agents/MAINTENANCE.md | satisfied | 人工 fallback 已因 Review Finding 删除；永久测试要求 Secret 缺失/403/404 均失败且禁止 `confirm_immutable_releases`；发布后 `immutable=true` 复核继续保留 |
 | R3 | Runtime/Release 现有版本、构建、资产与协议边界保持 | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | satisfied | 最终 clean run `33302620838`：181 tests、Linux onefile/真实 MCP/project install、Windows/macOS package/install 全部 Green；未改 Runtime Python、版本来源、资产集合或协议 |
-| R4 | Workflow 变更必须完成责任审计、独立 Review 与新鲜验证 | .agents/skills/coding/references/07_通用验证与证据策略.md | satisfied | Workflow Responsibility Audit 完成；HIGH Finding 已 Red→Green 修复；最终 re-review `NO_FINDINGS_WITHIN_SCOPE`；clean run `33302620838` 产品链全绿 |
-| R5 | 按仓库门禁完成非 Draft PR、merge、main fresh CI 与 Active Change 清理 | .agents/MAINTENANCE.md | explicitly_deferred | 必须发生在最终 Ready HEAD CI 之后；当前不得在 merge 前伪报完成 |
+| R4 | Workflow 变更必须完成责任审计、独立 Review 与新鲜验证 | .agents/skills/coding/references/07_通用验证与证据策略.md | satisfied | Workflow Responsibility Audit 完成；HIGH Finding 已 Red→Green 修复；最终 re-review `NO_FINDINGS_WITHIN_SCOPE`；最终 Ready run `33302808284` 三个 Job 全部 success |
+| R5 | 按仓库门禁完成非 Draft PR、merge、main fresh CI 与 Active Change 清理 | .agents/MAINTENANCE.md | explicitly_deferred | Draft #57 因连接器 GraphQL 缺陷关闭且未合并；非 Draft #58 已建立。仍需 #58 最终 HEAD 永久 CI、正常 merge、main fresh CI 与独立 Active Change 清理 |
 
 # Validation Matrix
 
@@ -90,10 +90,10 @@ GitHub 官方当前文档确认 `GET /repos/{owner}/{repo}/immutable-releases` �
 | 接口 / Contract | required | workflow_dispatch 仍仅 `tag`；Release identity、Draft/Publish/immutable Contract 保持；新增仓库 Secret 是维护者安全前置，不进入 Runtime 公共协议 |
 | 集成 / Persistence / Runtime Dependency | not_applicable | 不修改 Runtime 安装/持久化实现；现有 Runtime 链在永久 CI 全量回归 |
 | 用户 / Workflow Acceptance | required | 维护者必须先配置 `RELEASE_SETTINGS_TOKEN` 并启用 Release Immutability；之后仍只输入 `v<SemVer>` 手工发布；README 已同步 |
-| 跨组件 Golden Path | required | `33302620838` 覆盖 tests→onefile→真实 stdio MCP→project install；Release workflow 静态回归保持 preflight→tests/Ready→三平台→Draft→Publish→immutable |
+| 跨组件 Golden Path | required | `33302808284` 覆盖 tests→onefile→真实 stdio MCP→project install + Ready；Release workflow 静态回归保持 preflight→tests/Ready→三平台→Draft→Publish→immutable |
 | External Dependency / Provider Probe | required | Release #4 实际 403 日志 + GitHub 官方 immutable-releases API 当前文档确认 Administration(read)、200 enabled / 404 disabled；普通 PR 不真实 Publish Release |
-| Build / Package / Runtime | required | `33302620838`：Linux onefile/MCP/install、Windows package/install、macOS package/install 全部成功 |
-| Docs / Governance / Other | required | README/ref13/Change 已同步；独立 Review/re-review 完成；最终 Ready Check 待 ready_for_review HEAD 新鲜 CI |
+| Build / Package / Runtime | required | `33302808284`：Linux onefile/MCP/install、Windows package/install、macOS package/install 全部成功 |
+| Docs / Governance / Other | required | README/ref13/Change 已同步；独立 Review/re-review 完成；Ready Check 在 `33302808284` success；后续 Git 生命周期按 R5 执行 |
 
 # Workflow Responsibility Audit
 
@@ -120,7 +120,8 @@ GitHub 官方当前文档确认 `GET /repos/{owner}/{repo}/immutable-releases` �
 - [x] 删除全部一次性 patch workflow/script，最终 PR 仅保留正式文件。
 - [x] 最终 clean run `33302620838`：181 tests、Linux/Windows/macOS 产品链全部 Green，唯一 Job 失败为 Change 当时仍 `proposed` 的预期 Ready Gate。
 - [x] 完成 re-review 与 Completion Audit，结论 `NO_FINDINGS_WITHIN_SCOPE`。
-- [ ] 最终 `ready_for_review` HEAD 永久 CI 全绿后，处理 Draft→Ready/安全非 Draft 替代 PR 并正常合并；main fresh CI 后删除 Active Change。
+- [x] 最终 `ready_for_review` HEAD `570d3e588d3659802f461589294ab2b47df4ba26` 的永久 CI `33302808284` 三个 Job 全绿；Draft #57 因连接器缺陷关闭且未合并，建立非 Draft #58。
+- [ ] 非 Draft #58 最终 HEAD 永久 CI 全绿后正常合并；main fresh CI 后删除 Active Change。
 
 # 独立 Review
 
@@ -148,6 +149,8 @@ Finding：**HIGH — 人工 Immutability 确认不能保证正式 Release fail-c
 - Machine-only target Green run `33302426944` / job `99232912126`：补丁后的 9 条 Release-hardening 回归全部通过；`git diff --cached --check` 通过；仅最终 push 因 GitHub Actions Token 无 `workflows` permission 被 GitHub 拒绝，代码本身未失败。
 - Machine-only verified commit：`3d233f8ba396441209254bc66bf695a80478d976`；只修改 `release.yml`、README、ref13，之后两个一次性 patch 文件已删除。
 - Final clean pre-Ready run `33302620838`：181 tests OK；Linux onefile/status/self-test/真实 stdio MCP/project install 成功；Windows/macOS package/install 成功；唯一失败为当时 Active Change `proposed` 的 Ready Check。
+- Final Ready run `33302808284`：HEAD `570d3e588d3659802f461589294ab2b47df4ba26`；Skill Tests、Runtime Windows Package、Runtime macOS Package 三个 Job 全部 success，包含 181 tests 与 Ready Check。
+- Draft PR #57：因 GitHub 连接器 Draft→Ready mutation 查询不存在的 `Repository.fullDatabaseId` 而关闭、未合并；非 Draft PR #58 使用同一 feature branch 接棒。
 
 # 文档影响
 
@@ -165,5 +168,6 @@ Finding：**HIGH — 人工 Immutability 确认不能保证正式 Release fail-c
 # 交付
 
 - Branch：`fix/release-immutability-preflight-auth`
-- Draft PR：#57
+- Closed Draft PR：#57（连接器 Draft→Ready 缺陷；未合并）
+- Non-Draft PR：#58
 - Release：本任务不创建正式 Release；修复完成后如果 `v2.0.0` tag/Release 仍不存在，可在配置 Secret 和启用 Immutability 后重新运行。
