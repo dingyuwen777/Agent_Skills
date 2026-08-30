@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260831-requirement-pr-traceability
 title: 固化需求来源、Issue 与 PR 可追溯协作门禁
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: change/requirement-pr-traceability
 created: 2026-08-31
@@ -72,44 +72,45 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 多人开发 PR 必须能够追溯到明确需求，Agent Review 不能从代码反推需求 | user:current-request | satisfied | `17_需求来源与PR追溯治理.md` 第 1/5/6 节建立上游来源、PR 快照与 fail-closed 规则；路由/正文回归已进入 `test_pr_requirement_traceability.py`。 |
-| R2 | GitHub 场景下 Agent 能自动寻找/在授权下创建 Issue，并在 PR 中建立稳定需求关联 | user:current-request | satisfied | 新 Reference 第 2/3 节规定“先搜索→唯一匹配复用→有歧义不静默选择→无匹配且有写授权才创建 Issue→PR 写 `Requirement-Source:`”。 |
-| R3 | `Requirement-Source` 与 `Closes/Fixes/Resolves` 语义必须分离，支持一个 Issue 拆多个 PR | user:current-request | satisfied | 新 Reference 第 3 节明确需求追溯与 Issue 完成/自动关闭语义分离；preservation test 对关键标记执行回归。 |
-| R4 | PR Review 必须绑定 base/head revision；main 推进后重新验证当前集成状态 | user:current-request | satisfied | 新 Reference 第 5/7/8 节定义 `reviewed_base_sha`、`reviewed_head_sha`、`current_base_sha`、head/base 漂移、fresh integration validation 与 merge 前复核。 |
-| R5 | 需求缺失时仍可做代码质量 Review，但不得给需求符合或可合并结论 | user:current-request | satisfied | 新 Reference 第 6 节定义 `resolved / partial / unavailable`，后两者允许有边界的代码质量 Review，但禁止整体需求符合/可合并结论。 |
-| R6 | 不把 GitHub Issue/Ruleset 强加给所有项目，不修改 Runtime 协议或既有 Stable ID | AGENTS.md | satisfied | `.agents/MAINTENANCE.md` 与新 Reference 第 2/3/4/7/10 节保持项目治理/平台等价机制优先；实际 diff 没有 Runtime/MCP/Bundle/Project Payload 修改，既有 Stable ID 映射未改。 |
+| R1 | 多人开发 PR 必须能够追溯到明确需求，Agent Review 不能从代码反推需求 | user:current-request | satisfied | `17_需求来源与PR追溯治理.md` 第 1/5/6 节建立上游来源、PR 快照与 fail-closed 规则；路由/正文回归进入 `test_pr_requirement_traceability.py`；Requirement Issue #79 与实现 PR #76 已形成实际闭环。 |
+| R2 | GitHub 场景下 Agent 能自动寻找/在授权下创建 Issue，并在 PR 中建立稳定需求关联 | user:current-request | satisfied | 新 Reference 第 2/3 节规定“先搜索→唯一匹配复用→有歧义不静默选择→无匹配且有写授权才创建 Issue→PR 写 `Requirement-Source:`”；本 Change 在合并前实际搜索后创建 Issue #79 并关联 PR #76。 |
+| R3 | `Requirement-Source` 与 `Closes/Fixes/Resolves` 语义必须分离，支持一个 Issue 拆多个 PR | user:current-request | satisfied | 新 Reference 第 3 节明确两种语义；PR #76 同时使用 `Requirement-Source: #79` 与 `Closes #79`，合并后 Issue #79 自动以 `completed` 关闭。 |
+| R4 | PR Review 必须绑定 base/head revision；main 推进后重新验证当前集成状态 | user:current-request | satisfied | 新 Reference 第 5/7/8 节定义 revision snapshot/fresh validation；实现期间 main 两次推进，均检查无重叠、重新同步、重跑 CI；final review `5061508562` 绑定 base `4ffaef032106d54deadbd8e36ea7a159c15b1647` / head `2772c7f6ffb0e3f818e0967bf97606b61ee5c4bc`。 |
+| R5 | 需求缺失时仍可做代码质量 Review，但不得给需求符合或可合并结论 | user:current-request | satisfied | 新 Reference 第 6 节定义 `resolved / partial / unavailable`，后两者允许有边界的代码质量 Review，但禁止整体需求符合/可合并结论；preservation 回归覆盖。 |
+| R6 | 不把 GitHub Issue/Ruleset 强加给所有项目，不修改 Runtime 协议或既有 Stable ID | AGENTS.md | satisfied | `.agents/MAINTENANCE.md` 与新 Reference 第 2/3/4/7/10 节保持项目治理/平台等价机制优先；实现 diff 没有 Runtime/MCP/Bundle/Project Payload/依赖修改，既有 Stable ID 映射未改。 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | 首轮 Red `33325561885` 证明缺少规则时失败；首轮 Green `33325680763` 证明主体行为测试通过；二轮 Red `33326026571` 精确暴露“正式非 Issue 来源无默认追溯表达”缺口；二轮 Green `33326141862` 全部 self-contained tests 成功。 |
-| 接口 / 契约 | required | run `33326141862` 的 compile、CLI smoke、self-contained tests 与 changed Change gate 全部成功，说明 `agent-routing:v1`、Stable ID、dynamic compile/evaluate 与 Bundle 现有回归未被破坏。 |
+| 行为 / 单元 / 组件 | required | 首轮 Red `33325561885` 证明缺少规则时失败；首轮 Green `33325680763` 证明主体行为测试通过；二轮 Red `33326026571` 精确暴露“正式非 Issue 来源无默认追溯表达”缺口；二轮 Green `33326141862` 全部 self-contained tests 成功；final-base PR run `33326489339` 与 merge 后 main run `33326556157` 均全绿。 |
+| 接口 / 契约 | required | PR final-base run `33326489339` 及 main run `33326556157` 的 compile、CLI smoke、self-contained tests、Change gate 均成功，证明 `agent-routing:v1`、Stable ID、dynamic compile/evaluate 与 Bundle 既有回归未被破坏。 |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 不修改外部数据库、服务或 Runtime 进程。 |
-| 用户 / 工作流验收 | required | `test_pr_requirement_traceability.py` 验证代码审查、Git 交付、多人协作自动加载 `coding.reference.18`，并验证 GitHub Issue 与正式非 Issue 载体两种追溯路径。 |
-| 跨组件关键路径 | required | run `33326141862` 的全部 self-contained tests 成功，包括动态 Routing/Bundle/Project Payload 既有回归；本次未改 Runtime 实现。 |
-| 外部依赖 / 供应方探测 | not_applicable | 规则本身不需要真实第三方 Probe；GitHub Issue/PR 外部动作只定义项目/权限条件与验证责任。 |
+| 用户 / 工作流验收 | required | `test_pr_requirement_traceability.py` 验证代码审查、Git 交付、多人协作自动加载 `coding.reference.18`，并验证 GitHub Issue 与正式非 Issue 载体两种追溯路径；实际 Issue #79 → PR #76 → Review → merge 链已运行。 |
+| 跨组件关键路径 | required | PR final-base 和 main fresh Skill Tests 均成功，包括动态 Routing/Bundle/Project Payload 既有回归；本次未改 Runtime 实现。 |
+| 外部依赖 / 供应方探测 | not_applicable | 规则本身不需要第三方 Probe；GitHub Issue/PR 动作用当前授权 GitHub 能力执行并回读验证。 |
 | 构建 / 打包 / 运行 | not_applicable | 不修改 Runtime/Builder/MCP/Installer/Release 路径；按 Maintenance 不触发三平台 Runtime Package Tests。 |
-| 文档 / 治理 / 其他 | required | Change、canonical Reference、PR traceability 回归与 Reference numbering 均在 Skill Tests 覆盖；Ready Check 路径格式问题已按原门禁修正，没有放宽检查。 |
+| 文档 / 治理 / 其他 | required | Change、canonical Reference、PR traceability 回归与 Reference numbering 均在 Skill Tests 覆盖；实现 PR #76、final review、Issue #79 关闭、merge commit 与 main fresh CI 均有 GitHub 新鲜证据。 |
 
 # 完成审计
 
-- [x] upstream_re_read：重新读取本轮用户确认结果、当前 main 的 AGENTS、Maintenance、Router、Coding、Mutation、多人协作、Git 与 Review 当前规则；没有用历史摘要代替 canonical 文件。
+- [x] upstream_re_read：实现与每次 final review 前均重新读取当前目标分支 AGENTS、Maintenance、Router、Coding/Mutation/Review 及相关 References；Requirement Source 在规则落地后实际持久化为 Issue #79 并回读。
 - [x] change_coverage：R1–R6 全部进入单一 canonical Owner；Issue 自动搜索/创建、正式非 Issue 来源直接追溯、关闭语义、需求状态、revision snapshot、base/head freshness 和机器/语义门禁分工均已覆盖。
-- [x] reverse_audit：开发需求 → Requirement Source → Issue/正式载体 → Change → PR；PR Review → Requirement Source → base/head → diff/tests → current-base fresh validation → merge，两条链均闭合；Review/Git 细节仍回到既有 Owner。
-- [x] unresolved_cleared：R1–R6 无 `not_satisfied`；所有 required Validation Matrix 项已有 Red/Green 与规则质量复核证据，最终 exact-head PR CI/re-review 由本证据提交后的 GitHub 状态绑定，不再通过修改 Change 追写自身结果。
+- [x] reverse_audit：开发需求 → Requirement Source → Issue/正式载体 → Change → PR；PR Review → Requirement Source → base/head → diff/tests → current-base fresh validation → merge → main fresh CI，两条链均已实际闭合；Review/Git 细节仍回到既有 Owner。
+- [x] unresolved_cleared：R1–R6 无 `not_satisfied`；所有 required Validation Matrix 项均有 Red/Green、final-base CI、Review、merge 与 main fresh CI 证据。
 
 # 任务
 
-- [x] 读取当前 main、AGENTS、Maintenance、Router、Coding、Mutation、Review、多人协作与 Git 规则，确认当前没有活动 Change。
-- [x] 确认 main `73efb8b98663e21836a0b8f76008eb8994cab903` 的 Skill Tests run `33324142068` 成功。
+- [x] 读取当前 main、AGENTS、Maintenance、Router、Coding、Mutation、Review、多人协作与 Git 规则，确认初始没有活动 Change。
+- [x] 确认初始 main `73efb8b98663e21836a0b8f76008eb8994cab903` 的 Skill Tests run `33324142068` 成功。
 - [x] 首轮 TDD：run `33325561885` 取得 Red；实现主体规则后 run `33325680763` 的 compile/CLI/self-contained tests 转绿。
 - [x] 修正 Ready Check 发现的 Requirement Source 路径格式问题，不降低 Completion Gate；run `33325966892` 完整成功。
 - [x] final re-review 发现正式非 Issue 载体追溯缺口，新增回归后 run `33326026571` 以 212 tests 中唯一 1 个目标失败取得第二轮 Red。
 - [x] 最小修正规则，使 `Requirement-Source` 接受项目正式稳定标识并明确不重复创建 Issue；run `33326141862` 完整成功。
-- [ ] 本证据提交后的 exact final head 通过完整 PR Skill Tests，并在 PR 上记录 exact-head re-review。
-- [ ] 合并实现 PR，确认 main fresh CI。
-- [ ] 将本 Change 更新为 `done` 并归档到 `archive/2026-08/`，通过独立归档 PR 完成交付。
+- [x] main 两次推进后均重新同步/复验；final exact head `2772c7f6ffb0e3f818e0967bf97606b61ee5c4bc` 对 base `4ffaef032106d54deadbd8e36ea7a159c15b1647` 的 Skill Tests run `33326489339` 全绿，review `5061508562` 无 BLOCKER/HIGH/MEDIUM。
+- [x] PR #76 以 `expected_head_sha=2772c7f6ffb0e3f818e0967bf97606b61ee5c4bc` REST merge；merge commit `33f577136c8e52fc4c8ef313a975c5719a2f6172`。
+- [x] merge 后 main 精确指向 `33f577136c8e52fc4c8ef313a975c5719a2f6172`，fresh Skill Tests run `33326556157` 全绿；Issue #79 由 `Closes #79` 自动关闭为 `completed`。
+- [ ] 独立 archive PR fresh CI / Review / merge / post-archive main fresh CI。
 
 # 验证
 
@@ -121,7 +122,12 @@ data_changes: []
 - Ready 格式诊断：run `33325872632`，head `abf1cc8ad89a82fa2afe3e4377a1ce597036b9cd`；211 tests 全通过，changed Change gate 唯一错误为组合 Source 路径不存在；修正为真实 `AGENTS.md` 后 run `33325966892` 在 head `cbe5deaaa0431bcd75c6b9a05f3effeed6c72778` 完整成功。
 - 第二轮 Red：run `33326026571`，head `b2b795cfc7bfa3bb7245b4e0f8bff7c53dd60907`；compile/CLI smoke 成功，212 tests 中唯一失败是“已有 Spec/OpenSpec 等正式载体时应能直接追溯稳定标识而不是被迫新建 Issue”。
 - 第二轮 Green：run `33326141862`，head `0f7f00d458a69ce1f0d0af037597aaef84fe2c52`；compile、CLI smoke、全部 self-contained tests、changed Change gate 全部成功。
-- 规则质量复核：当前生产范围仅新 Reference、新回归与 Reference 数量更新；无 Runtime 修改、无依赖变化、无无关重构。正式 Issue 与非 Issue 两类需求来源、权限边界、`resolved/partial/unavailable`、base/head snapshot、current-base freshness、Required Status Check 与 merge queue 机制中立性均已反向核对。
+- 证据 head：run `33326216018` 在 `2c0779063b79c740ab460f841bfb882d7d90ed62` 全绿。
+- 第一次 base 漂移：main 到 `41b4632bbc722fb141ae56cebbe8e49be0303f74` 后重新集成，run `33326347139` 在 head `8fdb73ec7c24e96fcbdc8fd8b2b30d61739bd5a4` 全绿。
+- 第二次 base 漂移：main 到 `4ffaef032106d54deadbd8e36ea7a159c15b1647` 后重新集成；compare 仅本 Change 4 个预期文件；run `33326489339` 在 final head `2772c7f6ffb0e3f818e0967bf97606b61ee5c4bc` 全绿；review `5061508562` 绑定该 exact base/head，Requirement Source #79=`resolved`，无未解决 BLOCKER/HIGH/MEDIUM。
+- 实现 merge：PR #76 于 merge commit `33f577136c8e52fc4c8ef313a975c5719a2f6172` 合入；GitHub 回读确认 PR merged=true；Issue #79 closed/completed。
+- main fresh：merge commit `33f577136c8e52fc4c8ef313a975c5719a2f6172` 的 push Skill Tests run `33326556157` 完整成功；compile、CLI smoke、self-contained tests、active Change gate 均 success。
+- 规则质量复核：最终生产范围仅新 Reference、新回归与 Reference 数量更新；无 Runtime 修改、无依赖变化、无无关重构。正式 Issue 与非 Issue 两类需求来源、权限边界、`resolved/partial/unavailable`、base/head snapshot、current-base freshness、Required Status Check 与 merge queue 机制中立性均已反向核对。
 
 # 文档影响
 
@@ -129,9 +135,14 @@ data_changes: []
 
 # Git / PR 状态
 
-- branch: `change/requirement-pr-traceability`
+- requirement: Issue #79，closed/completed
+- implementation branch: `change/requirement-pr-traceability`
 - baseline main: `73efb8b98663e21836a0b8f76008eb8994cab903`
-- PR: #76，open
-- merge: 未执行
-- main fresh CI: 未执行
-- archive: 未执行
+- final reviewed base: `4ffaef032106d54deadbd8e36ea7a159c15b1647`
+- final reviewed head: `2772c7f6ffb0e3f818e0967bf97606b61ee5c4bc`
+- final review: `5061508562`
+- PR: #76，merged
+- merge commit: `33f577136c8e52fc4c8ef313a975c5719a2f6172`
+- main fresh CI: run `33326556157`，success
+- archive branch: `archive/requirement-pr-traceability`
+- archive PR / merge / post-archive main CI: pending
