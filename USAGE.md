@@ -28,7 +28,7 @@ SHA256SUMS
 - Linux：`agent-skills-mcp-v<VERSION>-linux`
 - macOS：`agent-skills-mcp-v<VERSION>-macos`
 
-`USAGE.md` 和 `SHA256SUMS` 已随同一个 ZIP 一起提供，不需要另外下载。建议解压后使用 ZIP 内的 `SHA256SUMS` 校验对应文件完整性。
+本说明文件和 `SHA256SUMS` 已随同一个 ZIP 一起提供，不需要另外下载。建议解压后使用 ZIP 内的 `SHA256SUMS` 校验对应文件完整性。
 
 版本和必要运行状态已嵌入可执行文件，可用 `status --json` 查看；用户不需要额外下载或维护身份文件。
 
