@@ -76,7 +76,7 @@ data_changes: []
 | R3 | `Requirement-Source` 与 `Closes/Fixes/Resolves` 语义必须分离，支持一个 Issue 拆多个 PR | user:current-request | satisfied | 新 Reference 第 3 节明确需求追溯与 Issue 完成/自动关闭语义分离；preservation test 对四个关键标记执行回归。 |
 | R4 | PR Review 必须绑定 base/head revision；main 推进后重新验证当前集成状态 | user:current-request | satisfied | 新 Reference 第 5/7/8 节定义 `reviewed_base_sha`、`reviewed_head_sha`、`current_base_sha`、head/base 漂移、fresh integration validation 与 merge 前复核；当前 PR #76 base/main 在本轮复核时同为 `73efb8b98663e21836a0b8f76008eb8994cab903`。 |
 | R5 | 需求缺失时仍可做代码质量 Review，但不得给需求符合或可合并结论 | user:current-request | satisfied | 新 Reference 第 6 节定义 `resolved / partial / unavailable`，后两者明确允许有边界的代码质量 Review，但禁止整体需求符合/可合并结论；preservation test 覆盖。 |
-| R6 | 不把 GitHub Issue/Ruleset 强加给所有项目，不修改 Runtime 协议或既有 Stable ID | AGENTS.md + .agents/MAINTENANCE.md | satisfied | 新 Reference 第 2/4/7/10 节均以项目治理/平台等价机制为前提；实际 diff 仅新增 canonical Reference/测试及 Reference 数量回归，没有 Runtime/MCP/Bundle/Project Payload 修改，既有 Stable ID 映射未改。 |
+| R6 | 不把 GitHub Issue/Ruleset 强加给所有项目，不修改 Runtime 协议或既有 Stable ID | AGENTS.md | satisfied | `.agents/MAINTENANCE.md` 与新 Reference 第 2/4/7/10 节均保持项目治理/平台等价机制优先；实际 diff 仅新增 canonical Reference/测试及 Reference 数量回归，没有 Runtime/MCP/Bundle/Project Payload 修改，既有 Stable ID 映射未改。 |
 
 # 验证矩阵
 
@@ -89,14 +89,14 @@ data_changes: []
 | 跨组件关键路径 | required | run `33325680763` 的全部 self-contained tests 成功，包括动态 Routing/Bundle/Project Payload 既有回归；本次未改 Runtime 实现。 |
 | 外部依赖 / 供应方探测 | not_applicable | 规则本身不需要真实第三方 Probe；GitHub Issue/PR 外部动作只定义项目/权限条件与验证责任。 |
 | 构建 / 打包 / 运行 | not_applicable | 不修改 Runtime/Builder/MCP/Installer/Release 路径；按 Maintenance 不触发三平台 Runtime Package Tests。 |
-| 文档 / 治理 / 其他 | required | PR #76 当前 changed files 仅 Change、新 Reference、新回归和 Reference numbering；run `33325680763` 的 changed Change gate 因 Change 仍为 `in_progress` 而正确失败，本提交切换 `ready_for_review` 后由下一轮 CI 重新验证。 |
+| 文档 / 治理 / 其他 | required | PR #76 当前 changed files 仅 Change、新 Reference、新回归和 Reference numbering；run `33325872632` 已证明 211 个 self-contained tests 全部通过，changed Change gate 仅因 R6 Source 被误写为组合路径而失败；本提交只修正为真实 `AGENTS.md` Source，下一轮重新验证完整门禁。 |
 
 # 完成审计
 
 - [x] upstream_re_read：重新读取本轮用户确认结果、当前 main 的 AGENTS、Maintenance、Router、Coding、Mutation、多人协作、Git 与 Review 当前规则；没有用历史摘要代替 canonical 文件。
 - [x] change_coverage：R1–R6 全部进入单一 canonical Owner；Issue 自动搜索/创建、PR traceability、关闭语义、需求状态、revision snapshot、base/head freshness 和机器/语义门禁分工均已覆盖。
 - [x] reverse_audit：开发需求 → Requirement Source → Issue/正式载体 → Change → PR；PR Review → Requirement Source → base/head → diff/tests → current-base fresh validation → merge，两条链均在新 Reference 中闭合；Review/Git 细节仍回到既有 Owner。
-- [x] unresolved_cleared：R1–R6 无 `not_satisfied`；所有 required Validation Matrix 项已有本轮 Red/Green 或当前 diff/review 证据，最终 changed Change gate 留给本次 `ready_for_review` 提交的新鲜 CI 验证。
+- [x] unresolved_cleared：R1–R6 无 `not_satisfied`；所有 required Validation Matrix 项已有本轮 Red/Green 或当前 diff/review 证据，最终 changed Change gate 留给本次路径格式修正后的新鲜 CI 验证。
 
 # 任务
 
@@ -106,7 +106,7 @@ data_changes: []
 - [x] 新增 `17_需求来源与PR追溯治理.md`，保持单一 Owner 和项目中立。
 - [x] 更新 Reference numbering 测试，不改变现有 Stable ID。
 - [x] run `33325680763` 证明实现后的 compile、CLI smoke 和全部 self-contained tests 成功；A1/A2、内容守恒、路由与 Review 复核无 blocker。
-- [ ] 本次 `ready_for_review` 提交通过完整 PR Skill Tests / changed Change gate，并在 exact final head 上完成 re-review。
+- [ ] 路径格式修正后的 exact final head 通过完整 PR Skill Tests / changed Change gate，并完成 final re-review。
 - [ ] 合并实现 PR，确认 main fresh CI。
 - [ ] 将本 Change 更新为 `done` 并归档到 `archive/2026-08/`，通过独立归档 PR 完成交付。
 
@@ -125,7 +125,8 @@ data_changes: []
 - 基线：main `73efb8b98663e21836a0b8f76008eb8994cab903`，Skill Tests run `33324142068`，conclusion=`success`。
 - Red：PR #76 run `33325561885`，head `725afb905d1d80e5fea8311c948f572eeff2781e`；compile/CLI smoke 成功，`Run self-contained tests` 失败，符合“新回归已存在、canonical 规则尚未实现”的预期失败。
 - Green 行为：PR #76 run `33325680763`，head `a9685091b98301d91c86d6ead4c2cf02594a4a8e`；compile、CLI smoke、`Run self-contained tests` 全部成功；workflow 最终 failure 只发生在 `Verify changed Coding Change`，原因是该 head 的 Change 仍为 `in_progress/not_satisfied`，没有绕过 Completion Gate。
-- A1/A2 / 规则质量复核：PR #76 在 head `a9685091b98301d91c86d6ead4c2cf02594a4a8e`、base/current main `73efb8b98663e21836a0b8f76008eb8994cab903` 上检查；changed files 仅 4 个，无临时 Red 文件、Runtime 修改或无关重构，未发现 BLOCKER/HIGH Finding。
+- Ready 格式诊断：run `33325872632`，head `abf1cc8ad89a82fa2afe3e4377a1ce597036b9cd`；211 tests 全部通过，`Verify changed Coding Change` 唯一错误为 `R6 Requirement Source 仓库文件不存在：AGENTS.md + .agents/MAINTENANCE.md`；本提交仅将 Source 改为真实存在的 `AGENTS.md`。
+- A1/A2 / 规则质量复核：PR #76 在规则实现 head `a9685091b98301d91c86d6ead4c2cf02594a4a8e`、base/current main `73efb8b98663e21836a0b8f76008eb8994cab903` 上检查；changed files 仅 4 个，无临时 Red 文件、Runtime 修改或无关重构，未发现 BLOCKER/HIGH Finding。
 
 # 文档影响
 
@@ -135,7 +136,7 @@ data_changes: []
 
 - branch: `change/requirement-pr-traceability`
 - baseline main: `73efb8b98663e21836a0b8f76008eb8994cab903`
-- PR: #76，open；本提交前 head `a9685091b98301d91c86d6ead4c2cf02594a4a8e`
+- PR: #76，open；本提交前 head `abf1cc8ad89a82fa2afe3e4377a1ce597036b9cd`
 - merge: 未执行
 - main fresh CI: 未执行
 - archive: 未执行
