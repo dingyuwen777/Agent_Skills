@@ -260,6 +260,7 @@ class ReleaseProductizationTest(unittest.TestCase):
                     "PATH": f"{stub_dir}{os.pathsep}{env['PATH']}",
                     "RELEASE_TAG": f"v{version}",
                     "RELEASE_VERSION": version,
+                    "GITHUB_REF": "refs/heads/main",
                     "GITHUB_SHA": commit,
                     "GITHUB_REPOSITORY": "example/repository",
                     "GH_TOKEN": "test-token",

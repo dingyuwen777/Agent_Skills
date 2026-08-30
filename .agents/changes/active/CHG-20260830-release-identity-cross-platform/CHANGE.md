@@ -199,7 +199,9 @@ data_changes: []
 
 Review Target：未提交候选 diff，base `a6b21122d73486de62353b0e849ad6db20142b56`，分支 `fix/release-identity-v3`，模式 `review-and-fix`。A1 先按用户要求、Release #12 日志/manifests、Runtime 当前常量与 Maintenance 的 CI 分责独立重建需求；A2 再审查实现、测试和文档，没有把作者 Change 当作需求来源。
 
-结论：`NO_FINDINGS_WITHIN_SCOPE`。重点复核了 Git `ls-files --stage -z` 的 stage-0 mode 解析和非 Git 回退、`0644/0755` executable 语义、LF 属性影响、Release Bash 数组/jq/cmp/diff/清理链、原 artifact SHA/checksum/Draft/Publish 证据保留、权限与 Secret 边界、`.agents/**` 触发分流以及无关改动；未发现正确性、安全、兼容性或门禁降级问题。
+初次静态结论：产品实现 `NO_FINDINGS_WITHIN_SCOPE`。重点复核了 Git `ls-files --stage -z` 的 stage-0 mode 解析和非 Git 回退、`0644/0755` executable 语义、LF 属性影响、Release Bash 数组/jq/cmp/diff/清理链、原 artifact SHA/checksum/Draft/Publish 证据保留、权限与 Secret 边界、`.agents/**` 触发分流以及无关改动；未发现正确性、安全、兼容性或门禁降级问题。
+
+PR #69 首轮 Ubuntu Skill Tests run `33320093413` 发现 1 个测试环境 Finding：新增 Shell 行为测试未设置生产 Workflow 一定存在的 `GITHUB_REF=refs/heads/main`，因此在进入目标三平台差异断言前被 main 前置检查终止，stderr 为空。保留生产检查，只给测试 fixture 补同值；该 Red 是测试接线缺口，不代表 Runtime/Release 产品失败。修复后需由新的 Ubuntu CI 证明 mismatch 与 accepted 两条 Bash 路径均实际执行。
 
 测试充分性边界：本地 201 项自包含测试证明静态 Contract、Payload Git mode、CI 分责和 Windows 可执行的行为；两份 fresh index checkout 证明 `core.autocrlf=true/false` 的 LF 与 identity 一致。非 Windows Bash 的两项 Release 行为测试在当前 Windows 按设计跳过，将由 PR Ubuntu Skill Tests 执行；三平台 onefile、安装和真实 stdio MCP 由 PR/main Runtime Package Tests 证明；正式 Draft/Publish 仍只能由合入 main 后的真实 `v2.0.2` Release 证明，不能用本地绿色代替。
 
@@ -235,6 +237,7 @@ Review Target：未提交候选 diff，base `a6b21122d73486de62353b0e849ad6db201
 - Fresh checkout identity：`core.autocrlf=true/false` 两份 index checkout 都是 `crlf=0`、mode `[420]`，且 `source_digest=575df116487138a352b3c445006f79184008ea29df61a82be63c3bfbcb33e841`、`routing_digest=600a9f493fb669addf53eff1ee55533091c1ffe344e4883528392af81116dc7e`、`bundle_version=46bc71f58ee80c40`、`payload_digest=400b16ab39ebee1e9c00768a1851bdc187c06550274ec13e8ed21f19f3094d9c` 完全一致。
 - 静态验证：12 个维护脚本/Runtime module `py_compile` 成功；3 个 Workflow 经 YAML parser 成功打开；`git diff --cached --check` 无非预期内容错误（最终提交前重跑）。
 - 全量：`python -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v`，201 tests，exit 0，199 passed、2 skipped；跳过项仅限当前 Windows 无非 Windows Bash 环境，Ubuntu CI 将实际运行。
+- PR #69 首轮三平台 Runtime Package Tests run `33320093361`：Linux、Windows、macOS 的 onefile build/self-test、真实 stdio MCP 和项目安装全部 success。首轮 Skill Tests run `33320093413` 在新 Shell fixture 缺少 `GITHUB_REF` 时失败，保留生产 main 前置检查并补齐测试环境；修复后的 Ubuntu 行为证据等待下一 head。
 
 # 文档影响
 
