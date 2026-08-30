@@ -1,0 +1,49 @@
+name: Temporary Project Governance PR55 Sync
+
+on:
+  push:
+    branches:
+      - feat/project-governance-bootstrap
+    paths:
+      - .github/workflows/tmp-project-governance-pr55-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: feat/project-governance-bootstrap
+      - name: Sync delivery lifecycle
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.agents/changes/active/CHG-20260830-project-governance-bootstrap/CHANGE.md')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              "Draft PR #54 已建立；Ready 后仍需最终 Ready HEAD CI、非 Draft PR、正常 merge、main fresh CI 和独立 Active Change 清理，不能在合并前伪报完成":
+              "Final Ready run `33300086948` 三个 Job 全绿；Draft PR #54 因连接器 `Repository.fullDatabaseId` GraphQL 缺陷关闭且未合并；非 Draft PR #55 使用同一 feature branch 接棒，仍需其最终 HEAD 永久 CI、正常 merge、main fresh CI 和独立 Active Change 清理",
+              "- [ ] 最终 Ready HEAD 永久 CI 全绿后将 Draft PR #54 转 Ready/采用安全非 Draft替代流程并正常合并；main fresh CI 后删除 Active Change。":
+              "- [x] Final Ready run `33300086948` 三个 Job 全部 Green；Draft PR #54 因连接器 GraphQL schema 缺陷关闭且未合并，已创建非 Draft PR #55。\n- [ ] 非 Draft PR #55 最终 HEAD 永久 CI 全绿后正常合并；main fresh CI 后删除 Active Change。",
+              "- Draft PR：#54\n- Release：本任务不创建正式 Release":
+              "- Draft PR #54：关闭且未合并；Draft → Ready 因已连接 GitHub 工具 GraphQL schema 缺陷失败。\n- 非 Draft PR：#55，当前正式交付入口。\n- Release：本任务不创建正式 Release",
+          }
+          for old, new in replacements.items():
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected one replacement, found {count}: {old[:80]}')
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .agents/changes/active/CHG-20260830-project-governance-bootstrap/CHANGE.md
+          git commit -m "同步项目治理替代PR交付状态"
+          git push origin HEAD:feat/project-governance-bootstrap
