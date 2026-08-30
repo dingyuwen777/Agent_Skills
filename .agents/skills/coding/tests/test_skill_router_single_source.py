@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[4]
 ROUTER_PATH = ".agents/skills/ROUTER.md"
 MAINTENANCE_PATH = ".agents/MAINTENANCE.md"
 MANAGED_PATH = ".agents/skills/coding/assets/AGENTS.managed.md"
-RUNTIME_REFERENCE_PATH = ".agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md"
+RUNTIME_REFERENCE_PATH = ".agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md"
 
 
 class SkillRouterSingleSourceTest(unittest.TestCase):

@@ -147,7 +147,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
 
         runtime_readme = self._read("runtime/README.md")
         runtime_reference = self._read(
-            ".agents/skills/coding/references/14_本地MCP_Runtime分发与原文上下文加载.md"
+            ".agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md"
         )
         for text in (runtime_readme, runtime_reference):
             self.assertIn("任意深度", text)

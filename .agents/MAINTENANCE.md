@@ -19,8 +19,8 @@
 3. 读取 `.agents/skills/ROUTER.md`，按唯一 Router 进入正式 Skill；
 4. 再读 `.agents/skills/coding/SKILL.md`，按四维任务路由选择当前真正命中的 references；
 5. 修改 Review、Docs、Figma 时，再读取对应 `SKILL.md` 与任务直接相关 references；
-6. 规则迁移、拆分、通用化、删文档或调整 Ownership 时，必须读取 `coding/references/16_规则内容守恒与Skill维护.md`；
-7. Runtime / Project Payload / Bundle / Stub / 项目安装 / MCP / Release 变化时，必须读取 `coding/references/14_本地MCP_Runtime分发与原文上下文加载.md`；
+6. 规则迁移、拆分、通用化、删文档或调整 Ownership 时，必须读取 `coding/references/15_规则内容守恒与Skill维护.md`；
+7. Runtime / Project Payload / Bundle / Stub / 项目安装 / MCP / Release 变化时，必须读取 `coding/references/13_本地MCP_Runtime分发与原文上下文加载.md`；
 8. 不从历史聊天或其他业务仓库猜当前实现，以当前分支真实文件、GitHub 状态和本轮运行结果为准；
 9. 只读取当前任务直接相关的代码、规则、测试、Workflow 和配置，不机械通读所有 references。
 
