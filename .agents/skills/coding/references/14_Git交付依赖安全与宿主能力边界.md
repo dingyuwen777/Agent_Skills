@@ -43,7 +43,7 @@ GitHub 的 Draft 状态只是托管平台工作流状态，不能成为必须由
 - 一旦当前宿主调用 Ready 时明确出现 `Field 'fullDatabaseId' doesn't exist on type 'Repository'` 或等价已确认的宿主 GraphQL schema 故障，记录一次真实失败证据，**不得循环重试同一失败 GraphQL，也不得要求用户手动点击 `Ready for review`**；
 - 如果已经创建 Draft PR 后才发现自动 Ready 不可用，且当前授权允许关闭/创建 PR，则自动关闭原 Draft PR，以**相同 head/base** 创建普通 PR；在新 PR 描述中保留原 PR 链接、Red/Green/Review 证据与迁移原因，并重新运行新 PR 的 fresh CI；不得把旧 PR 的绿色状态直接当作新 PR 的当前证据；
 - 普通 PR 处于“逻辑未就绪”期间，不因为 `draft=false` 就提前请求合并；仍必须完成项目规定的 Requirement Traceability / Completion Audit、Review、CI、文档和其他 Ready 门禁；
-- 真正准备合并前重新读取 PR，确认 `draft=false`、CI 和当前 head SHA；同时确认 mergeable、Branch Protection/Ruleset、required checks 和当前 reviewed head 没有漂移；
+- 真正准备合并前重新读取 PR，**重新确认 `draft=false`、CI 和当前 head SHA**；同时确认 mergeable、Branch Protection/Ruleset、required checks 和当前 reviewed head 没有漂移；
 - GitHub PR 的真正 merge 一律使用 GitHub **REST merge**；宿主接口支持时必须携带 `expected_head_sha`，把审查/验证过的 head 绑定到 merge 动作；如果当前 REST merge 能力无法提供等价 head guard，则停止并报告宿主能力缺口，不用不带防漂移条件的其他 merge 通路冒充等价；
 - merge 成功后读取真实 merge commit / main HEAD，并执行本次 changed scope 应触发的 **main fresh CI**；PR CI、历史 CI 或 merge API 成功本身不能替代 main 新鲜验证；
 - 使用 Coding Change 时，功能/治理变更合入且 main fresh CI 成功后，再按当前 Change 规则执行 **Change archive**：更新为 `done` 并移动到 `archive/YYYY-MM/...`，归档 PR 也遵循同一零人工 PR 策略；
