@@ -92,6 +92,17 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         ):
             self.assertIn(marker, handoff)
 
+    def test_figma_skill_exposes_real_system_handoff_hard_gates(self) -> None:
+        """主 Skill 必须显式暴露 Contract、运行时时间和 Annotation 充分性三个高价值门禁入口。"""
+        skill = self._read(FIGMA_ROOT / "SKILL.md")
+        for marker in (
+            "不得由 Figma / Design Context / Annotation 创建生产 Contract / API",
+            "DatePicker / DateRange / Today / Now",
+            "真实 Runtime / Contract 时间语义",
+            "baseline-ready 必须执行 Annotation Sufficiency Review",
+        ):
+            self.assertIn(marker, skill)
+
     def test_figma_skill_does_not_embed_business_facts(self) -> None:
         """Figma live 规则不能携带业务仓库、Provider、Stage 或 Blueprint 事实。"""
         texts = [self._read(FIGMA_ROOT / "SKILL.md")]
