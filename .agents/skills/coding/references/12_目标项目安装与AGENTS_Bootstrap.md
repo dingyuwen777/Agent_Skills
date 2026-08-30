@@ -69,7 +69,7 @@ Runtime Installation Bootstrap
 - 判断哪些 `.agents` 内容属于 Agent_Skills 受管内容，哪些属于目标项目自有状态；
 - 修改项目 Runtime、ownership manifest、宿主 MCP 配置或安装回滚。
 
-普通只读分析、Review、文档审计或功能开发，如果用户没有授权项目规则写入，不因为发现 `AGENTS.md` 缺失就自动创建或修改文件。权限边界仍按 Coding 主规则执行。
+普通只读分析、Review、文档审计或功能开发，如果用户没有授权项目规则写入，不因为发现 `AGENTS.md` 缺失就自动创建或修改文件。首次治理确有必要时，只在当前会话内完成最少充分的有界事实调查，明确 `AGENTS.md` 治理状态未持久化，然后**继续原始只读任务**；权限边界仍按 Coding 主规则执行。
 
 ## 2. 固定边界：分发 Skill，不复制源仓库 Bootstrap / Maintenance
 

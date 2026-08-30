@@ -87,7 +87,7 @@ agent-skills-mcp install --target <目标项目根目录> --json
 
 ### 首次接入：先校准项目 `AGENTS.md`
 
-第一次在一个已有项目中使用 Agent_Skills 时，建议先让当前大模型完成一次 `Project Governance Bootstrap`（项目规则初始化/校准）。这一步不是让安装程序猜项目架构，而是让**当前正在帮助你开发这个项目的大模型**先调查项目真实情况，再创建或修正项目自己的 `AGENTS.md`。
+首次接入任意项目时，当前大模型应先完成一次 `Project Governance Bootstrap`（项目规则初始化/校准），再进入实质性开发；Greenfield 和已有项目都适用。这一步不是让安装程序猜项目架构，而是让**当前正在帮助你开发这个项目的大模型**先调查项目真实情况，再创建或修正项目自己的 `AGENTS.md`。
 
 可以直接使用下面这段自然语言：
 
