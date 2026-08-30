@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import textwrap
 import unittest
+import zipfile
 from types import SimpleNamespace
 from unittest import mock
 from pathlib import Path
@@ -45,7 +46,7 @@ def _extract_workflow_run_block(step_name: str) -> str:
 
 
 class ReleaseProductizationTest(unittest.TestCase):
-    """验证显式版本输入、onefile Runtime 和 Release-only 资产合同。"""
+    """验证显式版本输入、onefile Runtime 和单 ZIP Release-only 资产合同。"""
 
     def test_release_version_source_is_explicit_and_development_build_has_stable_identity(self) -> None:
         """仓库不保留 VERSION；正式版本显式传入，普通构建使用固定 development SemVer。"""
@@ -120,8 +121,8 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertNotIn("\n  push:\n", workflow)
         self.assertEqual(workflow.count("contents: write"), 1)
 
-    def test_release_publishes_only_three_binaries_usage_and_checksums(self) -> None:
-        """Identity 只作构建验证；最终 Release 仍只发布三平台 binary、USAGE 和 checksum。"""
+    def test_release_publishes_single_zip_after_validating_three_platform_identities(self) -> None:
+        """Identity 只作构建验证；最终 Release 只暴露一个含三平台文件与说明的 ZIP。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for marker in (
             "agent-skills-mcp-v${RELEASE_VERSION}-linux",
@@ -144,13 +145,18 @@ class ReleaseProductizationTest(unittest.TestCase):
             "--notes-file USAGE.md",
             'rm release-assets/*.manifest.json',
             'test "$(wc -l < SHA256SUMS)" -eq 4',
+            "Build single distribution ZIP",
+            'f"agent-skills-v{version}.zip"',
+            'expected_package="agent-skills-v${RELEASE_TAG#v}.zip"',
+            'gh release upload "${RELEASE_TAG}" release-package/agent-skills-v*.zip',
         ):
             self.assertIn(marker, workflow)
+        self.assertNotIn('gh release upload "${RELEASE_TAG}" release-assets/*', workflow)
         for obsolete in ("agent-skills-full-kit", "runtime-kit", "--generate-notes"):
             self.assertNotIn(obsolete, workflow.lower() if obsolete == "runtime-kit" else workflow)
 
     def test_release_upload_sources_are_not_hidden(self) -> None:
-        """三平台 artifact 上传源必须位于非隐藏目录，避免被 upload-artifact 默认排除。"""
+        """三平台内部 artifact 上传源必须位于非隐藏目录，避免 upload-artifact 默认排除。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         self.assertNotIn(".release-assets", workflow)
         for marker in (
@@ -167,9 +173,9 @@ class ReleaseProductizationTest(unittest.TestCase):
             self.assertIn(marker, workflow)
 
     @unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "需要非 Windows bash 验证 Release Shell 语义")
-    def test_release_checksum_step_hashes_only_expected_assets(self) -> None:
-        """checksum step 必须只校验四个正式输入资产并排除 identity、输出与临时文件。"""
-        script = _extract_workflow_run_block("Generate SHA256SUMS")
+    def test_release_zip_step_hashes_only_expected_inner_assets(self) -> None:
+        """ZIP 组装步骤必须只校验四个正式内部文件并排除 identity、输出与临时文件。"""
+        script = _extract_workflow_run_block("Build single distribution ZIP")
         version = "2.0.0"
         expected_assets = (
             f"agent-skills-mcp-v{version}-linux",
@@ -203,7 +209,7 @@ class ReleaseProductizationTest(unittest.TestCase):
             self.assertEqual(
                 result.returncode,
                 0,
-                msg=f"checksum step 执行失败\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+                msg=f"ZIP step 执行失败\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}",
             )
             checksum_lines = (release_assets / "SHA256SUMS").read_text(encoding="utf-8").splitlines()
             self.assertEqual(len(checksum_lines), 4)
@@ -212,6 +218,10 @@ class ReleaseProductizationTest(unittest.TestCase):
             self.assertFalse(any(line.endswith(".manifest.json") for line in checksum_lines))
             for asset in expected_assets:
                 self.assertEqual(sum(line.endswith(f"  {asset}") for line in checksum_lines), 1)
+
+            package = temp_root / "release-package" / f"agent-skills-v{version}.zip"
+            with zipfile.ZipFile(package) as archive:
+                self.assertEqual(archive.namelist(), [*expected_assets, "SHA256SUMS"])
 
     def test_user_guide_is_final_user_only(self) -> None:
         """USAGE 必须是纯用户操作说明，不混入源码维护、内部 Contract 或治理术语。"""

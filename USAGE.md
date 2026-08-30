@@ -1,12 +1,18 @@
 # Agent_Skills 使用说明
 
-Agent_Skills 按项目安装。选择与你操作系统匹配的可执行文件，在项目根目录运行即可。
+Agent_Skills 按项目安装。下载并解压当前版本的统一 ZIP，选择与你操作系统匹配的可执行文件，在项目根目录运行即可。
 
 安装和基础运行无需预装 Python。如具体任务需要额外环境，工具会明确提示；未满足条件的检查不会被当作已经完成。
 
 ## 1. 获取文件
 
-每个正式版本提供：
+每个正式版本只需要下载一个分发包：
+
+```text
+agent-skills-v<VERSION>.zip
+```
+
+解压后，ZIP 内包含：
 
 ```text
 agent-skills-mcp-v<VERSION>-linux
@@ -22,7 +28,7 @@ SHA256SUMS
 - Linux：`agent-skills-mcp-v<VERSION>-linux`
 - macOS：`agent-skills-mcp-v<VERSION>-macos`
 
-建议同时使用 `SHA256SUMS` 校验文件完整性。
+本说明文件和 `SHA256SUMS` 已随同一个 ZIP 一起提供，不需要另外下载。建议解压后使用 ZIP 内的 `SHA256SUMS` 校验对应文件完整性。
 
 版本和必要运行状态已嵌入可执行文件，可用 `status --json` 查看；用户不需要额外下载或维护身份文件。
 
@@ -187,9 +193,9 @@ agent-skills-mcp self-test --json
 
 升级到新版本：
 
-1. 获取当前平台的新版本可执行文件和 `SHA256SUMS`；
-2. 校验文件完整性；
-3. 在同一个项目根目录运行新版本；
+1. 下载新版本的 `agent-skills-v<VERSION>.zip`；
+2. 解压 ZIP，使用其中的 `SHA256SUMS` 校验当前平台可执行文件；
+3. 在同一个项目根目录运行新版本的对应平台可执行文件；
 4. 运行 `status --json` 和 `self-test --json`；
 5. 重新打开项目或新建一次 Agent 会话。
 
@@ -201,15 +207,15 @@ agent-skills-mcp self-test --json
 
 需要回到之前的版本时：
 
-1. 获取需要回退到的同平台版本及其校验文件；
-2. 校验文件完整性；
-3. 在目标项目根目录运行该版本；
+1. 下载目标版本的 `agent-skills-v<VERSION>.zip`；
+2. 解压 ZIP，使用其中的 `SHA256SUMS` 校验当前平台可执行文件；
+3. 在目标项目根目录运行该版本的对应平台可执行文件；
 4. 运行 `status --json` 和 `self-test --json`；
 5. 重新打开项目或新建一次 Agent 会话。
 
 不要手工混合不同版本的 Agent_Skills 文件。如果目标版本明确拒绝当前项目状态，应停止操作并根据错误信息处理。
 
-回退必须使用目标版本对应的同一个完整可执行文件，让规则、运行文件和版本身份一起恢复；不要只复制其中一部分文件。
+回退必须使用目标版本 ZIP 中对应平台的完整可执行文件，让规则、运行文件和版本身份一起恢复；不要只复制其中一部分文件。
 
 ## 8. 常见问题
 
