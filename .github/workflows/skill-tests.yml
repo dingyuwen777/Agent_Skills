@@ -108,8 +108,13 @@ jobs:
           test -f "${target}/.codex/config.toml"
           test -f "${target}/CLAUDE.md"
           test -f "${target}/.agents/skills/ROUTER.md"
-          grep -Fq ".agents/skills/ROUTER.md" "${target}/AGENTS.md"
-          ! grep -Fq "agent_skills_load_required_context" "${target}/AGENTS.md"
+          ! grep -Fq ".agents/skills/" "${target}/AGENTS.md"
+          ! grep -Fq "ROUTER.md" "${target}/AGENTS.md"
+          ! grep -Fq "Reference" "${target}/AGENTS.md"
+          grep -Fq "代码修改" "${target}/AGENTS.md"
+          grep -Fq "测试" "${target}/AGENTS.md"
+          grep -Fq "文档同步" "${target}/AGENTS.md"
+          grep -Fq "用户可见" "${target}/AGENTS.md"
           grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/ROUTER.md"
           grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/ROUTER.md"
           grep -Fq '"schema": "agent-skills-install/v3"' "${target}/.agents/agent-skills-install.json"
@@ -126,7 +131,9 @@ jobs:
           test -x "${no_args_target}/.agents/runtime/agent-skills-mcp"
           test -f "${no_args_target}/.agents/agent-skills-install.json"
           test -f "${no_args_target}/.agents/skills/ROUTER.md"
-          grep -Fq ".agents/skills/ROUTER.md" "${no_args_target}/AGENTS.md"
+          ! grep -Fq ".agents/skills/" "${no_args_target}/AGENTS.md"
+          ! grep -Fq "ROUTER.md" "${no_args_target}/AGENTS.md"
+          grep -Fq "用户可见" "${no_args_target}/AGENTS.md"
 
       - name: Verify active Coding Change
         run: >-
@@ -195,8 +202,16 @@ jobs:
           )) {
             if (-not (Test-Path $path)) { throw "Windows 项目安装缺少文件: $path" }
           }
-          if (-not (Select-String -Path $agents -Pattern ".agents/skills/ROUTER.md" -SimpleMatch -Quiet)) { throw "Windows 目标 AGENTS 未指向 Router" }
-          if (Select-String -Path $agents -Pattern "agent_skills_load_required_context" -SimpleMatch -Quiet) { throw "Windows 目标 AGENTS 不应复制完整 Router" }
+          foreach ($forbidden in @(".agents/skills/", "ROUTER.md", "Reference")) {
+            if (Select-String -Path $agents -Pattern $forbidden -SimpleMatch -Quiet) {
+              throw "Windows 目标 AGENTS 泄露 Runtime 内部治理结构: $forbidden"
+            }
+          }
+          foreach ($required in @("代码修改", "测试", "文档同步", "用户可见")) {
+            if (-not (Select-String -Path $agents -Pattern $required -SimpleMatch -Quiet)) {
+              throw "Windows 目标 AGENTS 缺少工程过程语义: $required"
+            }
+          }
           if (-not (Select-String -Path $router -Pattern ".agents/skills/coding/SKILL.md" -SimpleMatch -Quiet)) { throw "Windows Router 未指向 Coding Skill" }
           if (-not (Select-String -Path $router -Pattern "agent_skills_load_required_context" -SimpleMatch -Quiet)) { throw "Windows Router 未保留 Runtime required Context 路由" }
           $installManifest = Get-Content $manifest -Raw | ConvertFrom-Json
@@ -222,8 +237,14 @@ jobs:
           if (-not (Test-Path (Join-Path $noArgsTarget ".agents\skills\ROUTER.md"))) {
             throw "Windows binary 无参数运行未安装 Router"
           }
-          if (-not (Select-String -Path (Join-Path $noArgsTarget "AGENTS.md") -Pattern ".agents/skills/ROUTER.md" -SimpleMatch -Quiet)) {
-            throw "Windows binary 无参数运行的 AGENTS 未指向 Router"
+          $noArgsAgents = Join-Path $noArgsTarget "AGENTS.md"
+          foreach ($forbidden in @(".agents/skills/", "ROUTER.md")) {
+            if (Select-String -Path $noArgsAgents -Pattern $forbidden -SimpleMatch -Quiet) {
+              throw "Windows binary 无参数运行的 AGENTS 泄露内部治理结构: $forbidden"
+            }
+          }
+          if (-not (Select-String -Path $noArgsAgents -Pattern "用户可见" -SimpleMatch -Quiet)) {
+            throw "Windows binary 无参数运行的 AGENTS 缺少用户可见进度边界"
           }
 
   runtime-macos-package:
@@ -272,8 +293,13 @@ jobs:
           test -f "${target}/.codex/config.toml"
           test -f "${target}/CLAUDE.md"
           test -f "${target}/.agents/skills/ROUTER.md"
-          grep -Fq ".agents/skills/ROUTER.md" "${target}/AGENTS.md"
-          ! grep -Fq "agent_skills_load_required_context" "${target}/AGENTS.md"
+          ! grep -Fq ".agents/skills/" "${target}/AGENTS.md"
+          ! grep -Fq "ROUTER.md" "${target}/AGENTS.md"
+          ! grep -Fq "Reference" "${target}/AGENTS.md"
+          grep -Fq "代码修改" "${target}/AGENTS.md"
+          grep -Fq "测试" "${target}/AGENTS.md"
+          grep -Fq "文档同步" "${target}/AGENTS.md"
+          grep -Fq "用户可见" "${target}/AGENTS.md"
           grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/ROUTER.md"
           grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/ROUTER.md"
           grep -Fq '"schema": "agent-skills-install/v3"' "${target}/.agents/agent-skills-install.json"
@@ -288,4 +314,6 @@ jobs:
           test -x "${no_args_target}/.agents/runtime/agent-skills-mcp"
           test -f "${no_args_target}/.agents/agent-skills-install.json"
           test -f "${no_args_target}/.agents/skills/ROUTER.md"
-          grep -Fq ".agents/skills/ROUTER.md" "${no_args_target}/AGENTS.md"
+          ! grep -Fq ".agents/skills/" "${no_args_target}/AGENTS.md"
+          ! grep -Fq "ROUTER.md" "${no_args_target}/AGENTS.md"
+          grep -Fq "用户可见" "${no_args_target}/AGENTS.md"
