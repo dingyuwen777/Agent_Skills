@@ -20,113 +20,155 @@ affected_paths:
   - ".agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md"
   - "README.md"
 contracts:
-  - "正式 Release fail-closed 与 Immutability 确认流程"
+  - "正式 Release fail-closed 与 Immutability 机器确认流程"
 data_changes: []
 ---
 
 # 目标
 
-修复 Release #4 暴露的 Immutability 预检鉴权错误：GitHub Actions 默认 `GITHUB_TOKEN` 对仓库管理设置没有 `Administration: read`，访问 `GET /repos/{owner}/{repo}/immutable-releases` 返回 403 时，workflow 不能误报为“未启用 Release Immutability”。在不降低正式 Release 不可变性门禁的前提下，让维护者可以通过明确的本次人工确认继续发布，并保留可选管理员只读 Token 的机器预检路径和发布后的 `immutable=true` 机器验证。
+修复 Release #4 暴露的 Immutability 预检鉴权错误：GitHub Actions 默认 `GITHUB_TOKEN` 对仓库管理设置没有 `Administration: read`，访问 `GET /repos/{owner}/{repo}/immutable-releases` 返回 403 时，workflow 不能误报为“未启用 Release Immutability”。正式 Release 必须在任何三平台构建和 Publish 之前使用最小权限的管理员只读 Secret **机器确认** Immutability 已启用；不能把人工勾选或口头确认作为不可变性前置证明。
 
 # 成功标准
 
-- [ ] Release workflow 区分 Immutability API 的 200 / 404 / 403 / 其他错误，不再把任意 API 失败都解释成“未启用”。
-- [ ] 配置 `RELEASE_SETTINGS_TOKEN` 且具备仓库 `Administration: read` 时，Preflight 使用它机器验证仓库 Immutability 设置。
-- [ ] 未配置管理员只读 Secret、默认 `GITHUB_TOKEN` 返回 403 时，只有本次 `workflow_dispatch` 明确确认 Immutability 已启用才允许继续；未确认时 fail closed。
-- [ ] 若配置了 `RELEASE_SETTINGS_TOKEN` 但它仍返回 403，则 fail closed 并提示修正 Token 权限，不静默降级成人工确认。
-- [ ] 机器可确认的 404 继续明确表示未启用并阻止正式构建。
-- [ ] 发布后继续验证正式 Release API 返回 `immutable=true`；不删除或弱化 Draft→Publish→immutable 的既有链路。
-- [ ] README 与 Runtime Release canonical Reference 同步解释新的权限边界和维护者操作方式。
-- [ ] 不修改 Release 版本来源、三平台构建、正式资产集合、Runtime/Project Payload/MCP schema 或依赖。
+- [x] Release workflow 区分 Immutability API 的 200 / 404 / 403 / 其他错误，不再把任意 API 失败解释成“未启用”。
+- [x] 正式 Release 必须配置仓库 Actions Secret `RELEASE_SETTINGS_TOKEN`；缺失时在三平台构建前 fail closed。
+- [x] `RELEASE_SETTINGS_TOKEN` 只需要当前仓库 `Administration: read`，只用于 Preflight 读取 Immutability 设置；不用于 tag、资产上传或 Publish。
+- [x] API 返回 403 时明确提示 `RELEASE_SETTINGS_TOKEN` 权限不足并停止，不降级为人工确认。
+- [x] API 返回 404 时明确表示当前仓库未启用 Release Immutability 并停止。
+- [x] 只有 API 返回 200 且响应 `enabled=true` 才允许继续完整测试、Ready、三平台构建和发布。
+- [x] 发布后继续验证正式 Release API 返回 `immutable=true`；Draft→Publish→immutable 与 Draft-only cleanup 既有链路不弱化。
+- [x] README 与 Runtime Release canonical Reference 已同步新的权限边界和维护者操作方式。
+- [x] Release 版本来源、三平台构建、正式资产集合、Runtime/Project Payload/MCP schema 与依赖均未修改。
 
 # 范围
 
 - 修复 `.github/workflows/release.yml` 的 Release Immutability Preflight。
-- 增加永久 workflow preservation 回归。
+- 增加永久 workflow preservation / security 回归。
 - 同步维护者 README 与 Runtime/Release canonical Reference。
 
 # 非目标
 
 - 不自动创建、读取或管理 GitHub Actions Secret。
-- 不赋予 `GITHUB_TOKEN` GitHub 平台并不存在的 Administration permission。
-- 不关闭 Release Immutability 门禁。
-- 不修改 Release v<SemVer> 版本语义、Runtime Builder 或正式发布资产。
-- 不创建实际正式 Release；修复合入后由维护者重新手工运行 Release workflow。
+- 不赋予 `GITHUB_TOKEN` GitHub 平台不存在的 Administration permission。
+- 不关闭或绕过 Release Immutability 门禁。
+- 不提供人工确认 fallback；不可变性必须在 Publish 前机器确认。
+- 不修改 Release `v<SemVer>` 版本语义、Runtime Builder 或正式发布资产。
+- 本变更不创建实际正式 Release；合入后由维护者配置 Secret 并重新手工运行 Release workflow。
 
 # 必须保持不变
 
 - Release 只能从 `main` 手工触发，tag 是唯一正式版本来源。
 - 已存在 tag / Release 不覆盖、不移动。
-- 三平台使用固定 Python 3.12.10 构建并验证同一 release_version。
+- 三平台使用固定 Python `3.12.10` 构建并验证同一 `release_version`。
 - 正式资产先 Draft、上传并核对完整集合，再 Publish；发布后必须验证 tag、资产与 `immutable=true`。
 - 发布失败清理仍只能自动删除未发布 Draft，不自动删除已发布 Release。
+- 管理员只读 Secret 不提升 Publish Job 权限；实际发布仍由现有 `github.token` + `contents: write` 承担。
 
 # 关键决策
 
-采用双路径 Preflight：优先使用可选 `RELEASE_SETTINGS_TOKEN` 做 GitHub 官方 Administration-read API 机器验证；未配置时仍尝试默认 `GITHUB_TOKEN`，若因其固有权限边界得到 403，则要求 `workflow_dispatch` 的显式人工确认。这样无需强迫仓库新增长期 PAT 才能发布，同时 403 不再被伪装成 404；有更高权限 Secret 时仍获得发布前机器证明。发布后现有 `immutable=true` 校验继续作为最终机器事实。
+最终采用**机器预检唯一放行路径**：正式 Release 必须配置 `RELEASE_SETTINGS_TOKEN`，推荐使用只授权 `dingyuwen777/Agent_Skills` 且 Repository permission 仅为 `Administration: Read-only` 的 fine-grained PAT。Preflight 使用该 Secret 调用 GitHub 官方 Immutability 设置 API；Secret 缺失、403、404、网络/API 异常或 200 但 `enabled!=true` 都在正式构建前失败关闭。
 
-GitHub 官方当前说明 `GET /repos/{owner}/{repo}/immutable-releases` 要求仓库 Administration(read)；200 表示已启用、404 表示未启用。因此默认仅有 Contents(read) 的 `GITHUB_TOKEN` 返回 403 属于权限边界而不是设置事实。
+初始 Green 曾设计为“可选管理员 Secret + 默认 GITHUB_TOKEN 403 时人工勾选确认”。独立 Review 发现该方案不能证明 fail-closed：如果人工确认错误而 Immutability 实际未启用，workflow 会先把 Draft Publish，再在发布后 `immutable=true` 校验时失败；此时仓库已经留下一个公开、可变 Release，而既有安全清理逻辑按设计不会删除已发布 Release。因为 GitHub Release Immutability 只影响启用后的未来 Release，发布后校验不能替代发布前机器确认。因此人工 fallback 被删除并加入永久回归禁止恢复。
+
+GitHub 官方当前说明 `GET /repos/{owner}/{repo}/immutable-releases` 要求仓库 `Administration: read`；200 表示设置可读取且响应包含启用状态，404 表示未启用。Release #4 的默认 Token 只有普通仓库读取权限，403 只能证明鉴权不足，不能当成设置状态。
 
 # Requirement Traceability
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | 修复 Release #4 的失败根因 | user:fix-release-4 | not_satisfied | 待 workflow 实现与回归 |
-| R2 | Release Immutability 仍必须在正式发布流程中确认并保持 fail-closed | .agents/MAINTENANCE.md | not_satisfied | 待 preflight 状态分类、人工/机器确认和发布后验证 |
-| R3 | Runtime/Release 现有版本、构建、资产与协议边界保持 | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | not_satisfied | 待永久回归与三平台 CI |
-| R4 | Workflow 变更必须有责任审计与新鲜验证证据 | .agents/skills/coding/references/07_通用验证与证据策略.md | not_satisfied | 待 Red/Green、Review、Ready、永久 CI |
+| R1 | 修复 Release #4 的失败根因和错误提示 | user:fix-release-4 | satisfied | Release #4 `33300984482` 403 根因已复现；workflow 改为专用 Admin-read Secret 并区分 200/404/403/其他状态；Initial Red/Green 与 Review Red/Green 均有证据 |
+| R2 | Release Immutability 必须在 Publish 前机器确认并保持 fail-closed | .agents/MAINTENANCE.md | satisfied | 人工 fallback 已因 Review Finding 删除；永久测试要求 Secret 缺失/403/404 均失败且禁止 `confirm_immutable_releases`；发布后 `immutable=true` 复核继续保留 |
+| R3 | Runtime/Release 现有版本、构建、资产与协议边界保持 | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | not_satisfied | 静态 diff 已确认未改版本/资产/Runtime 协议；仍待最终 clean HEAD 全量永久三平台 CI |
+| R4 | Workflow 变更必须完成责任审计、独立 Review 与新鲜验证 | .agents/skills/coding/references/07_通用验证与证据策略.md | not_satisfied | 已完成一轮独立 Review 并修复 HIGH Finding；仍待最终 clean HEAD CI 与 re-review / Ready |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | workflow preservation test 覆盖 200/404/403 权限语义、人工确认和可选 Secret |
-| 接口 / Contract | required | 保持 workflow_dispatch tag、Release identity、Draft/Publish/immutable 既有 Contract；新增确认输入为显式维护者交互 |
+| 行为 / Unit / Component | required | 永久 `test_runtime_release_hardening.py` 覆盖强制 Secret、200/404/403、禁止人工 fallback、YAML run block 缩进、发布后 immutable 和 Draft-only cleanup |
+| 接口 / Contract | required | 保持 workflow_dispatch 仅 `tag`、Release identity、Draft/Publish/immutable 既有 Contract；新增仓库 Secret 是维护者安全前置，不进入 Runtime 公共协议 |
 | 集成 / Persistence / Runtime Dependency | not_applicable | 不修改 Runtime 安装/持久化实现；永久 CI 的现有 Runtime 链继续回归 |
-| 用户 / Workflow Acceptance | required | 维护者能从 Actions 手工 Release：无管理员 Secret 时明确确认；有 Secret 时机器验证 |
-| 跨组件 Golden Path | required | 永久 CI 继续覆盖测试→onefile→真实 stdio MCP→project install；Release workflow 静态责任链保持完整 |
-| External Dependency / Provider Probe | required | GitHub Release #4 日志与 GitHub 官方 API 权限/状态语义作为当前外部事实；不在普通 PR CI 真实发布 Release |
-| Build / Package / Runtime | required | Linux/Windows/macOS 永久 Runtime package/install 全绿，证明 workflow 修复未破坏构建面 |
-| Docs / Governance / Other | required | README/ref13/Change/Ready/独立 Review 与 main fresh CI |
+| 用户 / Workflow Acceptance | required | 维护者必须先配置 `RELEASE_SETTINGS_TOKEN` 并启用 Release Immutability；之后仍只输入 `v<SemVer>` 手工发布 |
+| 跨组件 Golden Path | required | 永久 CI 继续覆盖 tests→onefile→真实 stdio MCP→project install；Release workflow 保持 preflight→tests/Ready→三平台→Draft→Publish→immutable |
+| External Dependency / Provider Probe | required | Release #4 日志 + GitHub 官方 immutable-releases API 权限/状态语义；普通 PR 不真实 Publish Release |
+| Build / Package / Runtime | required | 最终 clean HEAD Linux/Windows/macOS 永久 Runtime package/install 必须全绿 |
+| Docs / Governance / Other | required | README/ref13/Change、独立 Review/re-review、Ready Check、PR/main fresh CI |
+
+# Workflow Responsibility Audit
+
+- 旧责任：Release preflight 在正式构建前确认 Immutability 已启用。
+- 旧故障：默认 `GITHUB_TOKEN` 无 Administration(read)，403 被通用 `||` 分支错误翻译为“未启用”。
+- 新责任：Preflight 使用只读 Admin Secret 机器读取设置，并对 Secret 缺失、403、404、未知状态分别失败；只有 200 + `enabled=true` 放行。
+- Evidence Preservation：全量测试、Ready、三平台构建、identity、Draft 资产校验、Publish 后 tag/asset/immutable 验证、Draft-only cleanup 全部保留。
+- 权限隔离：`RELEASE_SETTINGS_TOKEN` 不进入 Publish Job，不代替 `github.token` 写 Release；只解决一个只读管理设置 API 的最小权限需求。
 
 # Completion Audit
 
 - [ ] upstream_re_read：Ready 前重新读取用户修复要求、当前分支 AGENTS、Maintenance、Router、Coding、ref07/ref13/ref14、Release workflow、README、目标测试和 Release #4 失败证据。
-- [ ] change_coverage：确认 403 权限、404 未启用、可选 Secret、人工确认、发布后 immutable 验证和错误信息都有 Owner。
-- [ ] reverse_audit：从维护者手工输入 v2.0.0 反查 preflight→tests/Ready→三平台→Draft→Publish→immutable；从错误权限/未启用设置反查不会误放行或误报。
-- [ ] unresolved_cleared：所有 not_satisfied 清零；交付后置步骤只有明确 deferred。
+- [x] change_coverage：403 权限、404 未启用、Secret 缺失、200 enabled、未知/API 错误、发布后 immutable、Draft-only cleanup 和维护者配置说明均有 Owner。
+- [x] reverse_audit：从维护者输入 `v2.0.0` 反查为 Secret machine preflight→tests/Ready→三平台→Draft→Publish→immutable；从 Secret 缺失/权限错/设置关闭反查均在构建前停止，不产生正式 Release。
+- [ ] unresolved_cleared：R3/R4 待最终 clean HEAD CI 与 re-review；交付后置步骤在 Ready 后明确 deferred。
 
 # 任务
 
 - [x] 调查 Release #4 日志、当前 workflow 与 GitHub 官方 Immutability API 权限事实。
-- [ ] 新增 Release Immutability Preflight Red 回归并确认旧实现精确失败。
-- [ ] 修复 workflow 并同步 ref13 / README。
-- [ ] 跑永久测试与三平台 Runtime CI。
-- [ ] 独立 Review、Completion Audit、Ready Check。
+- [x] 新增 Initial Red：旧实现精确暴露 403 鉴权/状态分类缺口。
+- [x] 初始 Green 修复 403 误报并同步 workflow/ref13/README。
+- [x] 独立 Review 发现人工确认可能先 Publish mutable Release 的 HIGH Finding，并建立 Review Red。
+- [x] 收紧为 mandatory `RELEASE_SETTINGS_TOKEN` 机器预检；目标 Release-hardening 回归 Green。
+- [x] 删除全部一次性 patch workflow/script，最终 PR 仅保留正式文件。
+- [ ] 跑最终 clean HEAD 全量测试与三平台 Runtime CI。
+- [ ] 完成 re-review、Completion Audit、Ready Check。
 - [ ] 非 Draft PR 正常合并，main fresh CI 后删除 Active Change。
+
+# 独立 Review
+
+Review Target：`main@6f5c582e99a304ef1d0c0d2781e7acfb7ff6b6c2 → fix/release-immutability-preflight-auth`。
+
+模式：review-and-fix。
+
+Finding：**HIGH — 人工 Immutability 确认不能保证正式 Release fail-closed**。
+
+- 条件：未配置 Admin-read Secret，默认 `GITHUB_TOKEN` 返回 403；维护者误勾选确认，但仓库实际没有启用 Immutability。
+- 旧初始 Green 行为：Preflight 放行，三平台构建成功后创建 Draft 并 Publish；之后才检查 Release API `.immutable == true`。
+- 影响：公开 Release 已经创建且可变；现有 cleanup 出于安全边界只删除仍为 Draft 的 Release，不删除已发布 Release，因此仓库会留下违反正式不可变交付契约的公开 Release。
+- 修复：删除人工确认 input / env / 403 fallback，强制使用只读 Admin Secret 在正式构建前机器确认；永久测试明确禁止恢复 manual fallback。
+- Review Green：Runner 生成 commit `3d233f8ba396441209254bc66bf695a80478d976`，9 条 Release-hardening 回归全部通过，`git diff --check` 通过；GitHub Actions 自带 Token 仅因缺少 `workflows` permission 无法 push workflow 文件，随后由已连接 GitHub App 对同一已验证 commit 做普通非 force fast-forward。
+- re-review：待最终 clean HEAD 全量 CI 后执行。
 
 # 验证
 
-## 计划
+## 已有证据
 
-- 目标测试：`.agents/skills/coding/tests/test_runtime_release_hardening.py`
-- 相关测试：全量 `.agents/skills/coding/tests/test_*.py`
-- 构建：永久 Linux/Windows/macOS Runtime package/install
-- External fact：Release #4 run `33300984482` + GitHub 官方 immutable-releases API 文档
-- Ready Check：`python .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready`
+- Release #4 run `33300984482`：Preflight 调用 immutable-releases API 返回 HTTP 403 `Resource not accessible by integration`，后续测试/三平台/Publish 全部 skipped。
+- Initial Red run `33301515574`：181 tests 中只有新增 Immutability 鉴权回归失败，原有 180 条通过。
+- 初始 manual-fallback clean run `33302016250`：181 tests、Linux onefile/MCP/install、Windows/macOS package/install 均通过；Job 唯一失败为 Change 仍 `proposed` 的 Ready Gate。该实现随后因独立 Review HIGH Finding 被废弃。
+- Review Red run `33302206596`：181 tests 中只有新的“必须机器预检”回归失败，其他 180 条通过。
+- Machine-only target Green run `33302426944` / job `99232912126`：补丁后的 9 条 Release-hardening 回归全部通过；`git diff --cached --check` 通过；仅最终 push 因 GitHub Actions Token 无 `workflows` permission 被 GitHub 拒绝，代码本身未失败。
+- Machine-only verified commit：`3d233f8ba396441209254bc66bf695a80478d976`；只修改 `release.yml`、README、ref13，随后 temp files 已删除。
 
-## 新鲜证据
+## 待完成
 
-- Release #4 run `33300984482`：Preflight 的 `gh api repos/.../immutable-releases` 返回 HTTP 403 `Resource not accessible by integration`，后续测试/三平台/Publish 全部 skipped。
-- 尚未建立 Red/Green。
+- 最终 clean HEAD 全量 self-contained tests。
+- Linux onefile / real stdio MCP / project install。
+- Windows / macOS package/install。
+- re-review + Ready Check。
 
 # 文档影响
 
-- `README.md`：需要同步维护者 Release 操作与可选 Secret / 人工确认边界。
-- `ref13`：需要同步正式 Release canonical 规则，不影响最终用户 `USAGE.md`。
+- `README.md`：已同步 `RELEASE_SETTINGS_TOKEN` 的创建原则、用途、最小权限和失败边界。
+- `ref13`：已同步正式 Release canonical 机器预检规则。
+- `USAGE.md`：最终用户不负责维护源仓库 Release，因此不需要变化。
+
+# Contract / Schema / Migration / 依赖
+
+- Release workflow_dispatch：仍只有 `tag`，无新增用户版本输入。
+- Runtime Bundle / Project Payload / install manifest / MCP / Task Route / Routing Manifest：不变。
+- Schema / Migration / 数据：无。
+- 直接依赖：无变化。
 
 # 交付
 
-- Commit：待完成
-- PR：待创建
-- 发布：本任务不创建正式 Release；修复合入后可重新运行 `v2.0.0`，前提是 tag/Release 仍不存在。
+- Branch：`fix/release-immutability-preflight-auth`
+- Draft PR：#57
+- Release：本任务不创建正式 Release；修复完成后如果 `v2.0.0` tag/Release 仍不存在，可在配置 Secret 和启用 Immutability 后重新运行。
