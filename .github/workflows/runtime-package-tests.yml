@@ -73,7 +73,21 @@ jobs:
           test -f "${target}/.codex/config.toml"
           test -f "${target}/CLAUDE.md"
           test -f "${target}/.agents/skills/ROUTER.md"
+          ! grep -Fq ".agents/skills/" "${target}/AGENTS.md"
+          ! grep -Fq "ROUTER.md" "${target}/AGENTS.md"
+          ! grep -Fq "Reference" "${target}/AGENTS.md"
+          grep -Fq "代码修改" "${target}/AGENTS.md"
+          grep -Fq "测试" "${target}/AGENTS.md"
+          grep -Fq "文档同步" "${target}/AGENTS.md"
+          grep -Fq "用户可见" "${target}/AGENTS.md"
+          grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/ROUTER.md"
+          grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/ROUTER.md"
+          grep -Fq '"schema": "agent-skills-install/v3"' "${target}/.agents/agent-skills-install.json"
+          grep -Fq '"managed_files"' "${target}/.agents/agent-skills-install.json"
+          grep -Fq '"ROUTER.md"' "${target}/.agents/agent-skills-install.json"
           test ! -e "${target}/.agents/skills/coding/references"
+          grep -Fq "/.agents/runtime/" "${target}/.gitignore"
+          test "$(grep -c '<!-- agent-skills:managed:start -->' "${target}/AGENTS.md")" -eq 1
           "${target}/.agents/runtime/agent-skills-mcp" status --json
           python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
 
@@ -82,6 +96,9 @@ jobs:
           test -x "${no_args_target}/.agents/runtime/agent-skills-mcp"
           test -f "${no_args_target}/.agents/agent-skills-install.json"
           test -f "${no_args_target}/.agents/skills/ROUTER.md"
+          ! grep -Fq ".agents/skills/" "${no_args_target}/AGENTS.md"
+          ! grep -Fq "ROUTER.md" "${no_args_target}/AGENTS.md"
+          grep -Fq "用户可见" "${no_args_target}/AGENTS.md"
 
   runtime-windows-package:
     name: Runtime Windows Package
@@ -109,7 +126,6 @@ jobs:
           python scripts/build_runtime.py --output-dir .runtime-dist --json
           .\.runtime-dist\agent-skills-mcp.exe status --json
           .\.runtime-dist\agent-skills-mcp.exe self-test --json
-          python scripts/runtime_mcp_smoke.py --artifact .\.runtime-dist\agent-skills-mcp.exe --json
           if (Test-Path .\.runtime-dist\agent-skills-mcp-runtime-kit.zip) { throw "不应生成 Windows Runtime Kit" }
           $manifest = Get-Content .\.runtime-dist\agent-skills-mcp.manifest.json -Raw | ConvertFrom-Json
           if ($manifest.release_version -ne "0.0.0-dev") { throw "普通 CI Runtime manifest 必须使用 development version" }
@@ -135,8 +151,37 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目重复升级失败" }
 
           $installedRuntime = Join-Path $target ".agents\runtime\agent-skills-mcp.exe"
-          if (-not (Test-Path $installedRuntime)) { throw "Windows 项目安装缺少 Runtime" }
-          if (-not (Test-Path (Join-Path $target ".agents\agent-skills-install.json"))) { throw "Windows 项目安装缺少 manifest" }
+          $manifest = Join-Path $target ".agents\agent-skills-install.json"
+          $router = Join-Path $target ".agents\skills\ROUTER.md"
+          $agents = Join-Path $target "AGENTS.md"
+          foreach ($path in @(
+            $installedRuntime,
+            $manifest,
+            $router,
+            $agents,
+            (Join-Path $target ".cursor\mcp.json"),
+            (Join-Path $target ".mcp.json"),
+            (Join-Path $target ".codex\config.toml"),
+            (Join-Path $target "CLAUDE.md")
+          )) {
+            if (-not (Test-Path $path)) { throw "Windows 项目安装缺少文件: $path" }
+          }
+          foreach ($forbidden in @(".agents/skills/", "ROUTER.md", "Reference")) {
+            if (Select-String -Path $agents -Pattern $forbidden -SimpleMatch -Quiet) {
+              throw "Windows 目标 AGENTS 泄露 Runtime 内部治理结构: $forbidden"
+            }
+          }
+          foreach ($required in @("代码修改", "测试", "文档同步", "用户可见")) {
+            if (-not (Select-String -Path $agents -Pattern $required -SimpleMatch -Quiet)) {
+              throw "Windows 目标 AGENTS 缺少工程过程语义: $required"
+            }
+          }
+          if (-not (Select-String -Path $router -Pattern ".agents/skills/coding/SKILL.md" -SimpleMatch -Quiet)) { throw "Windows Router 未指向 Coding Skill" }
+          if (-not (Select-String -Path $router -Pattern "agent_skills_load_required_context" -SimpleMatch -Quiet)) { throw "Windows Router 未保留 Runtime required Context 路由" }
+          $installManifest = Get-Content $manifest -Raw | ConvertFrom-Json
+          if ($installManifest.schema -ne "agent-skills-install/v3") { throw "Windows install manifest schema 不是 v3" }
+          if (@($installManifest.shared_files) -notcontains "ROUTER.md") { throw "Windows install manifest 未认领 ROUTER.md" }
+          if (@($installManifest.managed_files).Count -eq 0) { throw "Windows install manifest 缺少 managed_files" }
           if (Test-Path (Join-Path $target ".agents\skills\coding\references")) { throw "Windows 目标项目不应安装 Reference 或 Stub" }
           & $installedRuntime status --json
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime status 失败" }
@@ -152,6 +197,18 @@ jobs:
           }
           if (-not (Test-Path (Join-Path $noArgsTarget ".agents\runtime\agent-skills-mcp.exe"))) {
             throw "Windows binary 无参数运行未安装项目 Runtime"
+          }
+          if (-not (Test-Path (Join-Path $noArgsTarget ".agents\skills\ROUTER.md"))) {
+            throw "Windows binary 无参数运行未安装 Router"
+          }
+          $noArgsAgents = Join-Path $noArgsTarget "AGENTS.md"
+          foreach ($forbidden in @(".agents/skills/", "ROUTER.md")) {
+            if (Select-String -Path $noArgsAgents -Pattern $forbidden -SimpleMatch -Quiet) {
+              throw "Windows binary 无参数运行的 AGENTS 泄露内部治理结构: $forbidden"
+            }
+          }
+          if (-not (Select-String -Path $noArgsAgents -Pattern "用户可见" -SimpleMatch -Quiet)) {
+            throw "Windows binary 无参数运行的 AGENTS 缺少用户可见进度边界"
           }
 
   runtime-macos-package:
@@ -179,9 +236,9 @@ jobs:
           python scripts/build_runtime.py --output-dir .runtime-dist --json
           .runtime-dist/agent-skills-mcp status --json
           .runtime-dist/agent-skills-mcp self-test --json
+          test ! -e .runtime-dist/agent-skills-mcp-runtime-kit.zip
           grep -Fq '"release_version": "0.0.0-dev"' .runtime-dist/agent-skills-mcp.manifest.json
           grep -Fq '"python_version": "3.12.10"' .runtime-dist/agent-skills-mcp.manifest.json
-          test ! -e .runtime-dist/agent-skills-mcp-runtime-kit.zip
 
       - name: Verify real stdio MCP contract
         run: >-
@@ -200,7 +257,23 @@ jobs:
           "${artifact}" install --target "${target}" --json
           test -x "${target}/.agents/runtime/agent-skills-mcp"
           test -f "${target}/.agents/agent-skills-install.json"
+          test -f "${target}/.cursor/mcp.json"
+          test -f "${target}/.mcp.json"
+          test -f "${target}/.codex/config.toml"
+          test -f "${target}/CLAUDE.md"
           test -f "${target}/.agents/skills/ROUTER.md"
+          ! grep -Fq ".agents/skills/" "${target}/AGENTS.md"
+          ! grep -Fq "ROUTER.md" "${target}/AGENTS.md"
+          ! grep -Fq "Reference" "${target}/AGENTS.md"
+          grep -Fq "代码修改" "${target}/AGENTS.md"
+          grep -Fq "测试" "${target}/AGENTS.md"
+          grep -Fq "文档同步" "${target}/AGENTS.md"
+          grep -Fq "用户可见" "${target}/AGENTS.md"
+          grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/ROUTER.md"
+          grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/ROUTER.md"
+          grep -Fq '"schema": "agent-skills-install/v3"' "${target}/.agents/agent-skills-install.json"
+          grep -Fq '"managed_files"' "${target}/.agents/agent-skills-install.json"
+          grep -Fq '"ROUTER.md"' "${target}/.agents/agent-skills-install.json"
           test ! -e "${target}/.agents/skills/coding/references"
           "${target}/.agents/runtime/agent-skills-mcp" status --json
           python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
@@ -210,3 +283,6 @@ jobs:
           test -x "${no_args_target}/.agents/runtime/agent-skills-mcp"
           test -f "${no_args_target}/.agents/agent-skills-install.json"
           test -f "${no_args_target}/.agents/skills/ROUTER.md"
+          ! grep -Fq ".agents/skills/" "${no_args_target}/AGENTS.md"
+          ! grep -Fq "ROUTER.md" "${no_args_target}/AGENTS.md"
+          grep -Fq "用户可见" "${no_args_target}/AGENTS.md"
