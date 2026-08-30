@@ -240,19 +240,19 @@ Release
 → Red / Green / Review / CI
 → 自动 Ready
 
-宿主 Ready 能力未验证、不可用，或已命中 fullDatabaseId
+宿主 Ready 能力已确认不可用
 → 不创建 Draft PR
 → 创建普通 PR，并在流程中视为逻辑未就绪
 → Red / Green / Review / CI 未完成前禁止 merge
 ```
 
-- 不得把 GitHub 网页按钮变成人工交付门禁；Ready 自动化失败时**不得要求用户手动点击 `Ready for review`**；
-- 如果 Draft PR 已经存在后才确认宿主 Ready 故障，自动关闭原 Draft PR，以相同 head/base 创建普通 PR，保留原 PR 和证据链接，并重新运行新 PR 的 fresh CI；
+- 不得把 GitHub 网页按钮变成人工交付门禁；Ready API 返回错误时**不得要求用户手动点击 `Ready for review`**；
+- Ready API 出现 `Repository.fullDatabaseId` 或等价 GraphQL 返回查询错误时，不能直接认定 mutation 失败：先重新读取 PR 当前状态；如果已经 `draft=false`，继续当前 PR；**只有仍为 Draft**时才自动关闭原 Draft PR，以相同 head/base 创建普通 PR，保留原 PR 和证据链接，并重新运行新 PR 的 fresh CI；
+- 不重复调用同一已确认失败的 Ready mutation；
 - 真正合并前必须重新确认 `draft=false`、mergeable、required CI、当前 head SHA 与 reviewed head 一致；
 - GitHub merge 一律走 REST merge；宿主支持时必须传入 `expected_head_sha`，不使用无 head guard 的替代合并路径；
 - merge 后必须执行 main fresh CI；
-- main 新鲜验证成功后再执行 Change archive；归档 PR 同样不能依赖人工 Ready；
-- 当前 ChatGPT GitHub connector 如果出现 `Repository.fullDatabaseId` GraphQL schema 错误，只记录一次宿主故障证据并立即切换上述零人工路径，不重复调用同一失败 Ready mutation。
+- main 新鲜验证成功后再执行 Change archive；归档 PR 同样不能依赖人工 Ready。
 
 ## 11. 完成报告
 
