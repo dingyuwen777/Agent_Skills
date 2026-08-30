@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 import os
 import shutil
 import subprocess
@@ -12,10 +14,16 @@ from types import SimpleNamespace
 from unittest import mock
 from pathlib import Path
 
+from runtime.agent_skills_runtime.runtime import MCP_TOOL_CONTRACT_PROTOCOL
+
 
 ROOT = Path(__file__).resolve().parents[4]
 RUNTIME_BUILDER_PATH = ROOT / "scripts/build_runtime.py"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
+RUNTIME_PACKAGE_WORKFLOW = ROOT / ".github/workflows/runtime-package-tests.yml"
+SKILL_TESTS_WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"
+RUNTIME_README = ROOT / "runtime/README.md"
+RUNTIME_REFERENCE = ROOT / ".agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md"
 
 
 def _load_module(name: str, path: Path):
@@ -136,7 +144,7 @@ class ReleaseProductizationTest(unittest.TestCase):
             '.python_version == "3.12.10"',
             '."TaskRoute协议" == "Agent Skills 任务路由/v1"',
             '."RoutingManifest协议" == "Agent Skills 路由清单/v1"',
-            '."MCP工具契约协议" == "Agent Skills MCP工具契约/v2"',
+            f'."MCP工具契约协议" == "{MCP_TOOL_CONTRACT_PROTOCOL}"',
             '.install_manifest_schema == "agent-skills-install/v3"',
             '."Routing摘要" | test',
             "artifact_sha256",
@@ -154,6 +162,167 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertNotIn('gh release upload "${RELEASE_TAG}" release-assets/*', workflow)
         for obsolete in ("agent-skills-full-kit", "runtime-kit", "--generate-notes"):
             self.assertNotIn(obsolete, workflow.lower() if obsolete == "runtime-kit" else workflow)
+
+    def test_release_identity_uses_lf_and_compares_all_platforms(self) -> None:
+        """Release 必须固定 canonical 文本换行并比较三平台公共 identity。"""
+        attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        self.assertIn("* text=auto eol=lf", attributes.splitlines())
+
+        workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        for marker in (
+            "Release identity 字段校验失败",
+            "三平台 Release identity 不一致",
+            "del(.artifact, .artifact_sha256)",
+            "diff -u",
+        ):
+            self.assertIn(marker, workflow)
+
+    def test_skill_changes_do_not_require_runtime_package_or_release(self) -> None:
+        """纯 Skill 修改只走 Skill Tests，不自动触发三平台 package 或 Release。"""
+        skill_tests = SKILL_TESTS_WORKFLOW.read_text(encoding="utf-8")
+        runtime_package = RUNTIME_PACKAGE_WORKFLOW.read_text(encoding="utf-8")
+        release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn('      - ".agents/**"', skill_tests)
+        self.assertNotIn('      - ".agents/**"', runtime_package)
+        self.assertIn('      - ".gitattributes"', skill_tests)
+        self.assertIn('      - ".gitattributes"', runtime_package)
+        self.assertIn("workflow_dispatch:", release)
+        self.assertNotIn("\n  pull_request:\n", release)
+        self.assertNotIn("\n  push:\n", release)
+
+    def test_release_identity_policy_is_documented(self) -> None:
+        """Runtime 文档与 canonical Reference 必须说明 mode 和三平台 identity 规则。"""
+        for path in (RUNTIME_README, RUNTIME_REFERENCE):
+            content = path.read_text(encoding="utf-8")
+            self.assertIn("Git index", content)
+            self.assertIn("`0644`", content)
+            self.assertIn("`0755`", content)
+            self.assertIn("artifact", content)
+            self.assertIn("artifact_sha256", content)
+            self.assertIn("三平台", content)
+
+    @unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "需要非 Windows bash 验证 Release Shell 语义")
+    def test_release_rejects_cross_platform_identity_drift(self) -> None:
+        """三平台公共 identity 任一漂移时必须 fail closed，修正后才能继续。"""
+        script = _extract_workflow_run_block("Validate release identity and assets")
+        version = "2.0.0"
+        platforms = (
+            ("linux", f"agent-skills-mcp-v{version}-linux"),
+            ("windows", f"agent-skills-mcp-v{version}-windows.exe"),
+            ("macos", f"agent-skills-mcp-v{version}-macos"),
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            subprocess.run(["git", "init", "--quiet"], cwd=temp_root, check=True)
+            subprocess.run(
+                [
+                    "git",
+                    "-c",
+                    "user.name=Agent Skills Test",
+                    "-c",
+                    "user.email=agent-skills-test@example.invalid",
+                    "commit",
+                    "--quiet",
+                    "--allow-empty",
+                    "-m",
+                    "建立 Release 测试 HEAD",
+                ],
+                cwd=temp_root,
+                check=True,
+            )
+            commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=temp_root, text=True, encoding="utf-8"
+            ).strip()
+            release_assets = temp_root / "release-assets"
+            release_assets.mkdir()
+            (release_assets / "USAGE.md").write_text("usage", encoding="utf-8")
+
+            manifests: dict[str, dict[str, object]] = {}
+            for platform, artifact in platforms:
+                artifact_bytes = f"binary-{platform}".encode("utf-8")
+                (release_assets / artifact).write_bytes(artifact_bytes)
+                manifest = {
+                    "schema": "agent-skills-runtime-release-identity/v1",
+                    "release_version": version,
+                    "source_commit": commit,
+                    "artifact": artifact,
+                    "artifact_sha256": hashlib.sha256(artifact_bytes).hexdigest(),
+                    "python_version": "3.12.10",
+                    "bundle_schema": "agent-skills-runtime-bundle/v2",
+                    "bundle_version": "1" * 16,
+                    "TaskRoute协议": "Agent Skills 任务路由/v1",
+                    "RoutingManifest协议": "Agent Skills 路由清单/v1",
+                    "MCP工具契约协议": MCP_TOOL_CONTRACT_PROTOCOL,
+                    "project_payload_schema": "agent-skills-project-payload/v2",
+                    "install_manifest_schema": "agent-skills-install/v3",
+                    "source_digest": "2" * 64,
+                    "Routing摘要": "3" * 64,
+                    "payload_digest": "4" * 64,
+                    "skill_count": 4,
+                    "skills": ["coding", "docs", "figma", "review"],
+                }
+                manifests[platform] = manifest
+                manifest_path = release_assets / f"agent-skills-mcp-v{version}-{platform}.manifest.json"
+                manifest_path.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
+
+            manifests["windows"]["bundle_version"] = "5" * 16
+            windows_manifest = release_assets / f"agent-skills-mcp-v{version}-windows.manifest.json"
+            windows_manifest.write_text(
+                json.dumps(manifests["windows"], ensure_ascii=False), encoding="utf-8"
+            )
+
+            stub_dir = temp_root / "bin"
+            stub_dir.mkdir()
+            gh_stub = stub_dir / "gh"
+            gh_stub.write_text("#!/usr/bin/env bash\nexit 1\n", encoding="utf-8")
+            gh_stub.chmod(0o755)
+
+            env = os.environ.copy()
+            env.update(
+                {
+                    "PATH": f"{stub_dir}{os.pathsep}{env['PATH']}",
+                    "RELEASE_TAG": f"v{version}",
+                    "RELEASE_VERSION": version,
+                    "GITHUB_REF": "refs/heads/main",
+                    "GITHUB_SHA": commit,
+                    "GITHUB_REPOSITORY": "example/repository",
+                    "GH_TOKEN": "test-token",
+                }
+            )
+            rejected = subprocess.run(
+                ["bash", "-euo", "pipefail", "-c", script],
+                cwd=temp_root,
+                env=env,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertIn("三平台 Release identity 不一致", rejected.stderr)
+
+            manifests["windows"]["bundle_version"] = "1" * 16
+            windows_manifest.write_text(
+                json.dumps(manifests["windows"], ensure_ascii=False), encoding="utf-8"
+            )
+            accepted = subprocess.run(
+                ["bash", "-euo", "pipefail", "-c", script],
+                cwd=temp_root,
+                env=env,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+            self.assertEqual(
+                accepted.returncode,
+                0,
+                msg=f"identity 校验执行失败\nstdout:\n{accepted.stdout}\nstderr:\n{accepted.stderr}",
+            )
 
     def test_release_upload_sources_are_not_hidden(self) -> None:
         """三平台内部 artifact 上传源必须位于非隐藏目录，避免 upload-artifact 默认排除。"""

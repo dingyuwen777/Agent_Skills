@@ -300,10 +300,11 @@ jobs:
             "agent-skills-mcp-v${RELEASE_VERSION}-windows.manifest.json"
             "agent-skills-mcp-v${RELEASE_VERSION}-macos.manifest.json"
           )
+          normalized_identities=()
           for index in "${!binaries[@]}"; do
             binary="${binaries[$index]}"
             identity="${identities[$index]}"
-            jq -e \
+            if ! jq -e \
               --arg version "${RELEASE_VERSION}" \
               --arg commit "${GITHUB_SHA}" \
               --arg artifact "${binary}" \
@@ -316,22 +317,38 @@ jobs:
                and (.bundle_version | test("^[0-9a-f]{16}$"))
                and ."TaskRoute协议" == "Agent Skills 任务路由/v1"
                and ."RoutingManifest协议" == "Agent Skills 路由清单/v1"
-               and ."MCP工具契约协议" == "Agent Skills MCP工具契约/v2"
+               and ."MCP工具契约协议" == "Agent Skills MCP工具契约/v3"
                and .project_payload_schema == "agent-skills-project-payload/v2"
                and .install_manifest_schema == "agent-skills-install/v3"
                and (.source_digest | test("^[0-9a-f]{64}$"))
                and (."Routing摘要" | test("^[0-9a-f]{64}$"))
                and (.payload_digest | test("^[0-9a-f]{64}$"))' \
-              "release-assets/${identity}" >/dev/null
+              "release-assets/${identity}" >/dev/null; then
+              echo "Release identity 字段校验失败：${identity}" >&2
+              jq . "release-assets/${identity}" >&2 || true
+              exit 1
+            fi
             recorded_sha="$(jq -r '.artifact_sha256' "release-assets/${identity}")"
             actual_sha="$(sha256sum "release-assets/${binary}" | awk '{print $1}')"
             test "${recorded_sha}" = "${actual_sha}" || {
               echo "Release identity artifact SHA256 不一致：${binary}" >&2
               exit 1
             }
+            normalized_identity="release-assets/${identity}.common"
+            jq -S 'del(.artifact, .artifact_sha256)' \
+              "release-assets/${identity}" > "${normalized_identity}"
+            normalized_identities+=("${normalized_identity}")
+          done
+          reference_identity="${normalized_identities[0]}"
+          for candidate_identity in "${normalized_identities[@]:1}"; do
+            if ! cmp -s "${reference_identity}" "${candidate_identity}"; then
+              echo "三平台 Release identity 不一致：${reference_identity} <> ${candidate_identity}" >&2
+              diff -u "${reference_identity}" "${candidate_identity}" >&2 || true
+              exit 1
+            fi
           done
           # Identity manifest 只用于跨平台构建校验；正式 Release 最终收敛为单 ZIP。
-          rm release-assets/*.manifest.json
+          rm release-assets/*.manifest.json release-assets/*.manifest.json.common
           if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
             echo "tag 已存在，拒绝覆盖：${RELEASE_TAG}" >&2
             exit 1

@@ -66,6 +66,8 @@ shared_files（当前 ROUTER.md）
 
 `source_digest`、`routing_digest` 和 `payload_digest` 证明不同事实，不能互相替代。`shared_files` 是显式 Contract，不代表 Skills 根目录任意文件都会自动进入 Payload。
 
+Project Payload 的 `mode` 以 Git index 的 executable bit 为 canonical 来源：普通文件固定为 `0644`，Git 标记 executable 的文件固定为 `0755`；非 Git 源仅按宿主是否具有任一执行位回退到同一组可移植权限。不能直接把 Windows `0666` 或其他宿主 `stat` mode 写进 `payload_digest`，否则同一 commit 会产生跨平台 identity 漂移。
+
 Project Payload 明确排除：
 
 - canonical `references/*.md` 和 Runtime Stub；
@@ -243,7 +245,7 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 
 正式 Release 由根 `.github/workflows/release.yml` 从 `main` 手工构建。输入 `v<SemVer>` tag 后，workflow 将同一 `release_version` 显式传入 Linux/Windows/macOS Builder；Release preflight 会重新运行完整 self-contained tests 与 Ready Check。
 
-所有三平台 artifact / identity 完成验证后，workflow 先创建 Draft Release、上传完整正式资产并核对资产集合，再 Publish。正式 Release 仍是三平台 artifact 的最终交付门禁，不因为常规 Skill CI 减少 PyInstaller 构建而降低验证责任。
+所有三平台 artifact / identity 完成验证后，workflow 除逐一校验协议、digest 和 `artifact_sha256` 外，还会删除平台特有的 `artifact` / `artifact_sha256` 字段后比较其余公共 identity；三平台任一 source/routing/bundle/payload/protocol/Skill identity 漂移都会在发布前失败关闭。校验通过后删除构建期 manifest，把三个 binary、[`USAGE.md`](../USAGE.md) 和只覆盖这四个使用文件的 `SHA256SUMS` 组装为成员精确受控的 `agent-skills-v<SemVer>.zip`；Draft 与正式 Release 都只允许这一个 ZIP 资产。正式 Release 仍是三平台 artifact 的最终交付门禁，不因为常规 Skill CI 减少 PyInstaller 构建而降低验证责任。
 
 最终用户资产和使用方式以根 [`USAGE.md`](../USAGE.md) 为准。本文件不维护第二份最终用户教程，也不记录 Change/PR/Release 历史流水账。
 
