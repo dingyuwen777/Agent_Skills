@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 CODING_ROOT = ROOT / ".agents/skills/coding"
+MAINTENANCE = ROOT / ".agents/MAINTENANCE.md"
 
 
 class CodingProgressiveDisclosureTest(unittest.TestCase):
@@ -61,17 +62,25 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
         ):
             self.assertIn(marker, ref16)
 
-    def test_github_pr_delivery_has_ready_fallback_and_rest_merge_guard(self) -> None:
-        """GitHub PR 交付必须固化 Ready 宿主失败回退与 REST merge 的 head 防漂移门禁。"""
+    def test_github_pr_delivery_avoids_manual_ready_and_uses_rest_merge_guard(self) -> None:
+        """GitHub PR 交付必须在 Ready 能力异常时自动绕开 Draft，并用 REST merge 防止 head 漂移。"""
         skill = self._read("SKILL.md")
         delivery = self._read("references/14_Git交付依赖安全与宿主能力边界.md")
-        self.assertIn("GitHub PR Ready/merge 宿主兼容策略", skill)
+        maintenance = MAINTENANCE.read_text(encoding="utf-8")
+        self.assertIn("Git/PR/Release/Delivery", skill)
+        self.assertIn("GitHub PR 零人工交付兼容策略", maintenance)
         for marker in (
+            "GitHub PR 零人工交付兼容策略",
             "创建 Draft PR",
             "Red / Green / Review / CI",
             "fullDatabaseId",
-            "只请求用户在 GitHub 网页执行一次 `Ready for review`",
-            "不得循环重试同一失败 GraphQL",
+            "不得要求用户手动点击 `Ready for review`",
+            "不创建 Draft PR",
+            "普通 PR",
+            "逻辑未就绪",
+            "关闭原 Draft PR",
+            "相同 head/base",
+            "重新运行新 PR 的 fresh CI",
             "重新确认 `draft=false`、CI 和当前 head SHA",
             "REST merge",
             "expected_head_sha",
