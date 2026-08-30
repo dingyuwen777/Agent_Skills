@@ -61,6 +61,27 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
         ):
             self.assertIn(marker, ref16)
 
+    def test_github_pr_delivery_has_ready_fallback_and_rest_merge_guard(self) -> None:
+        """GitHub PR 交付必须固化 Ready 宿主失败回退与 REST merge 的 head 防漂移门禁。"""
+        skill = self._read("SKILL.md")
+        delivery = self._read("references/14_Git交付依赖安全与宿主能力边界.md")
+        self.assertIn("GitHub PR Ready/merge 宿主兼容策略", skill)
+        for marker in (
+            "创建 Draft PR",
+            "Red / Green / Review / CI",
+            "fullDatabaseId",
+            "只请求用户在 GitHub 网页执行一次 `Ready for review`",
+            "不得循环重试同一失败 GraphQL",
+            "重新确认 `draft=false`、CI 和当前 head SHA",
+            "REST merge",
+            "expected_head_sha",
+            "main fresh CI",
+            "Change archive",
+            "非 GitHub",
+            "head/revision guard",
+        ):
+            self.assertIn(marker, delivery)
+
     def test_existing_specialized_references_own_network_parallel_and_workflow_details(self) -> None:
         """网络源、多人协作和 Workflow 证据守恒应回到已有职责 reference，主文件仍保留触发入口。"""
         skill = self._read("SKILL.md")
