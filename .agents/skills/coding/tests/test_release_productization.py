@@ -201,7 +201,6 @@ class ReleaseProductizationTest(unittest.TestCase):
         """三平台公共 identity 任一漂移时必须 fail closed，修正后才能继续。"""
         script = _extract_workflow_run_block("Validate release identity and assets")
         version = "2.0.0"
-        commit = "c" * 40
         platforms = (
             ("linux", f"agent-skills-mcp-v{version}-linux"),
             ("windows", f"agent-skills-mcp-v{version}-windows.exe"),
@@ -210,6 +209,26 @@ class ReleaseProductizationTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_root = Path(temp_dir)
+            subprocess.run(["git", "init", "--quiet"], cwd=temp_root, check=True)
+            subprocess.run(
+                [
+                    "git",
+                    "-c",
+                    "user.name=Agent Skills Test",
+                    "-c",
+                    "user.email=agent-skills-test@example.invalid",
+                    "commit",
+                    "--quiet",
+                    "--allow-empty",
+                    "-m",
+                    "建立 Release 测试 HEAD",
+                ],
+                cwd=temp_root,
+                check=True,
+            )
+            commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=temp_root, text=True, encoding="utf-8"
+            ).strip()
             release_assets = temp_root / "release-assets"
             release_assets.mkdir()
             (release_assets / "USAGE.md").write_text("usage", encoding="utf-8")
