@@ -515,9 +515,12 @@ def install_project(
         _ensure_path_not_symlink(target, path)
         if path.exists() and (path.is_symlink() or not path.is_file()):
             raise ValueError(f"受管文件目标必须是普通文件：{path}")
-        if relative in new_managed_files and path.exists() and relative not in old_managed_files:
+        if (
+            relative in new_managed_files
+            and path.exists()
+            and relative not in old_managed_files
+        ):
             raise ValueError(f"目标项目已存在未被 Agent Skills manifest 认领的同名文件：{relative}")
-
     agents_path = target / "AGENTS.md"
     gitignore_path = target / ".gitignore"
     cursor_path = target / ".cursor" / "mcp.json"
