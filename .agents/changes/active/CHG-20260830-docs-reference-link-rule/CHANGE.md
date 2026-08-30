@@ -65,20 +65,20 @@ data_changes: []
 | R1 | 把文档引用路径与链接要求更新到 Agent_Skills Skill | user:docs-reference-link-skill | satisfied | `.agents/skills/docs/SKILL.md` 新增全局固定原则；ref02/ref03 承担详细写作与审查规则 |
 | R2 | 引用仓库内具体文档时显示完整路径并提供可点击链接 | user:path-and-clickable-link | satisfied | Docs Core 明确“完整仓库相对路径 + 可点击链接”；ref02 分离 link label、relative target、目标存在性和最终生成位置验证 |
 | R3 | 不机械链接命令、glob、占位路径等非导航内容 | user:preserve-non-navigation-content | satisfied | ref02 明确命令、目录树、glob、placeholder、协议/流程、生成路径、代码字面量的非导航例外；ref03 Review 主动检查误链接 |
-| R4 | 按仓库 Skill Mutation 门禁完成 Review、CI、PR、main fresh CI 与 Change 清理 | .agents/MAINTENANCE.md | explicitly_deferred | PR #51 已建立；Ready 后仍需最终 PR CI、非 Draft 合并、main fresh CI 和独立 Active Change 清理，不能在合并前伪报完成 |
+| R4 | 按仓库 Skill Mutation 门禁完成 Review、CI、PR、main fresh CI 与 Change 清理 | .agents/MAINTENANCE.md | explicitly_deferred | Draft PR #51 因连接器 `Repository.fullDatabaseId` 缺陷关闭且未合并；非 Draft PR #52 使用同一 feature branch 接棒，仍需其最终 HEAD 永久 CI、正常 merge、main fresh CI 和独立 Active Change 清理 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | Red run `33297530864`：173 tests 中仅新增 Docs preservation 用例失败；Green 后 clean run `33297719927` self-contained tests step success |
-| 接口 / Contract | required | 最终 PR changed-files 仅 Change、Docs Core/ref02/ref03 和 `test_docs_skill.py`；routing metadata / Stable ID / dependency / risk floor 未修改 |
-| 集成 / Runtime Dependency | required | clean run `33297719927`：Linux onefile/status/self-test、real stdio MCP、project install 全部 success |
+| 行为 / Unit / Component | required | Red run `33297530864`：173 tests 中仅新增 Docs preservation 用例失败；Green 后 clean run `33297719927` self-contained tests step success；Ready run `33297830411` 173 tests + Ready Check success |
+| 接口 / Contract | required | 最终生产改动仅 Docs Core/ref02/ref03 和 `test_docs_skill.py`；routing metadata / Stable ID / dependency / risk floor 未修改 |
+| 集成 / Runtime Dependency | required | run `33297830411`：Linux onefile/status/self-test、real stdio MCP、project install 全部 success |
 | 用户 / Workflow Acceptance | required | Docs Core 对所有文档任务提供硬原则；ref02 对 Write/Update 提供可执行格式；ref03 对 Review/Fix/Update 提供检查项 |
-| 跨组件 Golden Path | required | clean run `33297719927`：现有 onefile → MCP → project install 链保持 Green |
+| 跨组件 Golden Path | required | run `33297830411`：现有 onefile → MCP → project install 链保持 Green |
 | External Dependency / Provider Probe | not_applicable | 无外部 Provider、网络 Contract 或现时服务事实变化 |
-| Build / Package / Runtime | required | clean run `33297719927`：Runtime Windows Package success、Runtime macOS Package success |
-| Docs / Governance / Other | required | Skill Mutation 内容守恒 Review `NO_FINDINGS_WITHIN_SCOPE`；clean run 的唯一 Job 失败为本 Change 当时仍 `proposed` 的 Ready Gate |
+| Build / Package / Runtime | required | run `33297830411`：Runtime Windows Package success、Runtime macOS Package success |
+| Docs / Governance / Other | required | Skill Mutation 内容守恒 Review `NO_FINDINGS_WITHIN_SCOPE`；run `33297830411` Active Change Ready Check success |
 
 # Completion Audit
 
@@ -93,7 +93,8 @@ data_changes: []
 - [x] 新增 preservation Red：run `33297530864` 中原有回归保持通过，仅新用例因 Docs 尚未固化规则失败。
 - [x] 修改 Docs Core、写作 Reference、Review/Update Reference。
 - [x] clean implementation HEAD 运行全量测试、三平台 Runtime 产品链并完成独立 Review；pre-Ready 唯一失败为 Change 状态门禁。
-- [ ] 最终 Ready HEAD 永久 CI 全绿后将 PR #51 转非 Draft并正常合并；main fresh CI 后删除 Active Change。
+- [x] Ready HEAD run `33297830411` 三个 Job 全部 Green；Draft #51 因连接器 GraphQL schema 缺陷关闭且未合并，已创建非 Draft PR #52。
+- [ ] 非 Draft PR #52 最终 HEAD 永久 CI 全绿后正常合并；main fresh CI 后删除 Active Change。
 
 # 验证
 
@@ -114,10 +115,16 @@ data_changes: []
    - Runtime Windows Package success；
    - Runtime macOS Package success；
    - Skill Tests Job 唯一失败为 `status: proposed` 的预期 Active Change Ready Gate。
+4. **Final Ready CI — run `33297830411`**
+   - 173 self-contained tests success；
+   - Active Change Ready Check success；
+   - Linux onefile/status/self-test、real stdio MCP、project install success；
+   - Runtime Windows Package success；
+   - Runtime macOS Package success。
 
 # 独立 Review
 
-Review Target：PR #51 / `main@eee1f83822dc114eccb6da2098db3cd3078f0248 → feat/docs-reference-link-rule@fd2f90c8cc2fcac63d657902d9a20220893a0bf7`。
+Review Target：`main@eee1f83822dc114eccb6da2098db3cd3078f0248 → feat/docs-reference-link-rule`，对应 Draft PR #51 / 非 Draft替代 PR #52 的同一生产 diff。
 
 模式：review-and-fix（用户已授权更新并交付 Skill）。
 
@@ -156,5 +163,6 @@ re-review 结果：
 # 交付
 
 - Branch：`feat/docs-reference-link-rule`。
-- PR：#51（当前 Draft，待最终 Ready CI 后转 Ready）。
+- Draft PR #51：关闭且未合并；Draft → Ready 因已连接 GitHub 工具 GraphQL schema 缺陷失败。
+- 非 Draft PR：#52，当前正式交付入口。
 - Release：不创建。
