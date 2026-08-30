@@ -41,7 +41,7 @@ class CodingReferenceNumberingTest(unittest.TestCase):
         """Coding references 的两位数字文件前缀必须从 01 连续增长且无缺口。"""
         names = sorted(path.name for path in REFERENCES.glob("*.md"))
         prefixes = [int(name.split("_", 1)[0]) for name in names]
-        self.assertEqual(len(names), 16)
+        self.assertEqual(len(names), 17)
         self.assertEqual(prefixes, list(range(1, len(names) + 1)))
 
     def test_renamed_files_preserve_stable_reference_ids(self) -> None:
