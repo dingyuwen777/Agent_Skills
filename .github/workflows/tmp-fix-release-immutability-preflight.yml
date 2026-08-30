@@ -31,11 +31,12 @@ jobs:
           release_path = Path(".github/workflows/release.yml")
           release = release_path.read_text(encoding="utf-8")
 
-          old_inputs = '''      tag:
-                description: "Release tag，例如 v2.0.0"
-                required: true
-                type: string
-          '''.replace("                ", "        ")
+          old_inputs = (
+              "      tag:\n"
+              "        description: \"Release tag，例如 v2.0.0\"\n"
+              "        required: true\n"
+              "        type: string\n"
+          )
           new_inputs = old_inputs + (
               "      confirm_immutable_releases:\n"
               "        description: \"确认 Settings > Releases 已启用 Release Immutability（未配置管理员只读 Token 时必选）\"\n"
