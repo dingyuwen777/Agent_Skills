@@ -1,0 +1,212 @@
+name: Runtime Package Tests
+
+on:
+  pull_request:
+    paths:
+      - "runtime/**"
+      - "scripts/build_runtime.py"
+      - "scripts/runtime_mcp_smoke.py"
+      - ".github/workflows/runtime-package-tests.yml"
+      - ".github/workflows/release.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "runtime/**"
+      - "scripts/build_runtime.py"
+      - "scripts/runtime_mcp_smoke.py"
+      - ".github/workflows/runtime-package-tests.yml"
+      - ".github/workflows/release.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-linux-package:
+    name: Runtime Linux Package
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+
+      - name: Python version
+        run: python --version
+
+      - name: Install Runtime build dependencies
+        run: python -m pip install -r runtime/requirements-build.txt
+
+      - name: Build and self-test Linux onefile Runtime
+        run: |
+          python scripts/build_runtime.py --output-dir .runtime-dist --json
+          .runtime-dist/agent-skills-mcp status --json
+          .runtime-dist/agent-skills-mcp self-test --json
+          grep -Fq '"release_version": "0.0.0-dev"' .runtime-dist/agent-skills-mcp.manifest.json
+          grep -Fq '"python_version": "3.12.10"' .runtime-dist/agent-skills-mcp.manifest.json
+          test ! -e .runtime-dist/agent-skills-mcp-runtime-kit.zip
+
+      - name: Verify real stdio MCP contract
+        run: >-
+          python scripts/runtime_mcp_smoke.py
+          --artifact .runtime-dist/agent-skills-mcp
+          --json
+
+      - name: Verify project-only single-binary installation
+        run: |
+          artifact="${GITHUB_WORKSPACE}/.runtime-dist/agent-skills-mcp"
+          target="${RUNNER_TEMP}/agent-skills-project-target"
+          no_args_target="${RUNNER_TEMP}/agent-skills-project-no-args"
+          mkdir -p "${target}" "${no_args_target}"
+
+          "${artifact}" install --target "${target}" --json
+          "${artifact}" install --target "${target}" --json
+          test -x "${target}/.agents/runtime/agent-skills-mcp"
+          test -f "${target}/.agents/agent-skills-install.json"
+          test -f "${target}/.cursor/mcp.json"
+          test -f "${target}/.mcp.json"
+          test -f "${target}/.codex/config.toml"
+          test -f "${target}/CLAUDE.md"
+          test -f "${target}/.agents/skills/ROUTER.md"
+          test ! -e "${target}/.agents/skills/coding/references"
+          "${target}/.agents/runtime/agent-skills-mcp" status --json
+          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
+
+          cd "${no_args_target}"
+          "${artifact}"
+          test -x "${no_args_target}/.agents/runtime/agent-skills-mcp"
+          test -f "${no_args_target}/.agents/agent-skills-install.json"
+          test -f "${no_args_target}/.agents/skills/ROUTER.md"
+
+  runtime-windows-package:
+    name: Runtime Windows Package
+    runs-on: windows-2025
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+
+      - name: Python version
+        run: python --version
+
+      - name: Install Runtime build dependencies
+        run: python -m pip install -r runtime/requirements-build.txt
+
+      - name: Build and self-test Windows onefile Runtime
+        shell: pwsh
+        run: |
+          python scripts/build_runtime.py --output-dir .runtime-dist --json
+          .\.runtime-dist\agent-skills-mcp.exe status --json
+          .\.runtime-dist\agent-skills-mcp.exe self-test --json
+          python scripts/runtime_mcp_smoke.py --artifact .\.runtime-dist\agent-skills-mcp.exe --json
+          if (Test-Path .\.runtime-dist\agent-skills-mcp-runtime-kit.zip) { throw "不应生成 Windows Runtime Kit" }
+          $manifest = Get-Content .\.runtime-dist\agent-skills-mcp.manifest.json -Raw | ConvertFrom-Json
+          if ($manifest.release_version -ne "0.0.0-dev") { throw "普通 CI Runtime manifest 必须使用 development version" }
+          if ($manifest.python_version -ne "3.12.10") { throw "Runtime manifest Python 版本不是 3.12.10" }
+
+      - name: Verify real stdio MCP contract
+        shell: pwsh
+        run: |
+          python scripts/runtime_mcp_smoke.py --artifact .\.runtime-dist\agent-skills-mcp.exe --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows Runtime MCP smoke 失败" }
+
+      - name: Verify project-only single-binary installation
+        shell: pwsh
+        run: |
+          $artifact = (Resolve-Path .\.runtime-dist\agent-skills-mcp.exe).Path
+          $target = Join-Path $env:RUNNER_TEMP "agent-skills-project-target"
+          $noArgsTarget = Join-Path $env:RUNNER_TEMP "agent-skills-project-no-args"
+          New-Item -ItemType Directory -Force -Path $target, $noArgsTarget | Out-Null
+
+          & $artifact install --target $target --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows 项目首次安装失败" }
+          & $artifact install --target $target --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows 项目重复升级失败" }
+
+          $installedRuntime = Join-Path $target ".agents\runtime\agent-skills-mcp.exe"
+          if (-not (Test-Path $installedRuntime)) { throw "Windows 项目安装缺少 Runtime" }
+          if (-not (Test-Path (Join-Path $target ".agents\agent-skills-install.json"))) { throw "Windows 项目安装缺少 manifest" }
+          if (Test-Path (Join-Path $target ".agents\skills\coding\references")) { throw "Windows 目标项目不应安装 Reference 或 Stub" }
+          & $installedRuntime status --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime status 失败" }
+          python scripts/runtime_mcp_smoke.py --artifact $installedRuntime --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime MCP smoke 失败" }
+
+          Push-Location $noArgsTarget
+          try {
+            & $artifact
+            if ($LASTEXITCODE -ne 0) { throw "Windows binary 无参数项目安装失败" }
+          } finally {
+            Pop-Location
+          }
+          if (-not (Test-Path (Join-Path $noArgsTarget ".agents\runtime\agent-skills-mcp.exe"))) {
+            throw "Windows binary 无参数运行未安装项目 Runtime"
+          }
+
+  runtime-macos-package:
+    name: Runtime macOS Package
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+
+      - name: Python version
+        run: python --version
+
+      - name: Install Runtime build dependencies
+        run: python -m pip install -r runtime/requirements-build.txt
+
+      - name: Build and self-test macOS onefile Runtime
+        run: |
+          python scripts/build_runtime.py --output-dir .runtime-dist --json
+          .runtime-dist/agent-skills-mcp status --json
+          .runtime-dist/agent-skills-mcp self-test --json
+          grep -Fq '"release_version": "0.0.0-dev"' .runtime-dist/agent-skills-mcp.manifest.json
+          grep -Fq '"python_version": "3.12.10"' .runtime-dist/agent-skills-mcp.manifest.json
+          test ! -e .runtime-dist/agent-skills-mcp-runtime-kit.zip
+
+      - name: Verify real stdio MCP contract
+        run: >-
+          python scripts/runtime_mcp_smoke.py
+          --artifact .runtime-dist/agent-skills-mcp
+          --json
+
+      - name: Verify project-only single-binary installation
+        run: |
+          artifact="${GITHUB_WORKSPACE}/.runtime-dist/agent-skills-mcp"
+          target="${RUNNER_TEMP}/agent-skills-project-target"
+          no_args_target="${RUNNER_TEMP}/agent-skills-project-no-args"
+          mkdir -p "${target}" "${no_args_target}"
+
+          "${artifact}" install --target "${target}" --json
+          "${artifact}" install --target "${target}" --json
+          test -x "${target}/.agents/runtime/agent-skills-mcp"
+          test -f "${target}/.agents/agent-skills-install.json"
+          test -f "${target}/.agents/skills/ROUTER.md"
+          test ! -e "${target}/.agents/skills/coding/references"
+          "${target}/.agents/runtime/agent-skills-mcp" status --json
+          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
+
+          cd "${no_args_target}"
+          "${artifact}"
+          test -x "${no_args_target}/.agents/runtime/agent-skills-mcp"
+          test -f "${no_args_target}/.agents/agent-skills-install.json"
+          test -f "${no_args_target}/.agents/skills/ROUTER.md"
