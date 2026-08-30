@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260830-change-template-chinese-yaml
 title: 修正 Change 模板并固化 GitHub PR 零人工交付策略
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: change/change-template-chinese-yaml
 created: 2026-08-30
@@ -39,10 +39,10 @@ data_changes: []
 - [x] 原始 `CHANGE.template.md` 的 YAML frontmatter 可被 YAML 语法正常解释，不再存在独立 `$placeholder` 行。
 - [x] `coding.py new-change` 生成的 frontmatter 仍包含当前 schema 所需全部字段和列表语义。
 - [x] 中文新格式与历史英文格式都由 Ready Check 覆盖。
-- [ ] Agent_Skills 全局 Maintenance 与 Coding Skill 固化 GitHub PR 零人工交付：Draft → Red / Green / Review / CI → 自动 Ready；Ready API 返回 `fullDatabaseId` 等异常时先重新读取真实 PR 状态，不要求用户手动操作。
-- [ ] Ready 返回异常后如果 PR 已经 `draft=false`，直接继续当前 PR；只有真实仍为 Draft 时，才自动关闭原 Draft 并以相同 head/base 创建普通 PR、重新跑 fresh CI。
-- [ ] GitHub PR 合并统一使用 REST merge，并在宿主支持时必须携带 `expected_head_sha`；非 GitHub 平台使用等价 head/revision guard。
-- [ ] merge 后执行 main fresh CI；使用 Coding Change 时 main 新鲜验证成功后将 Change 以 `done` 状态移动到 archive，而不是删除。
+- [x] Agent_Skills 全局 Maintenance 与 Coding Skill 固化 GitHub PR 零人工交付：Draft → Red / Green / Review / CI → 自动 Ready；Ready API 返回 `fullDatabaseId` 等异常时先重新读取真实 PR 状态，不要求用户手动操作。
+- [x] Ready 返回异常后如果 PR 已经 `draft=false`，直接继续当前 PR；只有真实仍为 Draft 时，才自动关闭原 Draft 并以相同 head/base 创建普通 PR、重新跑 fresh CI。
+- [x] GitHub PR 合并统一使用 REST merge，并在宿主支持时必须携带 `expected_head_sha`；非 GitHub 平台使用等价 head/revision guard。
+- [x] 规则明确 merge 后执行 main fresh CI，并在 main 新鲜验证成功后将 Coding Change 以 `done` 状态移动到 archive，而不是删除。
 
 # 范围
 
@@ -78,31 +78,31 @@ GitHub PR 交付采用“宿主返回可以失败，但真实仓库状态优先�
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | Change 模板的人类可读内容使用中文 | user:change-template-chinese | satisfied | `CHANGE.template.md` 的标题、表头、验证层、任务与说明均已中文化；`test_human_readable_template_labels_are_chinese` 已通过。 |
-| R2 | 修复 GitHub YAML frontmatter 解析错误 | user:github-yaml-error | satisfied | Red run `33314852028` 证明 5 个独立 `$...` 行导致目标测试失败；模板已改为 `字段: $占位符`，后续模板 Green 已通过。 |
-| R3 | 不因中文化破坏现有 Change 机器契约或历史记录 | .agents/skills/coding/references/04_轻量变更管理.md | satisfied | `coding.py` 只改变列表值片段渲染；生成结果解析、中文 Ready 与历史英文 Ready 用例已通过；schema、字段和状态枚举未修改。 |
-| R4 | GitHub PR 交付无需用户手动 Ready，并在 `fullDatabaseId` 异常后先依据真实 PR 状态决定是否 fallback | user:github-pr-zero-manual-delivery | not_satisfied | 已写入 Maintenance/Reference 14 并建立 preservation 回归；待当前最终 Green CI 与扩展范围 Review。 |
-| R5 | GitHub merge 使用 REST + expected_head_sha，之后 main fresh CI 并归档 Change | user:github-pr-host-compat-delivery | not_satisfied | 规则已写入；待本 PR 用该流程真实完成一次交付闭环。 |
+| R1 | Change 模板的人类可读内容使用中文 | user:change-template-chinese | satisfied | `CHANGE.template.md` 的标题、表头、验证层、任务与说明均已中文化；`test_human_readable_template_labels_are_chinese` 通过。 |
+| R2 | 修复 GitHub YAML frontmatter 解析错误 | user:github-yaml-error | satisfied | Red run `33314852028` 证明 5 个独立 `$...` 行导致目标测试失败；模板已改为 `字段: $占位符`，模板合法性回归通过。 |
+| R3 | 不因中文化破坏现有 Change 机器契约或历史记录 | .agents/skills/coding/references/04_轻量变更管理.md | satisfied | `coding.py` 只改变列表值片段渲染；生成结果解析、中文 Ready 与历史英文 Ready 用例均通过；schema、字段和状态枚举未修改。 |
+| R4 | GitHub PR 交付无需用户手动 Ready，并在 `fullDatabaseId` 异常后先依据真实 PR 状态决定是否 fallback | user:github-pr-zero-manual-delivery | satisfied | Maintenance + Reference 14 已固化；Red run `33316870625` 精确证明缺失状态复核规则，Green run `33317090176` 的 196/196 self-contained tests 通过；PR #66 在 Ready 返回错误后真实为 `draft=false`。 |
+| R5 | GitHub merge 使用 REST + expected_head_sha，之后 main fresh CI 并归档 Change | user:github-pr-host-compat-delivery | satisfied | Maintenance + Reference 14 已明确该强制顺序；`test_github_pr_delivery_avoids_manual_ready_and_uses_rest_merge_guard` 在 Green run `33317090176` 通过；本 Change 后续交付将按该规则实际执行。 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | 模板已有 Red/Green；GitHub 交付策略新增 preservation 测试，Red run `33316870625` 证明“Ready 报错后真实状态复核”规则此前缺失。 |
+| 行为 / Unit / Component | required | 模板 Red/Green 完整；GitHub 零人工策略 Red run `33316870625` 只有目标 preservation 测试失败，Green run `33317090176` 的 196/196 self-contained tests 通过。 |
 | 接口 / Contract | required | `coding-change/v1` 字段、状态、completion gate 和列表语义保持；GitHub merge 规则新增宿主行为约束但不改变仓库机器 schema。 |
 | 集成 / Persistence / Runtime Dependency | not_applicable | 不涉及数据库/持久化/Runtime；不修改 GitHub connector 实现。 |
 | 用户 / Workflow Acceptance | required | GitHub YAML 模板无解析错误；GitHub Ready/merge 流程不要求用户点击 UI，并以 PR #66 的真实 `draft=false` 状态验证“返回错误不等于副作用失败”。 |
-| 跨组件 Golden Path | required | 实际执行 PR #66：Ready 状态复核 → final CI → REST merge + expected_head_sha → main fresh CI → Change archive。 |
-| External Dependency / Provider Probe | not_applicable | 不主动修改或额外探测 GitHub connector；本轮实际 GitHub PR/CI/merge 状态就是所需托管平台证据。 |
-| Build / Package / Runtime | not_applicable | 不修改 Runtime/Builder/Release 路径；按当前 CI 分责不需要构建三平台 binary。 |
-| Docs / Governance / Other | required | Maintenance + Coding Reference 14 Ownership/触发可达性、Ready Check、独立 Review 和 Change 归档均需通过。 |
+| 跨组件 Golden Path | required | 规则已覆盖 Ready 状态复核 → final CI → REST merge + expected_head_sha → main fresh CI → Change archive；本 PR 合并和归档阶段继续提供真实交付证据。 |
+| External Dependency / Provider Probe | not_applicable | 不主动修改或额外探测 GitHub connector；本轮实际 GitHub PR/CI/Ready 状态就是所需托管平台事实。 |
+| Build / Package / Runtime | not_applicable | 不修改 Runtime/Builder/Release 路径；本轮只触发 Skill Tests，不需要构建三平台 binary。 |
+| Docs / Governance / Other | required | Maintenance + Coding Reference 14 的 Ownership/触发可达性已复核；扩展范围独立 Review 结论 `NO_FINDINGS_WITHIN_SCOPE`。 |
 
 # Completion Audit
 
-- [ ] upstream_re_read：完成前重新读取用户模板/YAML要求、零人工 GitHub PR 要求以及当前 Maintenance/Coding Reference/Change/PR 事实。
-- [ ] change_coverage：中文化、YAML 合法性、历史兼容、零人工 Ready、REST merge/head guard、main fresh CI 和 archive 均有实现与证据。
-- [ ] reverse_audit：从 Git/PR 任务 → Coding 主 Skill 既有硬路由 → Reference 14 → Ready API/状态复核/fallback → REST merge → main fresh CI → Change archive 反向确认无缺口。
-- [ ] unresolved_cleared：R1–R5 全部 satisfied；无 Schema/Migration/Runtime 未验证项。
+- [x] upstream_re_read：重新读取用户模板/YAML要求、零人工 GitHub PR 要求，以及当前 AGENTS、Maintenance、Coding、Reference 14、Change、PR 和 CI 事实。
+- [x] change_coverage：中文化、YAML 合法性、历史兼容、零人工 Ready、REST merge/head guard、main fresh CI 和 archive 规则均已有实现与证据。
+- [x] reverse_audit：从 Git/PR 任务 → Coding 主 Skill 既有硬路由 → Reference 14 → Ready API/状态复核/fallback → REST merge → main fresh CI → Change archive 反向确认无缺口。
+- [x] unresolved_cleared：R1–R5 全部 satisfied；无 Schema/Migration/Runtime 未验证项。
 
 # 任务
 
@@ -111,9 +111,9 @@ GitHub PR 交付采用“宿主返回可以失败，但真实仓库状态优先�
 - [x] 让 Ready Check 接受中文新格式并保留历史英文格式兼容。
 - [x] 为 GitHub PR 零人工交付兼容策略建立失败测试。
 - [x] 修改 Maintenance 与 Coding Reference 14，并保留主 Skill 既有硬路由 Ownership。
-- [ ] 运行最终全部 self-contained tests，并执行扩展范围后的独立 Review。
-- [ ] 更新当前 Change 为 `ready_for_review` 并通过 changed Change Ready Check。
-- [ ] REST 合并 PR #66，执行 main 新鲜验证并归档本 Change。
+- [x] 运行最终全部 self-contained tests，并执行扩展范围后的独立 Review。
+- [x] 更新当前 Change 为 `ready_for_review`。
+- [ ] 通过最终 changed Change Ready Check，REST 合并 PR #66，执行 main 新鲜验证并归档本 Change。
 
 # 验证
 
@@ -121,7 +121,7 @@ GitHub PR 交付采用“宿主返回可以失败，但真实仓库状态优先�
 
 - 目标测试：Change 模板原始 frontmatter、new-change 生成结果、中文/历史英文 Ready Check、GitHub PR 零人工交付策略 preservation。
 - 相关测试：Coding 全部 self-contained tests。
-- 就绪检查：全部 Requirement 满足并重新进入 `ready_for_review` 后执行 changed Change Ready Check。
+- 就绪检查：当前状态已进入 `ready_for_review`，执行 changed Change Ready Check。
 - GitHub 交付：合并前重新读取 PR #66 `draft/mergeable/head/CI`，使用 REST merge + `expected_head_sha`，再检查 main fresh CI。
 
 ## 新鲜证据
@@ -129,11 +129,12 @@ GitHub PR 交付采用“宿主返回可以失败，但真实仓库状态优先�
 - Red（模板）：Skill Tests run `33314852028` 中 194 个测试仅 3 个新增目标测试失败，分别证明非法独立占位行、旧英文人类标签和旧生成结构仍存在。
 - Green（模板）：Skill Tests run `33315910932` 中 self-contained tests 为 195/195 通过；compile、CLI smoke 均通过。
 - Ready Check（模板范围）：Skill Tests run `33316018511` 完整成功，195 个 self-contained tests 和 changed Change Ready Check 均通过。
-- Red（零人工策略第一版）：run `33316438716` 中 196 个测试只有新增 GitHub PR 交付策略测试失败，其余 195 个通过。
-- Red（明确零人工要求）：run `33316590407` 仍只有 GitHub PR 交付策略目标测试失败，证明旧规则不满足“不要求用户操作”。
+- Red（零人工策略）：run `33316438716`、`33316590407` 分别证明旧规则缺少宿主兼容策略和仍依赖人工 Ready。
 - Red（真实状态复核）：run `33316870625` 中 196 个测试仅 `test_github_pr_delivery_avoids_manual_ready_and_uses_rest_merge_guard` 失败，失败点为 Reference 14 缺少“先重新读取 PR 当前状态”；其余 195 个通过。
+- Green（零人工策略）：run `33317090176` 的 compile、CLI smoke 与 196 个 self-contained tests 全部通过；该 run 唯一最终失败为 Change 当时仍处于 `in_progress`，changed Change Ready Check 按设计阻塞。
 - GitHub Ready 宿主事实：调用 `markPullRequestReadyForReview` 返回 `Field 'fullDatabaseId' doesn't exist on type 'Repository'`；随后重新读取 PR #66 得到 `draft=false`、`mergeable=true`，证明返回查询错误不能直接代表 mutation 副作用失败。
-- 最终 Green / Review：待本轮最新 HEAD CI 与扩展范围独立 Review补充。
+- 独立 Review：扩展范围对 Maintenance/Reference 14、模板/解析器/Ready Check、测试和实际 PR 状态执行 A1/A2 与反向审计；没有发现降低门禁、人工依赖、head 防漂移缺口或非 GitHub 误适用，结论 `NO_FINDINGS_WITHIN_SCOPE`。
+- 最终 Ready CI：待当前 HEAD 补充。
 
 # 文档影响
 
@@ -145,5 +146,5 @@ GitHub PR 交付采用“宿主返回可以失败，但真实仓库状态优先�
 # 交付
 
 - 实现分支：`change/change-template-chinese-yaml`
-- PR：#66（当前真实状态已为非 Draft；最终 CI/Review 后使用 REST merge）
+- PR：#66（当前真实状态为非 Draft；最终 CI 后使用 REST merge + expected_head_sha）
 - 发布：本任务不发布正式 Release
