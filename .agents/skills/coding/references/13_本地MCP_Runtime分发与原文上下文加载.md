@@ -614,11 +614,24 @@ Builder 可以在维护者构建结果中返回聚合 `context_budget`，但该�
 
 仓库不维护独立根版本文件。**正式 Release 的唯一版本来源是 `.github/workflows/release.yml` 手工输入的 `v<SemVer>` tag；workflow 去掉前缀 `v` 得到 `release_version`，并把同一个值显式传给三个平台 Builder。**普通本地、PR 和 main 常规构建没有正式 tag 时使用 `0.0.0-dev` development identity，不得冒充已发布版本。
 
-正式 Release 只发布三平台 binary、[`USAGE.md`](../../../../USAGE.md) 与 `SHA256SUMS`；不发布构建期 identity manifest、源包、Python 安装器、Runtime Kit、私有 Routing Manifest 或公开 Reference Catalog。构建期 identity manifest 至少绑定 `release_version`、真实 `source_commit`、artifact 文件名/SHA256、构建 `python_version`、source/routing/payload digest 以及 Bundle/Task Route/Routing Manifest/MCP/Project Payload/install 协议版本；workflow 先逐一验证协议、digest 与 `artifact_sha256`，再删除平台特有 `artifact` / `artifact_sha256` 字段并比较三平台其余公共 identity，任一漂移都必须失败关闭。完成交叉校验后必须在生成 checksum 和 Release 前删除这些 manifest。
+正式 GitHub Release 最终只发布一个版本 ZIP：
+
+```text
+agent-skills-v<SemVer>.zip
+├── agent-skills-mcp-v<SemVer>-linux
+├── agent-skills-mcp-v<SemVer>-windows.exe
+├── agent-skills-mcp-v<SemVer>-macos
+├── USAGE.md
+└── SHA256SUMS
+```
+
+ZIP 根目录的成员集合必须精确为上面 5 项。ZIP 内的 [`USAGE.md`](../../../../USAGE.md) 是最终用户说明；`SHA256SUMS` 必须且只校验三个 Runtime binary 与该说明文件共 4 个实际使用文件。构建期 identity manifest、源包、Python 安装器、Runtime Kit、私有 Routing Manifest、公开 Reference Catalog、临时文件或其他维护资产都不得进入 ZIP，也不得作为独立正式 Release asset 暴露。
+
+构建期 identity manifest 至少绑定 `release_version`、真实 `source_commit`、artifact 文件名/SHA256、构建 `python_version`、source/routing/payload digest 以及 Bundle/Task Route/Routing Manifest/MCP/Project Payload/install 协议版本。workflow 必须先逐一验证协议、digest 与 `artifact_sha256`，再删除平台特有 `artifact` / `artifact_sha256` 字段并比较三平台其余公共 identity；任一 release/source/routing/bundle/payload/protocol/Skill identity 漂移都必须失败关闭。完成交叉校验后删除这些 manifest；随后只对三个 binary 与 [`USAGE.md`](../../../../USAGE.md) 生成 4 行 `SHA256SUMS`，使用显式成员白名单组装版本 ZIP，并重新打开 ZIP 核对成员集合，不能通过 `release-assets/*` 等宽泛通配把临时文件或维护资产带入最终包。
 
 Release workflow 必须从 main 构建，在正式构建前校验 tag 不存在、Release 不存在，再在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check。workflow 不依赖自定义 PAT/Actions Secret，也不读取或要求仓库 Release Immutability 设置；tag/Release 操作使用 GitHub Actions 自动提供的 `github.token`，发布 job 只申请最小 `contents: write` 权限。三平台继续使用同一固定 Python 版本，且 identity 必须满足 `source_commit == GITHUB_SHA`、`release_version == tag 去 v 后值`、artifact SHA256 和协议/digest 一致。
 
-正式资产完成交叉校验后，workflow 必须先创建 **Draft Release**，上传三平台 binary、[`USAGE.md`](../../../../USAGE.md) 和 `SHA256SUMS`，核对 Draft 资产集合完整后才 Publish；发布后再核对 tag 指向当前 `GITHUB_SHA` 与资产集合。正式发布不使用 Release Immutability，有仓库管理权限的维护者仍可修改或删除已发布资产；workflow 拒绝覆盖已有 tag/Release，但不能把这项流程保护描述成不可变存储。Draft 上传不完整、identity 不一致或发布后 tag/资产不可验证时必须失败关闭。
+正式资产完成交叉校验和 ZIP 成员核对后，workflow 必须先创建 **Draft Release**，并且只上传 `agent-skills-v<SemVer>.zip` 一个资产；Draft Release 资产集合必须精确等于该版本 ZIP，不能同时上传独立 binary、说明文件、checksum 或 identity manifest。核对 Draft 通过后才 Publish；发布后再核对 tag 指向当前 `GITHUB_SHA`，且已发布资产集合仍精确只有该版本 ZIP。Release 页面正文可以继续使用源码仓库同版本 [`USAGE.md`](../../../../USAGE.md) 作为 notes，但最终分发文件以 ZIP 内说明为准。正式发布不使用 Release Immutability，有仓库管理权限的维护者仍可修改或删除已发布资产；workflow 拒绝覆盖已有 tag/Release，但不能把这项流程保护描述成不可变存储。Draft 上传不完整、identity 不一致、ZIP 成员不一致或发布后 tag/资产不可验证时必须失败关闭。
 
 版本语义分为两种：网页端读取当前 main、Runtime 使用当前最新 Release 时追求“最新规则”，但发布间隙允许短暂版本差；需要严格复现正式 Runtime 时，使用 Runtime `status --json` 的 `Release版本` 定位对应正式 Release/tag，再读取该 tag/commit 的 Source Mode 规则。development `0.0.0-dev` 不能仅靠公共 Runtime 状态反推出任意构建 commit；维护者需要使用本次构建保留的 identity manifest 或 CI 证据完成精确复现。
 

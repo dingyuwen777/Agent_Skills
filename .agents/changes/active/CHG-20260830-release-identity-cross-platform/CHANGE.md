@@ -41,7 +41,7 @@ data_changes: []
 - [x] Release 在 publish 前显式比较三平台公共 identity；不一致时输出可定位差异并停止，不能静默发布。
 - [x] 回归测试从 Runtime 当前协议事实源校验 Workflow，并覆盖 LF 与跨平台 identity 门禁，避免再次形成两套常量。
 - [x] 纯 `.agents/**` Skill 修改仍不触发 `Runtime Package Tests` 或 `Release`；正式 Release 仍只由 main 上的手工 `workflow_dispatch` 启动并执行完整三平台验证。
-- [ ] `v2.0.2` 在修复后的 main 上完成一次真实 Release，tag、Release 和五项正式资产均指向同一已验证 main SHA。
+- [ ] `v2.0.2` 在修复后的 main 上完成一次真实 Release，tag 与 Release 指向同一已验证 main SHA，正式资产仅为 `agent-skills-v2.0.2.zip`，且 ZIP 内五个成员精确符合最新 main 合同。
 
 # 范围
 
@@ -57,7 +57,7 @@ data_changes: []
 - 不让纯 Skill 修改自动运行或必须运行正式 Release。
 - 不删除正式 Release 自身的完整 preflight、三平台构建、安装、MCP、identity 或 checksum 验证。
 - 不在 Builder 内把 canonical 原始 bytes 静默归一化；checkout 必须直接提供规范 LF bytes。
-- 不改变 Runtime 业务能力、安装命令、正式资产集合、版本来源、Project Payload schema 或 GitHub 权限模型。
+- 不改变 Runtime 业务能力、安装命令、版本来源、Project Payload schema 或 GitHub 权限模型；合并期间最新 main 已把正式资产合同调整为单 ZIP，本 Change 保留并验证该合同，不恢复旧的多资产发布面。
 - 不升级 Python、MCP SDK、PyInstaller、Actions 或其他依赖。
 
 # 必须保持不变
@@ -95,7 +95,7 @@ data_changes: []
 | 每个平台 manifest schema/version/source/artifact/protocol/digest 合法 | Release `Validate release identity and assets` | 同一步骤 | 保持并增强 | 原 `jq` 条件全部保留，只把失效 MCP v2 修正为当前 v3，并增加失败明细。 |
 | 每个平台 binary 与 manifest SHA256 一致 | Release identity loop | 同一步骤 | 保持 | `artifact_sha256` 与 `sha256sum` 比较未删除。 |
 | Linux/Windows/macOS 真实构建、安装和 MCP | Runtime Package Tests 与 Release platform jobs | 原 jobs | 保持 | runner、Python 3.12.10、build/status/self-test/install/MCP 命令未删改。 |
-| 正式资产 checksum、Draft 核对与 Publish | Release 后续 steps | 原 steps | 保持 | 资产集合、四行 checksum、Draft/Publish/tag 核对无改动。 |
+| 正式资产 checksum、单 ZIP、Draft 核对与 Publish | Release 后续 steps | 原 steps | 保持 | 最新 main 的四行内部 checksum、五成员 ZIP、单资产 Draft/Publish/tag 核对完整保留。 |
 | 纯 Skill 变化不承担三平台 package/Release 成本 | Workflow path/event filters | 原分责 + 回归测试 | 保持 | Runtime Package paths 仍不含 `.agents/**`；Release 仍只有 `workflow_dispatch`。 |
 | 三平台公共 release/source/routing/bundle/payload/protocol/Skill identity 相等 | 原流程缺失 | Release identity loop 后的 normalized comparison | 新增强证据 | 仅删除平台特有 `artifact`、`artifact_sha256` 后用 `cmp/diff` fail closed。 |
 
@@ -131,7 +131,7 @@ data_changes: []
 | R2 | Skill 修改不必须执行 Release 验证 | user:skill-change-no-release | satisfied | 当前 Release 仅 `workflow_dispatch`；Runtime Package Tests paths 不含 `.agents/**`；Maintenance 第 9、10 节明确分责。本次保持不变并增加回归断言。 |
 | R3 | 正式 Release 不得发布三平台 identity 漂移的 Runtime | .agents/MAINTENANCE.md | satisfied | 两个 fresh index checkout（`core.autocrlf=true/false`）均为 0 CRLF、mode 0644，source/routing/bundle/payload identity 完全相同；Release 新增 normalized manifest 比较。 |
 | R4 | MCP 协议校验与当前 Runtime 单一事实源一致 | runtime/agent_skills_runtime/runtime.py | satisfied | 测试导入 `MCP_TOOL_CONTRACT_PROTOCOL` 并断言 Workflow 使用同一 v3；不再在测试维护 v2 副本。 |
-| R5 | 正式 Release 保持完整三平台 artifact、安装、MCP、checksum 和 fail-closed 责任 | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | satisfied | Workflow Responsibility Audit/Evidence Preservation Mapping 证明原三平台、SHA、checksum、Draft/Publish 责任未删；201 项自包含测试通过。 |
+| R5 | 正式 Release 保持完整三平台 artifact、安装、MCP、identity、单 ZIP、checksum 和 fail-closed 责任 | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | satisfied | Workflow Responsibility Audit/Evidence Preservation Mapping 证明三平台、SHA、checksum、五成员 ZIP、单资产 Draft/Publish 责任未删；合并最新 main 后重新执行全量测试与 CI。 |
 
 # 验证矩阵
 
@@ -192,7 +192,7 @@ data_changes: []
 
 - [x] upstream_re_read：重新读取用户两项要求、#12 日志/manifests、根 AGENTS、Maintenance、Runtime/Release canonical 规则、Workflow、Builder/Payload 实现与测试；完成定义不是从本 Change 反推。
 - [x] change_coverage：直接失败 v2、Windows CRLF、Windows `0666` mode、三平台未比较、静默 jq 日志和 CI 分责均进入实现/测试/文档；没有把纯 Skill 变化扩到 Release。
-- [x] reverse_audit：从 canonical bytes/Git mode → Bundle/Payload identity → 三平台 build manifests → 汇总校验 → checksum/Draft/Publish 反向检查；原独立证据均有 Owner，新门禁只删除两个合法平台字段后比较。
+- [x] reverse_audit：从 canonical bytes/Git mode → Bundle/Payload identity → 三平台 build manifests → 汇总校验 → 四行 checksum → 五成员 ZIP → 单资产 Draft/Publish 反向检查；原独立证据均有 Owner，新门禁只删除两个合法平台字段后比较。
 - [x] unresolved_cleared：R1–R5 均有当前实现与本轮验证证据；真实 PR/main/Release 作为交付阶段新鲜证据继续追加，不存在未决产品或 Contract 决策。
 
 # 独立 Review
@@ -205,7 +205,13 @@ PR #69 首轮 Ubuntu Skill Tests run `33320093413` 发现 1 个测试环境 Find
 
 第二轮 Ubuntu Skill Tests run `33320245548` 继续把前置条件推进到 `git rev-parse HEAD`，证明临时目录还缺正式 checkout 的真实 Git HEAD。测试改为初始化临时 Git 仓库、创建空提交，并用真实 HEAD 同时生成 manifest 与 `GITHUB_SHA`；不 stub、不删除生产的 source commit 检查。下一轮必须通过目标差异断言和接受路径，否则停止叠加 fixture 补丁并重新审视测试设计。
 
-测试充分性边界：本地 201 项自包含测试证明静态 Contract、Payload Git mode、CI 分责和 Windows 可执行的行为；两份 fresh index checkout 证明 `core.autocrlf=true/false` 的 LF 与 identity 一致。非 Windows Bash 的两项 Release 行为测试在当前 Windows 按设计跳过，将由 PR Ubuntu Skill Tests 执行；三平台 onefile、安装和真实 stdio MCP 由 PR/main Runtime Package Tests 证明；正式 Draft/Publish 仍只能由合入 main 后的真实 `v2.0.2` Release 证明，不能用本地绿色代替。
+测试充分性边界：合并前本地 201 项、合并最新 main 后 204 项自包含测试证明静态 Contract、Payload Git mode、CI 分责、单 ZIP 合同和 Windows 可执行的行为；两份 fresh index checkout 证明 `core.autocrlf=true/false` 的 LF 与 identity 一致。三个非 Windows Bash 用例在当前 Windows 按设计跳过，将由 PR Ubuntu Skill Tests 实际执行；三平台 onefile、安装和真实 stdio MCP 由 PR/main Runtime Package Tests 证明；正式 Draft/Publish 仍只能由合入 main 后的真实 `v2.0.2` Release 证明，不能用本地绿色代替。
+
+集成最新 main：远程 main 在本轮开发期间合入单 ZIP Release 合同（merge `5a6dbcc`），与本 Change 的 Workflow/Reference/测试发生同域变化。冲突解决以最新 main 为 Owner：保留 `agent-skills-v<SemVer>.zip` 单资产、五成员白名单和内部四行 checksum，只在构建期 identity 删除前叠加 v3、诊断、公共字段比较与 `.common` 清理；随后重新执行 A1/A2、全量测试和 PR CI。
+
+合并后全量 Red：204 项测试中仅 `test_concrete_repository_markdown_navigation_is_clickable` 失败，定位为本 Change 更新的 `runtime/README.md` 把真实 `USAGE.md` 路径写成不可点击 inline code；改为指向 `../USAGE.md` 的真实链接，不修改 Runtime 或 Release 行为。修复后必须重跑全量测试。
+
+合并后 re-review：以最新 main `5a6dbcc` 为 base 重新审查净 diff 与 204 项 Green，确认单 ZIP 组装、成员白名单、四行 checksum、Draft/Publish 单资产断言和最终用户说明均由 main 原实现保留；本 Change 只增强其上游三平台 identity 与 Payload canonical mode，没有把 `.agents/**` 加入重型 CI 或给 Release 增加自动触发。当前结论仍为产品实现 `NO_FINDINGS_WITHIN_SCOPE`，剩余证据是 Ubuntu Bash 与三平台 PR CI。
 
 # 任务
 
@@ -240,13 +246,14 @@ PR #69 首轮 Ubuntu Skill Tests run `33320093413` 发现 1 个测试环境 Find
 - 静态验证：12 个维护脚本/Runtime module `py_compile` 成功；3 个 Workflow 经 YAML parser 成功打开；`git diff --cached --check` 无非预期内容错误（最终提交前重跑）。
 - 全量：`python -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v`，201 tests，exit 0，199 passed、2 skipped；跳过项仅限当前 Windows 无非 Windows Bash 环境，Ubuntu CI 将实际运行。
 - PR #69 首轮三平台 Runtime Package Tests run `33320093361`：Linux、Windows、macOS 的 onefile build/self-test、真实 stdio MCP 和项目安装全部 success。Skill Tests run `33320093413` / `33320245548` 依次暴露 Shell fixture 缺少 `GITHUB_REF` 与真实 Git HEAD；生产前置检查均保留，测试现在建立与 checkout 对等的 main ref/HEAD 环境，修复后的 Ubuntu 行为证据等待下一 head。
+- 合并最新 main 后全量 Green：同一 discover 命令运行 204 tests，exit 0，201 passed、3 skipped；跳过项仅为当前 Windows 无法执行的 Release identity/ZIP Bash 用例。合并后 3 个 Workflow YAML 解析通过，两个 Active Change 的 Ready Check 通过。
 
 # 文档影响
 
 - Docs Impact：`targeted`。事实源为 Project Payload 实现、Git index mode、Release Workflow 与 #12 manifests。
 - `runtime/README.md`：补充 Git executable bit → `0644/0755` 的可移植 mode，以及三平台公共 identity 比较。
 - `.agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md`：同步同一 Runtime 分发硬边界；metadata trigger/依赖/Stable ID 不变，不发生规则迁移或语义降级。
-- `.agents/MAINTENANCE.md` 已准确描述纯 Skill CI 分责，无需修改；`USAGE.md` 的安装命令、资产集合和用户操作均未改变，无需修改。
+- `.agents/MAINTENANCE.md` 已准确描述纯 Skill CI 分责；最新 main 的单 ZIP Change 已同步 Maintenance 与 `USAGE.md`，本 Change 合并并复核该事实，不重复改写最终用户说明。
 - targeted re-review：两份文档均解释问题、canonical mode 来源、失败边界和 Release 流；未复制完整实现，无新链接，`code_issue_detected` 为无。
 
 # 交付
