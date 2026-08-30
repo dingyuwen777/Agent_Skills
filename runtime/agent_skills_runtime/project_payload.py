@@ -6,6 +6,7 @@ import base64
 import hashlib
 import json
 import stat
+import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
@@ -51,6 +52,60 @@ def _is_excluded_runtime_path(relative: PurePosixPath) -> bool:
     return False
 
 
+def _canonical_payload_mode(mode: int) -> int:
+    """把宿主或 Git mode 收敛为跨平台稳定的普通文件/可执行文件权限。"""
+    return 0o755 if int(mode) & 0o111 else 0o644
+
+
+def _git_tracked_modes(root: Path) -> dict[str, int]:
+    """读取 Git index 的可执行位；非 Git 源或 Git 不可用时返回空映射。"""
+    try:
+        completed = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "ls-files",
+                "--stage",
+                "-z",
+                "--",
+                ".agents/skills",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except OSError:
+        return {}
+    if completed.returncode != 0:
+        return {}
+
+    modes: dict[str, int] = {}
+    for record in completed.stdout.split(b"\0"):
+        if not record:
+            continue
+        metadata, separator, encoded_path = record.partition(b"\t")
+        fields = metadata.split()
+        if not separator or len(fields) != 3 or fields[2] != b"0":
+            continue
+        try:
+            git_mode = int(fields[0], 8)
+            relative = encoded_path.decode("utf-8", errors="surrogateescape")
+        except ValueError:
+            continue
+        modes[relative] = _canonical_payload_mode(git_mode)
+    return modes
+
+
+def _payload_file_mode(root: Path, path: Path, tracked_modes: Mapping[str, int]) -> int:
+    """优先使用 Git canonical mode，并为非 Git 文件提供可移植回退。"""
+    relative = path.relative_to(root).as_posix()
+    tracked = tracked_modes.get(relative)
+    if tracked is not None:
+        return int(tracked)
+    return _canonical_payload_mode(stat.S_IMODE(path.stat().st_mode))
+
+
 def _payload_digest(
     skills: list[str],
     shared_files: list[str],
@@ -77,6 +132,7 @@ def _payload_digest(
 def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) -> dict[str, Any]:
     """从共享运行资产和动态 Skill Catalog 构建可独立安装的 Project Payload。"""
     root = Path(source_root).resolve()
+    tracked_modes = _git_tracked_modes(root)
     skills = discover_skills(root)
     skill_names = [skill.name for skill in skills]
     bundle_skills = [str(name) for name in bundle.get("skills", [])]
@@ -90,7 +146,9 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
         path = skills_root / relative
         if path.is_symlink() or not path.is_file():
             raise ValueError(f"Project Payload 缺少普通共享运行资产：{path}")
-        files.append(_encode_file(relative, path.read_bytes(), stat.S_IMODE(path.stat().st_mode)))
+        files.append(
+            _encode_file(relative, path.read_bytes(), _payload_file_mode(root, path, tracked_modes))
+        )
 
     for skill in skills:
         for path in sorted(skill.root.rglob("*"), key=lambda item: item.as_posix()):
@@ -104,7 +162,7 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
             if _is_excluded_runtime_path(relative_in_skill):
                 continue
             relative = path.relative_to(skills_root).as_posix()
-            mode = stat.S_IMODE(path.stat().st_mode)
+            mode = _payload_file_mode(root, path, tracked_modes)
             files.append(_encode_file(relative, path.read_bytes(), mode))
 
     files.sort(key=lambda item: str(item["path"]))

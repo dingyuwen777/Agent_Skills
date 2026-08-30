@@ -243,6 +243,8 @@ ROUTER.md
 
 Payload 必须动态发现 Skill，显式记录 `skills`、`shared_files`、文件 path/hash/size/mode 和 `payload_digest`。`ROUTER.md` 当前是唯一 Skills 根级 shared file；根级任意新文件不会自动进入 Payload。
 
+Project Payload 的 `mode` 必须以 Git index executable bit 为跨平台 canonical 来源：普通文件映射为 `0644`，Git 标记 executable 的文件映射为 `0755`；非 Git 源只按宿主是否存在任一执行位回退到同一组可移植权限。不得直接把 Windows `0666` 或其他宿主 `stat` mode 写入 Payload identity，导致同一 source commit 在三平台得到不同 `payload_digest`。
+
 目标项目因此没有 Agent_Skills 的同名 Reference 文件。Runtime Mode 命中规则时不得尝试打开本地 `references/<file>.md`，也不得寻找或生成 Stub，而是通过当前 Task Route 的路由令牌取得 required canonical Context。目标根 `AGENTS.md` 同时明确禁止把受管源码维护导航当作 Runtime 日常 required Context 入口。
 
 ## 9. 单一 Routing Compiler / Evaluator
@@ -625,7 +627,7 @@ agent-skills-v<SemVer>.zip
 
 ZIP 根目录的成员集合必须精确为上面 5 项。ZIP 内的 [`USAGE.md`](../../../../USAGE.md) 是最终用户说明；`SHA256SUMS` 必须且只校验三个 Runtime binary 与该说明文件共 4 个实际使用文件。构建期 identity manifest、源包、Python 安装器、Runtime Kit、私有 Routing Manifest、公开 Reference Catalog、临时文件或其他维护资产都不得进入 ZIP，也不得作为独立正式 Release asset 暴露。
 
-构建期 identity manifest 至少绑定 `release_version`、真实 `source_commit`、artifact 文件名/SHA256、构建 `python_version`、source/routing/payload digest 以及 Bundle/Task Route/Routing Manifest/MCP/Project Payload/install 协议版本。workflow 必须先完成三平台 identity 交叉校验，再删除这些 manifest；随后只对三个 binary 与 [`USAGE.md`](../../../../USAGE.md) 生成 4 行 `SHA256SUMS`，使用显式成员白名单组装版本 ZIP，并重新打开 ZIP 核对成员集合，不能通过 `release-assets/*` 等宽泛通配把临时文件或维护资产带入最终包。
+构建期 identity manifest 至少绑定 `release_version`、真实 `source_commit`、artifact 文件名/SHA256、构建 `python_version`、source/routing/payload digest 以及 Bundle/Task Route/Routing Manifest/MCP/Project Payload/install 协议版本。workflow 必须先逐一验证协议、digest 与 `artifact_sha256`，再删除平台特有 `artifact` / `artifact_sha256` 字段并比较三平台其余公共 identity；任一 release/source/routing/bundle/payload/protocol/Skill identity 漂移都必须失败关闭。完成交叉校验后删除这些 manifest；随后只对三个 binary 与 [`USAGE.md`](../../../../USAGE.md) 生成 4 行 `SHA256SUMS`，使用显式成员白名单组装版本 ZIP，并重新打开 ZIP 核对成员集合，不能通过 `release-assets/*` 等宽泛通配把临时文件或维护资产带入最终包。
 
 Release workflow 必须从 main 构建，在正式构建前校验 tag 不存在、Release 不存在，再在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check。workflow 不依赖自定义 PAT/Actions Secret，也不读取或要求仓库 Release Immutability 设置；tag/Release 操作使用 GitHub Actions 自动提供的 `github.token`，发布 job 只申请最小 `contents: write` 权限。三平台继续使用同一固定 Python 版本，且 identity 必须满足 `source_commit == GITHUB_SHA`、`release_version == tag 去 v 后值`、artifact SHA256 和协议/digest 一致。
 

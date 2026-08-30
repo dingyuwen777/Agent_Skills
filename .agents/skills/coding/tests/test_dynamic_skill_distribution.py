@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import json
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -112,6 +113,30 @@ class DynamicSkillDistributionTest(unittest.TestCase):
         self.assertIn("security/templates/example.txt", paths)
         self.assertFalse(any("/references/" in path for path in paths))
         self.assertFalse(any("canonical-security" in payload_module.decode_payload_file(entry).decode("utf-8") for entry in payload["files"]))
+
+    @unittest.skipUnless(shutil.which("git"), "需要 Git 验证跨平台 canonical 文件权限")
+    def test_project_payload_modes_follow_git_index(self) -> None:
+        """Payload 权限必须跟随 Git 可执行位，而不是漂移的宿主 stat mode。"""
+        skill_root = self._write_skill("coding")
+        templates = skill_root / "templates"
+        templates.mkdir()
+        executable = templates / "run.sh"
+        executable.write_text("#!/usr/bin/env sh\n", encoding="utf-8")
+
+        subprocess.run(["git", "init", "--quiet"], cwd=self.root, check=True)
+        subprocess.run(["git", "add", "."], cwd=self.root, check=True)
+        subprocess.run(
+            ["git", "update-index", "--chmod=+x", "--", ".agents/skills/coding/templates/run.sh"],
+            cwd=self.root,
+            check=True,
+        )
+
+        payload_module = importlib.import_module("runtime.agent_skills_runtime.project_payload")
+        payload = payload_module.build_project_payload(self.root, build_bundle(self.root))
+        modes = {str(entry["path"]): int(entry["mode"]) for entry in payload["files"]}
+
+        self.assertEqual(modes["coding/SKILL.md"], 0o644)
+        self.assertEqual(modes["coding/templates/run.sh"], 0o755)
 
     def test_deleting_skill_and_reference_updates_dynamic_catalog_without_allowlist(self) -> None:
         """删除普通 Skill/Reference 后 Bundle 应由当前目录事实自然收敛。"""
