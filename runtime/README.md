@@ -96,7 +96,7 @@ agent-skills-mcp install --target <project-root>
 - 目标项目 `AGENTS.md` managed block 只做薄 Bootstrap，并指向 `.agents/skills/ROUTER.md`；
 - Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产和未认领 shared file 保留；
-- Codex 同名 MCP table 存在但 managed marker 缺失时，即使 install manifest 仍存在也 fail closed，不猜测 table ownership；
+- Codex 同名 MCP table 存在但 managed marker 缺失，或合法 managed block 外另有重复同名 table 时，即使 install manifest 仍存在也 fail closed，不猜测 table ownership；
 - 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、manifest 与受管文本；
 - 如果回滚本身有任何失败，必须同时报告原始安装异常与未恢复路径/原因，不能静默吞掉 rollback failure。
 
@@ -185,7 +185,7 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 - self-contained unit/preservation/portability tests；
 - 唯一 Skills 根级 Router / 双 Bootstrap / Maintenance 职责与 Project Payload shared-file 分发；
 - metadata compiler/evaluator、Routing Conformance、private manifest/encryption parity；
-- install v3 ownership、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、Codex marker 缺失 fail-closed 和失败/回滚诊断；
+- install v3 ownership、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、Codex marker/重复 table fail-closed 和失败/回滚诊断；
 - Linux onefile build/status/self-test；
 - real stdio MCP；
 - project-only single-binary 首次安装、升级和无参数安装；
@@ -200,7 +200,7 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 
 正式 Release 由根 `.github/workflows/release.yml` 从 `main` 手工构建。输入 `v<SemVer>` tag 后，workflow 将同一 `release_version` 显式传入 Linux/Windows/macOS Builder；Release preflight 会重新运行完整 self-contained tests 与 Ready Check。
 
-正式 Release 要求仓库已经启用 GitHub Release Immutability。workflow 会在创建任何 Release 前检查该设置；未启用时 fail closed。所有三平台 artifact / identity 完成验证后，workflow 先创建 Draft Release、上传完整正式资产并核对资产集合，再 Publish，并在发布后校验 tag、资产与 immutable 状态。
+正式 Release 要求仓库已经启用 GitHub Release Immutability。workflow 会在创建任何 Release 前检查该设置；未启用时 fail closed。所有三平台 artifact / identity 完成验证后，workflow 先创建 Draft Release、上传完整正式资产并核对资产集合，再 Publish，并在发布后校验 tag、资产与 immutable 状态。如果 publish 前任一步失败，失败清理只删除仍处于 Draft 的本次 Release/关联 tag，确保可重试；一旦已经 Publish，就不自动删除或覆盖正式 Release。
 
 最终用户资产和使用方式以根 [`USAGE.md`](../USAGE.md) 为准。本文件不维护第二份最终用户教程，也不记录 Change/PR/Release 历史流水账。
 
