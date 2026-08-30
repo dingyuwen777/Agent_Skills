@@ -84,7 +84,7 @@ data_changes: []
 | R5 | 自然语言触发当前项目宿主大模型治理后继续原任务 | user:host-llm-natural-language-bootstrap | satisfied | managed block 先 Router 后治理；Coding/ref12 明确普通自然语言任务可触发，并在校准/重读 AGENTS 后继续原始研发任务；只读边界也覆盖 |
 | R6 | USAGE 告诉使用者如何通过 MCP/Agent_Skills 修改代码 | user:usage-mcp-development | satisfied | USAGE 新增首次接入与日常开发章节、可复制 Project Governance Bootstrap 提示词以及“直接自然语言开发任务也会自动触发”说明 |
 | R7 | 保持 Runtime/Project Payload/安装安全与兼容边界 | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | satisfied | 未改 Runtime Python/protocol；run `33299971593` 的 180 tests、Linux onefile/MCP/project install、Windows/macOS package/install 产品链全部 Green |
-| R8 | 按 Agent_Skills L3 门禁完成 Review、CI、PR、main fresh CI 与 Change 清理 | .agents/MAINTENANCE.md | explicitly_deferred | Draft PR #54 已建立；Ready 后仍需最终 Ready HEAD CI、非 Draft PR、正常 merge、main fresh CI 和独立 Active Change 清理，不能在合并前伪报完成 |
+| R8 | 按 Agent_Skills L3 门禁完成 Review、CI、PR、main fresh CI 与 Change 清理 | .agents/MAINTENANCE.md | explicitly_deferred | Final Ready run `33300086948` 三个 Job 全绿；Draft PR #54 因连接器 `Repository.fullDatabaseId` GraphQL 缺陷关闭且未合并；非 Draft PR #55 使用同一 feature branch 接棒，仍需其最终 HEAD 永久 CI、正常 merge、main fresh CI 和独立 Active Change 清理 |
 
 # Validation Matrix
 
@@ -114,7 +114,8 @@ data_changes: []
 - [x] 保持 Runtime binary 为机械安装器，不新增语义扫描实现；canonical Project Payload 安装行为由永久测试覆盖。
 - [x] 完成独立 Review、Review Red/Green、Progressive Disclosure 修复、Router→Governance 顺序修复与最终 re-review。
 - [x] pre-Ready run `33299971593` 完成 180 tests、三平台 Runtime 和真实 project install；唯一失败为 `proposed` Ready Gate。
-- [ ] 最终 Ready HEAD 永久 CI 全绿后将 Draft PR #54 转 Ready/采用安全非 Draft替代流程并正常合并；main fresh CI 后删除 Active Change。
+- [x] Final Ready run `33300086948` 三个 Job 全部 Green；Draft PR #54 因连接器 GraphQL schema 缺陷关闭且未合并，已创建非 Draft PR #55。
+- [ ] 非 Draft PR #55 最终 HEAD 永久 CI 全绿后正常合并；main fresh CI 后删除 Active Change。
 
 # 独立 Review
 
@@ -159,5 +160,6 @@ Review 修复证据：
 # 交付
 
 - Branch：`feat/project-governance-bootstrap`
-- Draft PR：#54
+- Draft PR #54：关闭且未合并；Draft → Ready 因已连接 GitHub 工具 GraphQL schema 缺陷失败。
+- 非 Draft PR：#55，当前正式交付入口。
 - Release：本任务不创建正式 Release
