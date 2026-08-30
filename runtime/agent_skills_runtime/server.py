@@ -162,6 +162,27 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _public_install_result(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """把安装器内部结果收窄为最终用户完成安装所需的公开信息。"""
+    if payload.get("ok") is not True:
+        raise ValueError("安装成功结果缺少 ok=true")
+    target = payload.get("target")
+    release_version = payload.get("release_version")
+    hosts = payload.get("hosts")
+    if not isinstance(target, str) or not target:
+        raise ValueError("安装成功结果缺少目标项目")
+    if not isinstance(release_version, str) or not release_version:
+        raise ValueError("安装成功结果缺少 Release 版本")
+    if not isinstance(hosts, list) or any(not isinstance(item, str) or not item for item in hosts):
+        raise ValueError("安装成功结果缺少合法宿主列表")
+    return {
+        "ok": True,
+        "target": target,
+        "release_version": release_version,
+        "hosts": list(hosts),
+    }
+
+
 def _print_result(payload: Mapping[str, Any], as_json: bool) -> None:
     """输出非 MCP CLI 的机器可读或紧凑人类结果。"""
     if as_json:
@@ -209,7 +230,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 _runtime_artifact_path(),
                 release_version=release_version,
             )
-            _print_result(result, as_json)
+            _print_result(_public_install_result(result), as_json)
             return 0
         parser.error(f"未知命令：{command}")
         return 2
