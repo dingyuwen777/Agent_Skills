@@ -98,43 +98,44 @@ data_changes: []
 | --- | --- | --- | --- | --- |
 | R1 | 不配置仓库 Branch Protection | user:current-request | satisfied | 当前 diff/实现未调用或修改 Branch Protection/Ruleset；本 Change 保持其为明确非目标 |
 | R2 | 仓库保持 Public | user:current-request | satisfied | 当前 diff/实现未修改 repository visibility；Public 继续作为 Runtime 安全边界的公开事实 |
-| R3 | 删除根 VERSION，发布版本直接由 workflow tag 决定 | user:current-request | satisfied | `VERSION` 已删除；166-test Green 覆盖 no-VERSION、`--release-version`、`0.0.0-dev` 与 tag-only workflow 合同；run 33292540975 |
-| R4 | 其余按已审查建议修复 Installer rollback 与 Codex marker 边界 | user:current-request | satisfied | Initial Red run 33291650730；Review Red run 33292329213；当前 166 tests 覆盖 rollback failure、marker 缺失和重复 table，run 33292540975 全部通过 |
-| R5 | 固定正式构建 Python，减少三平台构建环境漂移且不升级依赖 | user:current-request | satisfied | `actions/setup-python` 固定 SHA + Python 3.12.10；run 33292540975 Linux/Windows/macOS 构建/安装均使用当前固定 workflow，现有 `mcp/cryptography/pyinstaller/tzdata` 版本未改 |
-| R6 | Release preflight 加强并采用安全的 Draft→Publish 顺序 | user:current-request | satisfied | 166-test workflow contract Green；preflight 包含全量 tests/Ready/immutability；Draft upload/asset verify/publish/失败 Draft 清理均有回归，run 33292540975 |
-| R7 | 量化 Router/Core/Reference Context footprint，不直接继续压缩规则 | user:current-request | satisfied | Builder Green 输出 `context_budget`；run 33292540975：router=20649 bytes、coding core=42222、coding Router+Core=62871；未改 Router/Coding Core 规则结构 |
-| R8 | 修改完成后按仓库门禁合入 main | user:current-request | explicitly_deferred | 这是 `ready_for_review` 之后的既定交付生命周期：PR 转 Ready并重新通过 CI → merge → main fresh CI → 删除 Active Change；用户已在当前请求明确授权推送主分支，本状态不能在 merge 前伪报 satisfied |
+| R3 | 删除根 VERSION，发布版本直接由 workflow tag 决定 | user:current-request | satisfied | `VERSION` 已删除；166-test Green 覆盖 no-VERSION、`--release-version`、`0.0.0-dev` 与 tag-only workflow 合同；run 33292830127 |
+| R4 | 其余按已审查建议修复 Installer rollback 与 Codex marker 边界 | user:current-request | satisfied | Initial Red run 33291650730；Review Red run 33292329213；166 tests 覆盖 rollback failure、marker 缺失和重复 table，Draft Ready run 33292830127 全部通过 |
+| R5 | 固定正式构建 Python，减少三平台构建环境漂移且不升级依赖 | user:current-request | satisfied | `actions/setup-python` 固定 SHA + Python 3.12.10；Draft Ready run 33292830127 的 Linux/Windows/macOS 构建/安装全绿，现有 `mcp/cryptography/pyinstaller/tzdata` 版本未改 |
+| R6 | Release preflight 加强并采用安全的 Draft→Publish 顺序 | user:current-request | satisfied | 166-test workflow contract Green；preflight 包含全量 tests/Ready/immutability；Draft upload/asset verify/publish/失败 Draft 清理均有回归，Draft Ready run 33292830127 |
+| R7 | 量化 Router/Core/Reference Context footprint，不直接继续压缩规则 | user:current-request | satisfied | Builder Green 输出 `context_budget`；router=20649 bytes、coding core=42222、coding Router+Core=62871；未改 Router/Coding Core 规则结构 |
+| R8 | 修改完成后按仓库门禁合入 main | user:current-request | explicitly_deferred | Draft Ready run 33292830127 已全绿；Draft→Ready 因连接器 `Repository.fullDatabaseId` 缺陷失败，PR #43 已关闭未合并；非 Draft 替代 PR #44 已建立，仍必须由 #44 最终 HEAD 自行完成永久 CI → merge → main fresh CI → 删除 Active Change，不能提前写 satisfied |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | 166 self-contained tests 在 run 33292540975 全部通过；Initial/Review Red 分别证明目标缺口和 Review Finding 可被回归捕获 |
+| 行为 / Unit / Component | required | 166 self-contained tests 在 Draft Ready run 33292830127 全部通过；Initial/Review Red 分别证明目标缺口和 Review Finding 可被回归捕获 |
 | 接口 / Contract | required | tag→release_version、development identity、Runtime identity、install v3 host config/rollback、Draft Release 合同均由当前 tests/Workflow 静态合同覆盖 |
 | 集成 / Persistence / Runtime Dependency | required | 临时真实文件系统 installer 故障注入通过；Linux/Windows/macOS onefile build/status/self-test/install 全部通过 |
 | 用户 / Workflow Acceptance | required | 首次/重复/no-args 项目安装、项目内 Runtime status/MCP smoke 通过；Release 的不可逆发布边界本 Change 不实际创建 tag/Release |
-| 跨组件 Golden Path | required | Builder→onefile→status/self-test→stdio MCP→项目安装在 run 33292540975 Linux 主链通过，Windows/macOS package/install Job success |
+| 跨组件 Golden Path | required | Builder→onefile→status/self-test→stdio MCP→项目安装在 Draft Ready run 33292830127 Linux 主链通过，Windows/macOS package/install Job success |
 | External Dependency / Provider Probe | not_applicable | 不引入新的第三方业务服务或外部 Provider；GitHub Release 本 Change 不执行不可逆真实发布，workflow 合同与平台 API 事实已独立核验 |
-| Build / Package / Runtime | required | run 33292540975：Windows Package success、macOS Package success；Linux build/self-test/MCP/install success，仅 proposed Ready Gate 预期失败 |
-| Docs / Governance / Other | required | README/runtime README/Maintenance/ref14 已同步；USAGE 用户操作语义不变；Completion Audit/Review 本文件已完成 |
+| Build / Package / Runtime | required | Draft Ready run 33292830127：Skill Tests、Runtime Windows Package、Runtime macOS Package 三项全部 success，Ready Check 同步通过 |
+| Docs / Governance / Other | required | README/runtime README/Maintenance/ref14 已同步；USAGE 用户操作语义不变；Completion Audit/Review 已完成；PR #43 Draft→Ready 外部工具异常已显式记录并未绕过 |
 
 # Completion Audit
 
 - [x] upstream_re_read：已重新读取本轮用户决定、当前分支根 AGENTS、Maintenance、ref14、ref15、ref16 与当前实现，不以旧 Change checklist 反推需求。
 - [x] change_coverage：版本、Installer、Release、Python、Context footprint、Public/unprotected 非目标均已逐项映射；Review 新发现的重复 Codex table 与失败 Draft 清理已补入范围并 Red→Green。
 - [x] reverse_audit：已从 workflow tag→Builder identity→binary→status/install manifest，以及 install failure→rollback→项目最终状态反向审计；已区分 Draft 与 Published Release 的失败清理边界。
-- [x] unresolved_cleared：实现范围内 Requirement 已 satisfied；仅 R8 按正式生命周期明确延期到 Ready/merge/main fresh CI 后执行，无未声明 `not_satisfied`。
+- [x] unresolved_cleared：实现范围内 Requirement 已 satisfied；仅 R8 按正式生命周期明确延期到非 Draft PR CI/merge/main fresh CI/Change 清理后执行，无未声明 `not_satisfied`。
 
 # 任务
 
 - [x] 调查当前实现、最新 main、依赖与三平台 CI 实际 Python 版本
 - [x] 建立四维路由：Infra/Release Tooling + Runtime CLI；Requirement/Implementation/Delivery；Python/GitHub Actions；L3
-- [x] 写入版本来源、Installer 故障、Python 固定、Release 顺序和 Context footprint Red tests 并确认正确失败
+- [x] 写入版本来源、Installer 故障、Python 固定、Release 顺序和 Context footprint Red tests并确认正确失败
 - [x] 最小修改 Builder、Installer 与 workflows 使目标 tests Green
 - [x] 更新正式规则与维护文档，删除 VERSION
-- [x] 运行目标/全量 self-contained、三平台 build/package/install；Ready Gate 已证明只因状态为 proposed 正确拒绝
+- [x] 运行目标/全量 self-contained、三平台 build/package/install，并取得 Draft Ready run 33292830127 全绿证据
 - [x] 完成独立 Review / re-review、Requirement Traceability 与 Completion Audit
-- [ ] PR 转 Ready、重新通过实际非 Draft PR CI、合并后验证 main fresh CI 并删除当前 Active Change
+- [x] Draft PR #43 已完成 Ready 前置 CI；Draft→Ready 连接器失败后已关闭且未合并，并创建相同 head/HEAD 的非 Draft PR #44
+- [ ] 非 Draft PR #44 最终 HEAD 重新通过永久 CI、合并后验证 main fresh CI 并删除当前 Active Change
 
 # 验证
 
@@ -152,8 +153,11 @@ data_changes: []
 - 第一轮 Green run `33292105962`：164 tests 全部通过；Linux 产品链、Windows/macOS package/install Green；仅 Change 仍 proposed 的 Ready Gate 失败。
 - Independent Review 发现两个 MEDIUM：合法 Codex managed block 外重复同名 table；Draft 上传失败后无法无人工干预重试。
 - Review Red run `33292329213`：166 tests 中仅上述两条新增 Review 回归失败，其余 164 条通过。
-- Review Green/final pre-Ready run `33292540975`，PR head `78721b8c9ee9c5d90bc851b84dbddc18e2ec4d71`：166 tests OK；Python 3.12.10；Linux onefile/status/self-test、真实 stdio MCP、首次/重复/no-args 项目安装全部成功；Windows/macOS Package 均 success；唯一失败为 `status=proposed` 的 Ready Gate。
-- final pre-Ready Context：Router `20649` bytes；Coding Core `42222`；Coding Router+Core `62871`；Coding canonical References 聚合 `268806` bytes。该 footprint 仅维护者构建输出，不进入 Runtime Reference 明细接口。
+- Review Green/pre-Ready run `33292540975`，PR head `78721b8c9ee9c5d90bc851b84dbddc18e2ec4d71`：166 tests OK；Python 3.12.10；Linux onefile/status/self-test、真实 stdio MCP、首次/重复/no-args 项目安装全部成功；Windows/macOS Package 均 success；唯一失败为 `status=proposed` 的 Ready Gate。
+- Draft Ready run `33292830127`，head `dfdd819f53bbe0af9780b84321d43b84cd37c60d`：Skill Tests、Runtime Windows Package、Runtime macOS Package 三项全部 success；166 tests、Ready Check、Linux onefile/MCP/install、Windows/macOS package/install 全部通过。
+- Draft→Ready mutation 随后因 GitHub 连接器自身 GraphQL `Repository.fullDatabaseId` 字段错误失败；PR #43 保持 Draft 并已关闭，`merged=false`，没有绕过门禁。
+- 非 Draft 替代 PR #44 使用同一分支/同一已验证 HEAD 创建；本次状态同步后以新的最终 HEAD 重新执行永久 CI。
+- Context：Router `20649` bytes；Coding Core `42222`；Coding Router+Core `62871`；Coding canonical References 聚合 `268806` bytes。该 footprint 仅维护者构建输出，不进入 Runtime Reference 明细接口。
 
 # Review
 
@@ -194,7 +198,8 @@ data_changes: []
 # 交付
 
 - 分支：`fix/runtime-release-hardening`。
-- PR：#43（当前 Draft；本次状态更新后等待 Ready CI）。
-- 已验证功能 head：`78721b8c9ee9c5d90bc851b84dbddc18e2ec4d71`，pre-Ready run `33292540975`。
+- Draft PR #43：已关闭且未合并；Draft→Ready 失败原因是连接器 `Repository.fullDatabaseId` GraphQL schema 缺陷。
+- 非 Draft PR #44：使用相同分支/已验证 HEAD 创建；本次 Change 状态同步会形成最终 head，等待 #44 自身永久三平台 CI。
+- Draft Ready 证据：head `dfdd819f53bbe0af9780b84321d43b84cd37c60d`，run `33292830127` 三项全部 success。
 - 正式 Release：未执行；workflow 已准备为 tag-only + immutable Draft→Publish。
-- merge/main fresh CI/Active Change 清理：按 R8 在 Ready 后执行。
+- merge/main fresh CI/Active Change 清理：按 R8 在 #44 非 Draft CI Green 后执行。
