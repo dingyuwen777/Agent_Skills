@@ -37,12 +37,12 @@ class ReleaseSingleZipTest(unittest.TestCase):
     """验证正式 Release 最终只发布一个包含三平台文件与说明的 ZIP。"""
 
     def test_release_surface_is_single_distribution_zip(self) -> None:
-        """Draft 与正式 Release 都只能暴露一个版本 ZIP，不再单独上传 USAGE 或 binary。"""
+        """Draft 与正式 Release 都只能暴露一个版本 ZIP，不再单独上传说明或 binary。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for marker in (
             "Build single distribution ZIP",
-            'agent-skills-v${RELEASE_VERSION}.zip',
-            'agent-skills-v${RELEASE_TAG#v}.zip',
+            'f"agent-skills-v{version}.zip"',
+            'expected_package="agent-skills-v${RELEASE_TAG#v}.zip"',
             "release-package/agent-skills-v*.zip",
             "ZIP 成员集合不正确",
         ):
@@ -51,7 +51,7 @@ class ReleaseSingleZipTest(unittest.TestCase):
 
     @unittest.skipUnless(os.name != "nt" and shutil.which("bash"), "需要 bash 验证 ZIP 组装脚本")
     def test_zip_contains_exact_runtime_files_usage_and_internal_checksums(self) -> None:
-        """ZIP 只能含三平台二进制、USAGE 和四项内部 checksum，不能夹带 identity/临时文件。"""
+        """ZIP 只能含三平台二进制、说明和四项内部 checksum，不能夹带 identity/临时文件。"""
         script = _extract_workflow_run_block("Build single distribution ZIP")
         version = "2.0.0"
         expected_files = (
