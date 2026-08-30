@@ -92,6 +92,27 @@ package.json 有 React 依赖
 
 Vue 的 Greenfield 默认推荐**不是迁移指令**。
 
+### 2.2 已有页面 + 新 Figma：差异驱动，不默认重写
+
+如果目标 Page/Screen 已经存在生产实现，而本轮是依据更新后的 Figma 修改页面，Coding 必须先保留当前实现的真实 Owner、正确业务行为和测试基线，再消费 Figma Skill 给出的差异事实。
+
+```text
+现有 Page / Screen / Shared / Feature Owner
+→ 当前 API / SDK / Store / Runtime 行为
+→ Figma Skill 的 Existing Implementation Delta / READY Handoff
+→ 按差异驱动实施最小代码修改
+→ 相关验证
+→ 返回 Figma Skill 做 Implementation ↔ Figma Conformance
+```
+
+本 reference 不复制 Figma 的差异分类、Annotation、Canvas 或 back-sync 细节。只保持以下跨 Skill Contract：
+
+- 不因为“有新 Figma”就默认整页重写；
+- 新 Figma 未明确改变的正确业务行为、错误/权限/兼容状态、Accessibility 和当前正式架构继续保留；
+- 机器接口仍服从当前正式 Contract / SDK / generated client / Backend Owner；
+- Coding 完成后必须**返回 Figma Skill**做实现一致性回验；
+- 如果 Figma Skill 判断长期设计事实需要更新，只有存在写权限和正式 Owner 依据时才执行**授权 Figma 回写**；详细门禁和人工复核输出仍由 Figma Skill 唯一维护。
+
 ---
 
 ## 3. Greenfield：先确认“是什么 UI 项目”，再推荐技术
@@ -409,6 +430,8 @@ Button
 
 基础 UI Component 不应直接拥有业务 endpoint、数据库语义、权限规则、Feature 状态机或业务专属默认值。
 
+这些通过 props/events/state 与上层业务 Owner 连接。
+
 ---
 
 ## 8. State：local、shared client state 与 server state 分开
@@ -622,16 +645,18 @@ Visual Snapshot 不默认成为所有页面的强制测试；稳定 Shared UI/Ap
 ```text
 恢复当前仓库事实
 → 识别实际技术栈 / Page / Feature / Shared Owner
+→ 若目标页面已存在：冻结现有实现基线并按 Figma 差异驱动界定范围
 → 读取目标设计的结构/交互/状态事实
 → 建立设计 → 实现 Owner 映射
 → 确认现有 API/SDK/Contract 和数据来源
 → 判断是否需要技术决策门禁
 → 先复用现有 Shared/Feature 能力
-→ Page / Screen 独立实现
+→ Page / Screen 最小增量实现
 → 目标测试
 → 相关回归
 → Build / Browser / Visual / Accessibility 验证
 → Completion Audit / Review
+→ 返回 Figma Skill 做 Implementation ↔ Figma Conformance / 授权 Figma 回写（适用时）
 ```
 
 Greenfield Web 前端推荐顺序：
@@ -724,9 +749,13 @@ Figma Skill baseline-ready
 → NOT_READY：停止生产实现；已授权时先修 Figma 并 re-review
 → READY / READY_WITH_NOTES
 → 接收 Coding Handoff
+→ 若已有实现：按现有实现基线 + 新 Figma 差异驱动实施
 → 本 reference 按目标项目真实技术栈实施
 → Coding 测试 / Completion Audit / Review / CI / Git / 交付
-→ targeted Figma re-review
+→ 返回 Figma Skill
+→ Implementation ↔ Figma Conformance
+→ 正式 Drift + 有 Figma 写权限时：授权 Figma 回写
+→ Figma Skill 输出 Figma Sync & Human Review
 ```
 
 ### 19.1 `NOT_READY` 是阻塞，不是实现方可自行绕过的 Note
@@ -759,6 +788,8 @@ Prototype / 状态规格入口
 
 `READY_WITH_NOTES` 的 Notes 只能是已经证明不会阻止正确实施的非阻塞事项；Coding 不能把 Figma 尚未解决的 P0/阻塞 P1 自行降级成 Notes。
 
+代码实现和验证结束后，Coding 的责任不是自行决定“让 Figma 迁就代码”，而是把当前实现的新鲜事实交还 Figma Skill。是否需要 back-sync、哪些 Figma Node/Annotation/Prototype 可以改、是否属于 `Pending Figma Sync`、以及 `Figma Sync & Human Review` 的强制人工复核输出，全部继续由 Figma Skill / Design-to-Code reference 唯一维护。
+
 ### 19.3 职责不能反向复制
 
 Figma Skill 负责：
@@ -772,6 +803,7 @@ Prototype / 状态
 Findings
 READY / READY_WITH_NOTES / NOT_READY
 设计修改后的 Canvas-level Review
+Implementation ↔ Figma Conformance / back-sync / Human Review Package
 ```
 
 Coding / 本 reference 负责：
