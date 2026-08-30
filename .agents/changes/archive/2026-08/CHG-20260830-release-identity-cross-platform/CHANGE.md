@@ -3,11 +3,11 @@ schema: coding-change/v1
 id: "CHG-20260830-release-identity-cross-platform"
 title: "修复 Release 身份协议与跨平台内容一致性"
 level: L3
-status: ready_for_review
+status: done
 owner: "dingyuwen777"
 branch: "fix/release-identity-v3"
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-08-31
 completion_gate: required
 depends_on: []
 affected_areas:
@@ -37,11 +37,11 @@ data_changes: []
 # 成功标准
 
 - [x] Release identity 按当前 `Agent Skills MCP工具契约/v3` 校验，不再使用失效的 v2 常量。
-- [ ] 仓库 canonical 文本在 Windows、Linux、macOS fresh checkout 中统一为 LF，三平台 manifest 除 artifact 名称和二进制 SHA 外完全一致。
+- [x] 仓库 canonical 文本在 Windows、Linux、macOS fresh checkout 中统一为 LF，三平台 manifest 除 artifact 名称和二进制 SHA 外完全一致。
 - [x] Release 在 publish 前显式比较三平台公共 identity；不一致时输出可定位差异并停止，不能静默发布。
 - [x] 回归测试从 Runtime 当前协议事实源校验 Workflow，并覆盖 LF 与跨平台 identity 门禁，避免再次形成两套常量。
 - [x] 纯 `.agents/**` Skill 修改仍不触发 `Runtime Package Tests` 或 `Release`；正式 Release 仍只由 main 上的手工 `workflow_dispatch` 启动并执行完整三平台验证。
-- [ ] `v2.0.2` 在修复后的 main 上完成一次真实 Release，tag 与 Release 指向同一已验证 main SHA，正式资产仅为 `agent-skills-v2.0.2.zip`，且 ZIP 内五个成员精确符合最新 main 合同。
+- [x] `v2.0.2` 在修复后的 main 上完成一次真实 Release，tag 与 Release 指向同一已验证 main SHA，正式资产仅为 `agent-skills-v2.0.2.zip`，且 ZIP 内五个成员精确符合最新 main 合同。
 
 # 范围
 
@@ -127,11 +127,11 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 修复 Release #12，使当前 v3 Runtime 可正常发布 | user:fix-release-12 | satisfied | #12 run 33318137922 定位为 v2 断言；Workflow 已改为 v3，目标回归 12 项通过 10、Windows 环境按设计跳过 2 个 Bash 用例。 |
+| R1 | 修复 Release #12，使当前 v3 Runtime 可正常发布 | user:fix-release-12 | satisfied | #12 run `33318137922` 定位为 v2 断言；修复后 Release run `33320921919` 在 main `e5b2f188b446df233b2f72bef552daf45a6f4d1f` 上完整成功并发布 `v2.0.2`。 |
 | R2 | Skill 修改不必须执行 Release 验证 | user:skill-change-no-release | satisfied | 当前 Release 仅 `workflow_dispatch`；Runtime Package Tests paths 不含 `.agents/**`；Maintenance 第 9、10 节明确分责。本次保持不变并增加回归断言。 |
-| R3 | 正式 Release 不得发布三平台 identity 漂移的 Runtime | .agents/MAINTENANCE.md | satisfied | 两个 fresh index checkout（`core.autocrlf=true/false`）均为 0 CRLF、mode 0644，source/routing/bundle/payload identity 完全相同；Release 新增 normalized manifest 比较。 |
+| R3 | 正式 Release 不得发布三平台 identity 漂移的 Runtime | .agents/MAINTENANCE.md | satisfied | 两个 fresh index checkout（`core.autocrlf=true/false`）均为 0 CRLF、mode 0644，source/routing/bundle/payload identity 完全相同；Release run `33320921919` 的三平台构建与公共 identity 比较实际通过。 |
 | R4 | MCP 协议校验与当前 Runtime 单一事实源一致 | runtime/agent_skills_runtime/runtime.py | satisfied | 测试导入 `MCP_TOOL_CONTRACT_PROTOCOL` 并断言 Workflow 使用同一 v3；不再在测试维护 v2 副本。 |
-| R5 | 正式 Release 保持完整三平台 artifact、安装、MCP、identity、单 ZIP、checksum 和 fail-closed 责任 | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | satisfied | Workflow Responsibility Audit/Evidence Preservation Mapping 证明三平台、SHA、checksum、五成员 ZIP、单资产 Draft/Publish 责任未删；合并最新 main 后重新执行全量测试与 CI。 |
+| R5 | 正式 Release 保持完整三平台 artifact、安装、MCP、identity、单 ZIP、checksum 和 fail-closed 责任 | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | satisfied | PR/main 三平台 Runtime CI 与 Release run `33320921919` 均完整成功；正式 Release 只含 `agent-skills-v2.0.2.zip`，tag/target 均为 `e5b2f18`。 |
 
 # 验证矩阵
 
@@ -213,6 +213,8 @@ PR #69 首轮 Ubuntu Skill Tests run `33320093413` 发现 1 个测试环境 Find
 
 合并后 re-review：以最新 main `5a6dbcc` 为 base 重新审查净 diff 与 204 项 Green，确认单 ZIP 组装、成员白名单、四行 checksum、Draft/Publish 单资产断言和最终用户说明均由 main 原实现保留；本 Change 只增强其上游三平台 identity 与 Payload canonical mode，没有把 `.agents/**` 加入重型 CI 或给 Release 增加自动触发。当前结论仍为产品实现 `NO_FINDINGS_WITHIN_SCOPE`，剩余证据是 Ubuntu Bash 与三平台 PR CI。
 
+最终 re-review：PR #69 final head `3036608a16f20ebbf5caa90f4ecfb424669d01fd` 的 Skill Tests run `33320669137` 与三平台 Runtime Package Tests run `33320669135` 全部成功；REST merge 使用相同 expected head，merge commit `e5b2f188b446df233b2f72bef552daf45a6f4d1f`。main fresh Skill Tests `33320801848`、三平台 Runtime Package Tests `33320801884` 及真实 Release `33320921919` 全部成功，未出现 review/validated head 漂移，最终结论 `NO_FINDINGS_WITHIN_SCOPE`。
+
 # 任务
 
 - [x] 调查 Release #12 日志、产物 manifests、Workflow、Runtime 常量、测试和 CI 触发路径
@@ -223,6 +225,9 @@ PR #69 首轮 Ubuntu Skill Tests run `33320093413` 发现 1 个测试环境 Find
 - [x] 完成 targeted Docs 同步与复核
 - [x] 取得本地新鲜验证证据
 - [x] 完成需求追溯、Workflow Responsibility Audit、Evidence Preservation Mapping 与完成审计
+- [x] 使用 REST merge + expected head 合并 PR #69，并取得 main fresh Skill/三平台 Runtime CI
+- [x] 在 main `e5b2f18` 手工发布 `v2.0.2`，核验 tag、Release、单 ZIP 资产与发布状态
+- [x] 将本 Change 更新为 `done` 并移动到 `archive/2026-08`
 
 # 验证
 
@@ -247,6 +252,10 @@ PR #69 首轮 Ubuntu Skill Tests run `33320093413` 发现 1 个测试环境 Find
 - 全量：`python -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v`，201 tests，exit 0，199 passed、2 skipped；跳过项仅限当前 Windows 无非 Windows Bash 环境，Ubuntu CI 将实际运行。
 - PR #69 首轮三平台 Runtime Package Tests run `33320093361`：Linux、Windows、macOS 的 onefile build/self-test、真实 stdio MCP 和项目安装全部 success。Skill Tests run `33320093413` / `33320245548` 依次暴露 Shell fixture 缺少 `GITHUB_REF` 与真实 Git HEAD；生产前置检查均保留，测试现在建立与 checkout 对等的 main ref/HEAD 环境，修复后的 Ubuntu 行为证据等待下一 head。
 - 合并最新 main 后全量 Green：同一 discover 命令运行 204 tests，exit 0，201 passed、3 skipped；跳过项仅为当前 Windows 无法执行的 Release identity/ZIP Bash 用例。合并后 3 个 Workflow YAML 解析通过，两个 Active Change 的 Ready Check 通过。
+- PR final：head `3036608a16f20ebbf5caa90f4ecfb424669d01fd`；Skill Tests run `33320669137` success，实际执行非 Windows Release identity/ZIP Bash 用例；Runtime Package Tests run `33320669135` 的 Linux、Windows、macOS 全部 success。
+- 合并与 main fresh：PR #69 以 REST merge + `expected_head_sha=3036608a16f20ebbf5caa90f4ecfb424669d01fd` 合并为 `e5b2f188b446df233b2f72bef552daf45a6f4d1f`；main Skill Tests run `33320801848` success，Runtime Package Tests run `33320801884` 三平台全部 success。
+- 真实 Release：run `33320921919` 在 `e5b2f188b446df233b2f72bef552daf45a6f4d1f` 上五个 jobs 全部 success，包含 preflight、三平台 build/install/MCP、v3/公共 identity、五成员 ZIP、Draft 核对与 Publish。`v2.0.2` tag 和 Release target 均解析到该 SHA；Release 非 Draft/非 prerelease，正式资产精确只有 `agent-skills-v2.0.2.zip`，GitHub 记录 size `76155974`、digest `sha256:05df1a97dc63466ca12fbc9899e1e53df57727c4a59f749ea41301e44972375c`。
+- 发布后补充下载：本地 `gh release download` 在 0 字节占位阶段卡住，已终止本轮下载子进程并由 `finally` 清理临时目录；不把该客户端尝试计作 ZIP 通过证据。ZIP 成员与内部 checksum 的通过证据来自正式 Release Job 上传前对实际 ZIP 的重新打开校验，远程存在性/名称/大小/digest 来自 GitHub Release API。
 
 # 文档影响
 
@@ -259,6 +268,8 @@ PR #69 首轮 Ubuntu Skill Tests run `33320093413` 发现 1 个测试环境 Find
 # 交付
 
 - 分支：`fix/release-identity-v3`
-- 提交：未创建
-- 拉取请求：未创建
-- 发布：未执行；Release 只允许修复合入 main 后运行 `v2.0.2`。
+- 实现提交：`1ea12ad`、`f1b5159`、`072e53e`、`3036608`
+- 功能 PR：#69，已使用 REST merge + expected head 合并为 `e5b2f188b446df233b2f72bef552daf45a6f4d1f`
+- main fresh CI：Skill Tests `33320801848` 与 Runtime Package Tests `33320801884` 全部成功
+- 发布：`v2.0.2` / Release run `33320921919` 成功；唯一资产 `agent-skills-v2.0.2.zip`
+- 归档：本记录已更新为 `done`，由独立最小归档分支移动到 `archive/2026-08/CHG-20260830-release-identity-cross-platform/CHANGE.md`
