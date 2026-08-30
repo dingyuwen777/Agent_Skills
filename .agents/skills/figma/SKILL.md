@@ -154,6 +154,8 @@ code_issue_detected
 
 只要本轮涉及页面、Canvas、Frame、Section、Annotation 或状态稿的视觉修改，修改前必须读取 [07_页面布局与真实可用性审计.md](references/07_页面布局与真实可用性审计.md)，并在每轮 Figma 写操作后执行其中的 Canvas-level Review。
 
+任何 Figma 写入还必须先执行 **Owner-first Figma Mutation**：已有 Shared/Feature/Page Owner 时优先复用或修改真实 Owner，不通过 Detach、复制或页面级重画制造第二套公共组件。公共语义与局部业务变化的详细分支由 [03_设计系统与组件复用审计.md](references/03_设计系统与组件复用审计.md) 维护。
+
 ```text
 先确认 Finding 和根因
 → 找最小真实 Owner
@@ -263,7 +265,7 @@ NOT_READY
 → READY / 可实施的 READY_WITH_NOTES
 → handoff 到目标项目 Coding 工作流
 → Coding 负责实现 / 测试 / Review / CI / Git / 交付
-→ 实现完成后再用 Figma 做 targeted re-review / 视觉与交互对照
+→ 实现完成后执行 Implementation ↔ Figma Conformance
 ```
 
 “替换 / 实现 / 重做现有页面”本身表示用户要求修改该目标实现；但 commit、PR、merge、release 等 Git/交付权限仍按目标项目 Coding 工作流和用户明确授权判断，不能从“实现页面”自动扩大。
@@ -443,6 +445,8 @@ Modal / Drawer Shell
 
 具体名称以当前 Design System 为准。
 
+Figma 修改遵循 **Owner-first Figma Mutation**：已有公共组件必须优先复用真实 Instance；公共语义变化改公共 Owner 并复核消费者，局部业务变化留在 Feature/Page，不用 Detach 或复制重画制造第二 Owner。详细门禁由 [03_设计系统与组件复用审计.md](references/03_设计系统与组件复用审计.md) 维护。
+
 ## 7.2 业务逻辑也要复用
 
 如果多个页面真正使用同一业务语义：
@@ -613,6 +617,8 @@ Secret / Raw / Stack Trace
 
 baseline-ready 必须执行 Annotation Sufficiency Review。只给实现无法从设计结构、Design Context 和正式事实源可靠推导的关键动态/非显然语义提供最小充分说明；不要用注释数量替代质量，也不要把完整 Contract / Schema 复制进 Canvas。详细充分性门禁由 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 维护。
 
+`baseline-ready` 还必须执行 **Annotation Development Readiness**：检查必要注释是否完整、正确并与当前真实系统机器事实一致；在 `review-and-fix` 且有 Figma 写权限时补齐/修正关键缺失并收敛重复说明，再重新复核。详细 Coverage、权限分支和去重规则由 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 与 [02_业务能力与真实系统映射.md](references/02_业务能力与真实系统映射.md) 维护。
+
 开发 Annotation 不应压在正式 UI 上，也不能被实现方误读成产品文案。Annotation 与正式 Frame、相邻画板、说明容器之间的间距、归属、分区和 Canvas-level Review 统一由 [07_页面布局与真实可用性审计.md](references/07_页面布局与真实可用性审计.md) 维护；本 Skill 不再维护第二套具体数值。
 
 ---
@@ -645,6 +651,8 @@ Figma MCP/工具返回的参考代码只表达结构意图，不得反向改变�
 → 当前项目实现入口
 ```
 
+生产实现由 Coding 工作流完成后，还必须执行 **Implementation ↔ Figma Conformance**，对实际页面、正式 Figma 与真实 Contract/Backend/SDK/Store 的 Visual、Interaction、State、Data/Contract、Responsive、Component/Owner 六个域做 targeted re-review；代码验证通过本身不等于 Design-to-Code 已闭环。详细 Drift Owner 和回验规则由 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 维护。
+
 ---
 
 # 14. Baseline Ready 硬门禁
@@ -658,6 +666,8 @@ Figma MCP/工具返回的参考代码只表达结构意图，不得反向改变�
 [ ] 用户输入和动作都有真实系统支持或明确 Future 标识
 [ ] 动态数据都有真实来源
 [ ] DESIGN_EXAMPLE 不冒充线上当前事实
+[ ] Annotation Development Readiness 已完成，必要机器事实已校验
+[ ] 必要 Annotation 最少充分，无会误导实现的缺失/错误/无意义重复
 [ ] 页面尺寸与目标设备/Viewport 有依据
 [ ] 设计基准没有诱导固定像素生产实现
 [ ] 页面区块对齐、间距、信息密度合理
@@ -669,6 +679,7 @@ Figma MCP/工具返回的参考代码只表达结构意图，不得反向改变�
 [ ] 图片比例、裁切、长文本和图表极端状态有策略
 [ ] 表格/表单适配真实数据长度和用户操作顺序
 [ ] 公共视觉组件真实复用
+[ ] Figma 修改遵守 Owner-first，没有 Detach/复制形成第二公共 Owner
 [ ] 可复用业务逻辑有唯一 Owner
 [ ] 不同语义没有为了“复用率”被错误合并
 [ ] Component Property 无覆盖 Text
@@ -827,4 +838,6 @@ Variables / Reactions / Flow / Overlay / Scroll / Hidden State。
 19. 让客户端绕过正式架构直接访问数据库；
 20. 把 MCP 参考代码直接当目标项目实现；
 21. 因为演示好看伪造系统执行成功；
-22. 未执行必要验证就宣称“可以交给实现方”。
+22. 未执行必要验证就宣称“可以交给实现方”；
+23. 已有公共组件时 Detach、复制或重画制造第二 Owner；
+24. 代码实现完成后跳过 Implementation ↔ Figma Conformance，让设计与生产实现长期漂移。

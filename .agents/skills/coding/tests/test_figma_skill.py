@@ -92,6 +92,50 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         ):
             self.assertIn(marker, handoff)
 
+    def test_annotation_development_readiness_repairs_and_deduplicates_annotations(self) -> None:
+        """正式基线必须审计注释覆盖率，能修时补齐错误/缺失注释，同时合并重复说明。"""
+        handoff = self._read(FIGMA_ROOT / "references/05_Design-to-Code交付门禁.md")
+        mapping = self._read(FIGMA_ROOT / "references/02_业务能力与真实系统映射.md")
+        for marker in (
+            "Annotation Development Readiness Gate", "Annotation Coverage Audit", "有 Figma 写权限",
+            "补齐 / 修正", "公共事实只写一次", "状态稿只写差异",
+        ):
+            self.assertIn(marker, handoff)
+        for marker in (
+            "Annotation 机器事实校验", "当前真实 Contract / SDK / generated client",
+            "Figma Annotation 过期", "真实消费链",
+        ):
+            self.assertIn(marker, mapping)
+
+    def test_owner_first_figma_mutation_uses_real_component_owner(self) -> None:
+        """修改 Figma 前必须先找真实组件 Owner，公共语义改源组件，局部差异不污染 Shared。"""
+        components = self._read(FIGMA_ROOT / "references/03_设计系统与组件复用审计.md")
+        for marker in (
+            "Owner-first Figma Mutation Gate", "Main Component / Component Set / Token",
+            "不得 Detach", "受影响消费者", "局部业务变化", "第二 Owner",
+        ):
+            self.assertIn(marker, components)
+
+    def test_design_to_code_requires_post_implementation_figma_conformance(self) -> None:
+        """代码完成后还必须做 Figma/Frontend/Backend 一致性回验，并按真实 Owner 收敛 Drift。"""
+        handoff = self._read(FIGMA_ROOT / "references/05_Design-to-Code交付门禁.md")
+        for marker in (
+            "Implementation ↔ Figma Conformance Gate",
+            "Visual / Interaction / State / Data/Contract / Responsive / Component/Owner",
+            "动态示例值不做字面相等比较", "代码验证通过", "Drift Owner",
+            "不能让 Figma 和生产实现长期分叉",
+        ):
+            self.assertIn(marker, handoff)
+
+    def test_canvas_geometry_audit_distinguishes_intentional_overlap(self) -> None:
+        """Canvas 几何审计必须机器识别非预期相交，同时允许有明确语义的浮层重叠。"""
+        layout = self._read(FIGMA_ROOT / "references/07_页面布局与真实可用性审计.md")
+        for marker in (
+            "Geometry Collision Audit", "x / y / width / height", "Bounding Box Intersection",
+            "有意重叠", "无意重叠", "z-order",
+        ):
+            self.assertIn(marker, layout)
+
     def test_figma_skill_exposes_real_system_handoff_hard_gates(self) -> None:
         """主 Skill 必须显式暴露 Contract、运行时时间和 Annotation 充分性三个高价值门禁入口。"""
         skill = self._read(FIGMA_ROOT / "SKILL.md")
@@ -100,6 +144,15 @@ class UniversalFigmaSkillTest(unittest.TestCase):
             "DatePicker / DateRange / Today / Now",
             "真实 Runtime / Contract 时间语义",
             "baseline-ready 必须执行 Annotation Sufficiency Review",
+        ):
+            self.assertIn(marker, skill)
+
+    def test_figma_skill_exposes_annotation_owner_and_post_implementation_gates(self) -> None:
+        """主 Skill 必须暴露注释开发就绪、Owner-first 修改和实现后一致性回验三个入口。"""
+        skill = self._read(FIGMA_ROOT / "SKILL.md")
+        for marker in (
+            "Annotation Development Readiness", "Owner-first Figma Mutation",
+            "Implementation ↔ Figma Conformance",
         ):
             self.assertIn(marker, skill)
 
