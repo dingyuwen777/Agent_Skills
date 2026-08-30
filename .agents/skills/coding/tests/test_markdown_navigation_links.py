@@ -1,14 +1,34 @@
 from __future__ import annotations
 
+import importlib.util
 import re
+import tempfile
 import unittest
 from pathlib import Path
 
+from runtime.agent_skills_runtime import project_installer
+
 
 ROOT = Path(__file__).resolve().parents[4]
+CODING_PATH = ROOT / ".agents/skills/coding/scripts/coding.py"
 INLINE_MD = re.compile(r"`([^`\n]+\.md)`")
 PATH_LINK = re.compile(r"\[`([^`\n]+\.md)`\]\(([^)]+)\)")
 FENCE = re.compile(r"^```(?P<lang>[^`]*)\s*$")
+PROJECT_ROUTER_LINK = "[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)"
+SOURCE_ROUTER_LINK = "[`.agents/skills/ROUTER.md`](../../ROUTER.md)"
+
+
+def _load_coding_module():
+    """加载 Coding Bootstrap 模块，验证模板在目标项目根的最终 Markdown 语义。"""
+    spec = importlib.util.spec_from_file_location("coding_markdown_navigation", CODING_PATH)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"无法加载 Coding 模块：{CODING_PATH}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+CODING = _load_coding_module()
 
 
 class MarkdownNavigationLinksTest(unittest.TestCase):
@@ -126,6 +146,40 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
                 if not target_path.is_file() or target_path.suffix != ".md":
                     offenders.append(f"{relative} 链接目标不存在：{target}")
         self.assertEqual(offenders, [], "发现无效 Markdown 文档链接：\n" + "\n".join(offenders))
+
+    def test_managed_agents_link_is_correct_in_source_and_generated_root(self) -> None:
+        """managed 模板自身与写入项目根后的 AGENTS 都必须链接到各自上下文中的真实 Router。"""
+        managed_path = ROOT / ".agents/skills/coding/assets/AGENTS.managed.md"
+        self.assertIn(SOURCE_ROUTER_LINK, managed_path.read_text(encoding="utf-8"))
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            skills = root / ".agents/skills"
+            coding = skills / "coding"
+            coding.mkdir(parents=True)
+            (coding / "SKILL.md").write_text("# Coding\n", encoding="utf-8")
+            (skills / "ROUTER.md").write_text("# Router\n", encoding="utf-8")
+            CODING.bootstrap_project(root)
+            generated = (root / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn(PROJECT_ROUTER_LINK, generated)
+            self.assertNotIn(SOURCE_ROUTER_LINK, generated)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload_files = {
+                "ROUTER.md": b"# Router\n",
+                "coding/assets/AGENTS.managed.md": managed_path.read_bytes(),
+                "coding/assets/AGENTS.template.md": (
+                    ROOT / ".agents/skills/coding/assets/AGENTS.template.md"
+                ).read_bytes(),
+            }
+            generated = project_installer._updated_agents_content(
+                root,
+                None,
+                payload_files,
+            ).decode("utf-8")
+            self.assertIn(PROJECT_ROUTER_LINK, generated)
+            self.assertNotIn(SOURCE_ROUTER_LINK, generated)
 
 
 if __name__ == "__main__":
