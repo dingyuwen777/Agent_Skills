@@ -85,7 +85,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             "先不要修改业务代码",
             "规范性规则",
             "描述性事实",
-            "完成后重新读取最终 `AGENTS.md`",
+            "完成后重新读取最终 AGENTS.md",
             "可以直接用自然语言提出开发任务",
             "日常开发",
         ):
