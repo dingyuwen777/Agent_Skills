@@ -72,6 +72,37 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         for marker in ("真实目标运行环境", "真实系统能力", "API / SDK / CMS / Local Store / Device / Runtime", "项目已有 Design System", "fallback"):
             self.assertIn(marker, layout)
 
+    def test_real_system_mapping_forbids_contract_invention_and_hardcoded_design_time(self) -> None:
+        """Figma 不能发明机器 Contract，日期/当前时间必须回到目标项目真实运行时时间语义。"""
+        mapping = self._read(FIGMA_ROOT / "references/02_业务能力与真实系统映射.md")
+        for marker in (
+            "不得自行创造 endpoint", "authoritative clock", "DatePicker / DateRange",
+            "Today / Now / 最近 N 天", "设计日期默认只作 `DESIGN_EXAMPLE`",
+            "Browser clock / Server clock / User timezone / Business timezone",
+        ):
+            self.assertIn(marker, mapping)
+
+    def test_design_to_code_requires_real_system_preflight_and_annotation_sufficiency(self) -> None:
+        """Design-to-Code 必须先完成真实系统预检，并让 Annotation 足够但不过度。"""
+        handoff = self._read(FIGMA_ROOT / "references/05_Design-to-Code交付门禁.md")
+        for marker in (
+            "UI → Real-System Preflight", "不构成生产 Contract", "已批准但尚未实现",
+            "未批准设计假设", "映射不明时不得 `READY`", "Annotation Sufficiency",
+            "注释数量本身不是质量指标", "不复制完整 OpenAPI / Schema",
+        ):
+            self.assertIn(marker, handoff)
+
+    def test_figma_skill_exposes_real_system_handoff_hard_gates(self) -> None:
+        """主 Skill 必须显式暴露 Contract、运行时时间和 Annotation 充分性三个高价值门禁入口。"""
+        skill = self._read(FIGMA_ROOT / "SKILL.md")
+        for marker in (
+            "不得由 Figma / Design Context / Annotation 创建生产 Contract / API",
+            "DatePicker / DateRange / Today / Now",
+            "真实 Runtime / Contract 时间语义",
+            "baseline-ready 必须执行 Annotation Sufficiency Review",
+        ):
+            self.assertIn(marker, skill)
+
     def test_figma_skill_does_not_embed_business_facts(self) -> None:
         """Figma live 规则不能携带业务仓库、Provider、Stage 或 Blueprint 事实。"""
         texts = [self._read(FIGMA_ROOT / "SKILL.md")]
