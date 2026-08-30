@@ -72,7 +72,7 @@ data_changes: []
 | R2 | 设计或生成工具不得凭猜测创造 API；发生前后端冲突时按真实 Contract/批准需求/Owner 分类裁决 | user:current-request | satisfied | `figma.reference.02` Contract/Capability 裁决 + `figma.reference.05` 禁止接口发明/能力缺口分支 + Figma 主 Skill 高层入口；run 33323640915 全绿。 |
 | R3 | 日期选择器和 Today/Now 等时间语义必须随真实运行时和项目时间 Contract 动态计算 | user:current-request | satisfied | `figma.reference.02` DatePicker/DateRange runtime time semantics + Figma 主 Skill 时间入口；run 33323640915 全绿。 |
 | R4 | Figma Annotation 必须足够支撑开发，但避免过量、重叠和重复正式 Contract | user:current-request | satisfied | `figma.reference.05` Annotation Sufficiency + Figma 主 Skill 高层入口；视觉间距、归属、24–32px fallback、无重叠和 zoom-out 可读性继续由既有 `figma.reference.07` 唯一维护。 |
-| R5 | 保持现有 Figma Ownership、Canvas 可读性和 Coding Handoff，不建立重复规则体系 | .agents/MAINTENANCE.md | satisfied | PR #72 diff 复核确认只修改 Figma 主 Skill/ref02/ref05 与 preservation tests；ref05 显式链接 ref07，Coding 生产实现 Owner 未复制；现有 routing/bundle preservation tests 全绿。 |
+| R5 | 保持现有 Figma Ownership、Canvas 可读性和 Coding Handoff，不建立重复规则体系 | .agents/MAINTENANCE.md | satisfied | PR diff 复核确认只修改本 Change、Figma 主 Skill/ref02/ref05 与 preservation tests；ref05 显式链接 ref07，Coding 生产实现 Owner 未复制；现有 routing/bundle preservation tests 全绿。 |
 
 # 验证矩阵
 
@@ -81,7 +81,7 @@ data_changes: []
 | 行为 / 单元 / 组件 | required | `test_figma_skill.py` 新增 3 组 preservation 回归。Red：run 33323008616、33323453187；Green：run 33323640915 的 self-contained tests 成功。 |
 | 接口 / 契约 | not_applicable | 不修改 Runtime/API/schema 机器契约；只规定设计与目标项目既有 Contract 的事实优先关系。 |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 不修改或运行具体业务项目、数据库或外部 Provider。 |
-| 用户 / 工作流验收 | required | A1/A2 从“Figma → baseline-ready → UI → Real-System Preflight → READY/NOT_READY → Coding Handoff”反向审查，动态控件、时间、能力缺口和 Annotation 均有明确停止/交接规则；无 P0/P1 Finding。 |
+| 用户 / 工作流验收 | required | A1/A2 从“Figma → baseline-ready → Coding Handoff”反向审查动态控件、时间、后端缺口和 Annotation 是否存在明确停止/交接规则；无 P0/P1 Finding。 |
 | 跨组件关键路径 | required | 现有 `test_figma_skill.py` 同时验证 Figma routing、READY/NOT_READY → Coding、Bundle/Project Payload 动态发现；run 33323640915 成功。 |
 | 外部依赖 / 供应方探测 | not_applicable | 不需要访问外部业务系统；规则测试自包含。 |
 | 构建 / 打包 / 运行 | not_applicable | 不修改 Runtime/Builder/MCP/Installer/Release 路径；按仓库 Maintenance 不触发三平台 Runtime Package Tests。 |
@@ -106,7 +106,8 @@ data_changes: []
 - [x] 运行全部 self-contained Skill Tests、compile、CLI smoke 和 changed Change gate；run 33323640915 全绿。
 - [x] 执行 Requirement A1/A2、内容守恒、项目中立性和规则质量 Review；无 P0/P1 Finding。
 - [x] 更新需求追溯与完成审计，进入 `ready_for_review`。
-- [ ] PR #72 最终 head CI 全绿后切换 Ready，按 head guard 合并并执行 main fresh CI。
+- [x] Draft PR #72 的最终 head CI run 33323743279 全绿；自动 Ready 返回 `fullDatabaseId` GraphQL 查询错误，重读确认仍为 Draft 后按仓库规则关闭 #72，并以相同 head/base 创建普通 PR #73，不复用旧 PR CI 作为 #73 的当前门禁。
+- [ ] 普通 PR #73 最终 head fresh CI 全绿后，重新确认 head/mergeable/checks 并按 expected head guard 合并，再执行 main fresh CI。
 - [ ] main 验证后通过独立归档 PR 移动本 Change 到 `archive/2026-08/...`。
 
 # 验证
@@ -125,7 +126,9 @@ data_changes: []
 - Green 1：run `33323354605`，head `5cf47ef8a872efab354a162eac3ad9cd1079c62f`，compile、CLI smoke、全部 self-contained tests、changed Change gate 全部成功。
 - Red 2：A1 发现主 Skill 高层入口遗漏后新增失败测试；run `33323453187`，head `b2aca6970fa555ce8b2c2b48402ff0967d9fc73d`，compile/CLI smoke 成功，self-contained tests 失败。
 - Green 2：run `33323640915`，head `97ed7dd9f6bd867c330e611990b1145e470c9b3d`，job `99289842292`；compile、CLI smoke、全部 self-contained tests、changed Change gate 全部成功。
-- diff 复核：主 Skill commit `97ed7dd9...` 仅新增 3 个高层入口；PR #72 changed files 限于本 Change、Figma Skill/ref02/ref05 和 Figma preservation tests。
+- Draft PR #72 final head：run `33323743279`，head `7aec2683505717603170333b511ffa58860e7bb9`，job `99290117103`；compile、CLI smoke、全部 self-contained tests、changed Change gate 全部成功。
+- PR 生命周期：Draft → Ready API 返回 `Field 'fullDatabaseId' doesn't exist on type 'Repository'`；立即重读 #72 仍为 Draft，按既有零人工交付规则关闭 #72、创建普通 PR #73，要求重新执行 fresh CI。
+- diff 复核：主 Skill commit `97ed7dd9...` 仅新增 3 个高层入口；当前 changed files 限于本 Change、Figma Skill/ref02/ref05 和 Figma preservation tests。
 
 # Review
 
@@ -153,8 +156,8 @@ data_changes: []
 # 交付
 
 - 分支：`change/figma-real-system-handoff`
-- 拉取请求：PR #72，当前为 Draft，待最终 Change head 新鲜 CI 后自动切换 Ready。
-- 合并：尚未执行；必须绑定最终 reviewed head 并遵守仓库 GitHub REST merge + expected head guard。
+- 拉取请求：普通 PR #73 当前 open；旧 Draft PR #72 因宿主 Ready API 不可用已按规则关闭且未合并。
+- 合并：尚未执行；必须等待 PR #73 当前最终 head fresh CI，并绑定最终 reviewed head 使用 GitHub REST merge + expected head guard。
 - main fresh CI：尚未执行，必须在功能 PR 合并后验证。
 - Change 归档：尚未执行，须在 main fresh CI 成功后通过独立最小归档 PR 完成。
 - 发布：不适用；本次不修改 Runtime/Release 产品面。
