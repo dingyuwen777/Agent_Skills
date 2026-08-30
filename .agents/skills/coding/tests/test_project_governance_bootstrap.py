@@ -21,6 +21,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
         self.assertIn("任何实质性生产代码修改之前", skill)
         self.assertIn("首次接入", skill)
         self.assertIn("治理事实", skill)
+        self.assertIn("继续原始研发任务", skill)
 
     def test_discovery_separates_normative_descriptive_and_unknown_facts(self) -> None:
         """仓库调查必须区分项目规则、可校准事实和未确认事项，不能从实现反向改写制度。"""
@@ -35,16 +36,19 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             self.assertIn(marker, discovery)
 
     def test_bootstrap_reference_separates_runtime_and_semantic_bootstrap(self) -> None:
-        """Runtime 安装与大模型语义治理必须是两个明确阶段。"""
+        """Runtime 安装与宿主大模型语义治理必须是两个明确阶段。"""
         bootstrap = self._read(".agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md")
         for marker in (
             "Runtime Installation Bootstrap",
             "Project Governance Bootstrap",
+            "宿主大模型",
+            "自然语言研发任务",
             "规范性规则",
             "描述性事实",
             "managed block 外",
             "不能通过修改 `AGENTS.md` 让错误实现合法化",
             "重新读取最终 `AGENTS.md`",
+            "继续原始研发任务",
         ):
             self.assertIn(marker, bootstrap)
 
@@ -54,6 +58,8 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
         for marker in (
             "Project Governance Bootstrap",
+            "<!-- agent-skills:project-governance:v1 -->",
+            "状态：待校准",
             "当前工程基线",
             "架构与模块边界",
             "Contract / Schema / Migration",
@@ -64,6 +70,8 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             self.assertIn(marker, template)
         self.assertIn("首次接入", managed)
         self.assertIn("Project Governance Bootstrap", managed)
+        self.assertIn("自然语言研发任务", managed)
+        self.assertIn("状态：已校准", managed)
         self.assertIn("managed block 外", managed)
         self.assertNotIn("本项目使用 React", template)
         self.assertNotIn("数据库：PostgreSQL", template)
@@ -78,6 +86,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             "规范性规则",
             "描述性事实",
             "完成后重新读取最终 `AGENTS.md`",
+            "可以直接用自然语言提出开发任务",
             "日常开发",
         ):
             self.assertIn(marker, usage)
