@@ -146,8 +146,8 @@ class ReleaseProductizationTest(unittest.TestCase):
             'rm release-assets/*.manifest.json',
             'test "$(wc -l < SHA256SUMS)" -eq 4',
             "Build single distribution ZIP",
-            'agent-skills-v${RELEASE_VERSION}.zip',
-            'agent-skills-v${RELEASE_TAG#v}.zip',
+            'f"agent-skills-v{version}.zip"',
+            'expected_package="agent-skills-v${RELEASE_TAG#v}.zip"',
             'gh release upload "${RELEASE_TAG}" release-package/agent-skills-v*.zip',
         ):
             self.assertIn(marker, workflow)
