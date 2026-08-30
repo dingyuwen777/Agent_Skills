@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260830-archive-ci-runtime-lifecycle
 title: 修正 Change 归档、Skill CI 与 Runtime 生命周期边界
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: change/archive-ci-runtime-lifecycle
 created: 2026-08-30
@@ -93,21 +93,21 @@ Evidence Preservation Mapping：旧 `skill-tests.yml` 中 Linux onefile/status/s
 | R1 | Active Change 完成后应归档而不是删除 | user:archive-completed-change | satisfied | `MAINTENANCE.md` 已统一为 `active → done → archive/YYYY-MM`；`test_archive_ci_runtime_lifecycle.py` 与 `test_release_only_repository_surface.py` 均验证完成 Change 不得删除。 |
 | R2 | 恢复上一轮被删除的 Runtime disclosure Change 到 archive | user:archive-completed-change | satisfied | 从被删除前真实 Git 历史恢复完整 CHANGE.md 到 `.agents/changes/archive/2026-08/CHG-20260830-runtime-disclosure-boundary/CHANGE.md`，保留 Traceability/Validation/Review，状态更新为 `done` 并补 PR #62/main CI #450 最终证据。 |
 | R3 | 纯 Skill 修改不应每次提交构建三平台二进制 | user:skill-ci-no-binary-every-commit | satisfied | `skill-tests.yml` 只安装 `runtime/requirements.txt` 并运行源码级验证；CI run `33313491859` 日志确认 191 tests 全通过且依赖列表没有 PyInstaller，Workflow 已无 onefile/Windows/macOS package job。 |
-| R4 | Runtime/打包实现变化与正式 Release 仍要保留三平台二进制验证 | user:skill-ci-no-binary-every-commit | satisfied | 新 `runtime-package-tests.yml` 完整承接旧三平台 package/install 证据；run `33313491871` Linux/Windows/macOS 三个 job 均 success。`release.yml` 未修改，现有测试继续验证正式三平台 Release。 |
-| R5 | 本地 MCP 应按宿主使用生命周期启动/退出，而不是系统常驻后台服务 | user:runtime-process-lifecycle | satisfied | 现有项目配置继续为 `stdio + serve`；`test_stdio_server_exits_after_host_closes_stdin` 在 run `33313491859` 通过，实际关闭 stdin 后 `serve` exit 0；`runtime/README.md` 与 `USAGE.md` 已说明 Codex 连接期间可保持进程、断开连接后应退出且不注册系统服务。 |
+| R4 | Runtime/打包实现变化与正式 Release 仍要保留三平台二进制验证 | user:skill-ci-no-binary-every-commit | satisfied | 新 `runtime-package-tests.yml` 完整承接旧三平台 package/install 证据；PR run `33313770610` 与 main run `33314074449` 的 Linux/Windows/macOS 三个 job 均 success。`release.yml` 未修改，现有测试继续验证正式三平台 Release。 |
+| R5 | 本地 MCP 应按宿主使用生命周期启动/退出，而不是系统常驻后台服务 | user:runtime-process-lifecycle | satisfied | 现有项目配置继续为 `stdio + serve`；`test_stdio_server_exits_after_host_closes_stdin` 在 PR/main Skill Tests 通过，实际关闭 stdin 后 `serve` exit 0；`runtime/README.md` 与 `USAGE.md` 已说明 Codex 连接期间可保持进程、断开连接后应退出且不注册系统服务。 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | Red run `33312588087` 新测试按 4 个目标边界失败；Green run `33313491859` 的 `Run self-contained tests` step 为 191/191 passed，含 archive、CI 分责和 stdin EOF 生命周期实测。 |
-| 接口 / Contract | required | MCP 配置仍保持 `stdio + serve`，Runtime 生产代码/Tool/安装 Contract 未变化；三平台专项 real stdio MCP 均 success。 |
+| 行为 / Unit / Component | required | Red run `33312588087` 新测试按 4 个目标边界失败；最终 PR `33313770660` 与 main `33314074462` 的 self-contained tests 均通过，含 archive、CI 分责和 stdin EOF 生命周期实测。 |
+| 接口 / Contract | required | MCP 配置仍保持 `stdio + serve`，Runtime 生产代码/Tool/安装 Contract 未变化；PR/main 三平台专项 real stdio MCP 均 success。 |
 | 集成 / Persistence / Runtime Dependency | not_applicable | 本次不修改 Runtime 进程实现、文件持久化或外部 Runtime dependency 语义；stdin EOF 行为由真实 MCP server 子进程测试覆盖。 |
 | 用户 / Workflow Acceptance | required | `USAGE.md` 明确 Codex 项目/会话期间进程可能存在、它不是系统服务、关闭/重载/断开后应退出。 |
 | 跨组件 Golden Path | not_applicable | 本次不改变 Runtime 调用链；三平台 package/install Golden Path 由 Runtime Package Tests 在相关路径变化时负责。 |
 | External Dependency / Provider Probe | not_applicable | 无第三方业务 Provider 当前事实。 |
-| Build / Package / Runtime | required | 本次修改 Workflow 自身，因此专项 run `33313491871` 实际触发并完成 Linux/Windows/macOS onefile build/self-test、real stdio MCP 与 project install，全部 success。 |
-| Docs / Governance / Other | required | `MAINTENANCE.md`、archive、两条 Workflow、runtime README、USAGE 和回归测试一致；当前 PR Ready Check 在状态更新前唯一失败项是本 Change 仍为 `in_progress`。 |
+| Build / Package / Runtime | required | 最终 PR run `33313770610` 与 main run `33314074449` 均实际完成 Linux/Windows/macOS onefile build/self-test、real stdio MCP 与 project install，全部 success。 |
+| Docs / Governance / Other | required | `MAINTENANCE.md`、archive、两条 Workflow、runtime README、USAGE 和回归测试一致；PR #64 最终 Ready Check 与 main Active Change Ready Check 均通过。 |
 
 # Completion Audit
 
@@ -122,6 +122,9 @@ Evidence Preservation Mapping：旧 `skill-tests.yml` 中 Linux onefile/status/s
 - Green（常规 CI 分责）：run `33313192968`（#462）190 tests 全部通过，日志确认 `Skill Tests` 只安装 Runtime 运行依赖、没有 PyInstaller；最终只被 Change `in_progress` 的 Ready Check 按预期阻塞。
 - Green（真实生命周期）：run `33313491859`（#465）191 tests 全部通过，`test_stdio_server_exits_after_host_closes_stdin` 实际关闭 stdin 后进程正常退出；当前 job 唯一失败仍是状态更新前的 Ready Check。
 - Green（三平台 package）：run `33313491871`（Runtime Package Tests #12）Linux/Windows/macOS 均完成 onefile build/self-test、真实 stdio MCP 和项目安装，全部 success。
+- Final PR HEAD `509ed0cea239a6708b06e063e6729dd89151164f`：`Skill Tests` run `33313770660`（#466）success，含 changed Change Ready Check；`Runtime Package Tests` run `33313770610`（#13）三平台全部 success。
+- Merge：PR #64 正常合并到 main，merge commit `de75cb9ce5842f8de33fc30af3d5ab39e8bbabf7`。
+- Main fresh CI：`Skill Tests` run `33314074462`（#467）success，含 Active Change Ready Check；`Runtime Package Tests` run `33314074449`（#14）Linux/Windows/macOS 全部 success。
 
 # 独立 Review
 
@@ -142,7 +145,9 @@ Review Target：PR #64，base `8f06aeaa948483eaf50d655a10758d62d12d85ee`，revie
 
 # Git / PR / Release
 
-- 分支：`change/archive-ci-runtime-lifecycle`
-- PR：#64，当前 Draft；Change Ready 后等待最终 HEAD CI
+- 实现分支：`change/archive-ci-runtime-lifecycle`
+- 实现 PR：#64，已正常合并到 main；merge commit `de75cb9ce5842f8de33fc30af3d5ab39e8bbabf7`
+- Main fresh CI：`Skill Tests` run `33314074462` 与 `Runtime Package Tests` run `33314074449` 均 success
 - Review：已完成独立 review-only；PR comment `5468910506` 留痕，平台 Review action 因连接器安全拦截未提交
+- 归档：main 新鲜验证完成后将本 Change 以 `status: done` 移入 `.agents/changes/archive/2026-08/CHG-20260830-archive-ci-runtime-lifecycle/CHANGE.md`
 - Release：本任务不发布正式 Release
