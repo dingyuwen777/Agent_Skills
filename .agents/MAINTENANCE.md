@@ -106,7 +106,7 @@ canonical references/*.md
 
 不能因为加密 onefile 存在就宣称可抵御机器 Owner、调试器、内存转储、Hook 或专业逆向。
 
-## 5. 人类文档职责
+## 5. 人类文档与历史记录职责
 
 仓库只保留三个人类入口：
 
@@ -123,7 +123,7 @@ runtime/README.md
 
 根 `AGENTS.md`、本 `MAINTENANCE.md`、Router、`SKILL.md`、References、Change 都是 Agent/治理规则，不是额外的人类用户手册。
 
-正式 Skill 不维护辅助 README；规则由 `SKILL.md + references + metadata/assets` 承担。维护历史只由 Git 与 PR 承担，不再在仓库中保留历史 Change archive、ChangeLog 或 Release 流水账文档。
+正式 Skill 不维护辅助 README；规则由 `SKILL.md + references + metadata/assets` 承担。完成的 Coding Change 归档到当前 carrier 的 `archive/YYYY-MM/...`，保存当次需求、取舍、验证和交付证据；Git/PR 继续保存提交与讨论历史。归档不是当前系统事实源，维护者不需要顺序阅读历史 Change 才能理解当前系统。仓库仍不维护独立 ChangeLog 或 Release 流水账文档。
 
 Docs Skill 仍然是目标项目技术文档工作流；“本仓库不保留 docs/ 目录”不等于删除 Docs Skill。
 
@@ -140,7 +140,7 @@ coding-change/v1
 - 当前 Change 不能把自己当 Requirement Source；
 - `completion_gate: required` 时，进入 `ready_for_review` 前 Requirement Traceability 全部 satisfied、Completion Audit 全部完成；
 - CI 绿色不能替代上游需求完整性、独立 Review 或文档影响审计；
-- `done` Change 不得留在 active；集成并完成 main 新鲜验证后删除当前 Change，由 Git/PR 保留历史，不复制到 archive。
+- `done` Change 不得留在 active；功能/治理变更正常合并并完成 `main` 新鲜验证后，将该 Change 的 `status` 更新为 `done`，保留 Requirement Traceability、Validation Matrix、Completion Audit、Review 与最终交付证据，并移动到 `archive/YYYY-MM/<change-id>/CHANGE.md`；不得删除已完成的 Change 历史。
 
 ## 7. 内容守恒
 
@@ -172,31 +172,46 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、Coding 锚�
 - `AGENTS.md` managed marker 外文本、项目自有 Skill、其他 MCP server 和宿主配置保持；
 - Codex/Cursor/Claude Code 只写项目级 Agent Skills 边界并尊重宿主 trust/approval；
 - 同名 Codex MCP table 存在但 managed marker 缺失时，不能仅凭旧 manifest 猜 ownership，必须 fail closed；
+- 项目级 MCP 使用宿主启动的 stdio 子进程，采用**宿主连接级生命周期**：宿主可以在项目/会话连接存续期间保持 Runtime 进程以复用任务状态；Runtime 不自行 fork/detach，不注册 Windows Service、systemd、launchd 或其他系统 daemon；宿主断开 stdio/stdin 后进程应退出；
 - 安装能预检的错误必须先于写入发现，切换失败按快照恢复；回滚自身失败必须显式聚合报告并保留原始安装异常，不能静默吞掉；
 - 普通源码/PR/main Runtime 构建使用明确 development identity；正式 Release 版本只由 Release workflow 的 `v<SemVer>` tag 派生并显式传入 Builder；
 - 正式 Linux、Windows、macOS Runtime 构建使用仓库当前固定的同一 Python 版本，不能依赖各 Runner 自带 Python 漂移；
 - `status/self-test`、真实 stdio MCP、真实项目安装和项目内 Runtime smoke 都要验证最终平台 artifact；
 - Linux、Windows、macOS 必须分别在对应 Runner 构建验证。
 
-## 9. 开发与测试责任
+## 9. 开发与永久 CI 责任
 
 测试必须自包含，**不能依赖另一个业务仓库**、外部 Blueprint、业务源码或私有测试 fixture 才成立。
 
-本仓库永久门禁至少证明：
+永久验证按独立证据分两层，不再让每个纯 Skill/Reference/治理提交重复承担 PyInstaller 三平台打包成本：
 
 ```text
-规则/脚本可解析
+Skill Tests
+→ 规则/脚本可解析
 → self-contained behavior/preservation/portability tests
 → 动态 Skill Bundle + Project Payload
-→ onefile Runtime build/status/self-test
+→ metadata / routing / encryption / ownership / governance invariants
+→ Ready Check
+
+Runtime Package Tests（仅 Runtime/Builder/MCP 安装/Release 路径变化时）
+→ Linux onefile build/status/self-test
 → real stdio MCP
 → project-only install/upgrade/no-args install
-→ ownership / AGENTS / Router / host config / rollback
-→ Windows + macOS 对应平台 package/install
-→ Ready Check
+→ Windows onefile + 项目安装
+→ macOS onefile + 项目安装
+
+Release
+→ 对目标 main SHA 重新执行完整 preflight
+→ 三平台正式 artifact 构建、验证与发布
 ```
 
-删除旧产品能力时，应删除只为该能力保活的测试；但不能借删除测试绕过现行 Runtime、内容守恒、安全或交付责任。
+`.github/workflows/skill-tests.yml` 对 Skill/Reference/Router/Change/治理及相关源码变化运行，不安装 PyInstaller，也不因为纯规则正文变化构建 onefile；但必须继续执行会真实构建 Bundle/Project Payload、校验 canonical exact-text、Routing Conformance、内容守恒和 Ready 的自包含测试。
+
+`.github/workflows/runtime-package-tests.yml` 只在 `runtime/**`、`scripts/build_runtime.py`、`scripts/runtime_mcp_smoke.py`、Runtime package workflow 自身或 Release workflow 等实际影响二进制构建/安装边界的路径变化时触发，并在 Linux、Windows、macOS 对应 Runner 真实构建和安装。不能用 Skill Tests 的绿色替代这一层，也不能把一个平台 artifact 当成其他平台证据。
+
+正式 Release 仍必须重新验证当前目标 main，并完整构建三平台 artifact；常规 CI 的分责优化不能降低 Release 候选的构建、安装、MCP、identity 或 checksum 责任。
+
+删除旧产品能力时，应删除只为该能力保活的测试；但不能借 CI 拆分删除现行 Runtime、内容守恒、安全或交付责任。修改 Workflow 时必须保持 Evidence Preservation Mapping：每个原独立证明责任都能指出新的唯一或等价承担位置。
 
 ## 10. Git 与 Release
 
@@ -206,7 +221,8 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、Coding 锚�
 - 提交信息使用中文；
 - 重要改动先 Red/Green/Review/Ready/永久 CI，再把 Draft PR 转 Ready；
 - 不绕过 Branch Protection、Ruleset、CI 或现有门禁；仓库当前未配置这些机制时也不能用“没有平台强制”替代本仓库自身 PR/CI 流程；
-- 合并后确认 main 指向预期 merge commit，并重新跑 main 新鲜 CI；
+- 合并后确认 main 指向预期 merge commit，并重新运行本次 changed scope 应触发的 main 新鲜 CI；纯 Skill/治理变化不人为触发无关三平台 Runtime package workflow；
+- L2/L3 Change 在功能/治理变更合并且 main 新鲜验证成功后，通过独立最小归档提交/PR 把该 Change 更新为 `done` 并移动到 `archive/YYYY-MM/...`；归档提交本身只运行其真实 changed scope 所需门禁；
 - Release 只从 main 手工运行 `.github/workflows/release.yml`，输入唯一正式版本来源 `v<SemVer>`；仓库不维护第二份根版本文件；
 - Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并拒绝覆盖已有 tag/Release；
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
@@ -226,7 +242,7 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、Coding 锚�
 - Contract/API/Schema/Migration/依赖变化；
 - Docs Impact；
 - 实际测试/CI/Review 证据；
-- Git 分支、提交、PR、merge、main CI 与当前 Change 清理状态；
+- Git 分支、提交、PR、merge、main CI 与当前 Change 归档状态；
 - 未验证项和剩余风险。
 
 禁止只回复“已完成”或“测试通过”。
