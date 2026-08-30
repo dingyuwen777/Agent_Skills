@@ -64,13 +64,23 @@ jobs:
               raise SystemExit("release env anchor not found")
           release = release.replace(old_env, new_env, 1)
 
-          old_check = '''          gh api \\
-            -H "X-GitHub-Api-Version: 2026-03-10" \\
-            "repos/${GITHUB_REPOSITORY}/immutable-releases" >/dev/null || {
-              echo "当前仓库未启用 GitHub Release Immutability；请先在 Settings > Releases 启用后再发布" >&2
-              exit 1
-            }
-          '''
+          lines = release.splitlines(keepends=True)
+          immutable_line = next(
+              (i for i, line in enumerate(lines) if '"repos/${GITHUB_REPOSITORY}/immutable-releases" >/dev/null || {' in line),
+              None,
+          )
+          if immutable_line is None or immutable_line < 2:
+              raise SystemExit("immutable preflight endpoint not found")
+          start = immutable_line - 2
+          if lines[start].strip() != "gh api \\" or "X-GitHub-Api-Version" not in lines[start + 1]:
+              raise SystemExit("immutable preflight block shape changed")
+          end = immutable_line + 1
+          while end < len(lines) and lines[end].strip() != "}":
+              end += 1
+          if end >= len(lines):
+              raise SystemExit("immutable preflight block end not found")
+          end += 1
+
           new_check = '''          settings_token="${GH_TOKEN}"
           settings_token_source="GITHUB_TOKEN"
           if [ -n "${RELEASE_SETTINGS_TOKEN}" ]; then
@@ -119,10 +129,8 @@ jobs:
               ;;
           esac
           '''
-          if old_check not in release:
-              raise SystemExit("immutable preflight anchor not found")
-          release = release.replace(old_check, new_check, 1)
-          release_path.write_text(release, encoding="utf-8")
+          lines[start:end] = [new_check]
+          release_path.write_text("".join(lines), encoding="utf-8")
 
           readme_path = Path("README.md")
           readme = readme_path.read_text(encoding="utf-8")
