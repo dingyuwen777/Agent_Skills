@@ -38,6 +38,19 @@ class DocsSkillIntegrationTest(unittest.TestCase):
         self.assertIn("术语后置", writing)
         self.assertIn("Greenfield / Bootstrap Guide", writing)
 
+    def test_repository_document_references_keep_path_and_clickable_link(self) -> None:
+        """Docs 必须把仓库内具体文档引用固化为完整路径展示和可点击链接，而不是只靠当前仓库格式习惯。"""
+        skill = self._read(".agents/skills/docs/SKILL.md")
+        writing = self._read(".agents/skills/docs/references/02_第一性原理技术写作.md")
+        workflow = self._read(".agents/skills/docs/references/03_审查编写与修复流程.md")
+
+        self.assertIn("完整仓库相对路径 + 可点击链接", skill)
+        self.assertIn("link label 使用完整仓库相对路径", writing)
+        self.assertIn("link target 使用从当前文档位置可解析的相对路径", writing)
+        self.assertIn("不得只写不可点击的 inline-code 路径", writing)
+        self.assertIn("最终输出位置重新验证", writing)
+        self.assertIn("误把命令、目录树、glob、占位路径", workflow)
+
     def test_coding_routes_docs_without_copying_second_rulebook(self) -> None:
         """Coding 有 Docs Impact 硬路由，但详细文档方法仍由 Docs 承担。"""
         coding = self._read(".agents/skills/coding/SKILL.md")
