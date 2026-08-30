@@ -163,30 +163,30 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
         self.assertLess(workflow.index("python -m unittest discover"), workflow.index("gh release create"))
         self.assertLess(workflow.index("gh release upload"), workflow.index("--draft=false"))
 
-    def test_release_immutability_preflight_distinguishes_permission_from_disabled_setting(self) -> None:
-        """Immutability 预检必须区分未启用与 Token 权限不足，并保持 YAML run block 结构有效。"""
+    def test_release_immutability_preflight_requires_machine_verified_admin_read_secret(self) -> None:
+        """正式发布前必须用管理员只读 Secret 机器确认 Immutability，不能靠人工勾选放行。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for required in (
-            "confirm_immutable_releases:",
             "secrets.RELEASE_SETTINGS_TOKEN",
-            'IMMUTABILITY_CONFIRMED: ${{ inputs.confirm_immutable_releases }}',
+            'RELEASE_SETTINGS_TOKEN: ${{ secrets.RELEASE_SETTINGS_TOKEN }}',
+            'if [ -z "${RELEASE_SETTINGS_TOKEN}" ]',
             'case "${immutable_status}" in',
             "200)",
             "404)",
             "403)",
             "Administration: read",
-            "RELEASE_SETTINGS_TOKEN",
-            "GITHUB_TOKEN",
-            "发布后仍会校验 immutable=true",
+            "缺少 RELEASE_SETTINGS_TOKEN",
+            "RELEASE_SETTINGS_TOKEN 权限不足",
+            "当前仓库未启用 GitHub Release Immutability",
         ):
             self.assertIn(required, workflow)
         self.assertEqual(workflow.count("secrets.RELEASE_SETTINGS_TOKEN"), 1)
-        self.assertIn("当前仓库未启用 GitHub Release Immutability", workflow)
-        self.assertIn("GITHUB_TOKEN 不具备读取仓库 Administration 设置的权限", workflow)
-        self.assertIn("RELEASE_SETTINGS_TOKEN 权限不足", workflow)
+        self.assertNotIn("confirm_immutable_releases", workflow)
+        self.assertNotIn("IMMUTABILITY_CONFIRMED", workflow)
+        self.assertNotIn("已接受本次维护者显式确认", workflow)
         self.assertIn("'.immutable')\" = \"true\"", workflow)
 
-        block_start = workflow.index('          settings_token="${GH_TOKEN}"')
+        block_start = workflow.index('          if [ -z "${RELEASE_SETTINGS_TOKEN}" ]')
         block_end = workflow.index('          echo "tag=${TAG}"', block_start)
         shell_block = workflow[block_start:block_end]
         for line in shell_block.splitlines():
