@@ -23,6 +23,38 @@ Runtime binary
 
 Runtime 的加密、Project Payload、managed installation manifest、Codex/Cursor/Claude Code 项目 MCP 和 binary 升级规则详见 [13_本地MCP_Runtime分发与原文上下文加载.md](13_本地MCP_Runtime分发与原文上下文加载.md)。
 
+## 0. 两阶段 Bootstrap：安装与宿主大模型治理
+
+目标项目接入必须区分两个阶段，不能把 binary 的确定性安装和大模型语义判断混成一件事：
+
+```text
+Runtime Installation Bootstrap
+→ Runtime binary 安全安装/升级 Router、Skill、项目 MCP 与 Agent Skills managed block
+→ 没有 AGENTS 时创建结构模板和“状态：待校准”项目自有区
+→ 不调用 LLM，不扫描整个仓库推断架构
+
+用户在 Codex / Cursor / Claude Code 等宿主中提出自然语言研发任务
+→ 宿主大模型读取 AGENTS → Router → Coding
+→ 首次接入 / 状态待校准 / 长期治理事实漂移时命中 Project Governance Bootstrap
+→ 有界调查当前仓库真实实现
+→ 只在 managed block 外创建/校准项目自己的 Overlay
+→ 标记“状态：已校准”
+→ 重新读取最终 AGENTS.md
+→ 继续原始研发任务
+```
+
+因此，Runtime binary 本身不需要也不允许成为第二个 Coding Agent；**Project Governance Bootstrap 由当前项目所用的宿主大模型执行**。用户无需手工构造 Task Route 或调用内部语义扫描命令，普通开发/修复/重构等**自然语言研发任务**就可以触发这条前置规则。Runtime Mode 中宿主根据该事实把现有 `项目 Bootstrap` 意图加入 Task Route，再加载本 Reference；不新增 Stable ID、协议或第二套路由词汇。
+
+项目自己的治理状态属于 `AGENTS.md` **managed block 外**内容。新建模板使用：
+
+```text
+<!-- agent-skills:project-governance:v1 -->
+## Project Governance Bootstrap 状态
+- 状态：待校准 / 已校准
+```
+
+安装器不维护这个项目自有状态；宿主大模型只有在完成真实仓库调查和 Overlay 校准后才能改成“状态：已校准”。已有 `AGENTS.md` 第一次接入时没有该状态，也按首次治理处理。状态只是是否完成首次长期规则校准的导航，不是代码/Contract/CI 当前正确性的证明。
+
 ## 1. 何时读取
 
 出现以下任务时必须读取本文件：
@@ -342,19 +374,26 @@ Greenfield / 空仓库：
 
 旧 schema/旧 Router 路径不在本版本兼容范围内，不自动迁移。Bootstrap 不是自动架构设计器。
 
-## 12. 有证据的项目 Overlay 语义补全
+## 12. Project Governance Bootstrap：有证据的项目 Overlay 语义校准
 
-如果当前任务本身就是“安装 / 初始化 Agent_Skills、创建或完善项目 AGENTS”，且用户授权修改项目规则，Coding Agent 在确定性 Bootstrap 后还要判断是否需要有证据的语义补全：
+当首次接入、项目治理状态尚未校准、现有 `AGENTS.md` 与长期工程事实疑似漂移，或用户明确要求刷新项目规则，并且当前任务授权修改项目时，Coding Agent 在 Runtime Installation Bootstrap 之后执行 Project Governance Bootstrap。这个阶段由**宿主大模型**负责语义判断，不由 Runtime binary 自动改写项目规则。
 
-1. 重新读取 Bootstrap 后的项目 `AGENTS.md`；
-2. 只读取与长期研发导航直接相关的最少充分事实源；
-3. 可确认的长期事实可以在 managed block **之外**增量补充；
-4. 已有内容不重复、不改写，不为了风格统一重排；
-5. 不能仅凭文件名/目录名写入框架、数据库、架构、Owner、Contract、CI 或部署结论；
-6. 多个事实源冲突时继续核实，不猜一个正确；
-7. 不修改 managed block 内模板文本；
-8. 不把 Router 专业路由正文复制到项目 Overlay；
-9. Runtime binary 本身不调用 LLM 自动生成项目架构结论。
+固定顺序：
+
+1. 重新读取安装/接入后的项目 `AGENTS.md` 以及适用的 `CONTRIBUTING` / 子目录规则；
+2. 按 ref01 做有界事实调查，只读取与长期研发导航直接相关的最少充分代码、Manifest/lock、Contract/Schema/Migration、测试、CI、部署和正式文档；
+3. 把现有 AGENTS 内容与新证据分成**规范性规则、描述性事实、未确认事项**；
+4. 规范性规则若与当前实现冲突，先把它视为实现/配置偏离；**不能通过修改 `AGENTS.md` 让错误实现合法化**，不能因为代码没有遵守就自动删除或弱化规则；
+5. 描述性事实只有在当前机器事实/代码/CI/运行证据足以证明过时时才做最小修正；不能仅凭文件名/目录名写入框架、数据库、架构、Owner、Contract、CI 或部署结论；
+6. 多个高权威事实源冲突或证据不足时保留为未确认；如果会实质改变 Contract、Schema、数据、安全、部署或验收，继续核实或请求 Owner 决策，不猜一个正确；
+7. 可确认的长期事实只在 managed block **之外**增量补充；不修改 managed block 内模板文本，不把 Router 专业路由正文复制到项目 Overlay；
+8. 已有仍有效文本尽量保持原位置和语义；只做必要的 targeted 修正，不为了套固定模板重排整份已有 AGENTS；
+9. 对新建模板，固定章节只是结构骨架；没有真实事实的章节保持为空或明确未确认，不为了“填满模板”发明制度；
+10. 首次治理成功后，在项目自有区保留 `<!-- agent-skills:project-governance:v1 -->` 并把状态更新为“状态：已校准”；已有 AGENTS 没有该项目自有状态时可在 managed block 外增量建立；
+11. **重新读取最终 `AGENTS.md`**，确认项目规则、事实描述、未确认事项和 Agent Skills managed block 边界没有互相覆盖；
+12. 然后回到用户最初的自然语言请求，按最终规则**继续原始研发任务**；治理 Bootstrap 不是把原任务替换成只写文档。
+
+后续普通开发不重复全量首次治理。每个任务仍做廉价事实/缓存失效检查；只有技术栈、模块 Owner、Contract/Schema、开发/验证入口、CI/Release/部署等长期工程事实变化时，才 targeted 调查并更新对应 Overlay。Runtime binary 本身仍不调用 LLM、不自动生成项目架构结论，也不修改项目自有治理状态。
 
 ## 13. 宿主差异
 

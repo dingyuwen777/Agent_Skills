@@ -179,7 +179,7 @@ Greenfield 表示工程事实尚未建立或只建立了一部分。此时先确
 | 跨模块、跨消费者、Contract/Schema/Migration/Owner/数据边界 | [06_仓库边界数据交换与条件式约束.md](references/06_仓库边界数据交换与条件式约束.md) |
 | 多人、多 Agent、多个分支或 Active Change 并行 | [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md) |
 | Review、Ready、交付或准备表达完成结论 | [11_两阶段复核与完成前验证.md](references/11_两阶段复核与完成前验证.md) |
-| 首次安装/升级 Agent_Skills、创建/补充目标项目 AGENTS 或修复 managed block | [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md) |
+| 首次安装/升级 Agent_Skills、创建/补充目标项目 AGENTS、首次 Project Governance Bootstrap、治理事实漂移校准或修复 managed block | [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) + [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md) |
 | Runtime Bundle/Routing Manifest/Task Route/MCP/Project Payload/安装升级或 Release identity | [13_本地MCP_Runtime分发与原文上下文加载.md](references/13_本地MCP_Runtime分发与原文上下文加载.md) |
 | Git/PR/Release/Delivery、依赖变化、安全边界、最终交付报告或宿主能力降级 | [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md) |
 | Skill/reference/模板/项目 Overlay 的精简、重组、拆分、合并、改名、迁移或通用化 | [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md) |
@@ -219,6 +219,21 @@ Greenfield 表示工程事实尚未建立或只建立了一部分。此时先确
 绝不覆盖、回滚、格式化或混入无关用户修改。
 
 Greenfield 仓库即使暂时为空，也先确认仓库根、当前 Git 状态、目标运行/交付环境和用户已确认约束；没有既有代码时不伪造“当前架构”，而是把尚待建立的工程事实标成待决策或待实现。
+
+#### 4.2.1 首次接入的 Project Governance Bootstrap
+
+当目标项目已经安装/可访问 Agent_Skills，且出现以下任一情况时，在**任何实质性生产代码修改之前**先完成 Project Governance Bootstrap：
+
+- 项目首次接入 Agent_Skills；
+- 根 `AGENTS.md` 不存在、仍标记 Project Governance Bootstrap“状态：待校准”，或已有项目规则从未按当前仓库事实做过首次校准；
+- 当前自然语言研发任务暴露技术栈、模块职责、Contract/Schema、开发验证入口、CI/Release/部署等长期治理事实可能已与 `AGENTS.md` 漂移；
+- 用户明确要求创建、刷新或校准项目规则。
+
+执行时必须读取 [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) 与 [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md)。普通自然语言开发、修复或重构请求本身即可触发该前置流程，用户不需要记忆额外内部命令。Runtime binary 只负责机械安装；仓库语义调查由当前宿主大模型完成。
+
+如果当前任务已授权修改项目，则宿主大模型先做有界事实调查，只在 Agent Skills 自管区之外创建或校准项目自己的 `AGENTS.md` Overlay；完成后把项目自有治理状态标记为“状态：已校准”，**重新读取最终 `AGENTS.md`**，再回到同一任务**继续原始研发任务**。如果当前任务只有只读授权，则只能在会话内完成调查并报告治理未校准，不得写 `AGENTS.md`。
+
+首次校准不是每个任务都重跑的全仓审计。状态已校准且没有长期治理事实变化时，只做廉价漂移检查并直接进入本次任务；只有受影响的长期事实变化时才 targeted 更新对应 Overlay 内容。
 
 ### 4.3 恢复项目和工具链事实
 
