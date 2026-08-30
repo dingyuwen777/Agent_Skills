@@ -90,8 +90,8 @@ class ReleaseProductizationTest(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "GITHUB_SHA 与当前源码 HEAD 不一致"):
                     builder._source_commit(ROOT)
 
-    def test_release_workflow_is_manual_tag_driven_and_requires_immutability(self) -> None:
-        """Release 只允许 main 手工 tag，要求 immutable releases，并显式 Draft→Publish。"""
+    def test_release_workflow_is_manual_tag_driven_without_immutability_gate(self) -> None:
+        """Release 只允许 main 手工 tag，不依赖 Immutability 或自定义管理 Secret。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for marker in (
             "workflow_dispatch",
@@ -99,7 +99,6 @@ class ReleaseProductizationTest(unittest.TestCase):
             "tag:",
             "refs/heads/main",
             'VERSION="${TAG#v}"',
-            "immutable-releases",
             "gh release view",
             "gh api",
             "git rev-parse",
@@ -111,6 +110,13 @@ class ReleaseProductizationTest(unittest.TestCase):
             self.assertIn(marker, workflow)
         for obsolete in ("FILE_VERSION", "Get-Content VERSION", "仓库 VERSION", "< VERSION"):
             self.assertNotIn(obsolete, workflow)
+        for removed_gate in (
+            "RELEASE_SETTINGS_TOKEN",
+            "immutable-releases",
+            "Release Immutability",
+            ".immutable",
+        ):
+            self.assertNotIn(removed_gate, workflow)
         self.assertNotIn("\n  push:\n", workflow)
         self.assertEqual(workflow.count("contents: write"), 1)
 
