@@ -100,7 +100,7 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
                 self.assertIn(required, text)
 
     def test_runtime_mcp_public_results_do_not_expose_internal_identity(self) -> None:
-        """公共 Tool 返回只提供完成流程所需信息，不返回 Skill/Reference/路径/hash 等身份。"""
+        """公共 Tool 外层只提供完成流程所需信息，不返回内部治理身份。"""
         status_text = json.dumps(self.store.status(), ensure_ascii=False)
         contract_text = json.dumps(self.store.route_contract(), ensure_ascii=False)
         for payload in (status_text, contract_text):
@@ -125,21 +125,18 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
             self.assertNotIn(forbidden, route_text)
 
         loaded = self.store.load_required_context(route["路由令牌"])
-        loaded_text = json.dumps(loaded, ensure_ascii=False)
-        for forbidden in (
-            "coding.reference.01",
-            "01_内部规则名称.md",
-            '"Skill"',
-            '"标识"',
-            '"SHA256"',
-            '"字节数"',
-            "本次加载上下文数量",
-            "已加载上下文数量",
-            "缺失上下文数量",
-        ):
-            self.assertNotIn(forbidden, loaded_text)
-        self.assertIn("执行代码修改、补测试、同步文档并完成复核", loaded_text)
-        self.assertIn("用户可见进度", loaded_text)
+        self.assertEqual(
+            set(loaded),
+            {"任务标识", "上下文", "加载完成", "用户可见进度规则"},
+        )
+        contexts = loaded["上下文"]
+        self.assertIsInstance(contexts, list)
+        self.assertEqual(len(contexts), 1)
+        self.assertEqual(set(contexts[0]), {"完整原文"})
+        # 完整原文仍逐字保留 canonical metadata；保密边界只收窄公共 envelope，不能篡改正文。
+        self.assertIn("coding.reference.01", contexts[0]["完整原文"])
+        self.assertIn("执行代码修改、补测试、同步文档并完成复核", contexts[0]["完整原文"])
+        self.assertIn("用户可见进度", loaded["用户可见进度规则"])
 
         checkpoint_text = json.dumps(self.store.checkpoint(route["路由令牌"]), ensure_ascii=False)
         for forbidden in ("最低风险", "缺失上下文数量", "已加载上下文数量"):
