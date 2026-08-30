@@ -179,7 +179,7 @@ Greenfield 表示工程事实尚未建立或只建立了一部分。此时先确
 | 跨模块、跨消费者、Contract/Schema/Migration/Owner/数据边界 | [06_仓库边界数据交换与条件式约束.md](references/06_仓库边界数据交换与条件式约束.md) |
 | 多人、多 Agent、多个分支或 Active Change 并行 | [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md) |
 | Review、Ready、交付或准备表达完成结论 | [11_两阶段复核与完成前验证.md](references/11_两阶段复核与完成前验证.md) |
-| 首次安装/升级 Agent_Skills、创建/补充目标项目 AGENTS 或修复 managed block | [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md) |
+| 首次安装/升级 Agent_Skills、创建/补充目标项目 AGENTS、首次 Project Governance Bootstrap、治理事实漂移校准或修复 managed block | [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) + [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md) |
 | Runtime Bundle/Routing Manifest/Task Route/MCP/Project Payload/安装升级或 Release identity | [13_本地MCP_Runtime分发与原文上下文加载.md](references/13_本地MCP_Runtime分发与原文上下文加载.md) |
 | Git/PR/Release/Delivery、依赖变化、安全边界、最终交付报告或宿主能力降级 | [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md) |
 | Skill/reference/模板/项目 Overlay 的精简、重组、拆分、合并、改名、迁移或通用化 | [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md) |
@@ -218,7 +218,7 @@ Greenfield 表示工程事实尚未建立或只建立了一部分。此时先确
 
 绝不覆盖、回滚、格式化或混入无关用户修改。
 
-Greenfield 仓库即使暂时为空，也先确认仓库根、当前 Git 状态、目标运行/交付环境和用户已确认约束；没有既有代码时不伪造“当前架构”，而是把尚待建立的工程事实标成待决策或待实现。
+Greenfield 仓库即使暂时为空，也先确认仓库根、当前 Git 状态、目标运行/交付环境和用户已确认约束；没有既有代码时不伪造“当前架构”，而是把尚待建立的工程事实标成待决策或待实现。目标项目**首次接入** Agent_Skills、治理状态待校准或长期**治理事实**疑似漂移时，按 ref01 + ref12 在**任何实质性生产代码修改之前**完成 `Project Governance Bootstrap`：写授权下校准项目 Overlay、重读最终 `AGENTS.md` 后**继续原始研发任务**；只有只读授权时在会话内完成最少充分调查、不写项目规则并**继续原始只读任务**。普通后续任务没有长期治理变化时不重复全量校准。
 
 ### 4.3 恢复项目和工具链事实
 
