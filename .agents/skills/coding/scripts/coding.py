@@ -783,9 +783,19 @@ def _bootstrap_fact_sources(root: Path) -> str:
     return "\n".join(lines)
 
 
+def _managed_asset_text() -> str:
+    """把源模板 Router 链接转换为写入项目根 AGENTS 后仍可点击的目标。"""
+    text = _asset_text("AGENTS.managed.md")
+    source_link = "[`.agents/skills/ROUTER.md`](../../ROUTER.md)"
+    project_link = "[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)"
+    if text.count(source_link) != 1:
+        raise ValueError("AGENTS.managed.md Router 链接模板不符合预期")
+    return text.replace(source_link, project_link)
+
+
 def _managed_block(newline: bytes) -> bytes:
     """渲染固定 Agent Skills managed block，并适配目标文件原有换行风格。"""
-    return _render_with_newline(_asset_text("AGENTS.managed.md"), newline)
+    return _render_with_newline(_managed_asset_text(), newline)
 
 
 def _validate_managed_markers(content: bytes) -> tuple[int, int] | None:
@@ -812,7 +822,7 @@ def _updated_agents_content(root: Path, existing: bytes | None) -> bytes:
         template = Template(_asset_text("AGENTS.template.md"))
         rendered = template.substitute(
             project_name=_markdown_safe_text(root.name or "Project"),
-            managed_block=_asset_text("AGENTS.managed.md").rstrip("\r\n"),
+            managed_block=_managed_asset_text().rstrip("\r\n"),
             fact_sources=_bootstrap_fact_sources(root),
         )
         return _render_with_newline(rendered, newline) + newline
