@@ -59,7 +59,7 @@ def _structured_result(result: Any) -> dict[str, Any]:
 
 
 def _json_keys(value: Any) -> set[str]:
-    """递归收集 JSON object 键，避免把合法中文取值误判成私有字段。"""
+    """递归收集 JSON object 键，避免把完整规则正文中的合法元数据误判为 envelope 泄露。"""
     if isinstance(value, dict):
         keys = {str(key) for key in value}
         for item in value.values():
@@ -73,8 +73,18 @@ def _json_keys(value: Any) -> set[str]:
     return set()
 
 
+def _assert_progress_rule(payload: dict[str, Any], label: str) -> None:
+    """确认 Runtime 明确允许真实工程过程，并禁止向用户复述治理实现细节。"""
+    rule = payload.get("用户可见进度规则")
+    if not isinstance(rule, str) or not rule:
+        raise RuntimeError(f"{label} 缺少用户可见进度规则")
+    for required in ("代码修改", "测试", "文档同步", "复核", "Git/CI", "不得主动复述"):
+        if required not in rule:
+            raise RuntimeError(f"{label} 用户可见进度规则缺少语义：{required}")
+
+
 async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
-    """启动真实 stdio MCP 子进程，验证 tools/list 与 canonical Reference 原文读取链。"""
+    """启动真实 stdio MCP 子进程，验证工具契约、去标识化 envelope 与 canonical 原文读取链。"""
     try:
         from mcp import Client, StdioServerParameters
         from mcp.client.stdio import stdio_client
@@ -100,10 +110,11 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
                 )
 
         status = _structured_result(await client.call_tool("agent_skills_status", {}))
-        if status.get("Source摘要") != expected_bundle["source_digest"]:
-            raise RuntimeError("MCP status source_digest 与 canonical source 不一致")
+        _assert_progress_rule(status, "MCP status")
         status_keys = _json_keys(status)
         for forbidden in (
+            "Skill",
+            "Skill数量",
             "reference_count",
             "loaded_ids",
             "filename",
@@ -113,16 +124,32 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
             "标识",
             "文件名",
             "源路径",
+            "RoutingManifest协议",
+            "Source摘要",
+            "Routing摘要",
+            "Payload摘要",
+            "已加载上下文数量",
+            "缺失上下文数量",
         ):
             if forbidden in status_keys:
                 raise RuntimeError(f"MCP status 泄露被禁止字段：{forbidden}")
 
         contract = _structured_result(await client.call_tool("agent_skills_route_contract", {}))
+        _assert_progress_rule(contract, "MCP route contract")
         contract_text = json.dumps(contract, ensure_ascii=False)
         if ".reference." in contract_text:
             raise RuntimeError("MCP route contract 泄露 Stable Reference ID")
         contract_keys = _json_keys(contract)
-        for forbidden in ("source_path", "filename", "标识", "文件名", "源路径", "依赖", "最低风险"):
+        for forbidden in (
+            "Skill",
+            "source_path",
+            "filename",
+            "标识",
+            "文件名",
+            "源路径",
+            "依赖",
+            "最低风险",
+        ):
             if forbidden in contract_keys:
                 raise RuntimeError(f"MCP route contract 泄露私有路由信息：{forbidden}")
 
@@ -141,46 +168,57 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
         }
         expected_route = evaluate_route(expected_bundle["路由清单"], task_route)
 
-        _structured_result(
+        started = _structured_result(
             await client.call_tool(
                 "agent_skills_start_task",
                 {"任务标识": "runtime-smoke", "阶段": "验证"},
             )
         )
+        _assert_progress_rule(started, "MCP start_task")
         submitted = _structured_result(
             await client.call_tool(
                 "agent_skills_submit_route",
                 {"任务标识": "runtime-smoke", "任务路由": task_route},
             )
         )
+        _assert_progress_rule(submitted, "MCP submit_route")
         route_token = submitted.get("路由令牌")
         if not isinstance(route_token, str) or not route_token:
-            raise RuntimeError("MCP submit_route 未返回有效路由令牌")
-        if submitted.get("必需上下文数量") != len(expected_route["必需Reference"]):
-            raise RuntimeError("MCP submit_route required Context 数量与唯一求值器不一致")
+            raise RuntimeError("MCP submit_route 未返回有效内部加载凭据")
+        for forbidden in ("命中Skill", "必需上下文数量", "缺失上下文数量", "最低风险"):
+            if forbidden in submitted:
+                raise RuntimeError(f"MCP submit_route 泄露内部求值结果：{forbidden}")
+        if submitted.get("需要加载约束") is not True:
+            raise RuntimeError("MCP submit_route 未识别当前任务仍需加载规则正文")
 
         loaded = _structured_result(
             await client.call_tool("agent_skills_load_required_context", {"路由令牌": route_token})
         )
+        _assert_progress_rule(loaded, "MCP load_required_context")
         contexts = loaded.get("上下文")
         if not isinstance(contexts, list) or len(contexts) != len(expected_route["必需Reference"]):
             raise RuntimeError("MCP load_required_context 未返回完整 required Context")
+        expected_texts = [
+            expected_by_id[reference_id]["content"]
+            for reference_id in expected_route["必需Reference"]
+        ]
+        actual_texts: list[str] = []
         for context in contexts:
-            reference_id = str(context.get("标识"))
-            expected_entry = expected_by_id.get(reference_id)
-            if expected_entry is None or reference_id not in expected_route["必需Reference"]:
-                raise RuntimeError(f"MCP load_required_context 返回非 required Reference：{reference_id}")
-            if context.get("完整原文") != expected_entry["content"]:
-                raise RuntimeError("MCP required Context 完整原文与 canonical source 不一致")
-            if context.get("SHA256") != expected_entry["sha256"]:
-                raise RuntimeError("MCP required Context SHA256 与 canonical source 不一致")
-            if "文件名" in context or "源路径" in context:
-                raise RuntimeError("MCP required Context 不应返回文件名或源路径")
+            if not isinstance(context, dict) or set(context) != {"完整原文"}:
+                raise RuntimeError("MCP required Context envelope 必须只含完整原文")
+            text = context.get("完整原文")
+            if not isinstance(text, str):
+                raise RuntimeError("MCP required Context 完整原文必须是字符串")
+            actual_texts.append(text)
+        if actual_texts != expected_texts:
+            raise RuntimeError("MCP required Context 完整原文与 canonical source 不一致")
+        if loaded.get("加载完成") is not True:
+            raise RuntimeError("MCP load_required_context 未识别当前任务规则已完整加载")
 
         repeated = _structured_result(
             await client.call_tool("agent_skills_load_required_context", {"路由令牌": route_token})
         )
-        if repeated.get("上下文") != []:
+        if repeated.get("上下文") != [] or repeated.get("加载完成") is not True:
             raise RuntimeError("MCP load_required_context 默认没有跳过已加载 Context")
 
         checkpoint = _structured_result(
@@ -189,8 +227,12 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
                 {"路由令牌": route_token, "阶段": "完成前检查"},
             )
         )
-        if checkpoint.get("通过") is not True or checkpoint.get("缺失上下文数量") != 0:
+        _assert_progress_rule(checkpoint, "MCP checkpoint")
+        if checkpoint.get("通过") is not True:
             raise RuntimeError("MCP checkpoint 未识别已经加载的 required Context")
+        for forbidden in ("最低风险", "缺失上下文数量", "已加载上下文数量"):
+            if forbidden in checkpoint:
+                raise RuntimeError(f"MCP checkpoint 泄露内部状态：{forbidden}")
 
     return {
         "ok": True,

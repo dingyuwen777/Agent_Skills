@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
 import unittest
@@ -7,7 +8,6 @@ from pathlib import Path
 
 from runtime.agent_skills_runtime.catalog import build_bundle, deserialize_bundle, serialize_bundle
 from runtime.agent_skills_runtime.crypto import decrypt_bundle, encrypt_bundle, generate_bundle_key
-from runtime.agent_skills_runtime.project_installer import INSTALL_SCHEMA
 from runtime.agent_skills_runtime.routing import (
     REFERENCE_ROUTE_PROTOCOL,
     SKILL_ROUTE_PROTOCOL,
@@ -81,25 +81,27 @@ class RuntimeBundleTest(unittest.TestCase):
         source = root / ".agents/skills/coding/references/01_规则.md"
         source_bytes = source.read_bytes()
         source_text = source_bytes.decode("utf-8")
+        expected_entry = next(entry for entry in bundle["references"] if entry["id"] == "coding.reference.01")
 
         serialized = serialize_bundle(bundle)
         key = generate_bundle_key()
         restored = deserialize_bundle(decrypt_bundle(encrypt_bundle(serialized, key), key))
         store = RuntimeStore(restored)
-        self.assertEqual(store.status()["Install协议"], INSTALL_SCHEMA)
         store.start_task("T-1")
         route = store.submit_route("T-1", _task_route(意图=["功能开发"]))
         context = store.load_required_context(route["路由令牌"])["上下文"][0]
 
-        self.assertEqual(context["完整原文"], source_text)
-        self.assertEqual(context["字节数"], len(source_bytes))
-        self.assertEqual(context["SHA256"], bundle["references"][0]["sha256"])
+        self.assertEqual(context, {"完整原文": source_text})
+        self.assertEqual(expected_entry["sha256"], hashlib.sha256(source_bytes).hexdigest())
+        self.assertEqual(expected_entry["size"], len(source_bytes))
         self.assertTrue(store.checkpoint(route["路由令牌"])["通过"])
+
         expanded = store.submit_route("T-1", _task_route(意图=["文档更新"]))
-        self.assertEqual(expanded["必需上下文数量"], 2)
+        self.assertTrue(expanded["需要加载约束"])
         self.assertFalse(store.checkpoint(expanded["路由令牌"])["通过"])
         new_context = store.load_required_context(expanded["路由令牌"])["上下文"]
-        self.assertEqual([entry["标识"] for entry in new_context], ["docs.reference.01"])
+        docs_text = (root / ".agents/skills/docs/references/01_规则.md").read_text(encoding="utf-8")
+        self.assertEqual(new_context, [{"完整原文": docs_text}])
 
     def test_unknown_route_state_remains_monotonic_for_same_task(self) -> None:
         """同一任务一旦按未知项 fail-safe 扩大，后续提交不得把未知状态伪装成已消失。"""
@@ -108,14 +110,16 @@ class RuntimeBundleTest(unittest.TestCase):
         unknown = _task_route(意图=["功能开发"])
         unknown["未知项"] = ["阶段"]
         first = store.submit_route("T-unknown", unknown)
+        first_contexts = store.load_required_context(first["路由令牌"])["上下文"]
         second = store.submit_route("T-unknown", _task_route(意图=["功能开发"]))
 
-        self.assertTrue(first["存在未知项"])
-        self.assertTrue(second["存在未知项"])
-        self.assertEqual(second["必需上下文数量"], 3)
+        self.assertTrue(first["存在未确认任务事实"])
+        self.assertTrue(second["存在未确认任务事实"])
+        self.assertEqual(len(first_contexts), 3)
+        self.assertFalse(second["需要加载约束"])
 
-    def test_public_route_contract_never_contains_private_reference_mapping(self) -> None:
-        """公开 route contract 只能披露词汇和 Skill，不能泄露私有 Reference mapping。"""
+    def test_source_mode_public_route_contract_keeps_catalog_without_reference_mapping(self) -> None:
+        """Source Mode 的原始公开词汇契约可保留 Catalog，但不能泄露 Reference mapping。"""
         bundle = build_bundle(self._fixture_root())
         contract = public_route_contract(bundle["路由清单"])
         encoded = json.dumps(contract, ensure_ascii=False)

@@ -14,7 +14,7 @@ from .catalog import deserialize_bundle
 from .crypto import decrypt_bundle
 from .project_installer import install_project
 from .project_payload import validate_project_payload
-from .runtime import RuntimeStore
+from .runtime import RuntimeStore, USER_VISIBLE_PROGRESS_RULE
 
 
 _STORE: RuntimeStore | None = None
@@ -107,40 +107,41 @@ def create_mcp_server():
     mcp = MCPServer(
         "Agent Skills Runtime",
         instructions=(
-            "提供 Agent_Skills Runtime Mode 的同源路由与 canonical Reference 完整原文。"
-            "先读取公开 route contract，开始任务并提交中文 Task Route，再只按当前路由令牌加载 required Context。"
-            "完整原文是正式规则；不得用旧记忆、摘要或目标项目同名 Reference 替代。"
+            "这是当前项目已配置的研发治理能力。先读取当前任务事实词汇，开始任务并提交来自项目真实内容的任务事实，"
+            "再加载本任务需要的完整规则正文；正文不得用旧记忆、摘要或猜测替代。"
+            + USER_VISIBLE_PROGRESS_RULE
+            + "这些内部调用与返回内容用于执行治理，不应作为用户可见过程复述。"
         ),
     )
 
     @mcp.tool()
     def agent_skills_status() -> dict[str, Any]:
-        """返回必要版本身份与任务汇总状态，不枚举 Reference、文件名或路径。"""
+        """返回完成宿主协作所需的最小运行状态，不公开治理内部身份。"""
         return _load_embedded_store().status()
 
     @mcp.tool()
     def agent_skills_route_contract() -> dict[str, Any]:
-        """返回当前中文 Task Route 词汇与公开 Skill，不返回私有 Reference mapping。"""
+        """返回构造当前任务事实所需的中文词汇，不公开内部分类拥有者或规则映射。"""
         return _load_embedded_store().route_contract()
 
     @mcp.tool()
     def agent_skills_start_task(任务标识: str, 阶段: str = "规划") -> dict[str, Any]:
-        """开始或显式重置当前任务，并清空此前 task 的 route 与披露状态。"""
+        """开始或显式重置当前任务，并清空此前任务的内部状态。"""
         return _load_embedded_store().start_task(任务标识, 阶段)
 
     @mcp.tool()
     def agent_skills_submit_route(任务标识: str, 任务路由: dict[str, Any]) -> dict[str, Any]:
-        """校验中文 Task Route，并计算单调扩展后的 required Context 与不透明路由令牌。"""
+        """校验当前任务事实并建立本任务后续规则加载所需的不透明凭据。"""
         return _load_embedded_store().submit_route(任务标识, 任务路由)
 
     @mcp.tool()
     def agent_skills_load_required_context(路由令牌: str, 重新加载: bool = False) -> dict[str, Any]:
-        """只返回当前 route required 的完整原文；默认跳过本 task 已加载 Context。"""
+        """返回当前任务需要的完整规则正文，不返回内部身份字段。"""
         return _load_embedded_store().load_required_context(路由令牌, reload=重新加载)
 
     @mcp.tool()
     def agent_skills_checkpoint(路由令牌: str, 阶段: str | None = None) -> dict[str, Any]:
-        """检查 Runtime 内部 required Context 是否全加载，并可更新当前阶段。"""
+        """检查当前任务所需规则是否已经完整取得，并可更新当前工程阶段。"""
         return _load_embedded_store().checkpoint(路由令牌, 阶段)
 
     return mcp
@@ -154,11 +155,32 @@ def _build_parser() -> argparse.ArgumentParser:
     install_parser.add_argument("--target", default=".", help="目标项目根目录，默认当前目录")
     install_parser.add_argument("--json", action="store_true", help="以 JSON 输出")
     subparsers.add_parser("serve", help="通过 stdio 启动 MCP Server")
-    status_parser = subparsers.add_parser("status", help="输出 Runtime/Bundle/Project Payload 状态")
+    status_parser = subparsers.add_parser("status", help="输出 Runtime 当前最小状态")
     status_parser.add_argument("--json", action="store_true", help="以 JSON 输出")
-    self_test_parser = subparsers.add_parser("self-test", help="解密并完整校验内嵌 Bundle 与 Project Payload")
+    self_test_parser = subparsers.add_parser("self-test", help="解密并完整校验内嵌 Runtime 与 Project Payload")
     self_test_parser.add_argument("--json", action="store_true", help="以 JSON 输出")
     return parser
+
+
+def _public_install_result(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """把安装器内部结果收窄为最终用户完成安装所需的公开信息。"""
+    if payload.get("ok") is not True:
+        raise ValueError("安装成功结果缺少 ok=true")
+    target = payload.get("target")
+    release_version = payload.get("release_version")
+    hosts = payload.get("hosts")
+    if not isinstance(target, str) or not target:
+        raise ValueError("安装成功结果缺少目标项目")
+    if not isinstance(release_version, str) or not release_version:
+        raise ValueError("安装成功结果缺少 Release 版本")
+    if not isinstance(hosts, list) or any(not isinstance(item, str) or not item for item in hosts):
+        raise ValueError("安装成功结果缺少合法宿主列表")
+    return {
+        "ok": True,
+        "target": target,
+        "release_version": release_version,
+        "hosts": list(hosts),
+    }
 
 
 def _print_result(payload: Mapping[str, Any], as_json: bool) -> None:
@@ -171,15 +193,13 @@ def _print_result(payload: Mapping[str, Any], as_json: bool) -> None:
 
 
 def _self_test_payload() -> dict[str, Any]:
-    """交叉验证内嵌 Bundle/Project Payload，并返回不含正文的 onefile 自检结果。"""
-    store, project_payload, release_version = _load_embedded_material()
+    """交叉验证内嵌 Bundle/Project Payload，并返回不含规则身份或正文的自检结果。"""
+    store, _, release_version = _load_embedded_material()
     result = store.self_test()
     result.update(
         {
             "通过": True,
             "Release版本": release_version,
-            "Payload协议": project_payload["schema"],
-            "Payload摘要": project_payload["payload_digest"],
         }
     )
     return result
@@ -210,7 +230,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 _runtime_artifact_path(),
                 release_version=release_version,
             )
-            _print_result(result, as_json)
+            _print_result(_public_install_result(result), as_json)
             return 0
         parser.error(f"未知命令：{command}")
         return 2

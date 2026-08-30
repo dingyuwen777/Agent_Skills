@@ -36,7 +36,7 @@ class ProjectBootstrapTest(unittest.TestCase):
         (skills / "ROUTER.md").write_text("# Router\n", encoding="utf-8")
 
     def test_bootstrap_creates_agents_for_greenfield_without_inventing_stack(self) -> None:
-        """空项目应创建可用 AGENTS 初版，并通过薄 managed block 进入唯一 Router。"""
+        """空项目应创建可用 AGENTS 初版，并通过薄 managed block 进入项目级治理 MCP。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._install_minimal_coding(root)
@@ -44,10 +44,13 @@ class ProjectBootstrapTest(unittest.TestCase):
             content = (root / "AGENTS.md").read_text(encoding="utf-8")
             self.assertEqual(result["agents"], "created")
             self.assertIn("<!-- agent-skills:managed:start -->", content)
-            self.assertIn(ROUTER_PATH, content)
+            self.assertNotIn(ROUTER_PATH, content)
             self.assertNotIn(".agents/skills/figma/SKILL.md", content)
             self.assertNotIn(".agents/skills/review/SKILL.md", content)
             self.assertNotIn(".agents/skills/docs/SKILL.md", content)
+            self.assertIn("研发治理 MCP", content)
+            self.assertIn("代码修改", content)
+            self.assertIn("用户可见", content)
             self.assertIn("不能直接推导未被证据证明的架构结论", content)
             self.assertNotIn("本项目使用 FastAPI", content)
             self.assertNotIn("数据库：PostgreSQL", content)
@@ -133,7 +136,7 @@ class ProjectBootstrapTest(unittest.TestCase):
             self.assertEqual(updated.count("project-context.json"), 1)
 
     def test_bootstrap_requires_installed_router_before_mutation(self) -> None:
-        """Coding Skill 存在但共享 Router 缺失时不得写出悬空 AGENTS 导航。"""
+        """Coding Skill 存在但共享 Router 缺失时不得在不完整运行资产上继续写入。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._install_minimal_coding(root)
@@ -146,7 +149,7 @@ class ProjectBootstrapTest(unittest.TestCase):
             self.assertFalse((root / ".gitignore").exists())
 
     def test_bootstrap_requires_installed_coding_skill(self) -> None:
-        """目标项目没有 Coding Skill 时不得生成指向不存在入口的 AGENTS。"""
+        """目标项目没有 Coding Skill 时不得生成缺少运行资产的 AGENTS。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             with self.assertRaisesRegex(FileNotFoundError, "coding/SKILL.md"):

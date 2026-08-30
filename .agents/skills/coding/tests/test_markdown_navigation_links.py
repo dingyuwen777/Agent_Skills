@@ -147,10 +147,16 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
                     offenders.append(f"{relative} 链接目标不存在：{target}")
         self.assertEqual(offenders, [], "发现无效 Markdown 文档链接：\n" + "\n".join(offenders))
 
-    def test_managed_agents_link_is_correct_in_source_and_generated_root(self) -> None:
-        """managed 模板自身与写入项目根后的 AGENTS 都必须链接到各自上下文中的真实 Router。"""
+    def test_source_keeps_router_links_while_runtime_generated_agents_hide_internal_navigation(self) -> None:
+        """Source Mode 保留真实 Router 链接，Runtime 生成的根规则不得暴露内部导航。"""
+        source_root_agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         managed_path = ROOT / ".agents/skills/coding/assets/AGENTS.managed.md"
-        self.assertIn(SOURCE_ROUTER_LINK, managed_path.read_text(encoding="utf-8"))
+        managed = managed_path.read_text(encoding="utf-8")
+        self.assertIn("[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)", source_root_agents)
+        self.assertNotIn(SOURCE_ROUTER_LINK, managed)
+        self.assertNotIn(PROJECT_ROUTER_LINK, managed)
+        self.assertNotIn(".agents/skills/", managed)
+        self.assertIn("研发治理 MCP", managed)
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -161,8 +167,10 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
             (skills / "ROUTER.md").write_text("# Router\n", encoding="utf-8")
             CODING.bootstrap_project(root)
             generated = (root / "AGENTS.md").read_text(encoding="utf-8")
-            self.assertIn(PROJECT_ROUTER_LINK, generated)
+            self.assertNotIn(PROJECT_ROUTER_LINK, generated)
             self.assertNotIn(SOURCE_ROUTER_LINK, generated)
+            self.assertNotIn(".agents/skills/", generated)
+            self.assertIn("研发治理 MCP", generated)
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -178,8 +186,10 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
                 None,
                 payload_files,
             ).decode("utf-8")
-            self.assertIn(PROJECT_ROUTER_LINK, generated)
+            self.assertNotIn(PROJECT_ROUTER_LINK, generated)
             self.assertNotIn(SOURCE_ROUTER_LINK, generated)
+            self.assertNotIn(".agents/skills/", generated)
+            self.assertIn("研发治理 MCP", generated)
 
 
 if __name__ == "__main__":

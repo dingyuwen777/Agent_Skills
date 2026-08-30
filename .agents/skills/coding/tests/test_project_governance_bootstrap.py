@@ -59,13 +59,13 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
         ):
             self.assertIn(marker, bootstrap)
 
-    def test_agents_assets_expose_structural_template_and_first_use_trigger(self) -> None:
-        """目标 AGENTS 固定结构而非技术栈，managed block 能触发首次治理校准。"""
+    def test_agents_assets_expose_structural_template_and_runtime_first_use_trigger(self) -> None:
+        """目标 AGENTS 固定结构而非技术栈，Runtime managed block 能触发首次治理校准。"""
         template = self._read(".agents/skills/coding/assets/AGENTS.template.md")
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
         for marker in (
-            "Project Governance Bootstrap",
             "<!-- agent-skills:project-governance:v1 -->",
+            "项目治理校准状态",
             "状态：待校准",
             "当前工程基线",
             "架构与模块边界",
@@ -75,25 +75,32 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             "项目特殊长期约束",
         ):
             self.assertIn(marker, template)
-        self.assertIn("首次接入", managed)
-        self.assertIn("Project Governance Bootstrap", managed)
-        self.assertIn("自然语言研发任务", managed)
-        self.assertIn("状态：已校准", managed)
-        self.assertIn("managed block 外", managed)
+        for marker in (
+            "首次接入",
+            "自然语言研发任务",
+            "研发治理 MCP",
+            "有界的项目治理校准",
+            "Runtime Mode",
+            "用户可见",
+        ):
+            self.assertIn(marker, managed)
+        self.assertNotIn(".agents/skills/", managed)
+        self.assertNotIn("ROUTER.md", managed)
         self.assertNotIn("本项目使用 React", template)
         self.assertNotIn("数据库：PostgreSQL", template)
 
-    def test_managed_bootstrap_reads_router_before_governance_route(self) -> None:
-        """Runtime Mode 必须先读取唯一 Router，再通过 Coding 进入项目治理 Bootstrap。"""
+    def test_managed_bootstrap_uses_runtime_mcp_before_governance_calibration(self) -> None:
+        """Runtime Mode 必须先取得当前任务约束，再执行首次项目治理校准。"""
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
-        router_step = "必须读取 [`.agents/skills/ROUTER.md`]"
-        governance_step = "Project Governance Bootstrap"
-        self.assertIn(router_step, managed)
+        mcp_step = "使用当前项目已经配置的研发治理 MCP"
+        governance_step = "有界的项目治理校准"
+        self.assertIn(mcp_step, managed)
         self.assertIn(governance_step, managed)
-        self.assertLess(managed.index(router_step), managed.index(governance_step))
+        self.assertLess(managed.index(mcp_step), managed.index(governance_step))
+        self.assertNotIn(".agents/skills/ROUTER.md", managed)
 
     def test_canonical_runtime_install_creates_pending_governance_agents(self) -> None:
-        """真实 canonical Project Payload 安装到新项目后必须落地待校准治理骨架和自然语言入口。"""
+        """真实 canonical Project Payload 安装到新项目后必须落地待校准治理骨架和 Runtime 薄入口。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         with tempfile.TemporaryDirectory() as directory:
@@ -113,10 +120,16 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             agents = (target / "AGENTS.md").read_text(encoding="utf-8")
             self.assertIn("<!-- agent-skills:project-governance:v1 -->", agents)
             self.assertIn("状态：待校准", agents)
-            self.assertIn("Project Governance Bootstrap", agents)
+            self.assertIn("项目治理校准状态", agents)
             self.assertIn("自然语言研发任务", agents)
+            self.assertIn("研发治理 MCP", agents)
+            self.assertIn("代码修改", agents)
+            self.assertIn("测试", agents)
+            self.assertIn("文档同步", agents)
             self.assertIn("当前工程基线", agents)
             self.assertIn("CI / Git / Release / 部署", agents)
+            self.assertNotIn(".agents/skills/", agents)
+            self.assertNotIn("ROUTER.md", agents)
             self.assertNotIn("本项目使用 React", agents)
             self.assertNotIn("数据库：PostgreSQL", agents)
 

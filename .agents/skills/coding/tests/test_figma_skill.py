@@ -98,14 +98,21 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         self.assertIn("不得在 Coding", preservation)
         self.assertIn("第二套 Figma", preservation)
 
-    def test_bootstrap_and_source_navigation_expose_figma_without_static_whitelist(self) -> None:
-        """双 Bootstrap 指向唯一 Router，由 Router 暴露 Figma，同时保持动态 Skill Catalog。"""
+    def test_source_navigation_exposes_figma_while_runtime_bootstrap_hides_internal_catalog(self) -> None:
+        """Source Mode 保留明文 Figma 导航，Runtime Bootstrap 只暴露项目治理能力。"""
         managed = self._read(CODING_ROOT / "assets/AGENTS.managed.md")
         root_agents = self._read(ROOT / "AGENTS.md")
         router = self._read(ROUTER_PATH)
         root_readme = self._read(ROOT / "README.md")
-        for text in (managed, root_agents):
-            self.assertIn(".agents/skills/ROUTER.md", text)
+
+        self.assertIn(".agents/skills/ROUTER.md", root_agents)
+        self.assertNotIn(".agents/skills/", managed)
+        self.assertNotIn("ROUTER.md", managed)
+        self.assertNotIn("figma", managed.lower())
+        self.assertIn("研发治理 MCP", managed)
+        self.assertIn("Runtime Mode", managed)
+        self.assertIn("用户可见", managed)
+
         self.assertIn("figma", router.lower())
         self.assertIn(".agents/skills/*/SKILL.md", router)
         self.assertIn("figma", root_readme.lower())

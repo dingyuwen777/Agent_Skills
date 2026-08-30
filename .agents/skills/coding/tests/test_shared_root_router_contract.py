@@ -16,7 +16,7 @@ LEGACY_ROUTER_PATH = ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
 
 
 class SharedRootRouterContractTest(unittest.TestCase):
-    """验证统一 Router 是 Skills 根级共享运行资产，而不是 Coding 私有 asset。"""
+    """验证统一 Router 是 Skills 根级共享运行资产，并区分 Source/Runtime 可见入口。"""
 
     def test_source_router_has_single_shared_root_location(self) -> None:
         """源码只允许保留 `.agents/skills/ROUTER.md` 一个 Router 正文入口。"""
@@ -33,16 +33,19 @@ class SharedRootRouterContractTest(unittest.TestCase):
         ):
             self.assertIn(marker, router)
 
-    def test_bootstrap_entries_all_point_to_shared_root_router(self) -> None:
-        """源码入口和目标项目 managed block 都必须指向同一个根级 Router。"""
-        for relative in (
-            "AGENTS.md",
-            ".agents/MAINTENANCE.md",
-            ".agents/skills/coding/assets/AGENTS.managed.md",
-        ):
+    def test_source_bootstraps_point_router_while_runtime_bootstrap_hides_internal_navigation(self) -> None:
+        """源码维护入口继续指向 Router，目标项目 Runtime managed block 只暴露治理能力。"""
+        for relative in ("AGENTS.md", ".agents/MAINTENANCE.md"):
             text = (ROOT / relative).read_text(encoding="utf-8")
             self.assertIn(ROUTER_PATH, text, f"{relative} 未指向共享 ROUTER.md")
             self.assertNotIn("coding/assets/AGENT_SKILLS_ROUTER.md", text)
+
+        managed = (ROOT / ".agents/skills/coding/assets/AGENTS.managed.md").read_text(encoding="utf-8")
+        self.assertNotIn(ROUTER_PATH, managed)
+        self.assertNotIn(".agents/skills/", managed)
+        self.assertNotIn("coding/assets/AGENT_SKILLS_ROUTER.md", managed)
+        self.assertIn("研发治理 MCP", managed)
+        self.assertIn("Runtime Mode", managed)
 
     def test_project_payload_explicitly_models_shared_router(self) -> None:
         """Project Payload 必须显式声明并携带根级共享 Router，而不是借用某个 Skill 目录。"""
@@ -67,8 +70,8 @@ class SharedRootRouterContractTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "反斜杠"):
             project_installer._normalise_shared_files(["nested\\ROUTER.md"], "fixture")
 
-    def test_installer_manifest_owns_shared_router(self) -> None:
-        """安装结果必须由新 manifest 显式认领共享 Router，保证后续升级与回滚有 ownership。"""
+    def test_installer_manifest_owns_shared_router_without_exposing_it_in_root_guidance(self) -> None:
+        """安装 manifest 继续认领共享 Router，但目标根 AGENTS 不把它作为用户可见入口。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             target = root / "target"
@@ -85,7 +88,11 @@ class SharedRootRouterContractTest(unittest.TestCase):
             self.assertIn('"shared_files"', manifest)
             self.assertIn('"managed_files"', manifest)
             self.assertIn('"ROUTER.md"', manifest)
-            self.assertIn(".agents/skills/ROUTER.md", (target / "AGENTS.md").read_text(encoding="utf-8"))
+            agents = (target / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertNotIn(".agents/skills/ROUTER.md", agents)
+            self.assertNotIn(".agents/skills/", agents)
+            self.assertIn("研发治理 MCP", agents)
+            self.assertIn("用户可见", agents)
 
 
 if __name__ == "__main__":
