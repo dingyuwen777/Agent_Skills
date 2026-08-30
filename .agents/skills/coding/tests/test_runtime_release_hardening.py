@@ -15,6 +15,7 @@ from runtime.agent_skills_runtime.project_payload import build_project_payload
 ROOT = Path(__file__).resolve().parents[4]
 RUNTIME_BUILDER_PATH = ROOT / "scripts/build_runtime.py"
 SKILL_TESTS_WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"
+RUNTIME_PACKAGE_WORKFLOW = ROOT / ".github/workflows/runtime-package-tests.yml"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 SETUP_PYTHON_SHA = "5fda3b95a4ea91299a34e894583c3862153e4b97"
 PINNED_PYTHON = "3.12.10"
@@ -125,15 +126,18 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
             self.assertIn("fixture install write failure", str(captured.exception.__cause__))
 
     def test_permanent_and_release_workflows_pin_python_31210(self) -> None:
-        """三平台永久 CI 与 Release 构建必须使用同一明确 Python 版本和固定 action SHA。"""
+        """常规 Skill、三平台 Runtime 专项 CI 与 Release 都必须固定 Python 和 action SHA。"""
         setup_marker = f"actions/setup-python@{SETUP_PYTHON_SHA}"
         skill_workflow = SKILL_TESTS_WORKFLOW.read_text(encoding="utf-8")
+        runtime_workflow = RUNTIME_PACKAGE_WORKFLOW.read_text(encoding="utf-8")
         release_workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
-        self.assertGreaterEqual(skill_workflow.count(setup_marker), 3)
+        self.assertGreaterEqual(skill_workflow.count(setup_marker), 1)
+        self.assertGreaterEqual(runtime_workflow.count(setup_marker), 3)
         self.assertGreaterEqual(release_workflow.count(setup_marker), 4)
-        self.assertGreaterEqual(skill_workflow.count(f'python-version: "{PINNED_PYTHON}"'), 3)
+        self.assertGreaterEqual(skill_workflow.count(f'python-version: "{PINNED_PYTHON}"'), 1)
+        self.assertGreaterEqual(runtime_workflow.count(f'python-version: "{PINNED_PYTHON}"'), 3)
         self.assertGreaterEqual(release_workflow.count(f'python-version: "{PINNED_PYTHON}"'), 4)
-        self.assertNotIn("runs-on: windows-latest", skill_workflow)
+        self.assertNotIn("runs-on: windows-latest", runtime_workflow)
         self.assertNotIn("runs-on: windows-latest", release_workflow)
 
     def test_release_workflow_uses_tag_only_and_publishes_from_verified_draft(self) -> None:

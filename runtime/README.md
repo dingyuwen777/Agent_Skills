@@ -105,6 +105,23 @@ agent-skills-mcp install --target <project-root>
 
 正式 Skill 仍通过动态 Catalog 分发；Skills 根级共享文件只通过 Project Payload 的显式 `shared_files` Contract 分发，二者职责不混淆。内部 Router/Core 仍存在于目标项目并不意味着它们必须成为用户可见的日常导航；安装 ownership 与用户披露是两个独立边界。
 
+### 宿主连接级生命周期
+
+项目安装写入的 Codex、Cursor、Claude Code MCP 配置都是 `stdio`，命令参数为 `serve`。这意味着 Runtime 是由当前宿主启动并通过标准输入/输出保持连接的**前台子进程**，采用**宿主连接级生命周期**，不是系统常驻服务：
+
+```text
+宿主打开项目 / 建立 MCP 连接
+→ 启动项目 Runtime `serve`
+→ stdio 连接期间保持进程
+→ 可在同一连接内复用 task、route token 与已加载 Context
+→ 宿主关闭/重载项目或断开 stdio/stdin
+→ Runtime 进程退出
+```
+
+因此一个 Tool 调用或一次模型回复结束后，Codex 等宿主仍可能继续保持 Runtime 进程，这是正常的连接复用；**不应为了“用完即关”把每个 MCP Tool 调用改成一次独立进程**，否则会丢失当前任务的进程内渐进状态并反复完成 MCP 初始化。
+
+Runtime 不自行 fork/detach，不注册 Windows Service，也不创建 systemd、launchd 或其他 daemon/自动启动项。若宿主已经完全退出或明确断开项目 MCP，而 `serve` 进程仍长期存在，应按 orphan process 缺陷调查，而不能把这种状态当成设计目标。
+
 ## 4. MCP Contract
 
 稳定工具名称保持：
@@ -144,7 +161,7 @@ python -m pip install -r runtime/requirements-build.txt
 python scripts/build_runtime.py --output-dir dist --json
 ```
 
-未传 `--release-version` 时，Builder 使用 `0.0.0-dev` 作为明确的 development identity；该值只用于本地/PR/main 常规构建，不代表任何正式 Release。
+未传 `--release-version` 时，Builder 使用 `0.0.0-dev` 作为明确的 development identity；该值用于手工开发构建和 Runtime package CI，不代表任何正式 Release。纯 Skill/Reference/治理变化的常规 CI 不需要为了验证规则正文而调用 PyInstaller。
 
 正式 Release 不读取仓库根版本文件。`.github/workflows/release.yml` 从用户输入的 `v<SemVer>` tag 派生无 `v` 的 `release_version`，然后三平台统一显式调用：
 
@@ -193,29 +210,40 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 
 ## 7. 永久 CI
 
-`.github/workflows/skill-tests.yml` 固定使用 Python `3.12.10` 构建三平台 Runtime，并持续验证：
+永久 CI 按证明责任拆分，不再让每次纯 Skill/Reference/治理变化都重复构建三平台 binary。
+
+### Skill Tests
+
+`.github/workflows/skill-tests.yml` 使用 Python `3.12.10`，安装 Runtime 的运行依赖而不是 PyInstaller 构建依赖，并持续验证：
 
 - self-contained unit/preservation/portability tests；
 - Source Mode 唯一 Skills 根级 Router 与 Maintenance 职责、Runtime 薄 Bootstrap 可见性边界，以及 Project Payload shared-file 分发；
 - metadata compiler/evaluator、Routing Conformance、private manifest/encryption parity；
 - Runtime 公共返回面不暴露内部治理身份，同时 required canonical Context exact-text 不被删改；
 - install v3 ownership、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、Codex marker/重复 table fail-closed 和失败/回滚诊断；
-- Linux onefile build/status/self-test；
+- 动态 Skill Bundle + Project Payload 的源码级构建与内容守恒；
+- Active/changed Change Ready Check。
+
+这条 Workflow 不运行 PyInstaller，不构建 onefile，也不创建 Windows/macOS package job。规则正文会进入下一次正式 Runtime，但它的内容、路由、Bundle/Payload 和治理正确性由上述源码级自动化证明。
+
+### Runtime Package Tests
+
+`.github/workflows/runtime-package-tests.yml` 只在 Runtime/Builder/MCP 安装/Release 工作流相关路径变化时触发，并使用 Linux、Windows、macOS 对应 Runner 真实验证：
+
+- onefile build/status/self-test；
+- development `release_version=0.0.0-dev` 与固定 Python identity；
 - real stdio MCP；
 - project-only single-binary 首次安装、升级和无参数安装；
-- 安装后的根 `AGENTS.md` 保留正常工程过程语义且不主动暴露内部治理导航；
 - 项目内 Runtime status/MCP smoke；
-- Windows onefile + 项目安装；
-- macOS onefile + 项目安装；
-- Active Change Ready Check。
+- Windows/macOS 对应平台 package/install。
 
-普通永久 CI 构建必须得到 `release_version=0.0.0-dev`，不能冒充正式版本。不同平台必须使用对应 Runner，不能把一个平台的 PyInstaller artifact 当跨平台二进制。
+不同平台必须使用对应 Runner，不能把一个平台的 PyInstaller artifact 当跨平台二进制。Skill Tests 的绿色不能替代这一层；反过来，Runtime package 绿色也不能替代规则/内容守恒/Ready 的广覆盖测试。
 
 ## 8. 正式 Release
 
 正式 Release 由根 `.github/workflows/release.yml` 从 `main` 手工构建。输入 `v<SemVer>` tag 后，workflow 将同一 `release_version` 显式传入 Linux/Windows/macOS Builder；Release preflight 会重新运行完整 self-contained tests 与 Ready Check。
 
-正式 Release 要求仓库已经启用 GitHub Release Immutability。workflow 会在创建任何 Release 前检查该设置；未启用时 fail closed。所有三平台 artifact / identity 完成验证后，workflow 先创建 Draft Release、上传完整正式资产并核对资产集合，再 Publish，并在发布后校验 tag、资产与 immutable 状态。如果 publish 前任一步失败，失败清理只删除仍处于 Draft 的本次 Release/关联 tag，确保可重试；一旦已经 Publish，就不自动删除或覆盖正式 Release。
+所有三平台 artifact / identity 完成验证后，workflow 先创建 Draft Release、上传完整正式资产并核对资产集合，再 Publish。正式 Release 仍是三平台 artifact 的最终交付门禁，不因为常规 Skill CI 减少 PyInstaller 构建而降低验证责任。
 
 最终用户资产和使用方式以根 [`USAGE.md`](../USAGE.md) 为准。本文件不维护第二份最终用户教程，也不记录 Change/PR/Release 历史流水账。
 

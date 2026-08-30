@@ -97,8 +97,8 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         for relative in removed:
             self.assertFalse((ROOT / relative).exists(), f"旧分发入口仍存在：{relative}")
 
-    def test_repository_has_no_install_compatibility_or_change_archives(self) -> None:
-        """仓库只保留当前 v3 安装路径，并由 Git/PR 而不是历史 Change 文件保存历史。"""
+    def test_repository_has_no_install_compatibility_and_keeps_change_archives(self) -> None:
+        """仓库只保留当前 v3 安装路径，同时把完成 Change 作为独立历史记录归档。"""
         installer = self._read("runtime/agent_skills_runtime/project_installer.py")
         for obsolete in (
             "LEGACY_INSTALL_SCHEMA",
@@ -110,12 +110,12 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             self.assertNotIn(obsolete, installer)
 
         archive_root = ROOT / ".agents/changes/archive"
-        archived_files = list(archive_root.rglob("*")) if archive_root.exists() else []
-        self.assertFalse(
-            any(path.is_file() for path in archived_files),
-            "仓库不应保留历史 Change archive 文件",
-        )
-        self.assertNotIn(".agents/changes/archive/", self._read(".agents/MAINTENANCE.md"))
+        archived = archive_root / "2026-08/CHG-20260830-runtime-disclosure-boundary/CHANGE.md"
+        self.assertTrue(archived.is_file(), "已完成的 Runtime disclosure Change 应保留在 archive")
+        self.assertIn("status: done", archived.read_text(encoding="utf-8"))
+        maintenance = self._read(".agents/MAINTENANCE.md")
+        self.assertIn("archive/YYYY-MM", maintenance)
+        self.assertIn("不得删除已完成的 Change 历史", maintenance)
 
     def test_coding_python_helpers_remain_runtime_assets_without_leaking_internal_paths_to_usage(self) -> None:
         """单 binary 仍携带 Coding helper，但最终用户只看到必要的环境提示，不暴露内部降级设计。"""
