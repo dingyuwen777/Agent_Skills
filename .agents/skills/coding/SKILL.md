@@ -560,10 +560,10 @@ roadmap / release state（项目实际维护时）
 
 #### Docs Skill 按需路由（仓库存在时）
 
-如果仓库存在 `.agents/skills/docs/SKILL.md`，本节的文档同步检查必须先给出 Docs Impact：
+如果仓库存在 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)，本节的文档同步检查必须先给出 Docs Impact：
 
 - 当前变化不改变人类需要理解、使用、维护、部署或排障的事实：记录 `Docs Impact: not_applicable` 和具体依据，不加载 Docs，不制造无意义文档 diff；
-- 当前变化存在文档影响，或当前任务本身就是技术文档 Review / 编写 / 更新：必须读取 `.agents/skills/docs/SKILL.md`，再由 Docs 根据真实影响选择 `targeted`（默认）或 `full`；
+- 当前变化存在文档影响，或当前任务本身就是技术文档 Review / 编写 / 更新：必须读取 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)，再由 Docs 根据真实影响选择 `targeted`（默认）或 `full`；
 - Coding 可以提供候选文档作为导航，但不能代替 Docs 决定真正需要读取或修改哪些文档，也不得把 Docs 的详细写作/审查规则复制或总结进 Coding；
 - Docs 返回 `code_issue_detected` 时，回到 Coding 当前完整流程修复实现；修复完成并取得新鲜验证后，再执行 Docs `targeted re-review`。Docs 尚未闭环前，继续受上一条“不得标记 Ready、完成、可合并或可发布”的约束。
 
@@ -655,16 +655,16 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 7. 规则内容守恒与 Skill 维护
 
-当任务会精简、重组、拆分、合并、改名、迁移或通用化 `SKILL.md`、reference、模板或项目 Overlay 时，必须在修改之前读取 [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md)。内容守恒仍是硬门禁：只有逐项证明完全等价时才允许消除重复，无法证明时保留原细节。
+当任务会精简、重组、拆分、合并、改名、迁移或通用化 [`SKILL.md`](SKILL.md)、reference、模板或项目 Overlay 时，必须在修改之前读取 [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md)。内容守恒仍是硬门禁：只有逐项证明完全等价时才允许消除重复，无法证明时保留原细节。
 
 ## 10. Review Skill 集成
 
 #### Review Skill 强制路由（仓库存在时）
 
-如果仓库存在 `.agents/skills/review/SKILL.md`，Coding 必须把 Review 视为完成前的独立审查层，而不是可选建议：
+如果仓库存在 [`.agents/skills/review/SKILL.md`](../review/SKILL.md)，Coding 必须把 Review 视为完成前的独立审查层，而不是可选建议：
 
-- **显式 Code Review / Audit**：Coding 先完成仓库事实恢复、四维任务路由、风险/工具链/权限确认，并读取当前任务应触发的 Coding references；随后必须读取 `.agents/skills/review/SKILL.md`，立即切入 Review，由 Review 负责独立需求重建、Findings 和测试充分性审查；
-- **任何 Coding 实现任务**：完成实现、目标验证、文档同步和进入完成前 Review 时，必须读取 `.agents/skills/review/SKILL.md` 并执行适用 Review；不能只由同一个 Coding 流程用一句“自检完成”替代独立 Review 方法；
+- **显式 Code Review / Audit**：Coding 先完成仓库事实恢复、四维任务路由、风险/工具链/权限确认，并读取当前任务应触发的 Coding references；随后必须读取 [`.agents/skills/review/SKILL.md`](../review/SKILL.md)，立即切入 Review，由 Review 负责独立需求重建、Findings 和测试充分性审查；
+- **任何 Coding 实现任务**：完成实现、目标验证、文档同步和进入完成前 Review 时，必须读取 [`.agents/skills/review/SKILL.md`](../review/SKILL.md) 并执行适用 Review；不能只由同一个 Coding 流程用一句“自检完成”替代独立 Review 方法；
 - Review 可以复用 Coding 作为唯一研发规范源，但 Coding 不把 Review 的 Findings、测试专家方法和报告细节复制进本文件；
 - Review 处于 `review-only` 时不自动获得实现修改授权；Review 发现需要修生产代码且任务已授权修复时，返回 Coding，重新按 Coding 完整流程修复并取得新鲜验证，然后再次进入 Review 做 re-review；
 - Review Skill **存在但无法读取**时，必须报告阻塞，**不得宣称 Review 完成**、可合并或可交付；

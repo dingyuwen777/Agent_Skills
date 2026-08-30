@@ -32,7 +32,7 @@ Runtime 的加密、Project Payload、managed installation manifest、Codex/Curs
 - 目标项目缺少根 `AGENTS.md`，需要建立项目 Overlay；
 - 目标项目已有 `AGENTS.md`，需要安全补充/升级 Agent Skills managed block；
 - 修复或审查 AGENTS managed block、Bootstrap 行为；
-- 修改唯一 `.agents/skills/ROUTER.md` 的项目安装/Bootstrap 可达性；
+- 修改唯一 [`.agents/skills/ROUTER.md`](../../ROUTER.md) 的项目安装/Bootstrap 可达性；
 - 修改正式 Skill 或 Skills 根级 shared runtime file 的 Project Payload 安装边界；
 - 判断哪些 `.agents` 内容属于 Agent_Skills 受管内容，哪些属于目标项目自有状态；
 - 修改项目 Runtime、ownership manifest、宿主 MCP 配置或安装回滚。
@@ -41,13 +41,11 @@ Runtime 的加密、Project Payload、managed installation manifest、Codex/Curs
 
 ## 2. 固定边界：分发 Skill，不复制源仓库 Bootstrap / Maintenance
 
-Agent_Skills 源仓库根 `AGENTS.md` 是源码直读/维护模式的薄 Bootstrap，`.agents/MAINTENANCE.md` 只负责维护 Agent_Skills 源仓库本身。二者都**禁止直接复制成目标项目根 `AGENTS.md`**。
+Agent_Skills 源仓库根 `AGENTS.md` 是源码直读/维护模式的薄 Bootstrap，[`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md) 只负责维护 Agent_Skills 源仓库本身。二者都**禁止直接复制成目标项目根 `AGENTS.md`**。
 
 目标项目安装后的跨 Skill 路由统一读取：
 
-```text
-.agents/skills/ROUTER.md
-```
+[`.agents/skills/ROUTER.md`](../../ROUTER.md)
 
 Router 是整个 Skill 系统的 Skills 根级 shared runtime file，不属于 `coding` 或其他任一 Skill，也不是第五个 Skill。
 
@@ -86,7 +84,7 @@ Runtime 安装自己的：
 
 **普通 Runtime** 的 `AGENTS` managed block 和共享 Router 只承担目标项目正常研发入口：项目事实优先、动态 Skill 导航、Reference 加载、专业 Skill Handoff、失败停止和权限边界。它们不承载 **源仓库 Mutation**、canonical repository、源仓库 Maintenance 或跨仓库同步等维护者专用治理。
 
-源仓库中针对 Skill / Reference 的新增、修改、删除、重命名、拆分、合并、通用化和跨仓库同步，由 Agent_Skills 根 `AGENTS.md` 识别维护意图，再进入 `.agents/MAINTENANCE.md`、Coding 与 ref16。普通目标项目只需要知道：安装器 manifest 明确认领的 `.agents` 运行资产不是项目自有规则，不应直接手工修改；项目自己的长期规则继续写在项目自己的正式事实源中。
+源仓库中针对 Skill / Reference 的新增、修改、删除、重命名、拆分、合并、通用化和跨仓库同步，由 Agent_Skills 根 `AGENTS.md` 识别维护意图，再进入 [`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md)、Coding 与 ref16。普通目标项目只需要知道：安装器 manifest 明确认领的 `.agents` 运行资产不是项目自有规则，不应直接手工修改；项目自己的长期规则继续写在项目自己的正式事实源中。
 
 ## 3. 最终用户入口：项目级单 binary
 
@@ -123,7 +121,7 @@ Runtime binary 负责：
 2. 读取动态正式 Skill Catalog，以及 Project Payload 显式 `shared_files`；
 3. 读取旧 `.agents/agent-skills-install.json`：只接受 v3，并且只认领 `managed_files`；
 4. 首次安装遇到未被认领的同名 Skill 或同名 shared file 时 fail closed；
-5. 预检并逐文件更新新受管 Core/shared files，其中唯一 Router 为 `.agents/skills/ROUTER.md`；
+5. 预检并逐文件更新新受管 Core/shared files，其中唯一 Router 为 [`.agents/skills/ROUTER.md`](../../ROUTER.md)；
 6. 安装/升级项目 `.agents/runtime/agent-skills-mcp[.exe]`；
 7. 创建或安全增量更新根 `AGENTS.md`，managed block 只指向项目内 Router；
 8. 增量更新 `.gitignore`；
@@ -177,16 +175,16 @@ Bootstrap **不会**：
 python .agents/skills/coding/scripts/coding.py bootstrap --root . --json
 ```
 
-这是源仓库维护入口，不是最终用户安装通道。正式 Runtime 安装已经通过 Project Payload v2 保证 Router 与 Coding 同版本落地；手工使用这个 helper 时仍必须先确认目标项目已经具备本 Release 的 `.agents/skills/ROUTER.md` 与 Coding Skill。
+这是源仓库维护入口，不是最终用户安装通道。正式 Runtime 安装已经通过 Project Payload v2 保证 Router 与 Coding 同版本落地；手工使用这个 helper 时仍必须先确认目标项目已经具备本 Release 的 [`.agents/skills/ROUTER.md`](../../ROUTER.md) 与 Coding Skill。
 
 ## 5. 目标项目没有 AGENTS.md
 
-没有根 `AGENTS.md` 时，使用 `coding/assets/AGENTS.template.md` 创建项目 Overlay 初版。
+没有根 `AGENTS.md` 时，使用 [`coding/assets/AGENTS.template.md`](../assets/AGENTS.template.md) 创建项目 Overlay 初版。
 
 初版必须包含：
 
 1. Agent Skills managed block；
-2. managed block 指向项目内已经安装的 `.agents/skills/ROUTER.md`；
+2. managed block 指向项目内已经安装的 [`.agents/skills/ROUTER.md`](../../ROUTER.md)；
 3. 项目 Overlay 的维护边界；
 4. 初始化时真实存在的项目规则、Manifest/Lock/Build、需求/Spec、Contract/Schema、Migration、README/Architecture/Documentation 等事实入口导航；
 5. 明确“事实入口存在”不等于“已经确认某个框架、数据库或架构”；
@@ -253,16 +251,16 @@ marker 后原文：逐字保留
 
 ## 7. managed block 必须表达什么
 
-`coding/assets/AGENTS.managed.md` 是 managed block 唯一模板事实源，但它现在只承担**薄 Bootstrap**。至少保持：
+[`coding/assets/AGENTS.managed.md`](../assets/AGENTS.managed.md) 是 managed block 唯一模板事实源，但它现在只承担**薄 Bootstrap**。至少保持：
 
 1. 项目自己的规则和真实事实优先；
-2. 明确读取 `.agents/skills/ROUTER.md`；
+2. 明确读取 [`.agents/skills/ROUTER.md`](../../ROUTER.md)；
 3. 由 Router 决定本次 Skill / Reference 加载，不在 block 内复制第二套详细路由；
 4. 通用示例不能覆盖目标项目事实；
 5. 明确安装器认领的 `.agents` 受管运行资产不是项目自有规则，不直接手工修改，项目长期规则维护在项目自身正式事实源；
 6. Router 缺失、不可读或与更高优先级规则存在无法安全解析的冲突时明确报告并停止依赖它的动作，不假装遵守。
 
-原 managed block 曾直接承担的 Coding 锚点、Reference 触发、Runtime Task Route → required Context、Figma NOT_READY/READY Handoff、Review、Docs、Skill/Reference 失败停止、CI/Branch Protection/PR/Release/Migration/安全与授权边界、项目事实来源等完整可执行语义，已经按内容守恒迁入 `.agents/skills/ROUTER.md`，该 Router 是这些跨 Skill 语义的唯一正文 Owner。本 Reference 只定义 Bootstrap Contract，不再复制第二份 Router 正文。
+原 managed block 曾直接承担的 Coding 锚点、Reference 触发、Runtime Task Route → required Context、Figma NOT_READY/READY Handoff、Review、Docs、Skill/Reference 失败停止、CI/Branch Protection/PR/Release/Migration/安全与授权边界、项目事实来源等完整可执行语义，已经按内容守恒迁入 [`.agents/skills/ROUTER.md`](../../ROUTER.md)，该 Router 是这些跨 Skill 语义的唯一正文 Owner。本 Reference 只定义 Bootstrap Contract，不再复制第二份 Router 正文。
 
 ## 8. `.gitignore` 规则
 
@@ -386,7 +384,7 @@ Claude Code
 - 无参数当前目录安装；
 - 显式 `install --target`；
 - 重复升级幂等；
-- 动态正式 Skill 都安装，且 `.agents/skills/ROUTER.md` 不被误识别成 Skill；
+- 动态正式 Skill 都安装，且 [`.agents/skills/ROUTER.md`](../../ROUTER.md) 不被误识别成 Skill；
 - 目标 Project Payload 不出现 canonical Reference 或 Stub；
 - Project Payload `shared_files` 显式认领 `ROUTER.md`，该文件原样进入目标项目；
 - 目标项目 managed block 指向这个真实存在的 Router，且不复制完整 Router；

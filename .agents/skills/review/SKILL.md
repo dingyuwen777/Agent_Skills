@@ -44,9 +44,7 @@ Review **不复制** Coding 的编码、TDD、Git、兼容、安全、Contract�
 
 如果存在：
 
-```text
-.agents/skills/coding/SKILL.md
-```
+[`.agents/skills/coding/SKILL.md`](../coding/SKILL.md)
 
 必须在正式 Review 前读取，并把它及其按任务触发的 references 作为**唯一研发规范源**。Review 不得把 Coding 的详细规则复制成第二份，也不得用 Review 自己的偏好覆盖项目事实。
 
@@ -79,7 +77,7 @@ Review 仍可独立使用，但只能依据：
 Review 发现技术文档缺陷时：
 
 - 只读 Review：作为 Finding 报告；
-- 已授权修文档且存在 `.agents/skills/docs/SKILL.md`：按 Docs 的工作流处理，不由 Review 复制 Docs 写作规则；
+- 已授权修文档且存在 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)：按 Docs 的工作流处理，不由 Review 复制 Docs 写作规则；
 - Docs 发现实现问题后仍返回 Coding，不由 Review 越权直接改生产实现。
 
 ## 2. 三种工作模式

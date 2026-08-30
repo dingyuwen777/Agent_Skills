@@ -4,9 +4,7 @@
 
 跨 Skill Catalog、项目事实边界、Reference 两种加载方式以及 Coding / Review / Docs / Figma Handoff 的唯一入口是：
 
-```text
-.agents/skills/ROUTER.md
-```
+[`.agents/skills/ROUTER.md`](skills/ROUTER.md)
 
 本文件不再维护第二份完整 Skill Catalog / Router。
 
@@ -16,11 +14,11 @@
 
 1. 先读根 `AGENTS.md`，确认当前属于 Agent_Skills Maintenance Mode；
 2. 再读本文件；
-3. 读取 `.agents/skills/ROUTER.md`，按唯一 Router 进入正式 Skill；
-4. 再读 `.agents/skills/coding/SKILL.md`，按四维任务路由选择当前真正命中的 references；
+3. 读取 [`.agents/skills/ROUTER.md`](skills/ROUTER.md)，按唯一 Router 进入正式 Skill；
+4. 再读 [`.agents/skills/coding/SKILL.md`](skills/coding/SKILL.md)，按四维任务路由选择当前真正命中的 references；
 5. 修改 Review、Docs、Figma 时，再读取对应 `SKILL.md` 与任务直接相关 references；
-6. 规则迁移、拆分、通用化、删文档或调整 Ownership 时，必须读取 `coding/references/15_规则内容守恒与Skill维护.md`；
-7. Runtime / Project Payload / Bundle / Stub / 项目安装 / MCP / Release 变化时，必须读取 `coding/references/13_本地MCP_Runtime分发与原文上下文加载.md`；
+6. 规则迁移、拆分、通用化、删文档或调整 Ownership 时，必须读取 [`coding/references/15_规则内容守恒与Skill维护.md`](skills/coding/references/15_规则内容守恒与Skill维护.md)；
+7. Runtime / Project Payload / Bundle / Stub / 项目安装 / MCP / Release 变化时，必须读取 [`coding/references/13_本地MCP_Runtime分发与原文上下文加载.md`](skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md)；
 8. 不从历史聊天或其他业务仓库猜当前实现，以当前分支真实文件、GitHub 状态和本轮运行结果为准；
 9. 只读取当前任务直接相关的代码、规则、测试、Workflow 和配置，不机械通读所有 references。
 
@@ -214,7 +212,7 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、Coding 锚�
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
 - 正式资产全部验证后先创建 Draft Release、上传并核对资产集合，再 Publish；发布后核对 tag、资产和 immutable 状态；
 - 已存在 tag/Release 不覆盖、不移动；
-- Release 页面说明使用 `USAGE.md`，不自动把维护 commit/PR 历史暴露给最终用户。
+- Release 页面说明使用 [`USAGE.md`](../USAGE.md)，不自动把维护 commit/PR 历史暴露给最终用户。
 
 ## 11. 完成报告
 

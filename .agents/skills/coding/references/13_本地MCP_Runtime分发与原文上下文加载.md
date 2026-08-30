@@ -6,7 +6,7 @@
 
 这份规则定义 Agent_Skills 当前唯一正式对外分发模式：**Native Core Skill + Shared Skill Router + Project-local MCP Runtime + Encrypted Canonical References + onefile binary**。
 
-目标是：最终使用者只拿到对应平台 Release binary，在目标项目根运行即可完成项目级接入；详细 canonical `references/*.md` 不作为普通 Markdown 分发到目标项目，同时保持现有自然语言 Skill 的执行语义和逐字完整性。跨 Skill 的 Catalog / Router 只维护一份 `.agents/skills/ROUTER.md`，源码直读和 Runtime 安装共享同一正文。
+目标是：最终使用者只拿到对应平台 Release binary，在目标项目根运行即可完成项目级接入；详细 canonical `references/*.md` 不作为普通 Markdown 分发到目标项目，同时保持现有自然语言 Skill 的执行语义和逐字完整性。跨 Skill 的 Catalog / Router 只维护一份 [`.agents/skills/ROUTER.md`](../../ROUTER.md)，源码直读和 Runtime 安装共享同一正文。
 
 本文件只规定 Runtime 分发、动态 Skill 发现、Skills 根级共享运行资产、Project Payload、Reference 原文加载、项目级安装/升级、宿主接入、完整性、Release 和失败边界。Coding / Review / Docs / Figma 的研发语义仍由各自 `SKILL.md` 与 canonical References 定义；跨 Skill 入口、Reference 取得方式和 Handoff 由唯一 Router 定义。
 
@@ -104,7 +104,7 @@ Runtime、Project Payload、manifest、测试和 Release **不得维护固定完
 7. `references/` 存在时只接受当前 Contract 支持的普通 Markdown，不通过特殊文件/符号链接越界；
 8. 发现结果确定性排序。
 
-`.agents/skills/ROUTER.md` 是根级普通文件，**不能被识别成正式 Skill**。`coding` 仍是当前目标项目研发路由的核心锚点；Router 可以展示当前 Catalog 供 Agent 导航，但明确不是 Runtime 分发白名单。改变 Coding 的上位入口关系属于独立架构变化，不能借动态发现静默修改。
+[`.agents/skills/ROUTER.md`](../../ROUTER.md) 是根级普通文件，**不能被识别成正式 Skill**。`coding` 仍是当前目标项目研发路由的核心锚点；Router 可以展示当前 Catalog 供 Agent 导航，但明确不是 Runtime 分发白名单。改变 Coding 的上位入口关系属于独立架构变化，不能借动态发现静默修改。
 
 ## 4. 规则与 Router 事实源
 
@@ -117,9 +117,7 @@ Runtime、Project Payload、manifest、测试和 Release **不得维护固定完
 
 跨 Skill 的 Catalog、项目事实优先、Source/Runtime 两种取得方式和 Coding/Figma/Review/Docs Handoff 的唯一正文 Owner：
 
-```text
-.agents/skills/ROUTER.md
-```
+[`.agents/skills/ROUTER.md`](../../ROUTER.md)
 
 Router 是 Skills 根级 shared runtime file，不是新的专业 Skill，也不得复制各 Skill 的完整详细规则；根 `AGENTS.md` 与 `AGENTS.managed.md` 只做 Bootstrap，不再拥有第二套完整 Router。
 
@@ -127,7 +125,7 @@ Router 是 Skills 根级 shared runtime file，不是新的专业 Skill，也不
 
 源仓库 Mutation 的意图识别与 canonical Ownership 由 Agent_Skills **根 `AGENTS.md`** 独立承担，详细 Skill/Reference 内容守恒继续由 ref16 承担。普通 Runtime 安装给目标项目的 shared Router 与 `AGENTS.managed.md` 不复制这套源仓库 Mutation、canonical repository、Maintenance 或跨仓库同步治理。
 
-这不是建立第二个 Router：`.agents/skills/ROUTER.md` 仍是源码直读与 Runtime 安装共享的普通研发 Router；根 `AGENTS.md` 只在 Agent_Skills 源仓库维护场景增加源仓库专用 Bootstrap。Custom Instructions 可以把维护者意图引导到当前根 `AGENTS.md`，但不进入 Project Payload，也不替代当前源码事实。
+这不是建立第二个 Router：[`.agents/skills/ROUTER.md`](../../ROUTER.md) 仍是源码直读与 Runtime 安装共享的普通研发 Router；根 `AGENTS.md` 只在 Agent_Skills 源仓库维护场景增加源仓库专用 Bootstrap。Custom Instructions 可以把维护者意图引导到当前根 `AGENTS.md`，但不进入 Project Payload，也不替代当前源码事实。
 
 Builder 读取 canonical References 时：
 
@@ -426,7 +424,7 @@ manifest 记录 Release、`source_digest`、`payload_digest`、公开 Skill/`sha
 
 项目安装还会建立：
 
-- 根 `AGENTS.md`：创建或只更新 `agent-skills:managed` block；该 block 只负责项目事实优先并指向项目内 `.agents/skills/ROUTER.md`；
+- 根 `AGENTS.md`：创建或只更新 `agent-skills:managed` block；该 block 只负责项目事实优先并指向项目内 [`.agents/skills/ROUTER.md`](../../ROUTER.md)；
 - `.gitignore`：增量加入项目缓存和 Runtime ignore；
 - Cursor：`.cursor/mcp.json` 的 `mcpServers.agent-skills`；
 - Claude Code：`.mcp.json` 的 `mcpServers.agent-skills` + `CLAUDE.md` 最薄 `@AGENTS.md` bridge；
@@ -520,11 +518,11 @@ bundle_version / source_digest / routing_digest / payload_digest
 
 仓库不维护独立根版本文件。**正式 Release 的唯一版本来源是 `.github/workflows/release.yml` 手工输入的 `v<SemVer>` tag；workflow 去掉前缀 `v` 得到 `release_version`，并把同一个值显式传给三个平台 Builder。**普通本地、PR 和 main 常规构建没有正式 tag 时使用 `0.0.0-dev` development identity，不得冒充已发布版本。
 
-正式 Release 只发布三平台 binary、`USAGE.md` 与 `SHA256SUMS`；不发布构建期 identity manifest、源包、Python 安装器、Runtime Kit、私有 Routing Manifest 或公开 Reference Catalog。构建期 identity manifest 至少绑定 `release_version`、真实 `source_commit`、artifact 文件名/SHA256、构建 `python_version`、source/routing/payload digest 以及 Bundle/Task Route/Routing Manifest/MCP/Project Payload/install 协议版本；workflow 完成三平台交叉校验后必须在生成 checksum 和 Release 前删除这些 manifest。
+正式 Release 只发布三平台 binary、[`USAGE.md`](../../../../USAGE.md) 与 `SHA256SUMS`；不发布构建期 identity manifest、源包、Python 安装器、Runtime Kit、私有 Routing Manifest 或公开 Reference Catalog。构建期 identity manifest 至少绑定 `release_version`、真实 `source_commit`、artifact 文件名/SHA256、构建 `python_version`、source/routing/payload digest 以及 Bundle/Task Route/Routing Manifest/MCP/Project Payload/install 协议版本；workflow 完成三平台交叉校验后必须在生成 checksum 和 Release 前删除这些 manifest。
 
 Release workflow 必须从 main 构建，在正式构建前校验 tag 不存在、Release 不存在、Release Immutability 已启用，并在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check；三平台使用同一固定 Python 版本，且 identity 必须满足 `source_commit == GITHUB_SHA`、`release_version == tag 去 v 后值`、artifact SHA256 和协议/digest 一致。
 
-正式资产完成交叉校验后，workflow 必须先创建 **Draft Release**，上传三平台 binary、`USAGE.md` 和 `SHA256SUMS`，核对 Draft 资产集合完整后才 Publish；发布后再核对 tag 指向当前 `GITHUB_SHA`、资产集合与 GitHub 返回的 `immutable=true`。Release Immutability 未启用、Draft 上传不完整、identity 不一致或发布后不可验证时必须失败关闭，不能把可变或缺资产的 Release 描述成正式不可变交付。
+正式资产完成交叉校验后，workflow 必须先创建 **Draft Release**，上传三平台 binary、[`USAGE.md`](../../../../USAGE.md) 和 `SHA256SUMS`，核对 Draft 资产集合完整后才 Publish；发布后再核对 tag 指向当前 `GITHUB_SHA`、资产集合与 GitHub 返回的 `immutable=true`。Release Immutability 未启用、Draft 上传不完整、identity 不一致或发布后不可验证时必须失败关闭，不能把可变或缺资产的 Release 描述成正式不可变交付。
 
 版本语义分为两种：网页端读取当前 main、Runtime 使用当前最新 Release 时追求“最新规则”，但发布间隙允许短暂版本差；需要严格复现时，Source Mode 必须读取 Runtime `status --json` 记录的 `source_commit` 所对应的 Release tag/commit，不能把 main 的更新内容与旧 Runtime 声称为同一版本。
 

@@ -32,7 +32,7 @@ agent_skills_runtime/server.py
 → CLI + stdio MCP Server
 ```
 
-Runtime 不负责重新解释 Coding / Review / Docs / Figma 规则；跨 Skill 发现与 Handoff 由 `.agents/skills/ROUTER.md` 唯一负责，各 Skill 完整专业语义仍由自己的 `SKILL.md` 和 canonical `references/*.md` 定义。
+Runtime 不负责重新解释 Coding / Review / Docs / Figma 规则；跨 Skill 发现与 Handoff 由 [`.agents/skills/ROUTER.md`](../.agents/skills/ROUTER.md) 唯一负责，各 Skill 完整专业语义仍由自己的 `SKILL.md` 和 canonical `references/*.md` 定义。
 
 ## 2. 三个独立完整性域
 
@@ -72,7 +72,7 @@ Project Payload 明确排除：
 - tests；
 - Python cache/编译产物。
 
-因此像 `coding/scripts/tzdata/README.md` 这种源码维护说明可以留在私有源仓库，但不会安装到目标项目；真正运行需要的 `coding/scripts/tzdata/zoneinfo/Asia/Shanghai` 等资源和 Skills 根级 `.agents/skills/ROUTER.md` 仍会进入 Payload。
+因此像 [`coding/scripts/tzdata/README.md`](../.agents/skills/coding/scripts/tzdata/README.md) 这种源码维护说明可以留在私有源仓库，但不会安装到目标项目；真正运行需要的 `coding/scripts/tzdata/zoneinfo/Asia/Shanghai` 等资源和 Skills 根级 [`.agents/skills/ROUTER.md`](../.agents/skills/ROUTER.md) 仍会进入 Payload。
 
 目标项目没有 Agent_Skills `references/`。Source Mode 直接读取源仓库 required References；Runtime Mode 通过中文 Task Route 和当前不透明 route token 取得 required 完整原文。
 
@@ -93,7 +93,7 @@ agent-skills-mcp install --target <project-root>
 - 新 Release 删除文件时只删除旧 v3 `managed_files` 明确认领项，不替换整棵 Skill 目录；
 - `.agents/runtime/` 为项目本地运行资产并加入 `.gitignore`；
 - `AGENTS.md` / CLAUDE / Codex 使用 managed marker；
-- 目标项目 `AGENTS.md` managed block 只做薄 Bootstrap，并指向 `.agents/skills/ROUTER.md`；
+- 目标项目 `AGENTS.md` managed block 只做薄 Bootstrap，并指向 [`.agents/skills/ROUTER.md`](../.agents/skills/ROUTER.md)；
 - Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产和未认领 shared file 保留；
 - Codex 同名 MCP table 存在但 managed marker 缺失，或合法 managed block 外另有重复同名 table 时，即使 install manifest 仍存在也 fail closed，不猜测 table ownership；
