@@ -153,21 +153,27 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             self.assertIn("任意深度", text)
             self.assertIn("维护 `README.md`", text)
 
-    def test_root_managed_router_and_maintenance_have_distinct_roles(self) -> None:
-        """两个薄 Bootstrap 共用唯一根级 Router，源仓库维护规则由 Maintenance 独立承担。"""
+    def test_source_router_and_runtime_bootstrap_have_distinct_visibility_roles(self) -> None:
+        """源码入口保留完整 Router 导航，Runtime managed 只暴露工程治理能力，Maintenance 独立负责源仓库。"""
         root_agents = self._read("AGENTS.md")
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
         router = self._read(".agents/skills/ROUTER.md")
         maintenance = self._read(".agents/MAINTENANCE.md")
 
-        for text in (root_agents, managed):
-            self.assertIn(".agents/skills/ROUTER.md", text)
+        self.assertIn(".agents/skills/ROUTER.md", root_agents)
         self.assertIn(".agents/MAINTENANCE.md", root_agents)
         self.assertIn("不得复制到目标项目", root_agents)
+
+        self.assertNotIn(".agents/skills/", managed)
+        self.assertNotIn("ROUTER.md", managed)
         self.assertNotIn("agent_skills_load_required_context", managed)
         self.assertNotIn(".agents/skills/figma/SKILL.md", managed)
         self.assertNotIn(".agents/skills/review/SKILL.md", managed)
         self.assertNotIn(".agents/skills/docs/SKILL.md", managed)
+        self.assertIn("研发治理 MCP", managed)
+        self.assertIn("用户可见", managed)
+        self.assertIn("代码修改", managed)
+        self.assertIn("文档同步", managed)
 
         for marker in (
             ".agents/skills/coding/SKILL.md",
