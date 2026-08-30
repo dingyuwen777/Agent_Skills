@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import tempfile
 import unittest
 from pathlib import Path
+
+from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.project_installer import install_project
+from runtime.agent_skills_runtime.project_payload import build_project_payload
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -75,6 +80,34 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
         self.assertIn("managed block 外", managed)
         self.assertNotIn("本项目使用 React", template)
         self.assertNotIn("数据库：PostgreSQL", template)
+
+    def test_canonical_runtime_install_creates_pending_governance_agents(self) -> None:
+        """真实 canonical Project Payload 安装到新项目后必须落地待校准治理骨架和自然语言入口。"""
+        bundle = build_bundle(ROOT)
+        payload = build_project_payload(ROOT, bundle)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "target-project"
+            target.mkdir()
+            runtime_artifact = root / "agent-skills-mcp"
+            runtime_artifact.write_bytes(b"runtime-fixture")
+
+            install_project(
+                target,
+                payload,
+                runtime_artifact,
+                release_version="1.2.3",
+            )
+
+            agents = (target / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn("<!-- agent-skills:project-governance:v1 -->", agents)
+            self.assertIn("状态：待校准", agents)
+            self.assertIn("Project Governance Bootstrap", agents)
+            self.assertIn("自然语言研发任务", agents)
+            self.assertIn("当前工程基线", agents)
+            self.assertIn("CI / Git / Release / 部署", agents)
+            self.assertNotIn("本项目使用 React", agents)
+            self.assertNotIn("数据库：PostgreSQL", agents)
 
     def test_usage_explains_first_bootstrap_and_normal_development(self) -> None:
         """最终用户应知道安装后如何让 MCP/Agent 先校准 AGENTS，再进行代码修改。"""
