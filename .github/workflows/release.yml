@@ -253,6 +253,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+
       - name: Download verified release assets
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -325,7 +330,7 @@ jobs:
               exit 1
             }
           done
-          # Identity manifest 只用于跨平台构建校验；正式 Release 资产面保持三平台 binary。
+          # Identity manifest 只用于跨平台构建校验；正式 Release 最终收敛为单 ZIP。
           rm release-assets/*.manifest.json
           if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
             echo "tag 已存在，拒绝覆盖：${RELEASE_TAG}" >&2
@@ -336,21 +341,57 @@ jobs:
             exit 1
           fi
 
-      - name: Generate SHA256SUMS
+      - name: Build single distribution ZIP
         env:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           set -euo pipefail
-          cd release-assets
           assets=(
             "agent-skills-mcp-v${RELEASE_VERSION}-linux"
             "agent-skills-mcp-v${RELEASE_VERSION}-windows.exe"
             "agent-skills-mcp-v${RELEASE_VERSION}-macos"
             "USAGE.md"
           )
-          sha256sum "${assets[@]}" > SHA256SUMS
-          test "$(wc -l < SHA256SUMS)" -eq 4
-          cat SHA256SUMS
+          for asset in "${assets[@]}"; do
+            test -f "release-assets/${asset}" || {
+              echo "缺少 ZIP 输入资产：${asset}" >&2
+              exit 1
+            }
+          done
+          (
+            cd release-assets
+            sha256sum "${assets[@]}" > SHA256SUMS
+            test "$(wc -l < SHA256SUMS)" -eq 4
+          )
+          mkdir -p release-package
+          python - <<'PY'
+          import os
+          import zipfile
+          from pathlib import Path
+
+          version = os.environ["RELEASE_VERSION"]
+          expected = [
+              f"agent-skills-mcp-v{version}-linux",
+              f"agent-skills-mcp-v{version}-windows.exe",
+              f"agent-skills-mcp-v{version}-macos",
+              "USAGE.md",
+              "SHA256SUMS",
+          ]
+          source = Path("release-assets")
+          package = Path("release-package") / f"agent-skills-v{version}.zip"
+          with zipfile.ZipFile(
+              package,
+              "w",
+              compression=zipfile.ZIP_DEFLATED,
+              compresslevel=9,
+          ) as archive:
+              for name in expected:
+                  archive.write(source / name, arcname=name)
+          with zipfile.ZipFile(package) as archive:
+              actual = archive.namelist()
+          if actual != expected:
+              raise SystemExit(f"ZIP 成员集合不正确：{actual}")
+          PY
 
       - name: Create verified draft Release
         env:
@@ -358,25 +399,23 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          expected_package="agent-skills-v${RELEASE_TAG#v}.zip"
+          test -f "release-package/${expected_package}" || {
+            echo "缺少最终 ZIP：${expected_package}" >&2
+            exit 1
+          }
           gh release create "${RELEASE_TAG}" \
             --draft \
             --target "${GITHUB_SHA}" \
             --title "Agent_Skills ${RELEASE_TAG}" \
             --notes-file USAGE.md
-          gh release upload "${RELEASE_TAG}" release-assets/*
+          gh release upload "${RELEASE_TAG}" release-package/agent-skills-v*.zip
           test "$(gh release view "${RELEASE_TAG}" --json isDraft --jq '.isDraft')" = "true"
           draft_assets="$(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name')"
-          for asset in \
-            "agent-skills-mcp-v${RELEASE_TAG#v}-linux" \
-            "agent-skills-mcp-v${RELEASE_TAG#v}-windows.exe" \
-            "agent-skills-mcp-v${RELEASE_TAG#v}-macos" \
-            "USAGE.md" \
-            "SHA256SUMS"; do
-            grep -Fxq "${asset}" <<< "${draft_assets}" || {
-              echo "Draft Release 缺少资产：${asset}" >&2
-              exit 1
-            }
-          done
+          test "${draft_assets}" = "${expected_package}" || {
+            echo "Draft Release 资产集合不正确：${draft_assets}" >&2
+            exit 1
+          }
 
       - name: Publish GitHub Release
         env:
@@ -384,22 +423,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          expected_package="agent-skills-v${RELEASE_TAG#v}.zip"
           gh release edit "${RELEASE_TAG}" --draft=false
           git fetch --tags
           test "$(git rev-list -n 1 "${RELEASE_TAG}")" = "${GITHUB_SHA}"
           test "$(gh release view "${RELEASE_TAG}" --json isDraft --jq '.isDraft')" = "false"
           published_assets="$(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name')"
-          for asset in \
-            "agent-skills-mcp-v${RELEASE_TAG#v}-linux" \
-            "agent-skills-mcp-v${RELEASE_TAG#v}-windows.exe" \
-            "agent-skills-mcp-v${RELEASE_TAG#v}-macos" \
-            "USAGE.md" \
-            "SHA256SUMS"; do
-            grep -Fxq "${asset}" <<< "${published_assets}" || {
-              echo "Release 缺少已发布资产：${asset}" >&2
-              exit 1
-            }
-          done
+          test "${published_assets}" = "${expected_package}" || {
+            echo "Release 已发布资产集合不正确：${published_assets}" >&2
+            exit 1
+          }
           gh release view "${RELEASE_TAG}" --json tagName,targetCommitish,isDraft,isPrerelease,url,assets
 
       - name: Cleanup failed draft Release
