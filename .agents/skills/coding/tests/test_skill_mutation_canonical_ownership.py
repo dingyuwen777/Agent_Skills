@@ -85,20 +85,25 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + ("15_规则内容守恒与Skill维护.md",):
             self.assertNotIn(forbidden, router, f"Runtime Router 暴露源仓库 Mutation 治理：{forbidden}")
 
-    def test_managed_block_is_runtime_bootstrap_without_source_mutation_terms(self) -> None:
-        """目标项目 managed block 只保留普通入口与受管资产保护，不暴露源仓库维护术语。"""
+    def test_managed_block_is_runtime_bootstrap_without_source_mutation_or_internal_navigation_terms(self) -> None:
+        """目标项目 managed block 只暴露项目治理能力、工程过程和受管资产保护。"""
         managed = self._read(MANAGED_PATH)
         for marker in (
-            ROUTER_PATH,
             "项目自己的",
-            "按 Router",
+            "研发治理 MCP",
+            "Runtime Mode",
             "受管运行资产",
-            "不直接手工修改",
-            "无法读取",
+            "不应直接手工修改",
+            "代码修改",
+            "测试",
+            "文档同步",
+            "用户可见",
             "不得假装",
         ):
             self.assertIn(marker, managed, f"managed block 缺少普通 Runtime 入口保护：{marker}")
         for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + (
+            ROUTER_PATH,
+            ".agents/skills/",
             "15_规则内容守恒与Skill维护.md",
             "canonical Owner",
             "canonical repository",
