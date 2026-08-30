@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import secrets
 from threading import RLock
 from typing import Any, Mapping
@@ -18,6 +20,35 @@ USER_VISIBLE_PROGRESS_RULE = (
     "路由映射、凭据或加载明细。需要解释原因时，说明工程步骤本身的原因，不引用内部治理资产。"
 )
 _RISK_ORDER = {"L1": 1, "L2": 2, "L3": 3}
+
+
+def runtime_integrity_fingerprint(
+    bundle: Mapping[str, Any],
+    *,
+    release_version: str | None,
+    payload_digest: str | None,
+    source_commit: str | None,
+) -> str:
+    """把完整 Runtime 身份压缩为不透明指纹，供构建验证而不公开内部身份字段。"""
+    validate_bundle(bundle)
+    material = {
+        "bundle_schema": bundle["schema"],
+        "bundle_version": bundle["bundle_version"],
+        "source_digest": bundle["source_digest"],
+        "routing_digest": bundle["routing_digest"],
+        "skills": list(bundle["skills"]),
+        "release_version": release_version,
+        "payload_digest": payload_digest,
+        "source_commit": source_commit,
+        "mcp_contract": MCP_TOOL_CONTRACT_PROTOCOL,
+    }
+    encoded = json.dumps(
+        material,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 class RuntimeStore:
@@ -75,9 +106,15 @@ class RuntimeStore:
             }
 
     def self_test(self) -> dict[str, Any]:
-        """重新校验 Bundle 完整性，并只返回不暴露内部治理身份的自检结果。"""
+        """重新校验 Bundle 完整性，只返回通过状态和不可逆的整体完整性指纹。"""
         validate_bundle(self._bundle)
         result = self.status()
+        result["完整性指纹"] = runtime_integrity_fingerprint(
+            self._bundle,
+            release_version=self._release_version,
+            payload_digest=self._payload_digest,
+            source_commit=self._source_commit,
+        )
         result["通过"] = True
         return result
 
