@@ -163,6 +163,29 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
         self.assertLess(workflow.index("python -m unittest discover"), workflow.index("gh release create"))
         self.assertLess(workflow.index("gh release upload"), workflow.index("--draft=false"))
 
+    def test_release_immutability_preflight_distinguishes_permission_from_disabled_setting(self) -> None:
+        """Immutability 预检必须区分未启用与 Token 权限不足，并保留显式人工确认回退。"""
+        workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        for required in (
+            "confirm_immutable_releases:",
+            "secrets.RELEASE_SETTINGS_TOKEN",
+            'IMMUTABILITY_CONFIRMED: ${{ inputs.confirm_immutable_releases }}',
+            'case "${immutable_status}" in',
+            "200)",
+            "404)",
+            "403)",
+            "Administration: read",
+            "RELEASE_SETTINGS_TOKEN",
+            "GITHUB_TOKEN",
+            "发布后仍会校验 immutable=true",
+        ):
+            self.assertIn(required, workflow)
+        self.assertEqual(workflow.count("secrets.RELEASE_SETTINGS_TOKEN"), 1)
+        self.assertIn("当前仓库未启用 GitHub Release Immutability", workflow)
+        self.assertIn("GITHUB_TOKEN 不具备读取仓库 Administration 设置的权限", workflow)
+        self.assertIn("RELEASE_SETTINGS_TOKEN 权限不足", workflow)
+        self.assertIn("'.immutable')\" = \"true\"", workflow)
+
     def test_failed_release_job_cleans_only_unpublished_draft(self) -> None:
         """Draft 创建/上传失败后必须可重试；失败清理只能删除仍为 Draft 的本次 Release。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
