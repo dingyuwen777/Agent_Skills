@@ -462,6 +462,48 @@ Shared UI / Feature Public / Shared Domain Owner
 
 找不到某一层时记录 `not_applicable` 或 `implementation_required`；不要为了填表制造不存在的架构层。
 
+### Existing Implementation Delta Gate
+
+目标 Page/Screen 已经存在生产实现时，Design-to-Code 默认是**差异驱动的增量更新**，不是把现有页面当成空白工程重做。
+
+先冻结最少充分的**现有实现基线**：
+
+```text
+Route / Screen / Page Owner
+Shared / Feature Component 关系
+当前交互与状态机
+当前 API / SDK / Store / Runtime 消费链
+Loading / Empty / Error / Permission / Compatibility
+响应式 / 可访问性关键行为
+相关测试 / Acceptance 入口
+```
+
+再建立：
+
+```text
+现有实现基线
+→ 新 Figma 差异
+→ 当前 Requirement / Contract / Owner
+→ 差异分类
+→ 最小增量修改
+→ 目标验证
+→ Implementation ↔ Figma Conformance
+```
+
+差异至少按适用域分类为：
+
+```text
+Visual / Interaction / State / Data-Contract / Responsive / Component-Owner
+```
+
+硬规则：
+
+- **不默认整页重写**，除非当前项目事实和已批准范围确实证明重写是最小安全方案；
+- 新 Figma 没有明确改变的**正确业务行为**、真实数据链、错误/权限/兼容状态、可访问性和项目架构必须保留；
+- 只修改真正承载差异的最小 Owner，公共语义变化回公共 Owner，页面局部变化留在 Feature/Page；
+- Figma 新稿看起来“少了一个状态/入口”不等于可以直接删除真实能力，必须先判断这是批准变更、设计遗漏还是实现历史包袱；
+- 现有实现与新 Figma 同时存在冲突时，继续按 Requirement / Contract / Owner 分类，不用“新稿覆盖旧代码”替代事实判断。
+
 ### Figma 和当前实现发生冲突时
 
 先分类，不机械“Figma优先”或“代码优先”：
@@ -573,4 +615,75 @@ Figma 已经过期，当前正式 Requirement / Contract / 正确实现已变化
 → 不静默选择
 ```
 
-修复后重新执行受影响域的 targeted re-review。任何因为真实系统约束、批准需求变化或实现修正形成的长期决定，都要同步到对应正式事实源，**不能让 Figma 和生产实现长期分叉**。
+### Bidirectional Design Sync Gate
+
+Implementation ↔ Figma Conformance 发现 Drift 后，**不能把偶然实现偏移**、临时 workaround、截图差异或当前代码 Bug 自动升级成 Figma 的新长期事实。只有差异已经由正式 Requirement/Contract、明确 Owner 决定、确认的平台约束或修正后的真实机器事实证明为长期有效时，才进入 Figma back-sync。
+
+```text
+实现错误 / 偶然偏移 / 未批准 workaround
+→ 返回 Coding 修代码
+→ 不回写 Figma
+
+Figma 已过期 + 当前 Requirement / Contract / 正确实现已成为正式长期事实
+→ 进入 Figma back-sync
+
+Owner/事实仍有冲突
+→ 阻塞决策
+→ 不静默回写
+```
+
+有 Figma 写权限时：
+
+```text
+定位 Figma 的真实 Shared / Feature / Page Owner
+→ 按 Owner-first 修改 Component / Property / Token / Frame / Annotation / Prototype / 状态规格中的适用项
+→ 执行 Annotation Development Readiness
+→ Canvas-level Review
+→ Fresh Screenshot
+→ Prototype / Machine Audit / Design Context targeted re-review（适用时）
+→ 标记 SYNCHRONIZED_PENDING_HUMAN_REVIEW
+```
+
+无 Figma 写权限时，代码可以已经正确，但设计同步仍必须记录为 `Pending Figma Sync`，列出准确位置、应改内容和事实来源；不得把“已识别应同步”写成“Figma 已同步”。
+
+自动回写后默认状态只能是 `SYNCHRONIZED_PENDING_HUMAN_REVIEW`。只有人工确认，或目标项目已经存在且本轮确实取得等价设计审批证据后，才能描述为 `HUMAN_VERIFIED`。**人工确认**用于让人明确看到设计事实发生了什么变化；它本身不自动建立所有项目统一的代码 merge 人工门禁，是否阻塞合并仍服从目标项目规则和用户明确授权。
+
+修复或回写后重新执行受影响域的 targeted re-review。任何因为真实系统约束、批准需求变化或实现修正形成的长期决定，都要同步到对应正式事实源，**不能让 Figma 和生产实现长期分叉**。
+
+### Figma Sync & Human Review
+
+每个 Design-to-Code 任务在结束时都**必须输出** `Figma Sync & Human Review`，即使本轮判断无需修改 Figma，也不能省略。该输出是给人工复核设计/实现一致性的交付包，不替代 Coding 的测试、CI、PR 报告。
+
+最少包含：
+
+```text
+同步状态
+Figma File / Page / Section / Frame / Node
+修改类型：Visual / Interaction / State / Data-Contract / Responsive / Component-Owner / Annotation
+Before → After
+事实来源 / 原因：Requirement / Contract / Backend / SDK / Code / Platform
+关联实现 / Contract
+受影响消费者 / Flow
+验证证据：Fresh Screenshot / Prototype / Design Context / Canvas-level Review / 其它实际证据
+Pending Figma Sync
+人工复核重点
+Human Review Status
+```
+
+状态至少区分：
+
+```text
+NO_FIGMA_CHANGE_REQUIRED
+→ 本轮无需回写；仍说明为什么现有 Figma 已与正式事实一致
+
+PENDING_FIGMA_SYNC
+→ 应修改但无写权限、工具失败或仍有 Owner 阻塞；列出待修改的准确位置和建议变化
+
+SYNCHRONIZED_PENDING_HUMAN_REVIEW
+→ 本轮已实际修改 Figma 并完成适用机器/视觉复核，等待人工确认
+
+HUMAN_VERIFIED
+→ 已取得明确人工确认或项目等价设计审批证据
+```
+
+只要本轮实际修改过 Figma，就必须逐项告诉人工：**改了哪里、从什么改成什么、为什么、依据哪个正式事实、影响哪些消费者、实际验证了什么、还需要人工重点看什么**。不得只写“Figma 已同步”“原型已更新”或只给一个文件链接而省略具体修改范围。
