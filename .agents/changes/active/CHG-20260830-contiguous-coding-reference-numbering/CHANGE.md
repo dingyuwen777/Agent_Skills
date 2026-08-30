@@ -74,8 +74,8 @@ data_changes: []
 | --- | --- | --- | --- | --- |
 | R1 | Coding references 编号改为连续 | user:continuous-reference-numbering | satisfied | `test_reference_filename_prefixes_are_contiguous` 通过；当前目录事实为 01–16 |
 | R2 | 同步对应文档内容/引用，改名后不能找不到 | user:continuous-reference-numbering | satisfied | `test_live_navigation_contains_no_old_reference_filenames` 通过；AGENTS/Maintenance/Router/Coding/References/tests 已同步新路径 |
-| R3 | 不把纯文件改名升级成 Stable ID Contract Migration | repo:.agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | satisfied | `test_renamed_files_preserve_stable_reference_ids`、metadata rename、Routing Conformance、Bundle roundtrip 均通过；IDs 仍为 13–17 |
-| R4 | 按仓库门禁合入 main 并取得 main 新鲜 CI | repo:.agents/MAINTENANCE.md | explicitly_deferred | PR 合并、main fresh CI 与 Active Change 清理属于 Ready 后的交付生命周期步骤，合并前不能伪报完成 |
+| R3 | 不把纯文件改名升级成 Stable ID Contract Migration | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | satisfied | `test_renamed_files_preserve_stable_reference_ids`、metadata rename、Routing Conformance、Bundle roundtrip 均通过；IDs 仍为 13–17 |
+| R4 | 按仓库门禁合入 main 并取得 main 新鲜 CI | .agents/MAINTENANCE.md | explicitly_deferred | PR 合并、main fresh CI 与 Active Change 清理属于 Ready 后的交付生命周期步骤，合并前不能伪报完成 |
 
 # Validation Matrix
 
