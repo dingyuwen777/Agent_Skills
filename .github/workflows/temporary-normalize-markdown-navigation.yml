@@ -27,15 +27,19 @@ jobs:
       - name: Validate generated diff
         run: git diff --check
 
-      - name: Commit normalized Markdown
+      - name: Commit normalized navigation
         shell: bash
         run: |
-          if git diff --quiet -- '*.md'; then
-            echo '没有需要提交的 Markdown 变化。'
+          if git diff --quiet; then
+            echo '没有需要提交的导航变化。'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- '*.md'
-          git commit -m '统一 Markdown 可点击导航'
+          git add -- \
+            .agents/skills/coding/assets/CHANGE.template.md \
+            .agents/skills/coding/scripts/coding.py \
+            runtime/agent_skills_runtime/project_installer.py
+          git diff --cached --check
+          git commit -m '修正生成文档的可点击导航'
           git push origin HEAD:chore/clickable-markdown-navigation
