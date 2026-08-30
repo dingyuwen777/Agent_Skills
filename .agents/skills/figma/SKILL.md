@@ -366,6 +366,8 @@ CMS
 → 不作为正式可用能力
 ```
 
+Design-to-Code 的机器边界同样服从真实系统事实：**不得由 Figma / Design Context / Annotation 创建生产 Contract / API**；设计中的接口名、字段、枚举和示例机器值只能作为调查线索。冲突、缺失能力和真实机器边界的详细规则由 [02_业务能力与真实系统映射.md](references/02_业务能力与真实系统映射.md) 维护。
+
 ## 5.2 数据库数据也要通过正式系统边界
 
 如果设计展示的数据最终来自数据库：
@@ -609,6 +611,8 @@ Secret / Raw / Stack Trace
 错误态
 ```
 
+baseline-ready 必须执行 Annotation Sufficiency Review。只给实现无法从设计结构、Design Context 和正式事实源可靠推导的关键动态/非显然语义提供最小充分说明；不要用注释数量替代质量，也不要把完整 Contract / Schema 复制进 Canvas。详细充分性门禁由 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 维护。
+
 开发 Annotation 不应压在正式 UI 上，也不能被实现方误读成产品文案。Annotation 与正式 Frame、相邻画板、说明容器之间的间距、归属、分区和 Canvas-level Review 统一由 [07_页面布局与真实可用性审计.md](references/07_页面布局与真实可用性审计.md) 维护；本 Skill 不再维护第二套具体数值。
 
 ---
@@ -627,6 +631,8 @@ Tailwind / CSS Modules
 ```
 
 Figma MCP/工具返回的参考代码只表达结构意图，不得反向改变项目技术栈。
+
+凡是 DatePicker / DateRange / Today / Now 等时间相关 UI，必须映射目标项目当前**真实 Runtime / Contract 时间语义**；设计日期和生成代码时的本机时间不构成生产默认值。详细时间事实源、时区和日期区间规则见 [02_业务能力与真实系统映射.md](references/02_业务能力与真实系统映射.md)。
 
 实现前确认：
 
