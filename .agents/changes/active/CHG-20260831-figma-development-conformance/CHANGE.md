@@ -81,27 +81,27 @@ data_changes: []
 | R3 | Design-to-Code 实现后必须验证正式 Figma、Frontend 与 Backend/Contract 一致，并按真实 Owner 解决 Drift | user:figma-implementation-conformance | satisfied | `figma.reference.05` 增加 Implementation ↔ Figma Conformance Gate、六域回验、动态示例非字面比较和 Drift Owner；主 Skill 保留高层触发；Green run 33325709017 通过。 |
 | R4 | 修改 Figma 时优先复用公共组件；公共语义变化直接修改公共 Owner 并检查所有受影响消费者，局部变化不得污染 Shared | user:figma-owner-first-components | satisfied | `figma.reference.03` 增加 Owner-first Figma Mutation Gate、Main Component/Component Set/Token 分支、禁止 Detach/第二 Owner 与消费者复核；Green run 33325709017 通过。 |
 | R5 | 页面、画板、组件与注释保持美观易读；工具支持时机器检查非预期几何重叠，同时允许有明确语义的有意 Overlay | user:figma-canvas-geometry | satisfied | `figma.reference.07` 增加 Geometry Collision Audit、Bounding Box Intersection、有意/无意重叠与 z-order/安全区规则；Green run 33325709017 通过。 |
-| R6 | 不削弱现有 Figma Ready、Canvas、Prototype、真实系统映射和 Coding Handoff，也不建立重复 Owner | .agents/MAINTENANCE.md | satisfied | run 33325709017 的 212 个 self-contained tests 全绿，包含既有 Canvas fallback、Prototype、路由、Bundle/Project Payload、项目中立性回归；PR #75 review 5061478771 A1/A2 无 BLOCKER/HIGH。 |
+| R6 | 不削弱现有 Figma Ready、Canvas、Prototype、真实系统映射和 Coding Handoff，也不建立重复 Owner | .agents/MAINTENANCE.md | satisfied | run 33325923464 的 final-ready head 全绿，包含既有 Canvas fallback、Prototype、路由、Bundle/Project Payload、项目中立性回归；PR #75 final-head review 5061483418 无 BLOCKER/HIGH。 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | Red run 33325242508：新增 5 个规则测试按预期失败而既有回归通过；Green run 33325709017：compile、CLI smoke、212 个 self-contained tests 全部通过。 |
+| 行为 / Unit / Component | required | Red run 33325242508：新增 5 个规则测试按预期失败而既有回归通过；Green run 33325709017：compile、CLI smoke、212 个 self-contained tests 全部通过；ready head run 33325923464 全绿。 |
 | 接口 / Contract | not_applicable | 未修改 Runtime/API/Schema 机器 Contract；只修改通用 Figma 规则如何读取和校验目标项目现有 Contract。 |
 | 集成 / Persistence / Runtime Dependency | not_applicable | 未修改具体业务数据库、后端或 Figma 宿主实现；规则回归保持自包含。 |
-| 用户 / Workflow Acceptance | required | PR #75 review 5061478771 独立执行 A1/A2，反向检查 Figma review/fix → Annotation/Owner/Canvas → READY → Coding → Implementation Conformance → Drift Owner，无需求漏项。 |
-| 跨组件 Golden Path | required | Green run 33325709017 继续通过 Figma 路由、READY/NOT_READY→Coding、Bundle/Project Payload 动态发现和内容守恒既有测试。 |
+| 用户 / Workflow Acceptance | required | PR #75 reviews 5061478771 / 5061483418 独立执行 A1/A2 和 final-head re-review，反向检查 Figma review/fix → Annotation/Owner/Canvas → READY → Coding → Implementation Conformance → Drift Owner，无需求漏项。 |
+| 跨组件 Golden Path | required | runs 33325709017 / 33325923464 继续通过 Figma 路由、READY/NOT_READY→Coding、Bundle/Project Payload 动态发现和内容守恒既有测试。 |
 | 外部依赖 Probe | not_applicable | 不依赖真实第三方、业务 API 或 Figma 服务 Probe。 |
 | Build / Package / Runtime | not_applicable | 未修改 Runtime/Builder/MCP/Installer/Release 路径；现有测试明确纯 Skill 变更不触发 Runtime Package Tests。 |
-| Docs / Governance / Other | required | Markdown navigation、Routing Conformance、内容守恒、项目中立性均包含在 212 个 Green tests；Change 升级到 ready_for_review 后由最终 head CI 重新执行 changed Change gate。 |
+| Docs / Governance / Other | required | Markdown navigation、Routing Conformance、内容守恒、项目中立性与 changed Change Ready Gate 在 run 33325923464 全绿；迁移后的普通 PR #77 必须在最终 head 上重新取得 fresh CI。 |
 
 # 完成审计
 
 - [x] upstream_re_read：Review 前重新读取当前分支根 AGENTS、Review Skill/ref01/ref02/ref03，并以此前当前 main 的 Maintenance/Router/Coding/Mutation/Figma Owner 为研发规范；用户本轮 R1–R5 要求逐项重新建立，没有从旧 Change checklist 反推需求。
 - [x] change_coverage：R1–R6 均有唯一 Figma Owner、实现路径和 Red/Green/A1-A2 证据；未新增 Reference、Runtime/Router 协议或项目特定业务事实。
 - [x] reverse_audit：从 Figma review/fix → Annotation Development Readiness + Owner-first + Geometry → READY → Coding → Implementation ↔ Figma Conformance → Drift Owner 分流反向检查完整，NOT_READY/权限边界仍存在。
-- [x] unresolved_cleared：R1–R6 无 not_satisfied；required 行为、用户工作流、跨组件与治理证据均已取得，最终 PR/head CI 和 main fresh CI 作为后续交付门禁继续执行。
+- [x] unresolved_cleared：R1–R6 无 not_satisfied；required 行为、用户工作流、跨组件与治理证据均已取得；PR #77 final-head CI、merge 后 main fresh CI 和 Change archive 继续作为后续交付门禁，不反向改变 requirement satisfaction。
 
 # 任务
 
@@ -110,8 +110,8 @@ data_changes: []
 - [x] 先新增 preservation tests 并取得真实 Red：run 33325242508，5 个新增断言失败、旧回归保持通过。
 - [x] 最小增强 Figma 主 Skill/ref02/ref03/ref05/ref07，不复制现有唯一 Owner。
 - [x] 执行 Green：run 33325709017 的 compile、CLI smoke、212 个 self-contained tests 全部通过；该 run 仅因 Change 当时仍为 in_progress 而在 changed Change gate 失败。
-- [x] 执行 A1/A2、内容守恒、项目中立性与独立 Review：PR #75 review 5061478771，无 BLOCKER/HIGH。
-- [ ] 最终 head 的 PR fresh CI 全绿后按仓库门禁合并；main 上执行新鲜 CI。
+- [x] 执行 A1/A2、内容守恒、项目中立性与独立 Review：PR #75 reviews 5061478771 / 5061483418，无 BLOCKER/HIGH；ready head run 33325923464 全绿。
+- [ ] 普通 PR #77 最终 head 的 fresh CI 与 re-review 全绿后按仓库门禁合并；main 上执行新鲜 CI。
 - [ ] 从验证后的 main 创建独立归档 Change PR，归档为 `done` 并再次验证。
 
 # 验证
@@ -127,7 +127,8 @@ data_changes: []
 
 - Red：PR #75 / head `facab577a488aff7735ccca4c25ece68c54fc459` / run 33325242508 / job 99294097651；compile、CLI smoke 成功，5 个新增测试失败，形成真实 Red。
 - Green：PR #75 / head `157703f6d9fa8418fbfb0bbe5db49203273af22f` / run 33325709017 / job 99295336224；compile、CLI smoke、212 个 self-contained tests 成功；changed Change gate 因当时 status=in_progress 按预期失败。
-- 独立 Review：PR #75 review 5061478771，anchor `157703f6d9fa8418fbfb0bbe5db49203273af22f`，A1/A2 `NO_FINDINGS_WITHIN_SCOPE`，无 BLOCKER/HIGH；最终 head 更新后继续 re-review。
+- Ready head：PR #75 / head `76f5ddffa221a1724cff73056a48e0afea8ba834` / run 33325923464 / job 99295913578；compile、CLI smoke、212 个 self-contained tests、changed Change Ready Gate 全部成功；review 5061483418 为 `NO_FINDINGS_WITHIN_SCOPE`。
+- PR 迁移：当前宿主在本会话已确认 Draft→Ready GraphQL 返回通路不可用，按 `coding.reference.15` 关闭未合并 Draft PR #75，以相同 head/base 创建普通 PR #77；#77 必须重新取得 fresh CI，不能复用 #75 CI 作为当前合并门禁。
 
 # 文档影响
 
@@ -136,7 +137,8 @@ data_changes: []
 # 交付状态
 
 - Branch：`change/figma-development-conformance`
-- PR：#75（Draft，最终 head CI 后再转 Ready）
+- 历史 PR：#75（Draft，已关闭、未合并，只保留 Red/Green/Review/Ready-head 历史证据）
+- 当前 PR：#77（普通 PR，open；等待最终 head fresh CI + re-review）
 - Merge：未完成
 - Main fresh CI：未完成
 - Archive：未完成
