@@ -45,17 +45,20 @@ def _extract_workflow_run_block(step_name: str) -> str:
 
 
 class ReleaseProductizationTest(unittest.TestCase):
-    """验证 VERSION、onefile Runtime 和 Release-only 资产合同。"""
+    """验证显式版本输入、onefile Runtime 和 Release-only 资产合同。"""
 
-    def test_version_source_of_truth_is_valid_semver(self) -> None:
-        """Runtime Builder 应直接使用根 VERSION 作为 Release 版本事实源。"""
+    def test_release_version_source_is_explicit_and_development_build_has_stable_identity(self) -> None:
+        """仓库不保留 VERSION；正式版本显式传入，普通构建使用固定 development SemVer。"""
         builder = _load_module("runtime_release_version", RUNTIME_BUILDER_PATH)
-        version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
-        self.assertRegex(version, builder.VERSION_PATTERN)
-        self.assertEqual(builder._read_release_version(ROOT), version)
+        self.assertFalse((ROOT / "VERSION").exists())
+        self.assertEqual(builder.DEVELOPMENT_VERSION, "0.0.0-dev")
+        self.assertEqual(builder._normalise_release_version(None), "0.0.0-dev")
+        self.assertEqual(builder._normalise_release_version("2.0.0"), "2.0.0")
+        with self.assertRaises(ValueError):
+            builder._normalise_release_version("v2.0.0")
 
     def test_runtime_builder_embeds_project_payload_and_version(self) -> None:
-        """Runtime Builder 同时保持 Source/Routing/Project Payload 身份与版本。"""
+        """Runtime Builder 同时保持 Source/Routing/Project Payload、构建环境与版本身份。"""
         source = RUNTIME_BUILDER_PATH.read_text(encoding="utf-8")
         for marker in (
             "source_digest",
@@ -65,9 +68,13 @@ class ReleaseProductizationTest(unittest.TestCase):
             "RELEASE_IDENTITY_SCHEMA",
             "install_manifest_schema",
             "PROJECT_PAYLOAD_B64",
-            "VERSION",
+            "DEVELOPMENT_VERSION",
+            "--release-version",
+            "python_version",
+            "context_budget",
         ):
             self.assertIn(marker, source)
+        self.assertNotIn("_read_release_version", source)
         self.assertNotIn("build_distribution_kit", source)
         self.assertNotIn("runtime-kit", source.lower())
 
@@ -83,8 +90,8 @@ class ReleaseProductizationTest(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "GITHUB_SHA 与当前源码 HEAD 不一致"):
                     builder._source_commit(ROOT)
 
-    def test_release_workflow_is_manual_and_immutable(self) -> None:
-        """Release 只允许 main 手工输入 v<VERSION>，且已存在 tag/Release 时拒绝覆盖。"""
+    def test_release_workflow_is_manual_tag_driven_and_requires_immutability(self) -> None:
+        """Release 只允许 main 手工 tag，要求 immutable releases，并显式 Draft→Publish。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for marker in (
             "workflow_dispatch",
@@ -92,12 +99,18 @@ class ReleaseProductizationTest(unittest.TestCase):
             "tag:",
             "refs/heads/main",
             'VERSION="${TAG#v}"',
-            "输入 tag ${TAG} 与仓库 VERSION=${FILE_VERSION} 不一致",
+            "immutable-releases",
             "gh release view",
             "gh api",
             "git rev-parse",
+            "--draft",
+            "gh release upload",
+            "gh release edit",
+            "--draft=false",
         ):
             self.assertIn(marker, workflow)
+        for obsolete in ("FILE_VERSION", "Get-Content VERSION", "仓库 VERSION", "< VERSION"):
+            self.assertNotIn(obsolete, workflow)
         self.assertNotIn("\n  push:\n", workflow)
         self.assertEqual(workflow.count("contents: write"), 1)
 
@@ -113,6 +126,7 @@ class ReleaseProductizationTest(unittest.TestCase):
             "macos.manifest.json",
             "agent-skills-runtime-release-identity/v1",
             ".source_commit == $commit",
+            '.python_version == "3.12.10"',
             '."TaskRoute协议" == "Agent Skills 任务路由/v1"',
             '."RoutingManifest协议" == "Agent Skills 路由清单/v1"',
             '."MCP工具契约协议" == "Agent Skills MCP工具契约/v2"',
@@ -150,7 +164,7 @@ class ReleaseProductizationTest(unittest.TestCase):
     def test_release_checksum_step_hashes_only_expected_assets(self) -> None:
         """checksum step 必须只校验四个正式输入资产并排除 identity、输出与临时文件。"""
         script = _extract_workflow_run_block("Generate SHA256SUMS")
-        version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        version = "2.0.0"
         expected_assets = (
             f"agent-skills-mcp-v{version}-linux",
             f"agent-skills-mcp-v{version}-windows.exe",

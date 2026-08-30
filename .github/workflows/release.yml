@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag，例如 v1.0.0"
+        description: "Release tag，例如 v2.0.0"
         required: true
         type: string
 
@@ -28,6 +28,14 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+
+      - name: Install Runtime build dependencies
+        run: python -m pip install -r runtime/requirements-build.txt
+
       - name: Validate manual tag and release identity
         id: release
         env:
@@ -41,15 +49,10 @@ jobs:
           }
           TAG="${INPUT_TAG}"
           if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "tag 必须使用 v<SemVer>，例如 v1.0.0；当前值=${TAG}" >&2
+            echo "tag 必须使用 v<SemVer>，例如 v2.0.0；当前值=${TAG}" >&2
             exit 1
           fi
           VERSION="${TAG#v}"
-          FILE_VERSION="$(tr -d '\r\n' < VERSION)"
-          test "${VERSION}" = "${FILE_VERSION}" || {
-            echo "输入 tag ${TAG} 与仓库 VERSION=${FILE_VERSION} 不一致" >&2
-            exit 1
-          }
           test -f USAGE.md || {
             echo "缺少 Release 最终用户说明 USAGE.md" >&2
             exit 1
@@ -66,9 +69,24 @@ jobs:
             echo "Release 已存在，拒绝覆盖：${TAG}" >&2
             exit 1
           fi
-          python3 .agents/skills/coding/scripts/ready_check.py --root .
+          gh api \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            "repos/${GITHUB_REPOSITORY}/immutable-releases" >/dev/null || {
+              echo "当前仓库未启用 GitHub Release Immutability；请先在 Settings > Releases 启用后再发布" >&2
+              exit 1
+            }
           echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Run full self-contained tests
+        run: >-
+          python -m unittest discover
+          -s .agents/skills/coding/tests
+          -p 'test_*.py'
+          -v
+
+      - name: Verify release Ready gate
+        run: python .agents/skills/coding/scripts/ready_check.py --root .
 
   runtime-linux:
     name: Release Runtime Linux
@@ -80,8 +98,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+
       - name: Install Runtime build dependencies
-        run: python3 -m pip install -r runtime/requirements-build.txt
+        run: python -m pip install -r runtime/requirements-build.txt
 
       - name: Build and verify Linux single binary
         env:
@@ -89,18 +112,18 @@ jobs:
         run: |
           set -euo pipefail
           name="agent-skills-mcp-v${RELEASE_VERSION}-linux"
-          python3 scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --json
+          python scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --release-version "${RELEASE_VERSION}" --json
           artifact="${GITHUB_WORKSPACE}/.runtime-dist/${name}"
           identity="${GITHUB_WORKSPACE}/.runtime-dist/${name}.manifest.json"
           "${artifact}" status --json
           "${artifact}" self-test --json
-          python3 scripts/runtime_mcp_smoke.py --artifact "${artifact}" --json
+          python scripts/runtime_mcp_smoke.py --artifact "${artifact}" --json
 
           target="${RUNNER_TEMP}/agent-skills-release-target"
           mkdir -p "${target}"
           "${artifact}" install --target "${target}" --json
           test -x "${target}/.agents/runtime/agent-skills-mcp"
-          python3 scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
+          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
 
           mkdir -p release-assets
           cp "${artifact}" "release-assets/${name}"
@@ -119,12 +142,17 @@ jobs:
   runtime-windows:
     name: Release Runtime Windows
     needs: preflight
-    runs-on: windows-latest
+    runs-on: windows-2025
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
 
       - name: Install Runtime build dependencies
         run: python -m pip install -r runtime/requirements-build.txt
@@ -135,7 +163,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           $name = "agent-skills-mcp-v$env:RELEASE_VERSION-windows"
-          python scripts/build_runtime.py --output-dir .runtime-dist --name $name --json
+          python scripts/build_runtime.py --output-dir .runtime-dist --name $name --release-version $env:RELEASE_VERSION --json
           $artifact = (Resolve-Path ".\.runtime-dist\$name.exe").Path
           $identity = (Resolve-Path ".\.runtime-dist\$name.manifest.json").Path
           & $artifact status --json
@@ -177,11 +205,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+
       - name: Install Runtime build dependencies
-        run: |
-          python3 -m venv .venv-runtime
-          .venv-runtime/bin/python -m pip install -r runtime/requirements-build.txt
-          echo "${GITHUB_WORKSPACE}/.venv-runtime/bin" >> "${GITHUB_PATH}"
+        run: python -m pip install -r runtime/requirements-build.txt
 
       - name: Build and verify macOS single binary
         env:
@@ -189,18 +219,18 @@ jobs:
         run: |
           set -euo pipefail
           name="agent-skills-mcp-v${RELEASE_VERSION}-macos"
-          python3 scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --json
+          python scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --release-version "${RELEASE_VERSION}" --json
           artifact="${GITHUB_WORKSPACE}/.runtime-dist/${name}"
           identity="${GITHUB_WORKSPACE}/.runtime-dist/${name}.manifest.json"
           "${artifact}" status --json
           "${artifact}" self-test --json
-          python3 scripts/runtime_mcp_smoke.py --artifact "${artifact}" --json
+          python scripts/runtime_mcp_smoke.py --artifact "${artifact}" --json
 
           target="${RUNNER_TEMP}/agent-skills-release-target"
           mkdir -p "${target}"
           "${artifact}" install --target "${target}" --json
           test -x "${target}/.agents/runtime/agent-skills-mcp"
-          python3 scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
+          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
 
           mkdir -p release-assets
           cp "${artifact}" "release-assets/${name}"
@@ -249,7 +279,6 @@ jobs:
           set -euo pipefail
           test "${GITHUB_REF}" = "refs/heads/main"
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
-          test "$(tr -d '\r\n' < VERSION)" = "${RELEASE_VERSION}"
           expected=(
             "agent-skills-mcp-v${RELEASE_VERSION}-linux"
             "agent-skills-mcp-v${RELEASE_VERSION}-linux.manifest.json"
@@ -283,6 +312,7 @@ jobs:
                and .release_version == $version
                and .source_commit == $commit
                and .artifact == $artifact
+               and .python_version == "3.12.10"
                and .bundle_schema == "agent-skills-runtime-bundle/v2"
                and (.bundle_version | test("^[0-9a-f]{16}$"))
                and ."TaskRoute协议" == "Agent Skills 任务路由/v1"
@@ -328,18 +358,43 @@ jobs:
           test "$(wc -l < SHA256SUMS)" -eq 4
           cat SHA256SUMS
 
-      - name: Create immutable GitHub Release
+      - name: Create verified draft Release
         env:
           RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create "${RELEASE_TAG}" release-assets/* \
+          gh release create "${RELEASE_TAG}" \
+            --draft \
             --target "${GITHUB_SHA}" \
             --title "Agent_Skills ${RELEASE_TAG}" \
             --notes-file USAGE.md
+          gh release upload "${RELEASE_TAG}" release-assets/*
+          test "$(gh release view "${RELEASE_TAG}" --json isDraft --jq '.isDraft')" = "true"
+          draft_assets="$(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name')"
+          for asset in \
+            "agent-skills-mcp-v${RELEASE_TAG#v}-linux" \
+            "agent-skills-mcp-v${RELEASE_TAG#v}-windows.exe" \
+            "agent-skills-mcp-v${RELEASE_TAG#v}-macos" \
+            "USAGE.md" \
+            "SHA256SUMS"; do
+            grep -Fxq "${asset}" <<< "${draft_assets}" || {
+              echo "Draft Release 缺少资产：${asset}" >&2
+              exit 1
+            }
+          done
+
+      - name: Publish immutable GitHub Release
+        env:
+          RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release edit "${RELEASE_TAG}" --draft=false
           git fetch --tags
           test "$(git rev-list -n 1 "${RELEASE_TAG}")" = "${GITHUB_SHA}"
+          test "$(gh release view "${RELEASE_TAG}" --json isDraft --jq '.isDraft')" = "false"
+          test "$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" --jq '.immutable')" = "true"
           published_assets="$(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name')"
           for asset in \
             "agent-skills-mcp-v${RELEASE_TAG#v}-linux" \
@@ -353,3 +408,16 @@ jobs:
             }
           done
           gh release view "${RELEASE_TAG}" --json tagName,targetCommitish,isDraft,isPrerelease,url,assets
+
+      - name: Cleanup failed draft Release
+        if: failure()
+        env:
+          RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          is_draft="$(gh release view "${RELEASE_TAG}" --json isDraft --jq '.isDraft' 2>/dev/null || true)"
+          if [ "${is_draft}" = "true" ]; then
+            echo "清理本次失败后遗留的未发布 Draft Release：${RELEASE_TAG}"
+            gh release delete "${RELEASE_TAG}" --cleanup-tag --yes
+          fi

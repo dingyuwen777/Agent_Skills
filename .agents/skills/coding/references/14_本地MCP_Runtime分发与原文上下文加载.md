@@ -438,6 +438,7 @@ manifest 记录 Release、`source_digest`、`payload_digest`、公开 Skill/`sha
 - JSON 只认领 `mcpServers.agent-skills`；
 - 其他配置、其他 MCP server、marker 外文本保持；
 - 已存在未被 manifest 认领的同名 Agent Skills MCP 时拒绝静默覆盖；
+- **Codex 已存在 `[mcp_servers.agent-skills]` 但 managed marker 缺失时，即使旧 install manifest 仍存在，也必须 fail closed；manifest 不能证明当前 TOML table 仍是可安全替换的原受管块；**
 - 已存在未被 manifest 认领的同名 Skill/shared file 时拒绝静默覆盖；
 - marker 损坏、文本编码不可安全增量编辑、受管路径为符号链接时预检失败。
 
@@ -454,21 +455,23 @@ Codex workspace trust 以及 Cursor/Claude 的首次确认属于宿主安全边�
 5. 只删除旧 v3 明确认领且新 Payload 已删除的文件；
 6. 安装 Runtime 并验证 artifact SHA256；
 7. 写入 AGENTS、`.gitignore`、宿主配置和 v3 manifest；
-8. 任一步异常时恢复本轮 touched 文件、Runtime、manifest 与受管文本快照。
+8. 任一步异常时恢复本轮 touched 文件、Runtime、manifest 与受管文本快照；
+9. **任何快照恢复失败都必须聚合到明确的“回滚不完整”错误中，并把原始安装异常保留为 cause；不得用 `except: pass` 静默吞掉回滚失败后只报告最初异常。**
 
 目标路径任一上级是符号链接、目标是特殊文件、manifest 损坏或 ownership 不可证明时必须失败关闭。回滚不得使用 `git reset --hard`、`git clean`、强制推送或历史重写。
 
-普通文件系统不是数据库事务；实现必须把所有可预检失败前移，并让故障注入测试证明 Router 写入失败和 Runtime hash 失败后的恢复行为。
+普通文件系统不是数据库事务；实现必须把所有可预检失败前移，并让故障注入测试证明 Router 写入失败、Runtime hash 失败以及安装失败后 rollback 自身失败时的可恢复/可诊断行为。
 ## 16. 构建与验证
 
 Builder 固定顺序：
 
 ```text
-读取 VERSION 与真实 source commit
+规范化显式 release_version（未传则 0.0.0-dev）与真实 source commit
 → 动态发现 Skill/Reference
 → 解析并校验 committed canonical metadata
 → 编译私有 Routing Manifest / routing_digest
 → 构建 Bundle v2 / source_digest / bundle_version
+→ 量化 Router / Skill Core / Reference 聚合 Context footprint
 → 构建 no-Stub Project Payload v2 / payload_digest
 → AES-256-GCM 认证加密 Bundle
 → 生成当前平台 onefile
@@ -483,15 +486,15 @@ Builder 固定顺序：
 3. canonical 原始 bytes、SHA256、size 和 `source_digest` 在 build/encrypt/decrypt 后逐字一致；
 4. Routing Manifest 稳定序列化、`routing_digest` 和同一 Task Route 求值在编译/加密 roundtrip 前后一致；
 5. Project Payload 动态包含 Router、全部 Skill Core/运行资产，但没有 `references/`、Stub 或私有 Routing Manifest；
-6. status/self-test 不泄露 Reference count/ID/filename/path/loaded IDs；
+6. status/self-test 不泄露 Reference count/ID/filename/path/loaded IDs；Builder 的 `context_budget` 只允许输出 Router、各 Skill Core、各 Skill Reference 总字节和 Router+Core 聚合值，不得列单个 Reference 身份；
 7. 真实 MCP `tools/list` 恰为六个 Tool，中文 property 可调用，route→submit→load→checkpoint 成功；
 8. 同一 task 多次 route 只能单调扩展，旧 token/任意 ID load/未知词汇失败关闭，未知事实保守扩大；
-9. 首次安装、无参数安装、显式 target、v3 升级、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、符号链接和 rollback；
-10. `VERSION`、`source_commit`、Bundle/Task Route/Routing Manifest/MCP/Project Payload/install schema、三个 digest 与 artifact identity 一致。
+9. 首次安装、无参数安装、显式 target、v3 升级、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、符号链接、Codex marker 丢失 fail-closed 和 rollback/rollback-failure reporting；
+10. `release_version`、`python_version`、`source_commit`、Bundle/Task Route/Routing Manifest/MCP/Project Payload/install schema、三个 digest 与 artifact identity 一致。
 
 Routing Conformance Benchmark 必须永久覆盖 Greenfield、Fact Recovery、L1/L2/L3、Feature/Bug/Incident/Refactor/Performance/Schema、Frontend/Figma/Docs/Review、多 Agent/多 Change、Dependency/CI/Git/PR/Release、Runtime/Project Payload/Skill Mutation/Security、unknown 和复杂组合。最低门禁是 `Expected Required ⊆ Actual Required`；每次修改 trigger/依赖/风险下限都同步审查正例、必要反例和 ambiguous case，并力求 `Expected == Actual`。
 
-不同平台的 onefile 必须在 Linux、Windows、macOS 对应 Runner 构建、启动、MCP smoke 和 project install，不能把一个平台的产物当跨平台证据。
+正式平台构建的 Python 版本必须由永久 CI/Release workflow 显式固定；不能使用 Linux/Windows/macOS Runner 各自随机漂移的预装 Python 冒充同一构建环境。不同平台的 onefile 必须在 Linux、Windows、macOS 对应 Runner 构建、启动、MCP smoke 和 project install，不能把一个平台的产物当跨平台证据。
 
 ## 17. Release Identity 与正式资产
 
@@ -505,21 +508,27 @@ agent-skills-runtime-release-identity/v1
 
 ```text
 release_version / source_commit
-artifact / artifact_sha256
+artifact / artifact_sha256 / python_version
 Bundle/Task Route/Routing Manifest/MCP Tool/Project Payload protocol
 bundle_version / source_digest / routing_digest / payload_digest
 公开 Skill 集合
 ```
 
-不得公开 Reference ID、文件名、路径、数量、trigger mapping、依赖图或 canonical 原文。
+不得公开 Reference ID、文件名、路径、数量、trigger mapping、依赖图或 canonical 原文。Builder 可以在维护者构建结果中返回聚合 `context_budget`，但该信息不进入 Runtime `status/self-test` 的 Reference 明细面。
 
 正式 GitHub build 必须满足 `source_commit == GITHUB_SHA == 当前 checkout HEAD`；不一致、伪造或无法解析时失败。非 Git 本地源码允许明确为 `null`，不能编造 commit。
 
-正式 Release 只发布三平台 binary、`USAGE.md` 与 `SHA256SUMS`；不发布构建期 identity manifest、源包、Python 安装器、Runtime Kit、私有 Routing Manifest 或公开 Reference Catalog。构建期 identity manifest 至少绑定 `release_version`、真实 `source_commit`、artifact 文件名/SHA256、source/routing/payload digest 以及 Bundle/Task Route/Routing Manifest/MCP/Project Payload/install 协议版本；workflow 完成三平台交叉校验后必须在生成 checksum 和 Release 前删除这些 manifest。根 `VERSION` 是版本事实源；Release workflow 必须从 main 构建、校验 tag/version/Ready、三平台 identity 的 `source_commit == GITHUB_SHA` 与 artifact SHA256、三平台独立验证，并遵守仓库权限、Branch Protection/Ruleset 与不可覆盖资产边界。
+仓库不维护独立根版本文件。**正式 Release 的唯一版本来源是 `.github/workflows/release.yml` 手工输入的 `v<SemVer>` tag；workflow 去掉前缀 `v` 得到 `release_version`，并把同一个值显式传给三个平台 Builder。**普通本地、PR 和 main 常规构建没有正式 tag 时使用 `0.0.0-dev` development identity，不得冒充已发布版本。
+
+正式 Release 只发布三平台 binary、`USAGE.md` 与 `SHA256SUMS`；不发布构建期 identity manifest、源包、Python 安装器、Runtime Kit、私有 Routing Manifest 或公开 Reference Catalog。构建期 identity manifest 至少绑定 `release_version`、真实 `source_commit`、artifact 文件名/SHA256、构建 `python_version`、source/routing/payload digest 以及 Bundle/Task Route/Routing Manifest/MCP/Project Payload/install 协议版本；workflow 完成三平台交叉校验后必须在生成 checksum 和 Release 前删除这些 manifest。
+
+Release workflow 必须从 main 构建，在正式构建前校验 tag 不存在、Release 不存在、Release Immutability 已启用，并在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check；三平台使用同一固定 Python 版本，且 identity 必须满足 `source_commit == GITHUB_SHA`、`release_version == tag 去 v 后值`、artifact SHA256 和协议/digest 一致。
+
+正式资产完成交叉校验后，workflow 必须先创建 **Draft Release**，上传三平台 binary、`USAGE.md` 和 `SHA256SUMS`，核对 Draft 资产集合完整后才 Publish；发布后再核对 tag 指向当前 `GITHUB_SHA`、资产集合与 GitHub 返回的 `immutable=true`。Release Immutability 未启用、Draft 上传不完整、identity 不一致或发布后不可验证时必须失败关闭，不能把可变或缺资产的 Release 描述成正式不可变交付。
 
 版本语义分为两种：网页端读取当前 main、Runtime 使用当前最新 Release 时追求“最新规则”，但发布间隙允许短暂版本差；需要严格复现时，Source Mode 必须读取 Runtime `status --json` 记录的 `source_commit` 所对应的 Release tag/commit，不能把 main 的更新内容与旧 Runtime 声称为同一版本。
 
-AES-GCM 和 onefile 只减少普通明文浏览面并检测静态篡改，不是 TEE/KMS，也不能抵御机器 Owner、调试器、内存转储、Hook、MCP 通信观测或专业逆向。canonical 源码访问仍由私有仓库/制品渠道权限控制；不要为下载同仓 Release 向不应获得源码的人授予 read 权限。
+AES-GCM 和 onefile 只减少普通明文浏览面并检测静态篡改，不是 TEE/KMS，也不能抵御机器 Owner、调试器、内存转储、Hook、MCP 通信观测或专业逆向。canonical 源码访问仍由仓库/制品渠道权限控制；如果源仓库是 Public，则 canonical Skill/Reference 本身就是公开内容，Runtime 加密不能反向把公开源码变成保密事实。
 
 ## 18. 升级
 
@@ -542,6 +551,8 @@ v1/未知 install schema、Bundle v1、MCP v1 或损坏状态不静默兼容。�
 ## 19. 回滚
 
 安装过程内失败由 v3 Installer 快照恢复；用户手工回退必须取得目标版本的完整同平台资产并重新运行安装，不能只替换 Runtime、Router、Skill Core 或 manifest。
+
+如果安装过程自身失败且任何快照恢复失败，安装器必须明确报告“回滚不完整”及未恢复路径/原因，并保留最初安装异常作为根因链；不得因 rollback exception 被吞掉而让维护者误判项目已经恢复。
 
 如果目标版本不理解当前 schema/ownership，应停止并按该版本正式迁移说明处理。不得手工删除归属不明的 `.agents` 内容，不得用 Git destructive 命令冒充安装回滚。
 

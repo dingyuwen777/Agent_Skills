@@ -346,8 +346,22 @@ def _updated_codex_config(existing: bytes | None, runtime_command: str, owned: b
     if existing is not None:
         text = _validate_utf8(existing, ".codex/config.toml")
         marker = _marker_range(existing, CODEX_MANAGED_START, CODEX_MANAGED_END, ".codex/config.toml")
-        if marker is None and _CODEX_SERVER_PATTERN.search(text) and not owned:
-            raise ValueError(".codex/config.toml 已存在未被 Agent Skills manifest 认领的同名 MCP server")
+        matches = list(_CODEX_SERVER_PATTERN.finditer(text))
+        if marker is None:
+            if matches:
+                owner_state = "现有 install manifest 仍认领该配置" if owned else "当前 install manifest 未认领该配置"
+                raise ValueError(
+                    ".codex/config.toml 已存在同名 MCP server，但 Agent Skills managed marker 缺失；"
+                    f"{owner_state}，仍无法证明该 TOML table 可安全覆盖"
+                )
+        else:
+            marker_start = text.find(CODEX_MANAGED_START)
+            marker_end = text.find(CODEX_MANAGED_END) + len(CODEX_MANAGED_END)
+            outside = [match for match in matches if not (marker_start <= match.start() < marker_end)]
+            if len(matches) > 1 or outside:
+                raise ValueError(
+                    ".codex/config.toml 存在重复或 managed block 外的同名 MCP server，拒绝保留歧义 TOML table"
+                )
     return _replace_or_append_block(
         existing,
         block,
@@ -592,21 +606,26 @@ def install_project(
                 skill_root.rmdir()
             except OSError:
                 pass
-    except Exception:
+    except Exception as install_error:
+        rollback_errors: list[str] = []
         for path in reversed(text_paths):
             try:
                 _restore_file(path, snapshots[path])
-            except Exception:
-                pass
+            except Exception as rollback_error:
+                rollback_errors.append(f"{path}: {type(rollback_error).__name__}: {rollback_error}")
         try:
             _restore_file(runtime_target, runtime_snapshot)
-        except Exception:
-            pass
+        except Exception as rollback_error:
+            rollback_errors.append(f"{runtime_target}: {type(rollback_error).__name__}: {rollback_error}")
         for path in sorted(managed_snapshot_paths, key=lambda item: len(item.parts), reverse=True):
             try:
                 _restore_file(path, managed_snapshots[path])
-            except Exception:
-                pass
+            except Exception as rollback_error:
+                rollback_errors.append(f"{path}: {type(rollback_error).__name__}: {rollback_error}")
+        if rollback_errors:
+            raise RuntimeError(
+                "Agent Skills 安装失败且回滚不完整：" + "; ".join(rollback_errors)
+            ) from install_error
         raise
 
     return {
