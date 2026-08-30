@@ -144,12 +144,66 @@ def normalize_file(path: Path) -> bool:
     return True
 
 
+def replace_once(path: Path, old: str, new: str) -> bool:
+    """只在旧片段精确存在一次时替换，已迁移状态保持幂等。"""
+    text = path.read_text(encoding="utf-8")
+    if old not in text:
+        if new in text:
+            return False
+        raise RuntimeError(f"未找到预期迁移片段：{path.relative_to(ROOT)}")
+    if text.count(old) != 1:
+        raise RuntimeError(f"迁移片段出现次数异常：{path.relative_to(ROOT)}")
+    path.write_text(text.replace(old, new), encoding="utf-8")
+    return True
+
+
+def patch_generated_navigation_contexts() -> list[str]:
+    """修正复制到其他目录的模板链接，并让两个 Bootstrap 按输出目录重写 Router 链接。"""
+    changed: list[str] = []
+
+    change_template = ROOT / ".agents/skills/coding/assets/CHANGE.template.md"
+    text = change_template.read_text(encoding="utf-8")
+    old_target = "](../references/"
+    new_target = "](../../../skills/coding/references/"
+    if old_target in text:
+        text = text.replace(old_target, new_target)
+        change_template.write_text(text, encoding="utf-8")
+        changed.append(change_template.relative_to(ROOT).as_posix())
+    elif new_target not in text:
+        raise RuntimeError("CHANGE.template.md 未找到预期 Reference link target")
+
+    coding = ROOT / ".agents/skills/coding/scripts/coding.py"
+    old_block = '''def _managed_block(newline: bytes) -> bytes:\n    """渲染固定 Agent Skills managed block，并适配目标文件原有换行风格。"""\n    return _render_with_newline(_asset_text("AGENTS.managed.md"), newline)\n'''
+    new_block = '''def _managed_asset_text() -> str:\n    """把源模板 Router 链接转换为写入项目根 AGENTS 后仍可点击的目标。"""\n    text = _asset_text("AGENTS.managed.md")\n    source_link = "[`.agents/skills/ROUTER.md`](../../ROUTER.md)"\n    project_link = "[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)"\n    if text.count(source_link) != 1:\n        raise ValueError("AGENTS.managed.md Router 链接模板不符合预期")\n    return text.replace(source_link, project_link)\n\n\ndef _managed_block(newline: bytes) -> bytes:\n    """渲染固定 Agent Skills managed block，并适配目标文件原有换行风格。"""\n    return _render_with_newline(_managed_asset_text(), newline)\n'''
+    coding_changed = replace_once(coding, old_block, new_block)
+    old_substitute = 'managed_block=_asset_text("AGENTS.managed.md").rstrip("\\r\\n"),'
+    new_substitute = 'managed_block=_managed_asset_text().rstrip("\\r\\n"),'
+    coding_substitute_changed = replace_once(coding, old_substitute, new_substitute)
+    if coding_changed or coding_substitute_changed:
+        changed.append(coding.relative_to(ROOT).as_posix())
+
+    installer = ROOT / "runtime/agent_skills_runtime/project_installer.py"
+    old_asset_block = '''def _payload_asset(payload_files: Mapping[str, bytes], path: str) -> str:\n    """从内嵌 Project Payload 读取 Bootstrap 所需 UTF-8 模板。"""\n    content = payload_files.get(path)\n    if content is None:\n        raise ValueError(f"Project Payload 缺少 Bootstrap 模板：{path}")\n    return _validate_utf8(content, path)\n'''
+    new_asset_block = '''def _payload_asset(payload_files: Mapping[str, bytes], path: str) -> str:\n    """从内嵌 Project Payload 读取 Bootstrap 所需 UTF-8 模板。"""\n    content = payload_files.get(path)\n    if content is None:\n        raise ValueError(f"Project Payload 缺少 Bootstrap 模板：{path}")\n    return _validate_utf8(content, path)\n\n\ndef _project_agents_managed_text(payload_files: Mapping[str, bytes]) -> str:\n    """把源模板 Router 链接转换为写入项目根 AGENTS 后仍可点击的目标。"""\n    text = _payload_asset(payload_files, "coding/assets/AGENTS.managed.md")\n    source_link = "[`.agents/skills/ROUTER.md`](../../ROUTER.md)"\n    project_link = "[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)"\n    if text.count(source_link) != 1:\n        raise ValueError("AGENTS.managed.md Router 链接模板不符合预期")\n    return text.replace(source_link, project_link)\n'''
+    installer_changed = replace_once(installer, old_asset_block, new_asset_block)
+    old_managed = 'managed_text = _payload_asset(payload_files, "coding/assets/AGENTS.managed.md").rstrip("\\r\\n")'
+    new_managed = 'managed_text = _project_agents_managed_text(payload_files).rstrip("\\r\\n")'
+    installer_use_changed = replace_once(installer, old_managed, new_managed)
+    if installer_changed or installer_use_changed:
+        changed.append(installer.relative_to(ROOT).as_posix())
+
+    return changed
+
+
 def main() -> int:
     """规范全仓 Markdown，并输出实际改动文件。"""
     changed: list[str] = []
     for path in markdown_files():
         if normalize_file(path):
             changed.append(path.relative_to(ROOT).as_posix())
+    for item in patch_generated_navigation_contexts():
+        if item not in changed:
+            changed.append(item)
     print(f"changed_count={len(changed)}")
     for item in changed:
         print(item)
