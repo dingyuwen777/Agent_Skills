@@ -156,8 +156,6 @@ def _project_agents_managed_text(payload_files: Mapping[str, bytes]) -> str:
     text = _payload_asset(payload_files, "coding/assets/AGENTS.managed.md")
     source_link = "[`.agents/skills/ROUTER.md`](../../ROUTER.md)"
     project_link = "[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)"
-    if text.count(source_link) != 1:
-        raise ValueError("AGENTS.managed.md Router 链接模板不符合预期")
     return text.replace(source_link, project_link)
 
 
