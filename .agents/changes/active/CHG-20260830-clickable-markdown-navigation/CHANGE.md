@@ -34,7 +34,7 @@ data_changes: []
 
 # 成功标准
 
-- [x] 全仓 Markdown 中用于文档导航的具体仓库 Markdown 路径，统一使用可点击 Markdown link，并在 link label 中显示路径本身。
+- [x] 全仓 Markdown 中用于文档导航的具体仓库 Markdown 路径统一使用可点击 Markdown link，并在 link label 中显示路径本身。
 - [x] 用户截图对应的 Bootstrap / managed block 导航及同类写法全部处理，不只修单个 Reference。
 - [x] 命令、目录树、glob、协议/流程图、生成路径、目标项目占位路径和代码示例不被机械转换成链接。
 - [x] 所有新增链接目标均能解析到当前仓库真实 Markdown 文件，不制造死链。
@@ -76,27 +76,27 @@ data_changes: []
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
 | R1 | 检查所有文档中的同类纯路径导航 | user:scan-all-markdown-navigation | satisfied | Initial Red run `33295784345` 全仓扫描发现 100 处违规，集中在 19 份正式 Markdown；最终同一永久回归为 Green |
-| R2 | 路径文字保留且可以直接点击打开文件 | user:clickable-path-label | satisfied | `test_concrete_repository_markdown_navigation_is_clickable`、`test_path_label_links_resolve_to_real_markdown`、`test_managed_agents_link_is_correct_in_source_and_generated_root` 均通过；19 份 Markdown 的 link label 保留原路径文本 |
-| R3 | 不因格式统一误改命令/示例/流程语义 | .agents/skills/coding/references/15_规则内容守恒与Skill维护.md | satisfied | PR #48 diff 人工内容守恒 Review `NO_FINDINGS_WITHIN_SCOPE`；命令/流程/glob/协议示例未机械链接化；routing digest 仍为 `600a9f493fb669addf53eff1ee55533091c1ffe344e4883528392af81116dc7e` |
-| R4 | 按仓库门禁完成 PR、main fresh CI 与 Change 清理 | .agents/MAINTENANCE.md | explicitly_deferred | Ready 后仍需非 Draft PR 永久 CI、正常 merge、main fresh CI 和独立 Active Change 清理；这些生命周期步骤不能在合并前伪报完成 |
+| R2 | 路径文字保留且可以直接点击打开文件 | user:clickable-path-label | satisfied | 3 条 Markdown 导航永久回归均通过；19 份 Markdown 的 link label 保留原路径文本，所有 repo-relative target 可解析 |
+| R3 | 不因格式统一误改命令/示例/流程语义 | .agents/skills/coding/references/15_规则内容守恒与Skill维护.md | satisfied | PR diff 人工内容守恒 Review / re-review `NO_FINDINGS_WITHIN_SCOPE`；命令/流程/glob/协议示例未机械链接化；routing digest 仍为 `600a9f493fb669addf53eff1ee55533091c1ffe344e4883528392af81116dc7e` |
+| R4 | 按仓库门禁完成 PR、main fresh CI 与 Change 清理 | .agents/MAINTENANCE.md | explicitly_deferred | Draft #48 Final Ready CI 已全绿但 Draft→Ready 因连接器 `Repository.fullDatabaseId` 缺陷失败；#48 已关闭未合并，非 Draft #49 已建立，仍需其最终 HEAD 永久 CI、正常 merge、main fresh CI 与独立 Active Change 清理 |
 
 # Validation Matrix
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | run `33296394119`：172 self-contained tests 全部 OK，含 3 条 Markdown 导航永久回归 |
+| 行为 / Unit / Component | required | Final Ready run `33296569104`：172 self-contained tests 全部 OK，含 3 条 Markdown 导航永久回归 |
 | 接口 / Contract | required | Stable ID / trigger / dependency / risk floor 均未修改；routing digest 与基线相同；最小 Payload fixture 在修复过度约束后全部回归 Green |
-| 集成 / Persistence / Runtime Dependency | required | run `33296394119`：Bundle build/status/self-test、real stdio MCP、project install/repeat/no-args install 全部通过 |
+| 集成 / Persistence / Runtime Dependency | required | Final Ready run `33296569104`：Bundle build/status/self-test、real stdio MCP、project install/repeat/no-args install 全部通过 |
 | 用户 / Workflow Acceptance | required | link label 显示完整路径；目标解析测试证明仓库内 target 存在；Coding Bootstrap 与 Runtime Installer 均证明生成项目根 AGENTS 使用 `.agents/skills/ROUTER.md` 可点击链接 |
 | 跨组件 Golden Path | required | Linux onefile → status/self-test → real MCP → project install/no-args install 全部 Green |
 | External Dependency / Provider Probe | not_applicable | 无外部 Provider、网络 Contract 或现时服务事实变化 |
-| Build / Package / Runtime | required | run `33296394119`：Runtime Windows Package success、Runtime macOS Package success；Linux产品链 success |
-| Docs / Governance / Other | required | 19 份生产 Markdown 完成路径链接化；PR diff 内容守恒 Review `NO_FINDINGS_WITHIN_SCOPE`；Ready Gate pre-Ready 唯一失败为 Change 状态仍 `proposed` |
+| Build / Package / Runtime | required | Final Ready run `33296569104`：Skill Tests、Runtime Windows Package、Runtime macOS Package 三个 Job 全部 success |
+| Docs / Governance / Other | required | 19 份生产 Markdown 完成路径链接化；内容守恒 Review `NO_FINDINGS_WITHIN_SCOPE`；Final Ready Check success；Draft #48 关闭未合并，非 Draft #49 接棒 |
 
 # Completion Audit
 
 - [x] upstream_re_read：Ready 前重新读取用户“检查所有文档并统一修改”的要求、当前分支 AGENTS、Maintenance、Coding 两阶段复核、Skill 内容守恒和 Review Skill/审查执行/测试充分性规则。
-- [x] change_coverage：Initial Red 定位的 100 处 / 19 份 Markdown 均由最终链接扫描覆盖；最终 PR changed files 与人工 diff 复核确认没有遗留一次性 normalizer/workflow。
+- [x] change_coverage：Initial Red 定位的 100 处 / 19 份 Markdown 均由最终链接扫描覆盖；最终 changed files 与人工 diff 复核确认没有遗留一次性 normalizer/workflow。
 - [x] reverse_audit：从每个 path-label link 反查当前仓库真实 Markdown target；对 `AGENTS.managed.md` / `CHANGE.template.md` 额外从最终生成位置反查；Runtime/Payload/Router 现有链保持 Green。
 - [x] unresolved_cleared：R1–R3 satisfied；R4 仅为必须发生在 Ready 后的正式交付生命周期 `explicitly_deferred`；无 `not_satisfied`。
 
@@ -109,7 +109,8 @@ data_changes: []
 - [x] 处理 run `33296262526` 暴露的 9 个既有 installer fixture 回归：修复 Runtime helper 过度 fail-closed，不修改/削弱那 9 个测试，也不新增 Payload Contract。
 - [x] run `33296394119`：172 tests、Linux onefile/MCP/install、Windows/macOS package/install 全部 Green；Linux Job 唯一失败为当时 Change 仍 `proposed` 的 Ready Gate。
 - [x] 完成独立 Review / re-review，结论 `NO_FINDINGS_WITHIN_SCOPE`。
-- [ ] 在本 `ready_for_review` 提交上取得最终永久三平台 CI（含 Ready Check），随后非 Draft PR 正常合并；main fresh CI 后删除 Active Change。
+- [x] Draft #48 Final Ready HEAD `a2a57d75d763d79967145f5343deebd20f28b8a8` 的 run `33296569104` 三个永久 Job 全部 success，含 172 tests 与 Ready Check；Draft→Ready 因连接器 GraphQL schema 缺陷失败，#48 已关闭且未合并。
+- [ ] 非 Draft PR #49 在本次治理提交后的最终 HEAD 自行取得永久三平台 CI，随后正常合并；main fresh CI 后删除 Active Change。
 
 # 验证
 
@@ -124,12 +125,13 @@ data_changes: []
 3. **相邻回归发现 — `33296262526`**
    - Runtime helper 初版把 canonical link 变成最小 Payload fixture 的新强制 Contract，导致 9 个既有 installer/portability 用例统一 `ValueError`。
    - 修复生产 helper 为“存在源链接则转换，不存在则原样保留”；未修改这 9 个测试。
-4. **Green — `33296394119`**
-   - `Ran 172 tests ... OK`。
-   - 3 个新增导航测试全部通过。
-   - Linux onefile build/status/self-test、real stdio MCP、project install/repeat/no-args install 全部成功。
-   - Windows/macOS Package + install success。
-   - 唯一 Job 失败是 Ready Check 对 `status: proposed` 的预期拒绝。
+4. **Pre-Ready Green — `33296394119`**
+   - `Ran 172 tests ... OK`；Linux onefile/MCP/install、Windows/macOS package/install 全部成功。
+   - 唯一 Job 失败是 Ready Check 对当时 `status: proposed` 的预期拒绝。
+5. **Final Draft Ready — `33296569104`**
+   - HEAD `a2a57d75d763d79967145f5343deebd20f28b8a8`。
+   - Skill Tests、Runtime Windows Package、Runtime macOS Package 三个 Job 全部 success。
+   - 172 tests、Ready Check、Linux onefile/status/self-test/MCP/install 与 Windows/macOS package/install 全部通过。
 
 ## Markdown 覆盖事实
 
@@ -144,7 +146,7 @@ data_changes: []
 
 # 独立 Review
 
-Review Target：PR #48 / `main@908dbf87c84104d23a166d2f5351ee21c24f279b → chore/clickable-markdown-navigation`。
+Review Target：Draft PR #48 与同一实现分支；正式交付由非 Draft PR #49 承接。
 
 模式：review-and-fix（用户已授权本次实现与交付）。
 
@@ -162,12 +164,12 @@ Review Target：PR #48 / `main@908dbf87c84104d23a166d2f5351ee21c24f279b → chor
 
 re-review 结果：
 
-- 19 份 Markdown 的生产 diff 均保留原路径文字，只增加 link target 或把纯文档路径 fenced block转成 link/list；未删除触发、例外、失败、验证或 Ownership 规则。
+- 19 份 Markdown 的生产 diff 均保留原路径文字，只增加 link target 或把纯文档路径 fenced block 转成 link/list；未删除触发、例外、失败、验证或 Ownership 规则。
 - 所有 path-label repo links 通过目标存在性/仓库边界回归。
 - `AGENTS.managed.md` 源位置与 Coding/Runtime 生成项目根位置均有独立断言；`CHANGE.template.md` 链接 target 在模板位置和生成 Change 位置均可解析。
 - Runtime 最小 Payload fixture 不再被要求携带 canonical Markdown link，9 个原有测试恢复 Green。
-- current Green `routing_digest` 与变更前保持一致，说明路由 metadata/identity 未变化；`source_digest` 因 canonical Markdown bytes 改变而变化，属于预期。
-- 临时 normalizer / temporary workflows / patch helpers 已全部删除，不在 PR #48 最终 changed files 中。
+- Final Ready `routing_digest` 与变更前保持一致；`source_digest` 因 canonical Markdown bytes 改变而变化，属于预期。
+- 临时 normalizer / temporary workflows / patch helpers 已全部删除，不在正式 changed files 中。
 
 # 文档影响
 
@@ -188,6 +190,7 @@ re-review 结果：
 # 交付
 
 - Branch：`chore/clickable-markdown-navigation`。
-- Draft PR：#48 `统一 Markdown 文档路径为可点击导航`。
+- Draft PR #48：已关闭、未合并；原因是 Draft→Ready GitHub 连接器 GraphQL schema 缺陷，不是仓库/CI 拒绝。
+- 非 Draft PR #49：`统一 Markdown 文档路径为可点击导航`，继续使用同一分支；必须在本次治理提交后的最终 HEAD 自行通过永久 CI 后才合并。
 - Release：本 Change 不创建。
-- Post-Ready：最终 Ready HEAD 永久 CI → 非 Draft PR → merge → main fresh CI → 独立清理 Active Change；由 Git/PR 保留历史，不创建 Change archive。
+- Post-merge：必须验证 main fresh CI，再删除当前 Active Change；由 Git/PR 保留历史，不创建 Change archive。
