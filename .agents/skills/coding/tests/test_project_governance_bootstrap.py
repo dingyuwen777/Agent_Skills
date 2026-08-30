@@ -27,6 +27,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
         self.assertIn("首次接入", skill)
         self.assertIn("治理事实", skill)
         self.assertIn("继续原始研发任务", skill)
+        self.assertIn("继续原始只读任务", skill)
 
     def test_discovery_separates_normative_descriptive_and_unknown_facts(self) -> None:
         """仓库调查必须区分项目规则、可校准事实和未确认事项，不能从实现反向改写制度。"""
@@ -54,6 +55,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             "不能通过修改 `AGENTS.md` 让错误实现合法化",
             "重新读取最终 `AGENTS.md`",
             "继续原始研发任务",
+            "继续原始只读任务",
         ):
             self.assertIn(marker, bootstrap)
 
@@ -115,6 +117,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
         for marker in (
             "安装成功不等于项目治理已经完成",
             "首次接入：先校准项目 `AGENTS.md`",
+            "首次接入任意项目时，当前大模型应先",
             "先不要修改业务代码",
             "规范性规则",
             "描述性事实",
