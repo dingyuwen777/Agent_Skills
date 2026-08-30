@@ -8,6 +8,8 @@ import tempfile
 import unittest
 
 from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.project_installer import install_project
+from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime.routing import (
     REFERENCE_ROUTE_PROTOCOL,
     SKILL_ROUTE_PROTOCOL,
@@ -98,6 +100,32 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
         for required in ("代码", "测试", "文档", "复核", "Git", "CI", "用户可见"):
             with self.subTest(required=required):
                 self.assertIn(required, text)
+
+    def test_real_project_install_keeps_internal_runtime_assets_out_of_root_guidance(self) -> None:
+        """真实 Project Payload 安装后，根项目规则只暴露工程过程，不暴露内部治理路径。"""
+        bundle = build_bundle(ROOT)
+        payload = build_project_payload(ROOT, bundle)
+        with tempfile.TemporaryDirectory() as directory:
+            sandbox = Path(directory)
+            target = sandbox / "target"
+            target.mkdir()
+            artifact = sandbox / "agent-skills-mcp"
+            artifact.write_bytes(b"runtime-fixture")
+
+            install_project(target, payload, artifact, release_version="9.9.9-test")
+
+            agents = (target / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertNotIn(".agents/skills/", agents)
+            self.assertNotIn("ROUTER.md", agents)
+            self.assertNotIn("Reference", agents)
+            self.assertIn("代码修改", agents)
+            self.assertIn("测试", agents)
+            self.assertIn("文档同步", agents)
+            self.assertIn("Git", agents)
+            self.assertIn("CI", agents)
+            # 内部 shared runtime asset 仍按既有 Project Payload ownership 安装，只是不再暴露为根用户入口。
+            self.assertTrue((target / ".agents/skills/ROUTER.md").is_file())
+            self.assertFalse((target / ".agents/skills/coding/references").exists())
 
     def test_runtime_mcp_public_results_do_not_expose_internal_identity(self) -> None:
         """公共 Tool 外层只提供完成流程所需信息，不返回内部治理身份。"""
