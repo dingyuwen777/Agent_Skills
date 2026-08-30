@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260831-requirement-pr-traceability
 title: 固化需求来源、Issue 与 PR 可追溯协作门禁
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: change/requirement-pr-traceability
 created: 2026-08-31
@@ -30,16 +30,16 @@ data_changes: []
 
 # 成功标准
 
-- [ ] L2/L3 进入 PR 前必须解析可持久、团队可访问的 Requirement Source；项目已有 OpenSpec/RFC/ADR/Spec/Issue 等正式载体时优先复用，不平行造制度。
-- [ ] GitHub 项目在没有更强正式载体、且项目治理允许 Issue 作为需求索引时，可在已有 GitHub 写授权下先搜索等价 Issue，再创建最小 Issue；多个候选有实质歧义时禁止静默误关联。
-- [ ] PR 使用稳定的 `Requirement-Source:` 追溯字段；`Closes/Fixes/Resolves` 只表达“合并后整个 Issue 完成”，不得拿来替代一般需求追溯，多 PR 分拆时不得提前关闭 Issue。
-- [ ] PR 创建或更新后重新读取 PR 与 Requirement Source，确认引用真实存在、可访问且与当前实现范围一致；宿主无权限时明确降级，不伪造关联成功。
-- [ ] PR Review 将需求来源状态区分为 `resolved / partial / unavailable`；`partial/unavailable` 时可以继续代码质量 Review，但不得声明整体需求符合或可合并。
-- [ ] Review 绑定 `reviewed_base_sha + reviewed_head_sha`；base 或 head 漂移后必须针对当前目标分支状态重新做相应集成验证，并按风险 re-review，不能只因 PR head 未变沿用旧集成结论。
-- [ ] 不强制所有项目使用 rebase；以目标仓库 Branch Protection/Ruleset、up-to-date check、merge queue 或等价 merge-result validation 为实际集成机制。
-- [ ] CI 只适合强制 `Requirement-Source` 结构、来源存在性和最小结构；自然语言需求完整性与“PR 是否真正实现需求”继续由 Agent Review 语义审查负责。
-- [ ] Source Mode 与 Runtime Mode 都能在“代码审查 / Git 交付 / PR Ready / 多人协作”任务中自动加载本规则，无需用户知道内部 Reference 名称。
-- [ ] 不修改 Runtime evaluator、MCP、Bundle 协议、Project Payload 或既有 Stable Reference ID；新增 Reference 通过动态 Catalog 自动进入现有分发链。
+- [x] L2/L3 进入 PR 前必须解析可持久、团队可访问的 Requirement Source；项目已有 OpenSpec/RFC/ADR/Spec/Issue 等正式载体时优先复用，不平行造制度。
+- [x] GitHub 项目在没有更强正式载体、且项目治理允许 Issue 作为需求索引时，可在已有 GitHub 写授权下先搜索等价 Issue，再创建最小 Issue；多个候选有实质歧义时禁止静默误关联。
+- [x] PR 使用稳定的 `Requirement-Source:` 追溯字段；`Closes/Fixes/Resolves` 只表达“合并后整个 Issue 完成”，不得拿来替代一般需求追溯，多 PR 分拆时不得提前关闭 Issue。
+- [x] PR 创建或更新后重新读取 PR 与 Requirement Source，确认引用真实存在、可访问且与当前实现范围一致；宿主无权限时明确降级，不伪造关联成功。
+- [x] PR Review 将需求来源状态区分为 `resolved / partial / unavailable`；`partial/unavailable` 时可以继续代码质量 Review，但不得声明整体需求符合或可合并。
+- [x] Review 绑定 `reviewed_base_sha + reviewed_head_sha`；base 或 head 漂移后必须针对当前目标分支状态重新做相应集成验证，并按风险 re-review，不能只因 PR head 未变沿用旧集成结论。
+- [x] 不强制所有项目使用 rebase；以目标仓库 Branch Protection/Ruleset、up-to-date check、merge queue 或等价 merge-result validation 为实际集成机制。
+- [x] CI 只适合强制 `Requirement-Source` 结构、来源存在性和最小结构；自然语言需求完整性与“PR 是否真正实现需求”继续由 Agent Review 语义审查负责。
+- [x] Source Mode 与 Runtime Mode 都能在“代码审查 / Git 交付 / 多人协作”任务中自动加载本规则，无需用户知道内部 Reference 名称；`PR Ready` 与 `Git 交付` 共用同一 Reference trigger。
+- [x] 不修改 Runtime evaluator、MCP、Bundle 协议、Project Payload 或既有 Stable Reference ID；新增 Reference 通过动态 Catalog 自动进入现有分发链。
 
 # 范围
 
@@ -71,41 +71,42 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 多人开发 PR 必须能够追溯到明确需求，Agent Review 不能从代码反推需求 | user:current-request | not_satisfied | 待新增 canonical Reference 与回归测试。 |
-| R2 | GitHub 场景下 Agent 能自动寻找/在授权下创建 Issue，并在 PR 中建立稳定需求关联 | user:current-request | not_satisfied | 待新增 Requirement Source Resolution 与 `Requirement-Source:` 规则。 |
-| R3 | `Requirement-Source` 与 `Closes/Fixes/Resolves` 语义必须分离，支持一个 Issue 拆多个 PR | user:current-request | not_satisfied | 待新增 PR traceability 规则。 |
-| R4 | PR Review 必须绑定 base/head revision；main 推进后重新验证当前集成状态 | user:current-request | not_satisfied | 待新增 reviewed base/head snapshot 与漂移处理规则。 |
-| R5 | 需求缺失时仍可做代码质量 Review，但不得给需求符合或可合并结论 | user:current-request | not_satisfied | 待新增 `resolved/partial/unavailable` fail-closed 结论边界。 |
-| R6 | 不把 GitHub Issue/Ruleset 强加给所有项目，不修改 Runtime 协议或既有 Stable ID | AGENTS.md + .agents/MAINTENANCE.md | not_satisfied | 待完成项目中立性、动态 Catalog 与内容守恒 Review。 |
+| R1 | 多人开发 PR 必须能够追溯到明确需求，Agent Review 不能从代码反推需求 | user:current-request | satisfied | `17_需求来源与PR追溯治理.md` 第 1/5/6 节建立上游来源、PR 快照与 fail-closed 规则；`test_pr_requirement_traceability.py` preservation + review route 回归在 run `33325680763` 通过。 |
+| R2 | GitHub 场景下 Agent 能自动寻找/在授权下创建 Issue，并在 PR 中建立稳定需求关联 | user:current-request | satisfied | 新 Reference 第 2/3 节规定“先搜索→唯一匹配复用→有歧义不静默选择→无匹配且有写授权才创建 Issue→PR 写 `Requirement-Source:`”。 |
+| R3 | `Requirement-Source` 与 `Closes/Fixes/Resolves` 语义必须分离，支持一个 Issue 拆多个 PR | user:current-request | satisfied | 新 Reference 第 3 节明确需求追溯与 Issue 完成/自动关闭语义分离；preservation test 对四个关键标记执行回归。 |
+| R4 | PR Review 必须绑定 base/head revision；main 推进后重新验证当前集成状态 | user:current-request | satisfied | 新 Reference 第 5/7/8 节定义 `reviewed_base_sha`、`reviewed_head_sha`、`current_base_sha`、head/base 漂移、fresh integration validation 与 merge 前复核；当前 PR #76 base/main 在本轮复核时同为 `73efb8b98663e21836a0b8f76008eb8994cab903`。 |
+| R5 | 需求缺失时仍可做代码质量 Review，但不得给需求符合或可合并结论 | user:current-request | satisfied | 新 Reference 第 6 节定义 `resolved / partial / unavailable`，后两者明确允许有边界的代码质量 Review，但禁止整体需求符合/可合并结论；preservation test 覆盖。 |
+| R6 | 不把 GitHub Issue/Ruleset 强加给所有项目，不修改 Runtime 协议或既有 Stable ID | AGENTS.md + .agents/MAINTENANCE.md | satisfied | 新 Reference 第 2/4/7/10 节均以项目治理/平台等价机制为前提；实际 diff 仅新增 canonical Reference/测试及 Reference 数量回归，没有 Runtime/MCP/Bundle/Project Payload 修改，既有 Stable ID 映射未改。 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | 新增 `test_pr_requirement_traceability.py`，覆盖规则正文与 canonical routing。 |
-| 接口 / 契约 | required | `agent-routing:v1` metadata、Stable Reference ID、依赖和现有 Runtime compile/evaluate 必须继续可解析。 |
+| 行为 / 单元 / 组件 | required | Red run `33325561885` 在规则尚不存在时 self-contained tests 失败；Green 行为 run `33325680763` 在实现后 `Run self-contained tests` 成功。 |
+| 接口 / 契约 | required | run `33325680763` 的 compile/CLI smoke/self-contained tests 全部成功，说明 `agent-routing:v1`、Stable ID、dynamic compile/evaluate 与 Bundle 现有回归未被破坏。 |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 不修改外部数据库、服务或 Runtime 进程。 |
-| 用户 / 工作流验收 | required | 从“自然语言开发/审查 PR”反向验证自动命中规则以及需求缺失 fail-closed 输出边界。 |
-| 跨组件关键路径 | required | canonical Reference → dynamic routing → Bundle/Runtime 现有测试链由 Skill Tests 验证。 |
-| 外部依赖 / 供应方探测 | not_applicable | 规则本身不需要调用真实第三方服务；GitHub 外部动作只定义权限和验证责任。 |
-| 构建 / 打包 / 运行 | not_applicable | 不修改 Runtime/Builder/MCP/Installer/Release 路径，不触发三平台 package workflow。 |
-| 文档 / 治理 / 其他 | required | changed Change gate、Reference numbering、Markdown/routing/content preservation 与独立 Review。 |
+| 用户 / 工作流验收 | required | `test_pr_requirement_traceability.py` 直接验证自然语言代码审查、Git 交付和多人协作三类 route 自动加载 `coding.reference.18`；需求缺失 fail-closed 由正文 preservation 回归覆盖。 |
+| 跨组件关键路径 | required | run `33325680763` 的全部 self-contained tests 成功，包括动态 Routing/Bundle/Project Payload 既有回归；本次未改 Runtime 实现。 |
+| 外部依赖 / 供应方探测 | not_applicable | 规则本身不需要真实第三方 Probe；GitHub Issue/PR 外部动作只定义项目/权限条件与验证责任。 |
+| 构建 / 打包 / 运行 | not_applicable | 不修改 Runtime/Builder/MCP/Installer/Release 路径；按 Maintenance 不触发三平台 Runtime Package Tests。 |
+| 文档 / 治理 / 其他 | required | PR #76 当前 changed files 仅 Change、新 Reference、新回归和 Reference numbering；run `33325680763` 的 changed Change gate 因 Change 仍为 `in_progress` 而正确失败，本提交切换 `ready_for_review` 后由下一轮 CI 重新验证。 |
 
 # 完成审计
 
-- [ ] upstream_re_read：重新读取本轮用户确认结果、AGENTS、Maintenance、Router、Coding、Mutation、多人协作、Completion、Git 与 Review 当前规则。
-- [ ] change_coverage：R1–R6 全部进入 canonical Owner，且没有把项目特定治理强加为全局默认。
-- [ ] reverse_audit：开发需求 → Requirement Source → Issue/正式载体 → Change → PR；PR Review → source → base/head → diff/tests → merge freshness；两条链均可达。
-- [ ] unresolved_cleared：无 `not_satisfied`，required Validation Matrix 均有本轮新鲜证据。
+- [x] upstream_re_read：重新读取本轮用户确认结果、当前 main 的 AGENTS、Maintenance、Router、Coding、Mutation、多人协作、Git 与 Review 当前规则；没有用历史摘要代替 canonical 文件。
+- [x] change_coverage：R1–R6 全部进入单一 canonical Owner；Issue 自动搜索/创建、PR traceability、关闭语义、需求状态、revision snapshot、base/head freshness 和机器/语义门禁分工均已覆盖。
+- [x] reverse_audit：开发需求 → Requirement Source → Issue/正式载体 → Change → PR；PR Review → Requirement Source → base/head → diff/tests → current-base fresh validation → merge，两条链均在新 Reference 中闭合；Review/Git 细节仍回到既有 Owner。
+- [x] unresolved_cleared：R1–R6 无 `not_satisfied`；所有 required Validation Matrix 项已有本轮 Red/Green 或当前 diff/review 证据，最终 changed Change gate 留给本次 `ready_for_review` 提交的新鲜 CI 验证。
 
 # 任务
 
 - [x] 读取当前 main、AGENTS、Maintenance、Router、Coding、Mutation、Review、多人协作与 Git 规则，确认当前没有活动 Change。
 - [x] 确认 main `73efb8b98663e21836a0b8f76008eb8994cab903` 的 Skill Tests run `33324142068` 成功。
-- [ ] 先新增会因目标 Reference 尚不存在而失败的 self-contained 回归测试，取得 Red 证据。
-- [ ] 新增 `17_需求来源与PR追溯治理.md`，保持单一 Owner 和项目中立。
-- [ ] 更新 Reference numbering 测试，不改变现有 Stable ID。
-- [ ] 运行 PR Skill Tests 取得 Green，并完成 A1/A2、内容守恒、路由和 Review 复核。
+- [x] 先新增会因目标 Reference 尚不存在而失败的 self-contained 回归测试，并在 run `33325561885` 取得 Red。
+- [x] 新增 `17_需求来源与PR追溯治理.md`，保持单一 Owner 和项目中立。
+- [x] 更新 Reference numbering 测试，不改变现有 Stable ID。
+- [x] run `33325680763` 证明实现后的 compile、CLI smoke 和全部 self-contained tests 成功；A1/A2、内容守恒、路由与 Review 复核无 blocker。
+- [ ] 本次 `ready_for_review` 提交通过完整 PR Skill Tests / changed Change gate，并在 exact final head 上完成 re-review。
 - [ ] 合并实现 PR，确认 main fresh CI。
 - [ ] 将本 Change 更新为 `done` 并归档到 `archive/2026-08/`，通过独立归档 PR 完成交付。
 
@@ -122,16 +123,19 @@ data_changes: []
 ## 新鲜证据
 
 - 基线：main `73efb8b98663e21836a0b8f76008eb8994cab903`，Skill Tests run `33324142068`，conclusion=`success`。
+- Red：PR #76 run `33325561885`，head `725afb905d1d80e5fea8311c948f572eeff2781e`；compile/CLI smoke 成功，`Run self-contained tests` 失败，符合“新回归已存在、canonical 规则尚未实现”的预期失败。
+- Green 行为：PR #76 run `33325680763`，head `a9685091b98301d91c86d6ead4c2cf02594a4a8e`；compile、CLI smoke、`Run self-contained tests` 全部成功；workflow 最终 failure 只发生在 `Verify changed Coding Change`，原因是该 head 的 Change 仍为 `in_progress/not_satisfied`，没有绕过 Completion Gate。
+- A1/A2 / 规则质量复核：PR #76 在 head `a9685091b98301d91c86d6ead4c2cf02594a4a8e`、base/current main `73efb8b98663e21836a0b8f76008eb8994cab903` 上检查；changed files 仅 4 个，无临时 Red 文件、Runtime 修改或无关重构，未发现 BLOCKER/HIGH Finding。
 
 # 文档影响
 
-本次规则变化属于 Agent/治理能力，canonical Owner 为 Coding Reference；不需要新增人类 README。若最终用户说明因实际使用入口发生变化再更新 `USAGE.md`，但当前自然语言 Code Review 入口已经存在，因此本 Change 不为重复示例扩大文档范围。
+本次规则变化属于 Agent/治理能力，canonical Owner 为 Coding Reference；不需要新增人类 README。`USAGE.md` 已经允许用户直接用自然语言发起 Code Review，本次不要求用户记忆内部 Reference、route JSON 或新命令，因此不重复扩写最终用户说明。
 
 # Git / PR 状态
 
 - branch: `change/requirement-pr-traceability`
 - baseline main: `73efb8b98663e21836a0b8f76008eb8994cab903`
-- PR: 待创建
+- PR: #76，open；本提交前 head `a9685091b98301d91c86d6ead4c2cf02594a4a8e`
 - merge: 未执行
 - main fresh CI: 未执行
 - archive: 未执行
