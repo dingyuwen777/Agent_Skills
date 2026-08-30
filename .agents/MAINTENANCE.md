@@ -173,7 +173,10 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、Coding 锚�
 - 首次同名未认领 Skill fail closed；升级只修改旧 manifest 明确认领项；
 - `AGENTS.md` managed marker 外文本、项目自有 Skill、其他 MCP server 和宿主配置保持；
 - Codex/Cursor/Claude Code 只写项目级 Agent Skills 边界并尊重宿主 trust/approval；
-- 安装能预检的错误必须先于写入发现，切换失败按快照恢复；
+- 同名 Codex MCP table 存在但 managed marker 缺失时，不能仅凭旧 manifest 猜 ownership，必须 fail closed；
+- 安装能预检的错误必须先于写入发现，切换失败按快照恢复；回滚自身失败必须显式聚合报告并保留原始安装异常，不能静默吞掉；
+- 普通源码/PR/main Runtime 构建使用明确 development identity；正式 Release 版本只由 Release workflow 的 `v<SemVer>` tag 派生并显式传入 Builder；
+- 正式 Linux、Windows、macOS Runtime 构建使用仓库当前固定的同一 Python 版本，不能依赖各 Runner 自带 Python 漂移；
 - `status/self-test`、真实 stdio MCP、真实项目安装和项目内 Runtime smoke 都要验证最终平台 artifact；
 - Linux、Windows、macOS 必须分别在对应 Runner 构建验证。
 
@@ -204,9 +207,12 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、Coding 锚�
 - 禁止强制推送、`git reset --hard`、`git clean -fd`、共享历史重写；
 - 提交信息使用中文；
 - 重要改动先 Red/Green/Review/Ready/永久 CI，再把 Draft PR 转 Ready；
-- 不绕过 Branch Protection、Ruleset、CI 或现有门禁；
+- 不绕过 Branch Protection、Ruleset、CI 或现有门禁；仓库当前未配置这些机制时也不能用“没有平台强制”替代本仓库自身 PR/CI 流程；
 - 合并后确认 main 指向预期 merge commit，并重新跑 main 新鲜 CI；
-- Release 只从 main 手工运行 `.github/workflows/release.yml`，输入 `v<VERSION>`；
+- Release 只从 main 手工运行 `.github/workflows/release.yml`，输入唯一正式版本来源 `v<SemVer>`；仓库不维护第二份根版本文件；
+- Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并确认 Release Immutability 已启用；
+- 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
+- 正式资产全部验证后先创建 Draft Release、上传并核对资产集合，再 Publish；发布后核对 tag、资产和 immutable 状态；
 - 已存在 tag/Release 不覆盖、不移动；
 - Release 页面说明使用 `USAGE.md`，不自动把维护 commit/PR 历史暴露给最终用户。
 
