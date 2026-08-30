@@ -86,11 +86,11 @@ GitHub Release
   → Linux Runtime binary
   → Windows Runtime binary
   → macOS Runtime binary
-  → USAGE.md
+  → 最终用户说明
   → SHA256SUMS
 ```
 
-`SHA256SUMS` 位于 ZIP 内并校验三个 Runtime binary 与 `USAGE.md`；构建期 identity manifest 只承担维护侧校验，不进入 ZIP 或正式 Release 资产。源码仓库不维护第二套明文安装包或源码安装产品面。
+`SHA256SUMS` 位于 ZIP 内并校验三个 Runtime binary 与 ZIP 内的最终用户说明；该说明来自根 [`USAGE.md`](../USAGE.md)。构建期 identity manifest 只承担维护侧校验，不进入 ZIP 或正式 Release 资产。源码仓库不维护第二套明文安装包或源码安装产品面。
 
 目标项目中的运行边界：
 
@@ -229,10 +229,10 @@ Release
 - Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并拒绝覆盖已有 tag/Release；
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
 - 三平台 binary 与 identity 全部验证后，先删除只用于构建校验的 identity manifest，生成 ZIP 内 `SHA256SUMS`，再组装并验证 `agent-skills-v<SemVer>.zip` 的精确成员；
-- Draft Release 和已发布 Release 的资产集合都必须精确只有该版本 ZIP，不能同时暴露独立 binary、`USAGE.md`、`SHA256SUMS` 或 identity manifest；
+- Draft Release 和已发布 Release 的资产集合都必须精确只有该版本 ZIP，不能同时暴露独立 binary、说明文件、checksum 或 identity manifest；
 - Release workflow 不依赖自定义 PAT/Actions Secret，也不读取或要求仓库 Release Immutability 设置；发布使用 GitHub Actions 自动提供的 `github.token` 和最小 `contents: write` 权限；
 - 已存在 tag/Release 不覆盖、不移动；
-- Release 页面说明继续使用 [`USAGE.md`](../USAGE.md)，但 `USAGE.md` 作为 ZIP 内文件分发，不再作为独立 Release asset；不自动把维护 commit/PR 历史暴露给最终用户。
+- Release 页面说明继续使用 [`USAGE.md`](../USAGE.md)，但该说明文件作为 ZIP 内文件分发，不再作为独立 Release asset；不自动把维护 commit/PR 历史暴露给最终用户。
 
 ### GitHub PR 零人工交付兼容策略
 
