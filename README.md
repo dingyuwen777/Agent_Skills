@@ -194,7 +194,9 @@ main
 → 验证 tag、正式资产与 immutable 状态
 ```
 
-Release workflow 对 Release Immutability 采用 fail-closed：如果 GitHub 仓库没有启用该设置，就在正式构建前失败并提示维护者先在仓库 Settings 的 Releases 设置中启用，不创建不完整或可变的正式 Release。
+Release workflow 对 Release Immutability 采用 fail-closed。GitHub 官方的仓库设置检查 API 需要 `Administration: read`，而默认 `GITHUB_TOKEN` 不具备读取该管理设置的权限；因此 Preflight 优先使用可选仓库 Secret `RELEASE_SETTINGS_TOKEN`（建议使用仅授权本仓库、`Administration: read` 的 fine-grained PAT）做机器验证。若没有配置该 Secret，默认 Token 返回 403 时不会再误报“未启用”，而是要求本次手工运行显式勾选 `confirm_immutable_releases`，确认维护者已经在 `Settings > Releases` 打开该设置；真正的 404 仍表示未启用并立即失败。
+
+无论 Preflight 使用机器验证还是显式人工确认，正式发布后仍必须从 GitHub Release API 验证 `immutable=true`；Draft→资产校验→Publish、tag/资产核对和失败时只清理未发布 Draft 的边界保持不变。
 
 源仓库 Release 资产固定为三平台 binary、[`USAGE.md`](USAGE.md) 与 `SHA256SUMS`。构建期 identity manifest 只在 CI 内校验后删除；版本与 digest 身份仍可通过 binary 的 `status --json` 读取。Release 页面说明直接使用 [`USAGE.md`](USAGE.md)，不自动把维护 commit / PR 历史生成给最终使用者。最终交付给不具备源仓库权限的用户时，只复制这些 Release 资产，不暴露源仓库访问权。
 

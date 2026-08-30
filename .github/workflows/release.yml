@@ -7,6 +7,11 @@ on:
         description: "Release tag，例如 v2.0.0"
         required: true
         type: string
+      confirm_immutable_releases:
+        description: "确认 Settings > Releases 已启用 Release Immutability（未配置管理员只读 Token 时必选）"
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -40,6 +45,8 @@ jobs:
         id: release
         env:
           INPUT_TAG: ${{ inputs.tag }}
+          IMMUTABILITY_CONFIRMED: ${{ inputs.confirm_immutable_releases }}
+          RELEASE_SETTINGS_TOKEN: ${{ secrets.RELEASE_SETTINGS_TOKEN }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -69,12 +76,53 @@ jobs:
             echo "Release 已存在，拒绝覆盖：${TAG}" >&2
             exit 1
           fi
-          gh api \
-            -H "X-GitHub-Api-Version: 2026-03-10" \
-            "repos/${GITHUB_REPOSITORY}/immutable-releases" >/dev/null || {
-              echo "当前仓库未启用 GitHub Release Immutability；请先在 Settings > Releases 启用后再发布" >&2
-              exit 1
-            }
+          settings_token="${GH_TOKEN}"
+settings_token_source="GITHUB_TOKEN"
+if [ -n "${RELEASE_SETTINGS_TOKEN}" ]; then
+  settings_token="${RELEASE_SETTINGS_TOKEN}"
+  settings_token_source="RELEASE_SETTINGS_TOKEN"
+fi
+immutable_response="${RUNNER_TEMP}/immutable-releases.json"
+if ! immutable_status="$(
+  curl --silent --show-error \
+    --output "${immutable_response}" \
+    --write-out "%{http_code}" \
+    -H "Accept: application/vnd.github+json" \
+    -H "Authorization: Bearer ${settings_token}" \
+    -H "X-GitHub-Api-Version: 2026-03-10" \
+    "https://api.github.com/repos/${GITHUB_REPOSITORY}/immutable-releases"
+)"; then
+  echo "Release Immutability API 请求失败；无法确认仓库设置，停止发布" >&2
+  exit 1
+fi
+case "${immutable_status}" in
+  200)
+    jq -e '.enabled == true' "${immutable_response}" >/dev/null || {
+      echo "Release Immutability API 返回 200，但 enabled 不是 true；停止发布" >&2
+      exit 1
+    }
+    echo "已通过 ${settings_token_source} 机器确认 Release Immutability 已启用"
+    ;;
+  404)
+    echo "当前仓库未启用 GitHub Release Immutability；请先在 Settings > Releases 启用后再发布" >&2
+    exit 1
+    ;;
+  403)
+    if [ "${settings_token_source}" = "RELEASE_SETTINGS_TOKEN" ]; then
+      echo "RELEASE_SETTINGS_TOKEN 权限不足；该 Token 必须具备当前仓库 Administration: read" >&2
+      exit 1
+    fi
+    if [ "${IMMUTABILITY_CONFIRMED}" != "true" ]; then
+      echo "GITHUB_TOKEN 不具备读取仓库 Administration 设置的权限；请先在 Settings > Releases 确认已启用 Release Immutability，并重新运行 workflow 勾选 confirm_immutable_releases" >&2
+      exit 1
+    fi
+    echo "::warning::GITHUB_TOKEN 无法机器读取 Release Immutability 设置；已接受本次维护者显式确认，发布后仍会校验 immutable=true"
+    ;;
+  *)
+    echo "检查 Release Immutability 失败：HTTP ${immutable_status}；无法确认设置，停止发布" >&2
+    exit 1
+    ;;
+esac
           echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
 
