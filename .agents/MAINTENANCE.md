@@ -219,7 +219,6 @@ Release
 - 不覆盖、回滚或混入无关用户修改；
 - 禁止强制推送、`git reset --hard`、`git clean -fd`、共享历史重写；
 - 提交信息使用中文；
-- 重要改动先 Red/Green/Review/Ready/永久 CI，再把 Draft PR 转 Ready；
 - 不绕过 Branch Protection、Ruleset、CI 或现有门禁；仓库当前未配置这些机制时也不能用“没有平台强制”替代本仓库自身 PR/CI 流程；
 - 合并后确认 main 指向预期 merge commit，并重新运行本次 changed scope 应触发的 main 新鲜 CI；纯 Skill/治理变化不人为触发无关三平台 Runtime package workflow；
 - L2/L3 Change 在功能/治理变更合并且 main 新鲜验证成功后，通过独立最小归档提交/PR 把该 Change 更新为 `done` 并移动到 `archive/YYYY-MM/...`；归档提交本身只运行其真实 changed scope 所需门禁；
@@ -230,6 +229,30 @@ Release
 - Release workflow 不依赖自定义 PAT/Actions Secret，也不读取或要求仓库 Release Immutability 设置；发布使用 GitHub Actions 自动提供的 `github.token` 和最小 `contents: write` 权限；
 - 已存在 tag/Release 不覆盖、不移动；
 - Release 页面说明使用 [`USAGE.md`](../USAGE.md)，不自动把维护 commit/PR 历史暴露给最终用户。
+
+### GitHub PR 零人工交付兼容策略
+
+本仓库的 GitHub PR 交付必须遵守 [`coding/references/14_Git交付依赖安全与宿主能力边界.md`](skills/coding/references/14_Git交付依赖安全与宿主能力边界.md) 的完整通用规则，并额外固化以下源仓库约束：
+
+```text
+宿主自动 Draft → Ready 能力已验证可用
+→ 创建 Draft PR
+→ Red / Green / Review / CI
+→ 自动 Ready
+
+宿主 Ready 能力未验证、不可用，或已命中 fullDatabaseId
+→ 不创建 Draft PR
+→ 创建普通 PR，并在流程中视为逻辑未就绪
+→ Red / Green / Review / CI 未完成前禁止 merge
+```
+
+- 不得把 GitHub 网页按钮变成人工交付门禁；Ready 自动化失败时**不得要求用户手动点击 `Ready for review`**；
+- 如果 Draft PR 已经存在后才确认宿主 Ready 故障，自动关闭原 Draft PR，以相同 head/base 创建普通 PR，保留原 PR 和证据链接，并重新运行新 PR 的 fresh CI；
+- 真正合并前必须重新确认 `draft=false`、mergeable、required CI、当前 head SHA 与 reviewed head 一致；
+- GitHub merge 一律走 REST merge；宿主支持时必须传入 `expected_head_sha`，不使用无 head guard 的替代合并路径；
+- merge 后必须执行 main fresh CI；
+- main 新鲜验证成功后再执行 Change archive；归档 PR 同样不能依赖人工 Ready；
+- 当前 ChatGPT GitHub connector 如果出现 `Repository.fullDatabaseId` GraphQL schema 错误，只记录一次宿主故障证据并立即切换上述零人工路径，不重复调用同一失败 Ready mutation。
 
 ## 11. 完成报告
 
