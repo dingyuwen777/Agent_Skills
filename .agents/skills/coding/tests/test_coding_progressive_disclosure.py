@@ -41,10 +41,10 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
     def test_detailed_delivery_and_maintenance_rules_move_to_references_without_loss(self) -> None:
         """被移出主文件的 Git/交付/宿主与规则维护细节必须在专门 reference 中完整可达。"""
         skill = self._read("SKILL.md")
-        ref15 = self._read("references/15_Git交付依赖安全与宿主能力边界.md")
-        ref16 = self._read("references/16_规则内容守恒与Skill维护.md")
-        self.assertIn("15_Git交付依赖安全与宿主能力边界.md", skill)
-        self.assertIn("16_规则内容守恒与Skill维护.md", skill)
+        ref15 = self._read("references/14_Git交付依赖安全与宿主能力边界.md")
+        ref16 = self._read("references/15_规则内容守恒与Skill维护.md")
+        self.assertIn("14_Git交付依赖安全与宿主能力边界.md", skill)
+        self.assertIn("15_规则内容守恒与Skill维护.md", skill)
         for marker in (
             "未经授权不创建分支、提交、推送、PR、合并、部署、删分支",
             "Manifest 改动同步仓库正式 lock",
