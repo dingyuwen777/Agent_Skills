@@ -78,18 +78,19 @@ Agent_Skills 规定“怎样可靠工作”；目标项目规定“这个项目�
 
 如果完整 `SKILL.md` / canonical `references/*.md` 只允许维护者查看，**仓库访问控制必须由 GitHub Private Repository 保证**。Runtime 加密不是源仓库权限替代品。
 
-正式对外交付只有：
+正式对外交付只有一个版本 ZIP：
 
 ```text
 GitHub Release
-→ Linux Runtime binary
-→ Windows Runtime binary
-→ macOS Runtime binary
-→ USAGE.md
-→ SHA256SUMS
+→ agent-skills-v<SemVer>.zip
+  → Linux Runtime binary
+  → Windows Runtime binary
+  → macOS Runtime binary
+  → USAGE.md
+  → SHA256SUMS
 ```
 
-源码仓库不维护第二套明文安装包或源码安装产品面。
+`SHA256SUMS` 位于 ZIP 内并校验三个 Runtime binary 与 `USAGE.md`；构建期 identity manifest 只承担维护侧校验，不进入 ZIP 或正式 Release 资产。源码仓库不维护第二套明文安装包或源码安装产品面。
 
 目标项目中的运行边界：
 
@@ -174,7 +175,7 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、Coding 锚�
 - 同名 Codex MCP table 存在但 managed marker 缺失时，不能仅凭旧 manifest 猜 ownership，必须 fail closed；
 - 项目级 MCP 使用宿主启动的 stdio 子进程，采用**宿主连接级生命周期**：宿主可以在项目/会话连接存续期间保持 Runtime 进程以复用任务状态；Runtime 不自行 fork/detach，不注册 Windows Service、systemd、launchd 或其他系统 daemon；宿主断开 stdio/stdin 后进程应退出；
 - 安装能预检的错误必须先于写入发现，切换失败按快照恢复；回滚自身失败必须显式聚合报告并保留原始安装异常，不能静默吞掉；
-- 普通源码/PR/main Runtime 构建使用明确 development identity；正式 Release 版本只由 Release workflow 的 `v<SemVer>` tag 派生并显式传入 Builder；
+- 普通源码/PR/main Runtime 构建使用明确 development identity；正式 Release 版本只由 Release workflow 的 `v<SemVer>` tag 派生并显式传给 Builder；
 - 正式 Linux、Windows、macOS Runtime 构建使用仓库当前固定的同一 Python 版本，不能依赖各 Runner 自带 Python 漂移；
 - `status/self-test`、真实 stdio MCP、真实项目安装和项目内 Runtime smoke 都要验证最终平台 artifact；
 - Linux、Windows、macOS 必须分别在对应 Runner 构建验证。
@@ -202,14 +203,16 @@ Runtime Package Tests（仅 Runtime/Builder/MCP 安装/Release 路径变化时�
 
 Release
 → 对目标 main SHA 重新执行完整 preflight
-→ 三平台正式 artifact 构建、验证与发布
+→ 三平台正式 artifact 构建与 identity 校验
+→ 组装并验证单一版本 ZIP
+→ Draft Release 核对单 ZIP 后发布
 ```
 
 `.github/workflows/skill-tests.yml` 对 Skill/Reference/Router/Change/治理及相关源码变化运行，不安装 PyInstaller，也不因为纯规则正文变化构建 onefile；但必须继续执行会真实构建 Bundle/Project Payload、校验 canonical exact-text、Routing Conformance、内容守恒和 Ready 的自包含测试。
 
 `.github/workflows/runtime-package-tests.yml` 只在 `runtime/**`、`scripts/build_runtime.py`、`scripts/runtime_mcp_smoke.py`、Runtime package workflow 自身或 Release workflow 等实际影响二进制构建/安装边界的路径变化时触发，并在 Linux、Windows、macOS 对应 Runner 真实构建和安装。不能用 Skill Tests 的绿色替代这一层，也不能把一个平台 artifact 当成其他平台证据。
 
-正式 Release 仍必须重新验证当前目标 main，并完整构建三平台 artifact；常规 CI 的分责优化不能降低 Release 候选的构建、安装、MCP、identity 或 checksum 责任。
+正式 Release 仍必须重新验证当前目标 main，并完整构建三平台 artifact；常规 CI 的分责优化不能降低 Release 候选的构建、安装、MCP、identity、ZIP 成员或 checksum 责任。
 
 删除旧产品能力时，应删除只为该能力保活的测试；但不能借 CI 拆分删除现行 Runtime、内容守恒、安全或交付责任。修改 Workflow 时必须保持 Evidence Preservation Mapping：每个原独立证明责任都能指出新的唯一或等价承担位置。
 
@@ -225,10 +228,11 @@ Release
 - Release 只从 main 手工运行 `.github/workflows/release.yml`，输入唯一正式版本来源 `v<SemVer>`；仓库不维护第二份根版本文件；
 - Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并拒绝覆盖已有 tag/Release；
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
-- 正式资产全部验证后先创建 Draft Release、上传并核对资产集合，再 Publish；发布后核对 tag 和资产；
+- 三平台 binary 与 identity 全部验证后，先删除只用于构建校验的 identity manifest，生成 ZIP 内 `SHA256SUMS`，再组装并验证 `agent-skills-v<SemVer>.zip` 的精确成员；
+- Draft Release 和已发布 Release 的资产集合都必须精确只有该版本 ZIP，不能同时暴露独立 binary、`USAGE.md`、`SHA256SUMS` 或 identity manifest；
 - Release workflow 不依赖自定义 PAT/Actions Secret，也不读取或要求仓库 Release Immutability 设置；发布使用 GitHub Actions 自动提供的 `github.token` 和最小 `contents: write` 权限；
 - 已存在 tag/Release 不覆盖、不移动；
-- Release 页面说明使用 [`USAGE.md`](../USAGE.md)，不自动把维护 commit/PR 历史暴露给最终用户。
+- Release 页面说明继续使用 [`USAGE.md`](../USAGE.md)，但 `USAGE.md` 作为 ZIP 内文件分发，不再作为独立 Release asset；不自动把维护 commit/PR 历史暴露给最终用户。
 
 ### GitHub PR 零人工交付兼容策略
 
