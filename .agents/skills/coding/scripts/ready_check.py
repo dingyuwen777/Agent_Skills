@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""校验 Coding Change 的 Requirement Traceability 与 Completion Audit 门禁。"""
+"""校验 Coding Change 的需求追溯与完成审计门禁。"""
 
 from __future__ import annotations
 
@@ -13,9 +13,13 @@ import sys
 from typing import Any, Sequence
 
 
-TRACEABILITY_HEADING = "# Requirement Traceability"
-COMPLETION_AUDIT_HEADING = "# Completion Audit"
+TRACEABILITY_HEADINGS = ("# 需求追溯", "# Requirement Traceability")
+COMPLETION_AUDIT_HEADINGS = ("# 完成审计", "# Completion Audit")
 TRACEABILITY_COLUMNS = ("ID", "Requirement", "Source", "Status", "Evidence")
+TRACEABILITY_COLUMN_VARIANTS = {
+    ("编号", "要求", "来源", "状态", "证据"): TRACEABILITY_COLUMNS,
+    TRACEABILITY_COLUMNS: TRACEABILITY_COLUMNS,
+}
 REQUIREMENT_STATUSES = {
     "satisfied",
     "explicitly_deferred",
@@ -94,11 +98,14 @@ def _body_after_frontmatter(path: Path) -> str:
     raise ValueError("Change frontmatter 未闭合")
 
 
-def _section(body: str, heading: str) -> str | None:
-    """从 Change 正文中提取一级标题对应的内容。"""
+def _section(body: str, headings: Sequence[str]) -> str | None:
+    """从 Change 正文中提取任一兼容一级标题对应的内容。"""
     lines = body.splitlines()
+    heading_set = set(headings)
     try:
-        start = next(index for index, line in enumerate(lines) if line.strip() == heading)
+        start = next(
+            index for index, line in enumerate(lines) if line.strip() in heading_set
+        )
     except StopIteration:
         return None
     collected: list[str] = []
@@ -125,29 +132,31 @@ def _is_separator(cells: Sequence[str]) -> bool:
 
 
 def _parse_traceability(section: str) -> tuple[list[dict[str, str]], list[str]]:
-    """解析 Requirement Traceability 表并返回行数据和结构错误。"""
+    """解析中英文兼容的需求追溯表并返回规范化行数据和结构错误。"""
     errors: list[str] = []
     table_lines = [line for line in section.splitlines() if line.strip().startswith("|")]
     if len(table_lines) < 3:
-        return [], ["Requirement Traceability 必须包含表头、分隔行和至少一条 Requirement"]
-    header = _table_cells(table_lines[0])
-    if tuple(header) != TRACEABILITY_COLUMNS:
+        return [], ["需求追溯必须包含表头、分隔行和至少一条要求"]
+    header = tuple(_table_cells(table_lines[0]))
+    canonical_columns = TRACEABILITY_COLUMN_VARIANTS.get(header)
+    if canonical_columns is None:
         errors.append(
-            "Requirement Traceability 表头必须严格为："
-            + " | ".join(TRACEABILITY_COLUMNS)
+            "需求追溯表头必须严格为：编号 | 要求 | 来源 | 状态 | 证据"
+            "（历史 Change 仍兼容 ID | Requirement | Source | Status | Evidence）"
         )
+        canonical_columns = TRACEABILITY_COLUMNS
     separator = _table_cells(table_lines[1])
     if len(separator) != len(TRACEABILITY_COLUMNS) or not _is_separator(separator):
-        errors.append("Requirement Traceability 第二行必须是 Markdown 表格分隔行")
+        errors.append("需求追溯第二行必须是 Markdown 表格分隔行")
     rows: list[dict[str, str]] = []
     for line in table_lines[2:]:
         cells = _table_cells(line)
         if len(cells) != len(TRACEABILITY_COLUMNS):
-            errors.append(f"Requirement Traceability 行列数错误：{line.strip()}")
+            errors.append(f"需求追溯行列数错误：{line.strip()}")
             continue
-        rows.append(dict(zip(TRACEABILITY_COLUMNS, cells, strict=True)))
+        rows.append(dict(zip(canonical_columns, cells, strict=True)))
     if not rows:
-        errors.append("Requirement Traceability 至少需要一条 Requirement")
+        errors.append("需求追溯至少需要一条要求")
     return rows, errors
 
 
@@ -179,10 +188,10 @@ def _validate_source(root: Path, change_path: Path, source: str) -> str | None:
 
 
 def _validate_traceability(root: Path, change_path: Path, body: str) -> list[str]:
-    """校验 Requirement Traceability 的 ID、状态、来源和 Evidence。"""
-    section = _section(body, TRACEABILITY_HEADING)
+    """校验需求追溯的 ID、状态、来源和 Evidence。"""
+    section = _section(body, TRACEABILITY_HEADINGS)
     if section is None:
-        return [f"缺少 {TRACEABILITY_HEADING}"]
+        return ["缺少 # 需求追溯（历史 Change 兼容 # Requirement Traceability）"]
     rows, errors = _parse_traceability(section)
     seen_ids: set[str] = set()
     for row in rows:
@@ -217,10 +226,10 @@ def _validate_traceability(root: Path, change_path: Path, body: str) -> list[str
 
 
 def _validate_completion_audit(body: str) -> list[str]:
-    """校验 Completion Audit 四项均有有效说明并已勾选。"""
-    section = _section(body, COMPLETION_AUDIT_HEADING)
+    """校验完成审计四项均有有效说明并已勾选。"""
+    section = _section(body, COMPLETION_AUDIT_HEADINGS)
     if section is None:
-        return [f"缺少 {COMPLETION_AUDIT_HEADING}"]
+        return ["缺少 # 完成审计（历史 Change 兼容 # Completion Audit）"]
     found: dict[str, bool] = {}
     errors: list[str] = []
     for line in section.splitlines():
@@ -231,16 +240,16 @@ def _validate_completion_audit(body: str) -> list[str]:
         if item not in AUDIT_ITEMS:
             continue
         if item in found:
-            errors.append(f"Completion Audit 项重复：{item}")
+            errors.append(f"完成审计项重复：{item}")
             continue
         if _is_placeholder(description):
-            errors.append(f"Completion Audit {item} 缺少有效说明")
+            errors.append(f"完成审计 {item} 缺少有效说明")
         found[item] = checked.casefold() == "x"
     for item in sorted(AUDIT_ITEMS):
         if item not in found:
-            errors.append(f"Completion Audit 缺少项目：{item}")
+            errors.append(f"完成审计缺少项目：{item}")
         elif not found[item]:
-            errors.append(f"Completion Audit 未完成：{item}")
+            errors.append(f"完成审计未完成：{item}")
     return errors
 
 
@@ -250,7 +259,7 @@ def _metadata(path: Path) -> dict[str, Any]:
 
 
 def _validate_ready_document(root: Path, path: Path) -> list[str]:
-    """校验一个 Ready/Archive Change 的追溯表和 Completion Audit 正文。"""
+    """校验一个 Ready/Archive Change 的需求追溯表和完成审计正文。"""
     body = _body_after_frontmatter(path)
     return [
         *_validate_traceability(root, path, body),
@@ -384,9 +393,9 @@ def check_repository(
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """构造 Coding Completion Gate 的命令行参数解析器。"""
+    """构造 Coding 完成门禁的命令行参数解析器。"""
     parser = argparse.ArgumentParser(
-        description="检查 coding-change/v1 Requirement Traceability / Completion Audit Ready 门禁。"
+        description="检查 coding-change/v1 需求追溯 / 完成审计就绪门禁。"
     )
     parser.add_argument("--root", default=".")
     parser.add_argument(
