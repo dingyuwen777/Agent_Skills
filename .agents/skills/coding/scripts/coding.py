@@ -947,11 +947,11 @@ def _yaml_scalar(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
-def _yaml_list(name: str, values: Sequence[str]) -> list[str]:
-    """把字符串序列序列化为模板需要的扁平 YAML 列表。"""
+def _yaml_list(_name: str, values: Sequence[str]) -> list[str]:
+    """把字符串序列序列化为模板字段值所需的 YAML 列表片段。"""
     if not values:
-        return [f"{name}: []"]
-    return [f"{name}:", *(f"  - {_yaml_scalar(value)}" for value in values)]
+        return ["[]"]
+    return ["", *(f"  - {_yaml_scalar(value)}" for value in values)]
 
 
 def _has_coding_change_layout(root: Path, relative_root: Path) -> bool:

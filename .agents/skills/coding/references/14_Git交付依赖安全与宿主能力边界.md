@@ -17,6 +17,64 @@
 - CI 失败、冲突、保护规则或结果未确认时不强行推进；
 - 所有 Git 提交信息使用中文；项目可以额外规定提交格式、前缀或工单号，但不能覆盖中文语言要求。
 
+### GitHub PR 零人工交付兼容策略
+
+GitHub 的 Draft 状态只是托管平台工作流状态，不能成为必须由用户手工点击才能继续的质量门禁。真正的门禁仍然是当前项目的 Change/需求追溯、Red / Green / Review / CI、真实 PR 状态、head SHA、Branch Protection/Ruleset 和 merge 前复核。
+
+处理 GitHub PR 时按以下顺序执行：
+
+```text
+先确认当前宿主是否具有已经验证可用的自动 Draft → Ready 能力
+├─ 已验证可用
+│  → 创建 Draft PR
+│  → Red / Green / Review / CI
+│  → 完成门禁后自动切换 Ready
+│
+└─ 未验证、不可用，或当前宿主已确认无法自动完成 Ready
+   → 不创建 Draft PR
+   → 直接创建普通 PR
+   → 在 Agent 流程与 PR 描述中将其视为“逻辑未就绪”
+   → Red / Green / Review / CI 未完成前禁止 merge
+```
+
+硬规则：
+
+- 当前宿主的 Draft → Ready 能力没有经过当前工具版本验证时，不为了保持界面上的 Draft 形式引入人工依赖；优先使用普通 PR + 逻辑未就绪门禁；
+- 一旦调用 Ready 返回 `Field 'fullDatabaseId' doesn't exist on type 'Repository'` 或等价的宿主 GraphQL 返回查询错误，**不能直接推断 Ready mutation 失败**。先记录一次真实错误，再**先重新读取 PR 当前状态**；不得循环重试同一失败 GraphQL，也**不得要求用户手动点击 `Ready for review`**；
+- **如果已经 `draft=false`**，按“Ready 副作用已生效、返回结果查询失败”处理；保留错误证据，继续重新确认 CI、mergeable、当前 head SHA、reviewed head 和保护规则，不关闭或重建 PR；
+- **只有仍为 Draft**，才把自动 Ready 视为当前宿主不可用。若当前授权允许关闭/创建 PR，则自动关闭原 Draft PR，以**相同 head/base** 创建普通 PR；在新 PR 描述中保留原 PR 链接、Red/Green/Review 证据与迁移原因，并**重新运行新 PR 的 fresh CI**；不得把旧 PR 的绿色状态直接当作新 PR 的当前证据；
+- 普通 PR 处于“逻辑未就绪”期间，不因为 `draft=false` 就提前请求合并；仍必须完成项目规定的 Requirement Traceability / Completion Audit、Review、CI、文档和其他 Ready 门禁；
+- 真正准备合并前重新读取 PR，**重新确认 `draft=false`、CI 和当前 head SHA**；同时确认 mergeable、Branch Protection/Ruleset、required checks 和当前 reviewed head 没有漂移；
+- GitHub PR 的真正 merge 一律使用 GitHub **REST merge**；宿主接口支持时必须携带 `expected_head_sha`，把审查/验证过的 head 绑定到 merge 动作；如果当前 REST merge 能力无法提供等价 head guard，则停止并报告宿主能力缺口，不用不带防漂移条件的其他 merge 通路冒充等价；
+- merge 成功后读取真实 merge commit / main HEAD，并执行本次 changed scope 应触发的 **main fresh CI**；PR CI、历史 CI 或 merge API 成功本身不能替代 main 新鲜验证；
+- 使用 Coding Change 时，功能/治理变更合入且 main fresh CI 成功后，再按当前 Change 规则执行 **Change archive**：更新为 `done` 并移动到 `archive/YYYY-MM/...`，归档 PR 也遵循同一零人工 PR 策略；
+- 如果归档 PR 或其他后续最小 PR 只修改治理/Change 文件，只运行其真实 changed scope 需要的 CI，不人为触发无关构建；
+- 对**非 GitHub** 托管平台，不强行使用 GitHub REST、`expected_head_sha` 或 GitHub Draft 语义；使用该平台等价的 PR/MR 生命周期和 **head/revision guard**，但仍保持“自动化交付不依赖用户手工按钮、merge 前重新验证当前 revision、merge 后 fresh CI”的同等安全责任。
+
+因此在支持 GitHub REST merge 的宿主中，完整默认闭环是：
+
+```text
+宿主 Ready 能力可靠
+→ 创建 Draft PR
+→ Red / Green / Review / CI
+→ 自动 Ready
+→ 如果 Ready API 返回异常，先重读 PR 状态
+   ├─ draft=false → 继续，不重建 PR
+   └─ 仍为 Draft → 自动关闭 Draft，并以相同 head/base 创建普通 PR后重新跑 fresh CI
+→ 重新确认 draft=false / CI / head SHA / mergeable
+→ REST merge + expected_head_sha
+→ main fresh CI
+→ Change archive
+
+宿主 Ready 能力已确认不可用
+→ 创建普通 PR（逻辑未就绪）
+→ Red / Green / Review / CI
+→ 重新确认 draft=false / CI / head SHA / mergeable
+→ REST merge + expected_head_sha
+→ main fresh CI
+→ Change archive
+```
+
 ### 依赖
 
 - 先确认语言、Runtime、包管理器、Manifest、锁文件和实际版本；
