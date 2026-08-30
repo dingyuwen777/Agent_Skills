@@ -221,8 +221,8 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertIn("rm release-assets/*.manifest.json", workflow)
         self.assertIn('test "$(wc -l < SHA256SUMS)" -eq 4', workflow)
         self.assertIn("Build single distribution ZIP", workflow)
-        self.assertIn('agent-skills-v${RELEASE_VERSION}.zip', workflow)
-        self.assertIn('agent-skills-v${RELEASE_TAG#v}.zip', workflow)
+        self.assertIn('f"agent-skills-v{version}.zip"', workflow)
+        self.assertIn('expected_package="agent-skills-v${RELEASE_TAG#v}.zip"', workflow)
         self.assertIn('gh release upload "${RELEASE_TAG}" release-package/agent-skills-v*.zip', workflow)
         self.assertNotIn('gh release upload "${RELEASE_TAG}" release-assets/*', workflow)
         for binary in (
