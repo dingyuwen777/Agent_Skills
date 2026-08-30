@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import platform
 import re
 import shutil
 import subprocess
@@ -30,19 +31,16 @@ from runtime.agent_skills_runtime.runtime import MCP_TOOL_CONTRACT_PROTOCOL
 
 
 VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
+DEVELOPMENT_VERSION = "0.0.0-dev"
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 RELEASE_IDENTITY_SCHEMA = "agent-skills-runtime-release-identity/v1"
 
 
-def _read_release_version(source_root: str | Path) -> str:
-    """读取并校验根 VERSION，供 Runtime 与项目安装 manifest 记录产品版本。"""
-    root = Path(source_root).resolve()
-    version_path = root / "VERSION"
-    if version_path.is_symlink() or not version_path.is_file():
-        raise FileNotFoundError(f"VERSION 不存在或不是普通文件：{version_path}")
-    version = version_path.read_text(encoding="utf-8").strip()
+def _normalise_release_version(value: str | None) -> str:
+    """校验显式构建版本；普通源码/CI 构建未指定时使用稳定 development identity。"""
+    version = DEVELOPMENT_VERSION if value is None else str(value).strip()
     if not VERSION_PATTERN.fullmatch(version):
-        raise ValueError(f"VERSION 必须是 SemVer：{version!r}")
+        raise ValueError(f"release_version 必须是无 v 前缀的 SemVer：{version!r}")
     return version
 
 
@@ -79,6 +77,36 @@ def _source_commit(source_root: str | Path) -> str | None:
             raise RuntimeError("GITHUB_SHA 与当前源码 HEAD 不一致")
         return github_sha
     return head or None
+
+
+def _context_budget(source_root: str | Path, bundle: Mapping[str, Any]) -> dict[str, Any]:
+    """量化 Router/Core/Reference 聚合字节，供维护者观察上下文成本而不公开 Reference 明细。"""
+    root = Path(source_root).resolve()
+    router = root / ".agents" / "skills" / "ROUTER.md"
+    if router.is_symlink() or not router.is_file():
+        raise FileNotFoundError(f"共享 Router 不存在或不是普通文件：{router}")
+    skills = [str(item) for item in bundle["skills"]]
+    skill_core_bytes: dict[str, int] = {}
+    reference_bytes_by_skill = {skill: 0 for skill in skills}
+    for skill in skills:
+        core = root / ".agents" / "skills" / skill / "SKILL.md"
+        if core.is_symlink() or not core.is_file():
+            raise FileNotFoundError(f"Skill Core 不存在或不是普通文件：{core}")
+        skill_core_bytes[skill] = len(core.read_bytes())
+    for entry in bundle["references"]:
+        skill = str(entry["skill"])
+        if skill not in reference_bytes_by_skill:
+            raise ValueError(f"Context footprint 遇到未声明 Skill：{skill}")
+        reference_bytes_by_skill[skill] += int(entry["size"])
+    router_bytes = len(router.read_bytes())
+    return {
+        "router_bytes": router_bytes,
+        "skill_core_bytes": skill_core_bytes,
+        "reference_bytes_by_skill": reference_bytes_by_skill,
+        "base_router_plus_core_bytes": {
+            skill: router_bytes + skill_core_bytes[skill] for skill in skills
+        },
+    }
 
 
 def _serialize_project_payload(payload: Mapping[str, Any]) -> bytes:
@@ -153,14 +181,16 @@ def build_runtime(
     source_root: str | Path,
     output_dir: str | Path,
     name: str = "agent-skills-mcp",
+    release_version: str | None = None,
 ) -> dict[str, Any]:
     """构建自包含 onefile Runtime 与仅供本地/CI 校验的 Release identity。"""
     source = Path(source_root).resolve()
     output = Path(output_dir).resolve()
     output.mkdir(parents=True, exist_ok=True)
-    release_version = _read_release_version(source)
+    release_version = _normalise_release_version(release_version)
     source_commit = _source_commit(source)
     bundle = build_bundle(source)
+    context_budget = _context_budget(source, bundle)
     project_payload = build_project_payload(source, bundle)
     serialized = serialize_bundle(bundle)
     key = generate_bundle_key()
@@ -233,7 +263,7 @@ def build_runtime(
     if status.get("Skill") != project_payload["skills"] or self_test.get("Skill") != project_payload["skills"]:
         raise RuntimeError("构建产物 Skill Catalog 与当前 Project Payload 不一致")
     if status.get("Release版本") != release_version or self_test.get("Release版本") != release_version:
-        raise RuntimeError("构建产物 release_version 与根 VERSION 不一致")
+        raise RuntimeError("构建产物 release_version 与显式构建版本不一致")
     if status.get("Source提交") != source_commit or self_test.get("Source提交") != source_commit:
         raise RuntimeError("构建产物 source_commit 与当前构建源码不一致")
     if status.get("Install协议") != INSTALL_SCHEMA or self_test.get("Install协议") != INSTALL_SCHEMA:
@@ -241,12 +271,14 @@ def build_runtime(
     if self_test.get("通过") is not True:
         raise RuntimeError("构建产物 self-test 未通过")
 
+    python_version = platform.python_version()
     manifest = {
         "schema": RELEASE_IDENTITY_SCHEMA,
         "release_version": release_version,
         "source_commit": source_commit,
         "artifact": artifact.name,
         "artifact_sha256": _sha256_file(artifact),
+        "python_version": python_version,
         "bundle_schema": bundle["schema"],
         "bundle_version": bundle["bundle_version"],
         "TaskRoute协议": TASK_ROUTE_PROTOCOL,
@@ -279,6 +311,8 @@ def build_runtime(
         "skills": list(project_payload["skills"]),
         "skill_count": len(project_payload["skills"]),
         "bundle_version": manifest["bundle_version"],
+        "python_version": python_version,
+        "context_budget": context_budget,
     }
 
 
@@ -288,6 +322,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--source-root", default=str(SOURCE_ROOT), help="Agent_Skills 源仓库根目录")
     parser.add_argument("--output-dir", default="dist", help="构建产物目录，默认 dist")
     parser.add_argument("--name", default="agent-skills-mcp", help="Runtime 可执行文件基础名")
+    parser.add_argument(
+        "--release-version",
+        default=None,
+        help=f"嵌入 Runtime 的无 v SemVer；正式 Release 由 workflow tag 传入，默认 {DEVELOPMENT_VERSION}",
+    )
     parser.add_argument("--json", action="store_true", help="以 JSON 输出构建结果")
     return parser
 
@@ -296,7 +335,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     """执行 onefile Runtime 构建并以退出码明确成功或失败。"""
     arguments = _build_parser().parse_args(argv)
     try:
-        result = build_runtime(arguments.source_root, arguments.output_dir, arguments.name)
+        result = build_runtime(
+            arguments.source_root,
+            arguments.output_dir,
+            arguments.name,
+            release_version=arguments.release_version,
+        )
         if arguments.json:
             print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
         else:
