@@ -16,13 +16,14 @@ Runtime binary
 → 在目标项目根运行
 → 项目级安装 Runtime + Skills 根级 shared files + 全部正式 Skill Core/运行资产
 → 不在目标项目安装 canonical Reference 或 Stub
+→ 不生成独立 install manifest / ownership sidecar
 → 创建/更新目标项目 AGENTS managed block
 → managed block 只暴露项目事实恢复 + 项目级治理 MCP + 用户可见进度边界
 → 不把内部 Router / Skill / Reference 导航作为 Runtime 日常用户入口
 → 建立项目级 MCP 配置
 ```
 
-Runtime 的加密、Project Payload、managed installation manifest、Codex/Cursor/Claude Code 项目 MCP 和 binary 升级规则详见 [13_本地MCP_Runtime分发与原文上下文加载.md](13_本地MCP_Runtime分发与原文上下文加载.md)。
+Runtime 的加密、Project Payload、无 sidecar ownership、自描述 install-state、Codex/Cursor/Claude Code 项目 MCP 和 binary 升级规则详见 [13_本地MCP_Runtime分发与原文上下文加载.md](13_本地MCP_Runtime分发与原文上下文加载.md)。
 
 ## 0. 两阶段 Bootstrap：安装与宿主大模型治理
 
@@ -70,7 +71,7 @@ Runtime Installation Bootstrap
 - 修改正式 Skill 或 Skills 根级 shared runtime file 的 Project Payload 安装边界；
 - 修改 Runtime Mode 的用户可见进度/治理细节披露边界；
 - 判断哪些 `.agents` 内容属于 Agent_Skills 受管内容，哪些属于目标项目自有状态；
-- 修改项目 Runtime、ownership manifest、宿主 MCP 配置或安装回滚。
+- 修改项目 Runtime、previous ownership / legacy manifest 迁移、宿主 MCP 配置或安装回滚。
 
 普通只读分析、Review、文档审计或功能开发，如果用户没有授权项目规则写入，不因为发现 `AGENTS.md` 缺失就自动创建或修改文件。首次治理确有必要时，只在当前会话内完成最少充分的有界事实调查，明确 `AGENTS.md` 治理状态未持久化，然后**继续原始只读任务**；权限边界仍按 Coding 主规则执行。
 
@@ -100,7 +101,7 @@ Entry 不是正式 Skill，也不维护 Catalog；Router 是正式 Skill 和唯�
 .agents/changes/
 .agents/project-context.json
 .agents/skills/<项目自有 Skill>/
-.agents/skills/<未被 manifest 认领的根级文件>
+.agents/skills/<旧 Runtime install-state 未认领的根级文件>
 .agents/<其他项目自有内容>/
 AGENTS.md managed marker 外文本
 其他项目自有 MCP / 宿主配置
@@ -110,18 +111,17 @@ Runtime 安装自己的：
 
 ```text
 .agents/runtime/agent-skills-mcp[.exe]
-.agents/agent-skills-install.json
 .agents/skills/ENTRY.md
-.agents/skills/<Runtime manifest 明确认领的正式 Skill>/
+.agents/skills/<旧 Runtime install-state / 当前 Project Payload 明确认领的正式 Skill 文件>/
 ```
 
-`.agents/runtime/` 是项目本地 Runtime，应被目标项目 `.gitignore` 忽略；install manifest 只承担 Agent_Skills ownership/version 导航，不是项目业务事实源。
+`.agents/runtime/` 是项目本地 Runtime，应被目标项目 `.gitignore` 忽略。**新版本安装不创建 `.agents/agent-skills-install.json` 或其他 ownership sidecar。** 当前 Release 的 ownership 直接来自 Runtime 内嵌 Project Payload；升级时 previous ownership 来自旧已安装 Runtime 的内嵌 install-state。历史 `agent-skills-install/v3` 只允许作为一次性迁移输入，成功升级后删除，不再成为当前项目状态事实源。
 
 ### 普通 Runtime 与源仓库 Mutation 边界
 
 **普通 Runtime** 的 `AGENTS` managed block 只承担目标项目正常研发入口：项目事实优先、项目级治理 MCP、首次治理校准、失败停止、权限边界和用户可见进度边界。Entry/Router/Core 继续作为受管内部运行资产存在，但不要求用户可见过程复述其文件身份、分类或路由实现。
 
-源仓库中针对 Skill / Reference 的新增、修改、删除、重命名、拆分、合并、通用化和跨仓库同步，由 Agent_Skills 根 `AGENTS.md` 识别 **源仓库 Mutation** 维护意图，再进入 [`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md)、Coding 与 ref16。普通目标项目只需要知道：安装器 manifest 明确认领的 `.agents` 运行资产不是项目自有规则，不应直接手工修改；项目自己的长期规则继续写在项目自己的正式事实源中。
+源仓库中针对 Skill / Reference 的新增、修改、删除、重命名、拆分、合并、通用化和跨仓库同步，由 Agent_Skills 根 `AGENTS.md` 识别 **源仓库 Mutation** 维护意图，再进入 [`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md)、Coding 与 ref16。普通目标项目只需要知道：由当前 Release Runtime/Project Payload 明确认领的 `.agents` 运行资产不是项目自有规则，不应直接手工修改；项目自己的长期规则继续写在项目自己的正式事实源中。
 
 ## 3. 最终用户入口：项目级单 binary
 
@@ -150,23 +150,42 @@ chmod +x ./agent-skills-mcp
 agent-skills-mcp install --target <目标项目根目录> --json
 ```
 
-当前 Project Payload 使用 v2，install manifest 使用 v3 `managed_files` 逐文件 ownership。安装器只接受当前 v3 manifest；v1、v2、未知或损坏 schema 全部直接失败，不推断 ownership，也不保留旧 Stub 清理通路。
+当前 Project Payload 使用 v2。新安装不写持久 ownership manifest；Runtime 内部 `agent-skills-runtime-install-state/v1` 从自身内嵌 Project Payload 确定性派生，只供后续安装器恢复 previous ownership，不进入 MCP Tool Contract，也不作为普通用户 CLI/help 入口。历史 `agent-skills-install/v3` 仅用于从旧正式版本向无 sidecar 版本的一次迁移；v1、v2、未知或损坏 schema 全部直接失败，不推断 ownership，也不保留旧 Stub 清理通路。
 
 Runtime binary 负责：
 
 1. 校验自身内嵌 Reference Bundle 与 Project Payload；
 2. 读取动态正式 Skill Catalog，以及 Project Payload 显式 `shared_files`；
-3. 读取旧 `.agents/agent-skills-install.json`：只接受 v3，并且只认领 `managed_files`；
-4. 首次安装遇到未被认领的同名 Skill 或同名 shared file 时 fail closed；
+3. 恢复 previous ownership：优先严格读取历史合法 `agent-skills-install/v3` 作为一次性迁移输入；否则由旧已安装 Runtime 的内嵌 install-state 自描述；无法取得合法 previous ownership 时 fail closed；
+4. 首次安装遇到未被认领的同名 Skill、同名 shared file 或同名 managed file 时 fail closed；
 5. 预检并逐文件更新新受管 Core/shared files，其中 shared file 是 [`.agents/skills/ENTRY.md`](../../ENTRY.md)，唯一 Router 是动态 Skill Core [`.agents/skills/router/SKILL.md`](../../router/SKILL.md)；
-6. 安装/升级项目 `.agents/runtime/agent-skills-mcp[.exe]`；
+6. 安装/升级项目 `.agents/runtime/agent-skills-mcp[.exe]` 并校验 SHA256；
 7. 创建或安全增量更新根 `AGENTS.md`，managed block 只暴露项目事实恢复、项目级治理 MCP、首次治理校准和用户可见进度边界，不直接暴露内部 Router/Skill/Reference 导航；
 8. 增量更新 `.gitignore`；
 9. 建立 Codex / Cursor / Claude Code 项目级 MCP 入口和必要 bridge；
-10. 写入新的 managed installation manifest；
-11. 任一步失败时按安装前快照恢复本轮 touched managed files、Runtime、manifest 和受管文本。
+10. 成功完成后**不写 install manifest**；如果本次使用 legacy v3 manifest 迁移，则在事务末端删除它；
+11. 任一步失败时按安装前快照恢复本轮 touched managed files、Runtime、legacy manifest（如存在）和受管文本。
 
 目标项目不安装 canonical Reference 或 Stub；Runtime Mode 由项目级 MCP 先取得公共 route contract、提交中文 Task Route，再按不透明路由令牌加载当前 required 的完整 canonical Context。宿主可以使用这些内部结果执行治理，但用户可见过程应描述真实工程活动，不复述内部资产身份和加载明细。
+
+### 3.1 previous ownership 与可信工作区边界
+
+取消持久 sidecar 后，安装器不能靠目录名猜“这些文件以前是不是 Agent Skills 写的”。因此升级只允许以下 previous ownership 来源：
+
+```text
+合法 legacy agent-skills-install/v3
+→ 一次迁移输入
+
+或
+
+目标项目既有 .agents/runtime/agent-skills-mcp[.exe]
+→ 旧 Runtime 内部返回其内嵌 Project Payload 对应的 install-state
+→ 新安装器严格校验 schema / digest / skills / shared_files / managed_files / path
+```
+
+旧 Runtime 的 `install-state` 是**安装器内部自描述通路**，不是 MCP Tool，也不要求用户手工调用。目标项目本身必须是当前用户已经信任并明确选择进行升级的工作区；本机制不宣称能够抵御项目 Owner 恶意替换 `.agents/runtime` binary。旧 Runtime 是普通文件、路径无符号链接且返回合法状态只是安装安全校验的一部分，不是 TEE、代码签名或机器 Owner 安全边界。
+
+如果目标目录中存在旧 Runtime，但没有合法 legacy v3，且旧 Runtime 无法成功返回合法 install-state，则停止升级并报告 previous ownership 不可证明。**不得因为文件位置正确、内容相似、目录名相同或当前新 Payload 恰好有同名文件就猜 ownership。**
 
 ## 4. Bootstrap、Entry 与 Router 的唯一事实源
 
@@ -304,7 +323,7 @@ marker 后原文：逐字保留
 5. 首次接入、治理状态未校准或长期治理事实漂移时，在实质性代码修改前执行有界 Project Governance Bootstrap；
 6. 用户可见处理过程可以正常说明项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git、CI 和交付状态；
 7. 用户可见输出不得主动展示、枚举或复述治理系统内部分类、文件名、目录结构、规则标识、路由映射、内部凭据或加载明细；解释原因时说明工程步骤本身，不引用内部治理资产；
-8. 安装器认领的 `.agents` 受管运行资产不是项目自有规则，不直接手工修改，项目长期规则维护在项目自身正式事实源；
+8. 当前 Runtime / Project Payload 认领的 `.agents` 受管运行资产不是项目自有规则，不直接手工修改，项目长期规则维护在项目自身正式事实源；
 9. 项目级治理 MCP 不可用、必需约束不完整或与更高优先级规则存在无法安全解析的冲突时明确报告并停止依赖对应治理要求，不假装遵守。
 
 原 managed block 曾直接承担的 Reference 触发、Runtime Task Route → required Context、Figma NOT_READY/READY Handoff、Review、Docs、Skill/Reference 失败停止、CI/Branch Protection/PR/Release/Migration/安全与授权边界、项目事实来源等完整可执行语义，仍由 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md) 与各 Skill canonical 规则作为唯一正文 Owner 保存，并由 Runtime MCP 内部求值和加载。这里的变化只收窄 Runtime 用户可见入口，不删除任何治理语义，也不改变 Source Mode 的明文导航能力。
@@ -328,11 +347,11 @@ marker 后原文：逐字保留
 
 ## 9. Project Skill 与逐文件 ownership
 
-动态发现回答“Release 有哪些正式 Skill”；目标项目可写边界由 install manifest v3 的 `managed_files` 决定。`skills` 和 `shared_files` 只是维护/ownership 导航，不能授权替换整个目录，也不要求通过 Runtime MCP 公共状态向用户枚举。
+动态发现回答“当前 Release 有哪些正式 Skill”；当前版本 Project Payload 回答“新版本将认领哪些文件”；升级边界由**previous install-state** 与新 Project Payload 的逐文件集合差异决定，不再依赖持久 manifest。`skills` 和 `shared_files` 只是维护/ownership 导航，不能授权替换整个目录，也不要求通过 Runtime MCP 公共状态向用户枚举。
 
 ```text
-managed_files
-→ 相对 .agents/skills 的 Agent_Skills 受管文件
+previous managed_files
+→ 相对 .agents/skills 的旧 Agent_Skills 受管文件
 → 新版本仍存在：原子升级
 → 新版本已删除：只删除该文件
 
@@ -341,23 +360,26 @@ managed_files
 → 永远不因普通升级删除
 ```
 
-当前 shared file 只有 `ENTRY.md`；Router 由正式 Skill 目录分发。首次安装若目标已有同名 shared Entry 或同名正式 Skill 目录且没有合法 manifest 证明 ownership，必须在任何写入前 fail closed；禁止通过文件名、内容相似或 hash 猜归属。
+当前 shared file 只有 `ENTRY.md`；Router 由正式 Skill 目录分发。首次安装若目标已有同名 shared Entry、同名正式 Skill 目录或同名 managed file 且没有可验证 previous ownership，必须在任何写入前 fail closed；禁止通过文件名、内容相似或目录结构猜归属。
 
-非 v3 manifest 不提供原地升级。安装器不会扫描、识别或清理旧 Stub，也不会根据旧目录结构猜测 ownership；需要从旧安装切换时，必须先由项目 Owner 备份并显式处理旧安装边界，再执行当前版本安装。
+历史合法 `agent-skills-install/v3` 只支持一次迁移。安装器不会扫描、识别或清理旧 Stub，也不会根据旧目录结构猜测 ownership。v1/v2/未知/损坏 manifest 不能作为 previous ownership；旧 Runtime install-state 不可取得或校验失败时同样停止升级。
 
 ## 10. 安全与原子性
 
 安装/Bootstrap 修改研发治理入口，失败边界必须严格：
 
-- 目标 `.agents`、受管文件、Runtime、AGENTS/宿主配置路径出现符号链接时拒绝越界修改；
+- 目标 `.agents`、受管文件、Runtime、legacy manifest、AGENTS/宿主配置路径出现符号链接时拒绝越界修改；
 - Project Payload 先校验 schema、`skills`、`shared_files`、path / SHA / size / mode / `payload_digest`；
 - Project Payload v2 必须明确包含 `shared_files: ["ENTRY.md"]` 和对应 `ENTRY.md` 条目，并通过动态 Catalog 包含 `router/SKILL.md`，避免入口或控制面缺失；
+- previous ownership 只来自合法 legacy v3 或旧已安装 Runtime 的合法内嵌 install-state；无法证明时失败关闭；
 - 首次同名未认领 Skill/shared file/managed file 冲突在目标写入前发现；
 - 不移动或替换整棵 Skill 目录，只逐文件原子写入；
-- 写入前保存全部 touched managed files、Runtime、manifest 和受管文本的 bytes/权限快照；
+- 写入前保存全部 touched managed files、Runtime、legacy manifest（如存在）和受管文本的 bytes/权限快照；
 - AGENTS、`.gitignore`、CLAUDE/Codex marker 和 JSON MCP 配置在写入前先验证编码/结构；
 - 单文件写入使用同目录临时文件 + 原子替换；
-- 任一步异常时恢复本轮 touched files、Runtime、manifest 和受管文本快照；
+- legacy manifest 只在所有新受管文件、Runtime 与宿主配置完成后删除；
+- 任一步异常时恢复本轮 touched files、Runtime、legacy manifest 和受管文本快照；
+- rollback 自身失败必须聚合报告，保留原始安装异常作为 cause；
 - 禁止用 `git reset --hard`、`git clean`、强制推送或历史重写实现安装回滚。
 
 安装器不承诺普通文件系统跨多文件具备数据库式事务，但必须把可预检错误尽量前移，并把修改限制在可审计 managed 边界。
@@ -372,24 +394,36 @@ Greenfield / 空仓库：
 → managed block 指向项目级治理 MCP，而不是内部源码导航
 → 只列真实事实入口或明确当前未发现
 → 建立项目 MCP/宿主入口
+→ 不生成 ownership sidecar
 → MCP 取得本任务完整约束
 → Coding 按 Greenfield 规则确认目标、硬约束和最小工程基线
 ```
 
-已有 v3 安装项目：
+已有无 sidecar Runtime 安装项目：
 
 ```text
-依据 v3 managed_files 逐文件升级
+从旧已安装 Runtime 的内嵌 install-state 取得 previous managed_files
+→ 与当前 Project Payload 做逐文件升级/删除差异
 → 保留项目自有 Skill、Reference、未认领文件和其他 .agents 内容
 → 保留已有 AGENTS 原文
 → 追加/升级 Runtime 薄 managed block
-→ 继续安装当前 Release 内部 shared Entry/Router/Core
-→ 只更新 Agent_Skills 自管宿主边界
+→ 安装当前 Release 内部 shared Entry/Router/Core 与 Runtime
+→ 不生成新的 install manifest
 → 日常任务通过项目级治理 MCP 取得完整约束
 → Coding 继续以已有项目规则和真实实现为准
 ```
 
-旧 schema/旧 Router 路径不在本版本兼容范围内，不自动迁移。Bootstrap 不是自动架构设计器。
+已有 legacy v3 项目：
+
+```text
+严格校验 v3 manifest
+→ 作为一次 previous ownership 迁移输入
+→ 完成同一套逐文件升级
+→ 成功事务末端删除旧 manifest
+→ 后续升级转为旧 Runtime install-state
+```
+
+v1/v2/未知/损坏 legacy schema 不自动迁移；旧 Runtime install-state 不可取得时不猜 ownership。Bootstrap 不是自动架构设计器。
 
 ## 12. Project Governance Bootstrap：有证据的项目 Overlay 语义校准
 
@@ -429,7 +463,7 @@ Claude Code
 → CLAUDE.md 中 @AGENTS.md bridge
 ```
 
-宿主已有同名 `agent-skills` MCP 但不属于 Agent_Skills managed ownership 时，安装器必须拒绝静默覆盖。宿主要求首次 trust/approval 时不得绕过。
+宿主已有同名 `agent-skills` MCP 但没有可验证 previous ownership 时，安装器必须拒绝静默覆盖。Codex 还必须保留自己的 managed marker；即使能证明历史 Agent Skills 安装存在，marker 丢失、重复或同名 table 在 marker 外仍 fail closed。宿主要求首次 trust/approval 时不得绕过。
 
 ## 14. 验证安装/Bootstrap
 
@@ -439,24 +473,24 @@ Claude Code
 - 在真实临时项目运行 binary，不依赖源仓库；
 - 无参数当前目录安装；
 - 显式 `install --target`；
-- 重复升级幂等；
+- 首次安装、重复同版本安装和不同版本升级均不生成 `.agents/agent-skills-install.json`；
 - 动态正式 Skill 都安装并包含 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md)，薄 [`.agents/skills/ENTRY.md`](../../ENTRY.md) 不被误识别成 Skill；
 - 目标 Project Payload 不出现 canonical Reference 或 Stub；
-- Project Payload `shared_files` 显式认领 `ENTRY.md`，该文件原样进入目标项目；Router Core 由动态 Skill Catalog 原样分发；
+- Project Payload `shared_files` 显式认领 `ENTRY.md`，该文件原样进入目标项目；Router Core 由动态 Skill Catalog 分发；
 - Source Mode 的根入口继续显式导航 Entry 与唯一 Router，Runtime 安装后的根 `AGENTS.md` 不出现 `.agents/skills/`、Entry/Router/Reference 文件名、Stable ID 等内部治理导航；
 - Runtime 安装后的根 `AGENTS.md` 仍明确允许显示代码修改、测试、文档同步、复核、Git/CI 和交付等真实工程过程；
 - MCP `status/route_contract/submit/load/checkpoint` 公共 envelope 不公开 Skill Catalog、命中 Skill、Reference 身份/文件名/路径/hash/size、内部风险或加载计数；
 - `load_required_context` 返回的 `完整原文` 与 canonical source 逐字一致，不能为了保密删除 routing metadata；
-- install manifest v3 显式认领 `managed_files` 与 `shared_files`；
-- 同名未认领 shared Entry 或正式 Skill 在任何目标写入前 fail closed；
-- Entry/Router/Runtime/manifest 后续失败可以恢复旧受管状态；
-- v1/v2/未知 schema 明确拒绝，安装器不存在旧 Stub 扫描或清理路径；
+- Runtime 内部 install-state 能从内嵌 Project Payload确定性恢复 `skills/shared_files/managed_files`，但不进入普通 MCP/public status；
+- 合法 legacy v3 可一次迁移并在成功后删除；迁移失败时旧 manifest 与旧受管状态恢复；v1/v2/未知/损坏 schema 明确拒绝；
+- 无 legacy manifest 时，不同版本升级只接受旧 Runtime 返回的合法 install-state；旧 Runtime 不可用、非法 JSON/schema/path/digest 时 fail closed；
+- 同名未认领 shared Entry、正式 Skill 或 managed file 在任何目标写入前 fail closed；
+- Entry/Router/Runtime/legacy manifest 后续失败可以恢复旧受管状态；
 - Coding Python helper 作为 Project Payload 正式运行资产继续安装；
-- `.agents/runtime/` 和 install manifest 正确；
+- `.agents/runtime/` 正确被忽略，目标项目没有新增 ownership sidecar；
 - AGENTS 用户原文/managed marker 正确；
-- 项目自有 Skill 和未认领根级文件保留；
-- 同名未认领 Skill 冲突 fail closed；
-- 删除旧受管项只依据旧 v3 `managed_files`，没有 schema 或目录级例外；
+- 项目自有 Skill、Reference 和未认领根级文件保留；
+- 删除旧受管项只依据 previous `managed_files`，没有目录级例外；
 - Codex/Cursor/Claude 配置保留其他用户内容；
 - 项目内 Runtime 通过真实 stdio MCP smoke；
 - 安装失败可恢复本轮受管变化。
