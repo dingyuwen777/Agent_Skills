@@ -5,8 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
-from runtime.agent_skills_runtime.catalog import build_bundle
-from runtime.agent_skills_runtime.routing import evaluate_route
+from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -24,18 +23,28 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
         """读取指定 canonical Markdown。"""
         return path.read_text(encoding="utf-8")
 
+    def _evaluate(self, signals: dict[str, list[str]]) -> dict[str, object]:
+        """使用正式 Runtime evaluator 计算当前 canonical route。"""
+        return evaluate_route(
+            compile_routing(ROOT),
+            {
+                "协议": TASK_ROUTE_PROTOCOL,
+                "信号": signals,
+                "未知项": [],
+                "依据": ["minimal sufficient governance regression"],
+            },
+        )
+
     def test_all_coding_tasks_load_minimal_governance_gate(self) -> None:
         """治理升级门禁必须在正常实现入口可达，而不是依赖用户记住内部规则。"""
-        manifest = build_bundle(ROOT)["routing_manifest"]
-        result = evaluate_route(
-            manifest,
+        result = self._evaluate(
             {
                 "执行模式": ["实现"],
                 "阶段": ["功能开发"],
                 "风险": ["L2"],
-            },
+            }
         )
-        self.assertIn("coding.reference.19", result["required_reference_ids"])
+        self.assertIn("coding.reference.19", result["必需Reference"])
 
     def test_governance_gate_requires_minimal_sufficient_process(self) -> None:
         """能力存在不等于每次任务都启用。"""
@@ -70,12 +79,30 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
         self.assertIn("Requirement Traceability", completion)
         self.assertIn("Completion Audit", completion)
 
+        result = self._evaluate(
+            {
+                "执行模式": ["实现"],
+                "风险": ["L3"],
+                "范围": ["公共契约"],
+            }
+        )
+        self.assertIn("coding.reference.10", result["必需Reference"])
+
     def test_light_l2_completion_does_not_require_formal_change_table(self) -> None:
         """轻量 L2 仍核对上游目标，但不为了格式创建 Traceability/Completion 文件。"""
         text = self._read(COMPLETION)
         self.assertIn("轻量 L2 的最小完成核对", text)
         self.assertIn("不要求为了打勾生成", text)
         self.assertIn("持久 gated L2", text)
+
+        result = self._evaluate(
+            {
+                "执行模式": ["实现"],
+                "阶段": ["功能开发"],
+                "风险": ["L2"],
+            }
+        )
+        self.assertNotIn("coding.reference.10", result["必需Reference"])
 
     def test_collaboration_is_current_handoff_not_repository_label(self) -> None:
         """Protected/历史协作者等仓库线索不能单独把当前任务升级为多人协作。"""
@@ -136,16 +163,14 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
 
-        manifest = build_bundle(ROOT)["routing_manifest"]
-        result = evaluate_route(
-            manifest,
+        result = self._evaluate(
             {
                 "执行模式": ["审查"],
                 "阶段": ["审查"],
                 "意图": ["代码审查"],
-            },
+            }
         )
-        self.assertIn("review.reference.04", result["required_reference_ids"])
+        self.assertIn("review.reference.04", result["必需Reference"])
 
     def test_router_l2_example_does_not_predeclare_heavy_governance(self) -> None:
         """普通 L2 示例不能先假定已经存在 Change 和 Completion Gate。"""
