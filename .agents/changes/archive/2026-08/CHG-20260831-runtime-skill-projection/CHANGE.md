@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260831-runtime-skill-projection
 title: Runtime SKILL 明文去除 Reference 身份与导航映射
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: change/runtime-skill-projection
 created: 2026-08-31
@@ -99,24 +99,24 @@ Projection 独立实现于 `runtime_skill_projection.py`，Project Payload 只�
 | R3 | Source Mode 导航和维护体验不变 | https://github.com/dingyuwen777/Agent_Skills/issues/103 | satisfied | canonical Skill 文件未因投影需求删除导航；目标测试直接断言 Coding Source Core 仍保留真实 Reference 链接，既有 Markdown/Source Router/内容守恒测试全部继续通过。 |
 | R4 | Runtime Core 关键语义和宿主原生入口不丢失 | https://github.com/dingyuwen777/Agent_Skills/issues/103 | satisfied | 对 Router/Coding/Docs/Review/Figma 分别断言高价值 Core marker；新增全 Skill frontmatter + `agent-routing:v1` metadata 逐字 Source/Runtime 等值测试；Review 中发现可能误改保护区的维护风险后已修复并 re-review。 |
 | R5 | Projection 动态、确定性、fail-closed，新增/改名 Reference 无需白名单同步 | https://github.com/dingyuwen777/Agent_Skills/issues/103 | satisfied | 临时新增 `security` Skill/Reference fixture 无需修改生产名单即可自动去 filename/path/id；重复构建 payload/core bytes/digest 一致；残留身份扫描 fail closed；新增保护区包含真实 Reference filename 的 fixture 验证构建拒绝静默改写。 |
-| R6 | Routing/required Context/canonical exact-text 与安装运行行为不变 | https://github.com/dingyuwen777/Agent_Skills/issues/103 | satisfied | implementation head `9286ca294eaaa8fe9221be18fa8134a2d60d2dca` 的 Skill Tests #649（run `33368410774`）全部 self-contained tests 成功，包含 Routing Conformance、Bundle exact-text/hash、Project Payload/Installer 回归；workflow 最终只因 Change 尚为 `in_progress` 被 changed Change gate 预期阻塞。Runtime Package Tests #69（run `33368410780`）Linux/Windows/macOS 均完成 onefile build/self-test、真实 stdio MCP、project-only install 并成功。 |
+| R6 | Routing/required Context/canonical exact-text 与安装运行行为不变 | https://github.com/dingyuwen777/Agent_Skills/issues/103 | satisfied | implementation head `9286ca294eaaa8fe9221be18fa8134a2d60d2dca` 的 Skill Tests #649（run `33368410774`）全部 self-contained tests 成功，包含 Routing Conformance、Bundle exact-text/hash、Project Payload/Installer 回归；workflow 最终只因 Change 尚为 `in_progress` 被 changed Change gate 预期阻塞。Runtime Package Tests #69（run `33368410780`）Linux/Windows/macOS 均完成 onefile build/self-test、真实 stdio MCP、project-only install 并成功。Final delivery head `50ca5a1599ecd2bb945d24b45931fe2321a310e7` 又通过 Skill Tests #650（run `33368780646`）和 Runtime Package Tests #70（run `33368780656`）三平台验证；合并后的 `main@8e74d375775f71b6651694387fdea21ea148956b` 再通过 Skill Tests #651（run `33368976319`）与 Runtime Package Tests #71（run `33368976310`）三平台 fresh 验证。 |
 
 # Validation Matrix
 
 | 验证层 | 是否要求 | Scope / 完成证据 |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | Red：Skill Tests #640（run `33366290004`，head `34af37a77d8c959cc537a1ec9a5e83b5c451326e`）259 tests 中新增目标场景产生 7 个预期失败，旧路由/Bundle/安装回归保持通过。Green：后续 exact head 全部 self-contained tests 成功；最终 implementation head #649 再次全通过。 |
+| 行为 / Unit / Component | required | Red：Skill Tests #640（run `33366290004`，head `34af37a77d8c959cc537a1ec9a5e83b5c451326e`）259 tests 中新增目标场景产生 7 个预期失败，旧路由/Bundle/安装回归保持通过。Green：后续 exact head 全部 self-contained tests 成功；final delivery head #650 与 main #651 再次全通过。 |
 | 接口 / Contract | required | Project Payload v2 文件集合/ownership 不变；明确迁移旧“Runtime Core bytes == canonical Core bytes”假设为“canonical Core 唯一 Owner → deterministic Runtime Projection”；Entry 仍 exact copy，Skill frontmatter/routing metadata exact-preserved。 |
-| 集成 / Runtime Dependency | required | Bundle → Project Payload → Installer 全链由 self-contained tests 覆盖；真实 stdio MCP required Context exact-text 由 Runtime Package Tests 验证。 |
+| 集成 / Runtime Dependency | required | Bundle → Project Payload → Installer 全链由 self-contained tests 覆盖；真实 stdio MCP required Context exact-text 由 PR #70 与 main #71 三平台 Runtime Package Tests 验证。 |
 | 用户 / Workflow Acceptance | required | 安装后的全部 Runtime Skill Core 动态扫描不含当前 canonical Reference filename/source_path/Stable ID/`references/`，同时保留 Router/Coding/Docs/Review/Figma 核心工作语义。 |
-| 跨组件 Golden Path | required | canonical Skill/Reference → private routing manifest/encrypted bundle + projected Core → project install → real stdio MCP；三平台 #69 全部通过。 |
+| 跨组件 Golden Path | required | canonical Skill/Reference → private routing manifest/encrypted bundle + projected Core → project install → real stdio MCP；PR #70 与 main #71 均三平台全绿。 |
 | 外部依赖 Probe | not_applicable | 不依赖第三方 Provider 或现时网络数据。 |
-| Build / Package / Runtime | required | Runtime Package Tests #69（run `33368410780`）：Linux、Windows、macOS 均通过 build/self-test → real stdio MCP → project-only single-binary installation。 |
+| Build / Package / Runtime | required | PR Runtime Package Tests #70（run `33368780656`）和 main Runtime Package Tests #71（run `33368976310`）：Linux、Windows、macOS 均通过 build/self-test → real stdio MCP → project-only single-binary installation。 |
 | Docs / Governance / Other | required | 正式 Runtime 分发 Reference 与 `runtime/README.md` 已同步到“canonical Core → deterministic Runtime Projection”；旧单 ZIP 维护描述同时按当前真实三平台 ZIP Contract 修正。最终用户安装/升级/命令未变，因此 `USAGE.md` 不做无关修改。 |
 
 # Review
 
-Review Target：PR #105，base `35de5ec5e50ad65d9c233044a578dc6f09232e01`，implementation head `9286ca294eaaa8fe9221be18fa8134a2d60d2dca`。
+Review Target：PR #105，base `35de5ec5e50ad65d9c233044a578dc6f09232e01`，implementation head `9286ca294eaaa8fe9221be18fa8134a2d60d2dca`，final delivery head `50ca5a1599ecd2bb945d24b45931fe2321a310e7`。
 
 模式：独立 Requirement Review + 内容守恒 + 测试充分性 + 维护性 + 信息披露边界 Review；用户已明确授权实现、测试、PR 与合并到 main。
 
@@ -136,15 +136,15 @@ Review 第一轮发现一个维护性风险：正文全局替换如果未来 fro
 
 最终 Review 结论：`NO_FINDINGS_WITHIN_SCOPE`。
 
-测试充分性结论：仓库当前证据能证明当前 canonical Reference 身份不会进入 Project Payload Skill Core、Source Mode 原文仍保留、投影动态且确定性、宿主元数据逐字不变、routing conformance/canonical exact-text 未回退，以及 Linux/Windows/macOS 真实 onefile/MCP/install 链可用。它不能也不应证明机器 Owner 无法查看 Runtime Projection、MCP 通信或进程内解密 Context；该限制已在正式 Runtime 安全边界中明确，不作为已解决事项。
+测试充分性结论：仓库当前证据能证明当前 canonical Reference 身份不会进入 Project Payload Skill Core、Source Mode 原文仍保留、投影动态且确定性、宿主元数据逐字不变、routing conformance/canonical exact-text 未回退，以及 Linux/Windows/macOS 真实 onefile/MCP/install 链可用。它不能用确定性测试证明机器 Owner 无法查看 Runtime Projection、MCP 通信或进程内解密 Context；该限制已在正式 Runtime 安全边界中明确，不作为已解决事项。
 
 当前无未解决 BLOCKER/HIGH/MEDIUM Finding。
 
 # Completion Audit
 
-- [x] upstream_re_read：完成前重新读取 Issue #103、当前分支的 Maintenance、内容守恒、正式 Runtime 分发规则、Project Payload、Routing/Bundle 实现与 Review 规则；没有把 PR 描述或历史讨论当需求全集。
+- [x] upstream_re_read：完成前重新读取 Issue #103、当前 main/branch 的 Maintenance、内容守恒、正式 Runtime 分发规则、Project Payload、Routing/Bundle 实现与 Review 规则；没有把 PR 描述或历史讨论当需求全集。
 - [x] change_coverage：R1–R6 全部 satisfied；Source/Runtime/维护性/使用效果/三平台兼容均有明确落点和证据。
-- [x] reverse_audit：从最终安装面反查全部当前 canonical Reference filename/source_path/Stable ID/`references/` 均被投影移除；从高价值任务场景反查 Router/Coding/Docs/Review/Figma Core marker、Task Route/evaluator、required Context exact-text 与真实 Runtime 链仍可达。
+- [x] reverse_audit：从安装后 Runtime SKILL 明文反查当前 canonical Reference filename/source_path/Stable ID/`references/` 均不可见；从高价值任务场景反查 Router/Coding/Docs/Review/Figma Core marker、Task Route/evaluator、required Context exact-text 与真实 Runtime 链仍可达。
 - [x] unresolved_cleared：没有 not_satisfied、TBD/TODO、未解释测试失败或未解决 Review Finding；唯一剩余边界是已声明的机器 Owner/专业逆向非目标。
 
 # 任务
@@ -156,8 +156,8 @@ Review 第一轮发现一个维护性风险：正文全局替换如果未来 fro
 - [x] 执行完整 self-contained tests、routing conformance 和三平台 Runtime Package Tests。
 - [x] 同步正式 Runtime 分发规则与源码维护说明；确认最终用户操作不变，因此不修改 `USAGE.md`。
 - [x] 执行 Requirement / 内容守恒 / 维护性 / 信息披露 Review 与 Completion Audit，并完成 Review 发现的元数据保护修复与 re-review。
-- [x] 创建普通非 Draft PR #105；本 ready 状态提交后必须取得 exact-head fresh CI，成功后才允许用 expected_head_sha 合并。
-- [ ] main fresh CI 成功后独立归档 Change。
+- [x] 创建普通非 Draft PR #105；final-head fresh CI 全绿后以 expected_head_sha 正常合并。
+- [x] main fresh CI 成功后独立归档 Change。
 
 # 文档影响
 
@@ -167,8 +167,9 @@ Review 第一轮发现一个维护性风险：正文全局替换如果未来 fro
 
 - Requirement Source：Issue #103。
 - 分支：`change/runtime-skill-projection`。
-- PR：#105，普通非 Draft；implementation head Review 时为 `9286ca294eaaa8fe9221be18fa8134a2d60d2dca`。
-- 本 Change 切换为 `ready_for_review` 后，PR 必须在新的 exact head 上重新取得 Skill Tests（含 changed Change Ready gate）和三平台 Runtime Package Tests；不得用 #649/#69 冒充最终状态提交的 fresh CI。
-- Merge：尚未执行；只有 final head fresh CI 成功后才用 `expected_head_sha` 合并。
-- Release：本 Change 不创建新版本/tag；实现进入下一次正常 Release。
-- 操作记录：工具操作期间误创建无效占位 Issue #104，已立即改为“[无效占位] 误创建记录”并以 `not_planned` 关闭；它不承载需求、实现或交付事实，唯一 Requirement Source 仍为 #103。
+- 功能 PR：#105，已用 `expected_head_sha=50ca5a1599ecd2bb945d24b45931fe2321a310e7` 正常合并。
+- 功能 merge commit：`8e74d375775f71b6651694387fdea21ea148956b`。
+- 合并后 main fresh CI：Skill Tests #651（run `33368976319`）success；Runtime Package Tests #71（run `33368976310`）Linux/Windows/macOS 全部 success。
+- 本 Change 已进入独立 archive PR，归档仅移动本记录并将状态更新为 `done`，不修改 Runtime 实现。
+- Release：本 Change 未创建新版本/tag；实现进入下一次正常 Release。
+- 操作记录：工具操作期间误创建无效占位 Issue #104，已立即改名说明并以 `not_planned` 关闭；它不承载需求、实现或交付事实，唯一 Requirement Source 仍为 #103。
