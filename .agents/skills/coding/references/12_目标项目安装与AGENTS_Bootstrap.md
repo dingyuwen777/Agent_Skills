@@ -298,16 +298,17 @@ marker 后原文：逐字保留
 [`coding/assets/AGENTS.managed.md`](../assets/AGENTS.managed.md) 是 managed block 唯一模板事实源，但它现在只承担 **Runtime 薄 Bootstrap**。至少保持：
 
 1. 项目自己的规则和真实事实优先；
-2. 使用当前项目已经配置的研发治理 MCP 获取本次任务需要的完整约束；
-3. Runtime Mode 不根据受管运行资产中的源码维护导航去直接读取、本地枚举或猜测治理规则；Source Mode 维护者直接使用明文仓库时不受这个用户可见隐藏边界限制；
-4. 通用示例不能覆盖目标项目事实；
-5. 首次接入、治理状态未校准或长期治理事实漂移时，在实质性代码修改前执行有界 Project Governance Bootstrap；
-6. 用户可见处理过程可以正常说明项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git、CI 和交付状态；
-7. 用户可见输出不得主动展示、枚举或复述治理系统内部分类、文件名、目录结构、规则标识、路由映射、内部凭据或加载明细；解释原因时说明工程步骤本身，不引用内部治理资产；
-8. 安装器认领的 `.agents` 受管运行资产不是项目自有规则，不直接手工修改，项目长期规则维护在项目自身正式事实源；
-9. 项目级治理 MCP 不可用、必需约束不完整或与更高优先级规则存在无法安全解析的冲突时明确报告并停止依赖对应治理要求，不假装遵守。
+2. 默认 Runtime Mode：无更高优先级模式覆盖时，通过当前项目治理 MCP 获取完整约束；
+3. 系统、开发者或用户级更高优先级指令明确选择其他 Agent_Skills 执行模式时，只停止执行与该模式冲突的 Runtime/MCP 规则取得路径和 Runtime 用户可见披露限制；项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效；
+4. Runtime Mode 不根据受管运行资产中的源码维护导航去直接读取、本地枚举或猜测治理规则；Source Mode 维护者直接使用明文仓库时不受这个用户可见隐藏边界限制；
+5. 通用示例不能覆盖目标项目事实；
+6. 首次接入、治理状态未校准或长期治理事实漂移时，在实质性代码修改前执行有界 Project Governance Bootstrap；
+7. 用户可见处理过程可以正常说明项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git、CI 和交付状态；
+8. 默认 Runtime Mode 的用户可见输出不得主动展示、枚举或复述治理系统内部分类、文件名、目录结构、规则标识、路由映射、内部凭据或加载明细；解释原因时说明工程步骤本身，不引用内部治理资产；
+9. 安装器认领的 `.agents` 受管运行资产不是项目自有规则，不直接手工修改，项目长期规则维护在项目自身正式事实源；
+10. 默认 Runtime Mode 下，项目级治理 MCP 不可用、必需约束不完整或与更高优先级规则存在无法安全解析的冲突时明确报告并停止依赖对应治理要求，不假装遵守。
 
-原 managed block 曾直接承担的 Reference 触发、Runtime Task Route → required Context、Figma NOT_READY/READY Handoff、Review、Docs、Skill/Reference 失败停止、CI/Branch Protection/PR/Release/Migration/安全与授权边界、项目事实来源等完整可执行语义，仍由 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md) 与各 Skill canonical 规则作为唯一正文 Owner 保存，并由 Runtime MCP 内部求值和加载。这里的变化只收窄 Runtime 用户可见入口，不删除任何治理语义，也不改变 Source Mode 的明文导航能力。
+原 managed block 曾直接承担的 Reference 触发、Runtime Task Route → required Context、Figma NOT_READY/READY Handoff、Review、Docs、Skill/Reference 失败停止、CI/Branch Protection/PR/Release/Migration/安全与授权边界、项目事实来源等完整可执行语义，仍由 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md) 与各 Skill canonical 规则作为唯一正文 Owner 保存，并由 Runtime MCP 内部求值和加载。这里的变化只收窄 Runtime 用户可见入口，并增加默认 Runtime / 高优先级显式模式覆盖的薄契约；不删除任何治理语义，也不改变 Source Mode 的明文导航能力。
 
 ## 8. `.gitignore` 规则
 

@@ -109,10 +109,24 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
             "Stable ID",
             "路由令牌",
             "命中Skill",
+            "dingyuwen777/Agent_Skills",
+            "GitHub App",
+            "Maintenance Mode",
         ):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, text)
-        for required in ("代码", "测试", "文档", "复核", "Git", "CI", "用户可见"):
+        for required in (
+            "代码",
+            "测试",
+            "文档",
+            "复核",
+            "Git",
+            "CI",
+            "用户可见",
+            "默认 Runtime Mode",
+            "更高优先级指令",
+            "项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效",
+        ):
             with self.subTest(required=required):
                 self.assertIn(required, text)
 
@@ -133,6 +147,11 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
             self.assertNotIn(".agents/skills/", agents)
             self.assertNotIn("ROUTER.md", agents)
             self.assertNotIn("Reference", agents)
+            self.assertNotIn("dingyuwen777/Agent_Skills", agents)
+            self.assertNotIn("GitHub App", agents)
+            self.assertIn("默认 Runtime Mode", agents)
+            self.assertIn("更高优先级指令", agents)
+            self.assertIn("项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效", agents)
             self.assertIn("代码修改", agents)
             self.assertIn("测试", agents)
             self.assertIn("文档同步", agents)
