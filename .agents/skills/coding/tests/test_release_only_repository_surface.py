@@ -159,7 +159,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             self.assertIn("维护 `README.md`", text)
 
     def test_source_router_and_runtime_bootstrap_have_distinct_visibility_roles(self) -> None:
-        """源码入口保留完整 Router 导航，Runtime managed 只暴露工程治理能力，Maintenance 独立负责源仓库。"""
+        """源码入口保留完整 Router 导航，Runtime managed 只暴露项目侧行为契约，Maintenance 独立负责源仓库。"""
         root_agents = self._read("AGENTS.md")
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
         router = self._read(".agents/skills/router/SKILL.md")
@@ -176,10 +176,14 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertNotIn(".agents/skills/figma/SKILL.md", managed)
         self.assertNotIn(".agents/skills/review/SKILL.md", managed)
         self.assertNotIn(".agents/skills/docs/SKILL.md", managed)
-        self.assertIn("研发治理 MCP", managed)
-        self.assertIn("用户可见", managed)
+        self.assertNotIn("研发治理 MCP", managed)
+        self.assertNotIn("Runtime Mode", managed)
+        self.assertIn("无论采用哪种通用治理执行方式", managed)
+        self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", managed)
+        self.assertIn("只改变通用治理约束的取得和呈现方式", managed)
         self.assertIn("代码修改", managed)
         self.assertIn("文档同步", managed)
+        self.assertIn("治理能力自身的运行与实现细节不属于项目进度或交付内容", managed)
 
         for marker in (
             ".agents/skills/coding/SKILL.md",

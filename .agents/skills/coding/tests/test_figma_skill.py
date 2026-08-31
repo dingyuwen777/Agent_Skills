@@ -228,7 +228,7 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         self.assertIn("第二套 Figma", preservation)
 
     def test_source_navigation_exposes_figma_while_runtime_bootstrap_hides_internal_catalog(self) -> None:
-        """Source Mode 保留明文 Figma 导航，Runtime Bootstrap 只暴露项目治理能力。"""
+        """Source Mode 保留明文 Figma 导航，Runtime Bootstrap 只暴露项目侧行为契约。"""
         managed = self._read(CODING_ROOT / "assets/AGENTS.managed.md")
         root_agents = self._read(ROOT / "AGENTS.md")
         router = self._read(ROUTER_PATH)
@@ -239,9 +239,12 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         self.assertNotIn(".agents/skills/", managed)
         self.assertNotIn("ROUTER.md", managed)
         self.assertNotIn("figma", managed.lower())
-        self.assertIn("研发治理 MCP", managed)
-        self.assertIn("Runtime Mode", managed)
-        self.assertIn("用户可见", managed)
+        self.assertNotIn("研发治理 MCP", managed)
+        self.assertNotIn("Runtime Mode", managed)
+        self.assertIn("无论采用哪种通用治理执行方式", managed)
+        self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", managed)
+        self.assertIn("只改变通用治理约束的取得和呈现方式", managed)
+        self.assertIn("治理能力自身的运行与实现细节不属于项目进度或交付内容", managed)
 
         self.assertIn("figma", router.lower())
         self.assertIn(".agents/skills/*/SKILL.md", router)

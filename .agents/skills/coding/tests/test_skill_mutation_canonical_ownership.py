@@ -87,22 +87,23 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + ("15_规则内容守恒与Skill维护.md",):
             self.assertNotIn(forbidden, router, f"Runtime Router 暴露源仓库 Mutation 治理：{forbidden}")
 
-    def test_managed_block_is_runtime_bootstrap_without_source_mutation_or_internal_navigation_terms(self) -> None:
-        """目标项目 managed block 只暴露项目治理能力、工程过程和受管资产保护。"""
+    def test_managed_block_is_project_facing_without_source_mutation_or_internal_navigation_terms(self) -> None:
+        """目标项目 managed block 只暴露项目规则优先、工程过程和受管资产边界。"""
         managed = self._read(MANAGED_PATH)
         for marker in (
             "项目自己的",
-            "研发治理 MCP",
-            "Runtime Mode",
+            "无论采用哪种通用治理执行方式",
+            "必须先读取并遵守当前目录及上级适用的项目规则",
+            "只改变通用治理约束的取得和呈现方式",
             "受管运行资产",
-            "不应直接手工修改",
+            "不作为项目自有长期规则直接手工维护",
             "代码修改",
             "测试",
             "文档同步",
-            "用户可见",
-            "不得假装",
+            "治理能力自身的运行与实现细节不属于项目进度或交付内容",
+            "不得用旧记忆、摘要或自行猜测替代",
         ):
-            self.assertIn(marker, managed, f"managed block 缺少普通 Runtime 入口保护：{marker}")
+            self.assertIn(marker, managed, f"managed block 缺少项目侧入口保护：{marker}")
         for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + (
             ROUTER_PATH,
             ".agents/skills/",
@@ -115,6 +116,11 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "Completion Audit",
             "Red →",
             "agent_skills_load_required_context",
+            "研发治理 MCP",
+            "Runtime Mode",
+            "Source Mode",
+            "内部任务路由",
+            "必需上下文加载",
         ):
             self.assertNotIn(forbidden, managed, f"managed block 暴露维护者专用语义：{forbidden}")
 

@@ -22,8 +22,8 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         """读取仓库 UTF-8 文本，供入口职责和内容守恒断言使用。"""
         return (ROOT / relative).read_text(encoding="utf-8")
 
-    def test_source_agents_use_router_while_runtime_managed_uses_governance_mcp(self) -> None:
-        """Source Mode 显式导航 Router；Runtime managed 只暴露项目治理能力，不复制或暴露内部导航。"""
+    def test_source_agents_use_router_while_runtime_managed_uses_project_contract(self) -> None:
+        """Source Mode 显式导航 Router；Runtime managed 只暴露项目侧行为契约，不复制内部导航。"""
         root_agents = self._read("AGENTS.md")
         managed = self._read(MANAGED_PATH)
         self.assertTrue((ROOT / ENTRY_PATH).is_file(), "缺少唯一薄 Entry")
@@ -41,11 +41,14 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertNotIn(".agents/skills/figma/SKILL.md", managed)
         self.assertNotIn(".agents/skills/review/SKILL.md", managed)
         self.assertNotIn(".agents/skills/docs/SKILL.md", managed)
-        self.assertIn("研发治理 MCP", managed)
-        self.assertIn("Runtime Mode", managed)
-        self.assertIn("用户可见", managed)
+        self.assertNotIn("研发治理 MCP", managed)
+        self.assertNotIn("Runtime Mode", managed)
+        self.assertIn("无论采用哪种通用治理执行方式", managed)
+        self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", managed)
+        self.assertIn("只改变通用治理约束的取得和呈现方式", managed)
         self.assertIn("代码修改", managed)
         self.assertIn("文档同步", managed)
+        self.assertIn("治理能力自身的运行与实现细节不属于项目进度或交付内容", managed)
 
     def test_router_preserves_high_value_routing_and_failure_semantics(self) -> None:
         """旧 managed block 的高价值触发、失败和权限规则必须完整迁入唯一 Router。"""
