@@ -65,6 +65,7 @@ _FACT_SOURCE_DIRECTORIES = {
     "specs",
 }
 _INTERNAL_INSTALL_STATE_COMMAND = "__install-state"
+_INSTALL_STATE_QUERY_TIMEOUT_SECONDS = 10.0
 
 
 def _sha256_file(path: Path) -> str:
@@ -261,14 +262,20 @@ def _query_installed_runtime_state(runtime_path: Path) -> dict[str, Any]:
     """通过旧已安装 Runtime 的内部命令读取其内嵌 Project Payload ownership。"""
     if runtime_path.is_symlink() or not runtime_path.is_file():
         raise ValueError(f"旧 Agent Skills Runtime 必须是普通文件：{runtime_path}")
-    result = subprocess.run(
-        [str(runtime_path), _INTERNAL_INSTALL_STATE_COMMAND, "--json"],
-        check=False,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+    try:
+        result = subprocess.run(
+            [str(runtime_path), _INTERNAL_INSTALL_STATE_COMMAND, "--json"],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=_INSTALL_STATE_QUERY_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(
+            f"旧 Agent Skills Runtime install-state 查询超过 {_INSTALL_STATE_QUERY_TIMEOUT_SECONDS:g} 秒，停止升级"
+        ) from error
     if result.returncode != 0:
         detail = result.stderr.strip() or result.stdout.strip() or "未知错误"
         raise RuntimeError(f"旧 Agent Skills Runtime 无法提供 install-state：{detail}")
