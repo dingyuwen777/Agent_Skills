@@ -14,7 +14,7 @@ agent-skills-v<VERSION>-linux.zip
 agent-skills-v<VERSION>-macos.zip
 ```
 
-每个 ZIP 根目录只包含当前平台的可执行文件和同一版本的 `USAGE.md`：
+每个 ZIP 根目录只包含当前平台的可执行文件和同一版本的本说明文件：
 
 Windows：
 
