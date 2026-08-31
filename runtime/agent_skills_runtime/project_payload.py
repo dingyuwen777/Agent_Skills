@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
+from .runtime_skill_projection import project_runtime_skill_core
 from .skill_catalog import discover_skills
 
 
@@ -138,6 +139,9 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
     bundle_skills = [str(name) for name in bundle.get("skills", [])]
     if bundle_skills != skill_names:
         raise ValueError("Project Payload Skill Catalog 与 Runtime Bundle 不一致")
+    bundle_references = bundle.get("references")
+    if not isinstance(bundle_references, list):
+        raise ValueError("Project Payload 需要 Runtime Bundle 的 Reference 身份集合")
 
     files: list[dict[str, Any]] = []
     skills_root = root / ".agents" / "skills"
@@ -163,7 +167,10 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
                 continue
             relative = path.relative_to(skills_root).as_posix()
             mode = _payload_file_mode(root, path, tracked_modes)
-            files.append(_encode_file(relative, path.read_bytes(), mode))
+            file_payload = path.read_bytes()
+            if relative_in_skill == PurePosixPath("SKILL.md"):
+                file_payload = project_runtime_skill_core(file_payload, bundle_references)
+            files.append(_encode_file(relative, file_payload, mode))
 
     files.sort(key=lambda item: str(item["path"]))
     payload = {
