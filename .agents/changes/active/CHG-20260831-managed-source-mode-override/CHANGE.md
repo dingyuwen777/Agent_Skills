@@ -108,20 +108,22 @@ data_changes: []
 | 验证层 | 是否要求 | Scope / Evidence |
 | --- | --- | --- |
 | 行为 / Unit / Component | required | GitHub Actions run `33379066539`：self-contained suite `Ran 263 tests`，`OK`；覆盖默认 Runtime、higher-priority override、Overlay 保留。 |
-| 接口 / Contract | required | `AGENTS.managed.md` 与 ref12 同步；PR #111 diff 只新增薄模式契约，不改变 MCP Tool Contract、Stable ID 或 schema。 |
+| 接口 / Contract | required | `AGENTS.managed.md` 与 ref12 同步；当前非 Draft PR #116 diff 只新增薄模式契约，不改变 MCP Tool Contract、Stable ID 或 schema。 |
 | 集成 / Persistence / Runtime Dependency | required | `test_canonical_runtime_install_creates_pending_governance_agents` 与 `test_real_project_install_keeps_internal_runtime_assets_out_of_root_guidance` 使用 canonical Bundle/Project Payload/Installer 生成真实临时项目并通过。 |
 | 用户 / Workflow Acceptance | required | 普通 Runtime 路径与维护者 Source Mode 两条入口反向审查通过；首段 Runtime 职责歧义在 Review 中发现后增加回归并修复。 |
 | 跨组件 Golden Path | not_applicable | 未修改 MCP/Runtime 执行链；本次只改变安装到项目的 Bootstrap 规则文本及其 canonical 说明。 |
 | 外部依赖 Probe | not_applicable | 不依赖第三方 Provider 或现时网络事实。 |
 | Build / Package / Runtime | not_applicable | 未修改 `runtime/`、Builder、package/release workflow；按当前 path-scoped 门禁不要求三平台 onefile。Skill Tests 中 Python compile、CLI smoke、Project Payload/Installer integration 均通过。 |
-| Docs / Governance / Other | required | ref12 同步；context footprint migration 继续通过；A1/A2 Deep Review 完成；Change 切换 `ready_for_review` 后由下一轮 Ready Check 验证。 |
+| Docs / Governance / Other | required | ref12 同步；context footprint migration 继续通过；A1/A2 Deep Review 完成；Change `ready_for_review` 后 Ready Check 已在 run `33379223979` 通过。 |
 
 # TDD / 验证证据
 
-- 初始 Red：PR #111 run `33377500225`，旧 managed block 上 `263` 个测试中新增断言造成 `10` 个失败，均为缺少模式覆盖语义。
+- 初始 Red：已关闭 Draft PR #111 run `33377500225`，旧 managed block 上 `263` 个测试中新增断言造成 `10` 个失败，均为缺少模式覆盖语义。
 - Green 收敛：实现后曾触发 required-context 8 KiB 历史预算，未提高阈值，改为压缩 ref12 重复说明；预算最终通过。
 - Review 回归 Red：run `33379005282`，新加“首段 Runtime 职责必须限定默认模式”断言后 `263` 个测试中仅 `1` 个失败，原因与 Review Finding 一致。
 - Review 修复 Green：run `33379066539`，compile 与 CLI smoke 通过，self-contained suite `Ran 263 tests in 4.310s`，`OK`；workflow 唯一失败为 Change 当时仍是 `in_progress`，Ready Check 明确报告这一项。
+- Change Ready Green：run `33379223979` 完整成功，changed Change Ready Check 通过。
+- 最新 main 同步 Green：分支通过中文 merge commit `8fac06553f6602764da71775fac4a3b3b2bd2da4` 合并 `main` `0fc35ac54d7b1c2f9ed5095303f75f066b4f1965`；run `33379485410` 完整成功，比较结果 `behind_by=0`，diff 仍为预期 5 个文件。
 
 # 实施任务
 
@@ -130,7 +132,8 @@ data_changes: []
 3. [x] 同步 ref12 managed block 职责，不修改 ref13 Runtime 分发正文。
 4. [x] 收敛 required-context 增量，不提高历史预算门禁。
 5. [x] 执行独立 Deep Review；发现并修复首段无条件 Runtime 职责这一 MEDIUM Finding，并以单独 Red → Green 回归证明。
-6. [x] 更新本 Change 到 `ready_for_review`；下一轮 PR CI 必须通过 Ready Check 后才能解除 Draft/合并。
+6. [x] 更新本 Change 到 `ready_for_review`，Ready Check 已通过；因 GitHub 连接器 Draft→Ready GraphQL schema 错误关闭 Draft PR #111，并从同一已验证分支创建非 Draft PR #116，不绕过 Ready 门禁。
+7. [ ] PR #116 取得本次治理状态同步后的新鲜 CI，全绿后合并；merge 后验证 main fresh CI，再独立归档 Change。
 
 # Migration / 部署 / 回滚
 
@@ -155,7 +158,7 @@ data_changes: []
 
 # Review
 
-- Review 深度：L3 Deep Review；目标为 Issue #113 + 当前 main + PR #111。
+- Review 深度：L3 Deep Review；目标为 Issue #113 + 当前 main + 当前非 Draft PR #116（历史 TDD Red 来自已关闭 Draft PR #111）。
 - A1 Requirement Review：PASS。Issue 中默认 Runtime、显式高优先级模式覆盖、Overlay 保留、不泄露 Source 内部导航、非目标/回滚均已映射到实现和测试。
 - A2 Implementation / Test Review：PASS after fix。首次审查发现 1 个 MEDIUM：managed block 第一段仍无条件声明 Runtime 负责完整约束；已增加回归测试，在 run `33379005282` 正确失败后修正为“在默认 Runtime Mode 下”，run `33379066539` 的 263 个测试全部通过。
 - 内容守恒：PASS。只改变 Runtime Bootstrap 模式优先级契约；Router/Skill/Reference、MCP/Bundle/Runtime Python、Project Payload ownership 与 Source Mode 明文导航均未弱化。
@@ -165,9 +168,9 @@ data_changes: []
 # Git / PR / Release 状态
 
 - Branch：`change/managed-source-mode-override`
-- 当前实现 HEAD：`eaf294193e1e70351f0d129158fe894f1c960d5a`；本 Change ready 提交后会产生新 HEAD。
+- 主分支同步提交：`8fac06553f6602764da71775fac4a3b3b2bd2da4`，合并基线 `main` `0fc35ac54d7b1c2f9ed5095303f75f066b4f1965`，比较结果 `behind_by=0`。
 - Requirement Source：Issue #113 `https://github.com/dingyuwen777/Agent_Skills/issues/113`
-- PR：#111（Draft）；待本 Change ready 提交后的新鲜 CI 全绿后转 Ready。
-- Merge：待分支更新到最新 main、最终 CI/Review 门禁完成后执行。
+- PR：#116（非 Draft，当前正式交付 PR）。#111 已关闭且未合并，仅保留历史 TDD/CI 证据；关闭原因是 Draft→Ready 连接器 GraphQL schema 错误。
+- Merge：待 PR #116 当前 head 新鲜 CI 全绿后执行。
 - Main fresh CI：待 merge 后执行。
 - Release：本任务不创建正式 Release；AIMA_UGC 当前已安装旧 Release 不会自动获得该 managed block。
