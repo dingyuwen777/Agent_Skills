@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260831-release-platform-zips
 title: 将正式 Release 调整为三平台独立 ZIP 分发包
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: change/release-platform-zips
 created: 2026-08-31
@@ -106,26 +106,26 @@ data_changes: []
 | --- | --- | --- | --- | --- |
 | R1 | macOS、Linux、Windows 每个平台发布一个 ZIP | https://github.com/dingyuwen777/Agent_Skills/issues/96 | satisfied | `release.yml` 的 `Build platform distribution ZIPs` 显式生成三个平台包；`test_release_platform_zips.py` 与 Release 产品化测试验证 Draft/Publish 的精确三资产契约。 |
 | R2 | 每个 ZIP 内包含该平台二进制与 `USAGE.md` | https://github.com/dingyuwen777/Agent_Skills/issues/96 | satisfied | ZIP 组装使用每平台显式 `[binary, "USAGE.md"]` 白名单并重新打开核对成员；行为测试真实执行该 workflow shell block，验证其他平台 binary、manifest 和临时文件不进入 ZIP。 |
-| R3 | 三平台构建、identity、Draft/Publish 与失败清理门禁不得因分包降低 | https://github.com/dingyuwen777/Agent_Skills/issues/96 | satisfied | `release.yml` 保留 artifact SHA256、source commit、固定 Python、协议/digest 和三平台公共 identity 比较，之后才删除 manifest；Runtime Package Tests #50（run `33359475102`）在 Linux/Windows/macOS 均完成 onefile build/self-test、真实 stdio MCP 与项目安装并成功。 |
-| R4 | 分发 canonical 规则、最终用户说明与 workflow/test 保持一致 | https://github.com/dingyuwen777/Agent_Skills/issues/96 | satisfied | `USAGE.md`、`.agents/MAINTENANCE.md`、Runtime canonical Reference 与三组 Release 回归测试已同步；Skill Tests #621（run `33359475081`）compile、CLI smoke、self-contained tests 与 changed Change Ready gate 全部成功。 |
+| R3 | 三平台构建、identity、Draft/Publish 与失败清理门禁不得因分包降低 | https://github.com/dingyuwen777/Agent_Skills/issues/96 | satisfied | `release.yml` 保留 artifact SHA256、source commit、固定 Python、协议/digest 和三平台公共 identity 比较；PR #98 的 Runtime Package Tests #52 通过，合并后 `main` Runtime Package Tests #53 再次在 Linux/Windows/macOS 完成 onefile build/self-test、真实 stdio MCP 与项目安装并成功。 |
+| R4 | 分发 canonical 规则、最终用户说明与 workflow/test 保持一致 | https://github.com/dingyuwen777/Agent_Skills/issues/96 | satisfied | `USAGE.md`、`.agents/MAINTENANCE.md`、Runtime canonical Reference 与三组 Release 回归测试已同步；PR #98 Skill Tests #623 通过，合并后 `main` Skill Tests #624 再次通过 compile、CLI smoke、self-contained tests 与 active Change Ready gate。 |
 
 # Validation Matrix
 
 | 验证层 | 是否要求 | Scope / 完成证据 |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | Red：Skill Tests #604（run `33356381523`）共 249 tests，仅新增的 3 个平台 ZIP 目标测试因旧单 ZIP 契约失败；Green：Skill Tests #621（run `33359475081`）compile、CLI smoke 与 self-contained tests 全部成功。 |
+| 行为 / Unit / Component | required | Red：Skill Tests #604（run `33356381523`）共 249 tests，仅新增的 3 个平台 ZIP 目标测试因旧单 ZIP 契约失败；Green：PR #98 Skill Tests #623（run `33359843845`）成功；合并后 main Skill Tests #624（run `33361223652`）再次成功。 |
 | 接口 / Contract | required | 回归断言正式 Release asset surface 精确为三个平台 ZIP；每个 ZIP 精确两项成员；旧单 ZIP 与 `SHA256SUMS` 最终用户契约被明确排除；Runtime/MCP/install 协议测试继续通过。 |
 | 集成 / Persistence / Runtime Dependency | not_applicable | 无数据库或持久化变化；本 Change 不执行真实正式版本发布。 |
 | 用户 / Workflow Acceptance | required | `USAGE.md` 已覆盖 Windows/Linux/macOS 平台包选择、安装、升级与回退；平台 ZIP 命名和包内 binary 命名与 workflow 一致。 |
 | 跨组件 Golden Path | required | Actions artifact → 三平台 identity/artifact SHA 校验 → 三 ZIP 显式白名单组装 → Draft 三资产精确比较 → Publish 三资产精确比较的链路已通过静态与可执行行为测试；真实 Draft/Publish API 不在本 Change 中执行。 |
 | 外部依赖 Probe | not_applicable | 不新增第三方 Provider，且明确不执行真实正式版本发布。 |
-| Build / Package / Runtime | required | Runtime Package Tests #50（run `33359475102`）在 Linux、Windows、macOS 三个对应 Runner 全部成功，均覆盖 build/self-test、真实 stdio MCP 与 project install。 |
-| Docs / Governance / Other | required | Skill Tests #611 首次暴露两处新增裸 Markdown 路径并修正；#614 暴露 Requirement Source 格式问题并修正；#621 在恢复后的干净 branch tree 上通过 changed Change Ready gate。 |
+| Build / Package / Runtime | required | PR #98 Runtime Package Tests #52（run `33359843851`）与合并后 main Runtime Package Tests #53（run `33361223660`）均在 Linux、Windows、macOS 三个平台成功，覆盖 build/self-test、真实 stdio MCP 与 project install。 |
+| Docs / Governance / Other | required | Markdown 导航与 Requirement Source 格式问题均在开发阶段被 CI 精确拦截并修正；PR #98 Skill Tests #623 与 main Skill Tests #624 均成功。 |
 
 # Completion Audit
 
-- [x] upstream_re_read：完成前重新读取 Requirement Source #96、当前 Release workflow、Maintenance、Runtime Release Reference、USAGE、原 Draft PR #97 与当前普通 PR #98 的 base/head 及相关 diff；未从历史单 ZIP 方案推断当前实现。
-- [x] change_coverage：R1–R4 全部有实现和新鲜测试/CI 证据；旧单 ZIP 测试仅承担已废弃产品契约，其独立 identity/artifact SHA/失败清理责任仍由现行测试保留。
+- [x] upstream_re_read：完成前重新读取 Requirement Source #96、当前 Release workflow、Maintenance、Runtime Release Reference、USAGE、原 Draft PR #97 与最终 PR #98 的 base/head 及相关 diff；未从历史单 ZIP 方案推断当前实现。
+- [x] change_coverage：R1–R4 全部有实现、PR fresh CI 与 main fresh CI 证据；旧单 ZIP 测试仅承担已废弃产品契约，其独立 identity/artifact SHA/失败清理责任仍由现行测试保留。
 - [x] reverse_audit：从“用户只下载自己平台 ZIP”反向追踪到 Release 三资产集合 → 每个平台 ZIP 精确成员 → 对应平台 binary → identity/artifact SHA → 对应 Runner build/self-test/MCP/install，未发现证据断点。
 - [x] unresolved_cleared：R1–R4 均为 `satisfied`；无 TBD/TODO；真实正式 Release 未执行是本 Change 明确非目标，并已作为剩余验证边界记录。
 
@@ -136,10 +136,13 @@ data_changes: []
 - [x] 修改 `release.yml` 组装、校验并发布三个平台 ZIP。
 - [x] 更新原单 ZIP 测试、Release 产品化测试与仓库分发表面测试。
 - [x] 更新 `USAGE.md`、Maintenance 与 Runtime Release Reference。
-- [x] 运行完整 self-contained tests 与 changed Change Ready Check；恢复后的 branch head 已由 Skill Tests #621 验证成功。
-- [x] 运行 changed scope 对应的 Runtime Package Tests；恢复后的 branch head 已由 Runtime Package Tests #50 在三平台验证成功。
-- [x] 执行两阶段独立 Review；需求符合性与代码/Workflow 质量审查未发现 BLOCKER/HIGH/MEDIUM，期间 CI 发现的两处 Markdown 导航问题与 Requirement Source 格式问题均最小修正并重新验证。
+- [x] 运行完整 self-contained tests 与 changed Change Ready Check。
+- [x] 运行 changed scope 对应的 Runtime Package Tests，在三个平台验证 build/self-test、真实 MCP 和项目安装。
+- [x] 执行两阶段独立 Review；需求符合性与代码/Workflow 质量审查未发现 BLOCKER/HIGH/MEDIUM。
 - [x] 完成 Requirement Traceability 与 Completion Audit，进入 `ready_for_review`。
+- [x] PR #98 使用 head guard 合并到 `main`，merge commit 为 `71508f3d348e6b5bf913d16faaabac0228635ba2`。
+- [x] 合并后 `main` fresh Skill Tests #624 与 Runtime Package Tests #53 全部成功。
+- [x] 按仓库维护规则将 Change 标记为 `done` 并迁移到 `archive/2026-08/`。
 
 # 验证计划与新鲜证据
 
@@ -149,12 +152,11 @@ Skill Tests #604（run `33356381523`，head `969706524498037e7b1f0923b088ec945c9
 
 ## Green 与回归
 
-- Skill Tests #611（run `33357034982`）：所有三平台 ZIP、Release identity、Runtime/安装等目标测试已通过；246 tests 中唯一失败为 Markdown 导航门禁，定位到两处新增裸 `USAGE.md` 路径，随后最小修正。
-- Skill Tests #613（run `33357201653`）：compile、CLI smoke、全部 self-contained tests 成功；workflow 最终仅因本 Change 当时仍为 `in_progress` 而在 changed Change gate 阻塞，证明完成门禁未被绕过。
-- Skill Tests #614（run `33357465708`）：self-contained tests 全部成功；changed Change gate 精确暴露 Requirement Source 使用裸 `#96` 不符合当前 parser 语法，随后改为可验证的 Issue URL。
-- Skill Tests #621（run `33359475081`，head `b17bb8b7b8910958e204b3e62a5c3f21ca0beb47`）成功：compile、CLI smoke、self-contained tests、changed Change Ready gate 全部通过。
-- 同一 head 的 Runtime Package Tests #50（run `33359475102`）成功：Linux、Windows、macOS 全部完成 onefile build/self-test、真实 stdio MCP contract、project-only single-binary installation。
-- 原 Draft PR #97 因宿主 Ready GraphQL `fullDatabaseId` 兼容问题无法自动转 Ready；回读确认仍为 Draft 后按仓库零人工兼容策略关闭并保留证据，创建当前普通非 Draft PR #98。#98 必须对本次交付记录同步后的最终 head 重新取得 fresh CI，旧 PR 的集成结果不能替代当前 merge result。
+- 开发阶段的 Skill Tests #611 / #613 / #614 分别暴露并验证了 Markdown 导航、Completion Gate、Requirement Source 等治理边界，相关问题均最小修正。
+- 原 Draft PR #97 因宿主 Ready GraphQL `fullDatabaseId` 兼容问题无法自动转 Ready；回读确认仍为 Draft 后按仓库零人工兼容策略关闭并保留证据，随后以同一 head/base 创建普通非 Draft PR #98。
+- PR #98 final head `41a17bedb8c222d07bbc55070afcf83b5114dd71`：Skill Tests #623（run `33359843845`）成功；Runtime Package Tests #52（run `33359843851`）三平台成功。
+- PR #98 以 `expected_head_sha=41a17bedb8c222d07bbc55070afcf83b5114dd71` 合并；merge commit `71508f3d348e6b5bf913d16faaabac0228635ba2`。
+- `main@71508f3d348e6b5bf913d16faaabac0228635ba2`：Skill Tests #624（run `33361223652`）成功；Runtime Package Tests #53（run `33361223660`）Linux、Windows、macOS 全部成功。
 
 ## Review
 
@@ -169,10 +171,12 @@ Review 的实现主体绑定原 Draft PR #97 base `b2528fc91f15e170c6961beb26b1a
 
 # Git / PR / 发布状态
 
-- Requirement Source：Issue #96。
-- 分支：`change/release-platform-zips`。
-- 原 Draft PR：#97，因宿主 Ready GraphQL `fullDatabaseId` 兼容问题无法自动转 Ready，已按既定兼容策略关闭并保留历史证据。
-- 当前 PR：#98，普通非 Draft PR；本次状态同步提交后必须以当前 main merge result 重新完成 fresh CI，未通过前禁止 merge。
-- 操作恢复：期间出现过 Change 记录临时误覆盖和无关文件临时创建，均使用普通提交恢复/删除；未执行 reset、force 或历史重写。恢复后与最近已验证干净树比较无净文件差异，并已重新运行 Skill/Runtime CI；当前 PR 还会对本次最终状态同步提交再次验证。
-- 正式 Release：未执行，符合本 Change 非目标；因此真实 GitHub Draft/Publish 写操作未在本轮触发，剩余风险由 workflow 的精确资产校验和下一次正式 Release preflight 控制。
-- Merge：未执行；未获得用户明确合并授权。
+- Requirement Source：Issue #96；PR #98 合并时使用 `Closes #96`。
+- 原开发分支：`change/release-platform-zips`。
+- 原 Draft PR：#97，因宿主 Ready GraphQL `fullDatabaseId` 兼容问题关闭并保留历史证据。
+- 最终功能 PR：#98，已合并到 `main`。
+- 功能 merge commit：`71508f3d348e6b5bf913d16faaabac0228635ba2`。
+- main fresh CI：Skill Tests #624（run `33361223652`）成功；Runtime Package Tests #53（run `33361223660`）三平台成功。
+- 操作恢复：开发阶段出现过 Change 记录临时误覆盖和无关文件临时创建，均使用普通提交恢复/删除；未执行 reset、force 或历史重写，且后续 PR/main fresh CI 已覆盖恢复后的真实状态。
+- 正式 Release：未执行，符合本 Change 非目标；真实 GitHub Draft/Publish 写操作将由下一次从 main 手工执行 Release workflow 时重新 preflight 和验证。
+- Change：`done`，由独立最小归档 PR 迁移到 `.agents/changes/archive/2026-08/CHG-20260831-release-platform-zips/CHANGE.md`。
