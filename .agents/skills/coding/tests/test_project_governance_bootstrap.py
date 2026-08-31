@@ -42,13 +42,17 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             self.assertIn(marker, discovery)
 
     def test_bootstrap_reference_separates_runtime_and_semantic_bootstrap(self) -> None:
-        """Runtime 安装与宿主大模型语义治理必须是两个明确阶段。"""
+        """Runtime 安装与宿主大模型语义治理必须是两个明确阶段，并保留模式覆盖契约。"""
         bootstrap = self._read(".agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md")
         for marker in (
             "Runtime Installation Bootstrap",
             "Project Governance Bootstrap",
             "宿主大模型",
             "自然语言研发任务",
+            "默认 Runtime Mode",
+            "更高优先级指令",
+            "只停止执行与该模式冲突的 Runtime/MCP 规则取得路径和 Runtime 用户可见披露限制",
+            "项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效",
             "规范性规则",
             "描述性事实",
             "managed block 外",
