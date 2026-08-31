@@ -15,7 +15,7 @@ RUNTIME_REFERENCE = ROOT / ".agents/skills/coding/references/13_本地MCP_Runtim
 
 
 class RuntimeProgressPrivacyTest(unittest.TestCase):
-    """验证 Runtime 可展示真实工程过程，但治理控制面在所有用户可见进度中保持静默。"""
+    """验证 Runtime 可展示真实工程过程，但内部治理控制面不被转写成用户进度。"""
 
     def _read(self, path: Path) -> str:
         """读取一个当前仓库 UTF-8 规则文件。"""
@@ -29,21 +29,17 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
                 return decode_payload_file(entry).decode("utf-8")
         self.fail(f"Project Payload 缺少受测文件：{relative_path}")
 
-    def test_managed_block_makes_control_plane_silent_before_any_progress_update(self) -> None:
-        """最早 managed 入口必须在第一次用户可见播报前建立不可延迟的控制面静默规则。"""
+    def test_managed_block_establishes_project_facing_progress_contract(self) -> None:
+        """最早 managed 入口只需建立项目侧表达边界，不应展开内部控制面清单。"""
         managed = self._read(MANAGED)
         for marker in (
-            "从读取本 managed block 起立即生效",
-            "第一次用户可见进度更新之前",
-            "治理控制面必须保持静默",
-            "不得把控制面动作本身当作进度事件",
+            "无论采用哪种通用治理执行方式",
+            "必须先读取并遵守当前目录及上级适用的项目规则",
+            "治理能力自身的运行与实现细节不属于项目进度或交付内容",
+            "说明工程步骤本身的必要性、风险或证据",
         ):
             self.assertIn(marker, managed)
-
-    def test_all_agent_controlled_visible_channels_hide_internal_governance_details(self) -> None:
-        """进度、工具前说明、中间总结、最终回复和错误说明必须共享同一披露边界。"""
-        managed = self._read(MANAGED)
-        for marker in (
+        for forbidden in (
             "progress update",
             "commentary",
             "tool preamble",
@@ -51,29 +47,17 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
             "final response",
             "error explanation",
             "内部治理能力的发现、选择、加载或交接",
-            "内部分类判断",
-            "内部规则解析或加载",
             "内部任务路由",
             "必需上下文加载",
-            "内部文件名或目录结构",
         ):
-            self.assertIn(marker, managed)
-        for forbidden_example in (
-            "已读取/已加载/命中哪个内部治理能力",
-            "内部路由把任务分成",
-            "正在加载某条内部规则",
-            "正在通过项目治理能力加载内部约束",
-        ):
-            self.assertIn(forbidden_example, managed)
-        self.assertNotIn("Reference", managed)
-        self.assertNotIn("Stable ID", managed)
+            self.assertNotIn(forbidden, managed)
 
     def test_real_engineering_progress_remains_user_visible(self) -> None:
-        """保密边界不能误伤真实项目调查、修改、验证和交付过程。"""
+        """项目侧契约不能误伤真实项目调查、修改、验证和交付过程。"""
         managed = self._read(MANAGED)
         for marker in (
             "项目调查",
-            "需求与风险判断",
+            "需求与风险",
             "代码修改",
             "测试",
             "文档同步",
@@ -82,7 +66,6 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
             "CI",
             "Release",
             "交付状态",
-            "说明该工程步骤本身的原因",
         ):
             self.assertIn(marker, managed)
 
@@ -114,7 +97,7 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
             self.assertIn(marker, entry)
 
     def test_existing_canonical_runtime_rule_remains_mode_aware(self) -> None:
-        """详细 Runtime Owner 必须继续保留 Source/Runtime 两种披露边界，不能被早期入口反向削弱。"""
+        """详细 Runtime Owner 必须继续保留 Source/Runtime 两种披露边界，不能被薄入口反向削弱。"""
         reference = self._read(RUNTIME_REFERENCE)
         for marker in (
             "Source Mode",
@@ -124,19 +107,25 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
         ):
             self.assertIn(marker, reference)
 
-    def test_strengthened_managed_rule_is_in_real_project_payload(self) -> None:
-        """增强后的最早披露规则必须实际随 Project Payload 分发，而不是只停留在源码说明中。"""
+    def test_project_facing_managed_rule_is_in_real_project_payload(self) -> None:
+        """项目侧 managed 契约必须实际随 Project Payload 分发，且不重新携带内部控制面清单。"""
         managed = self._payload_text("coding/assets/AGENTS.managed.md")
         for marker in (
-            "从读取本 managed block 起立即生效",
-            "治理控制面必须保持静默",
-            "progress update",
-            "已读取/已加载/命中哪个内部治理能力",
+            "无论采用哪种通用治理执行方式",
+            "必须先读取并遵守当前目录及上级适用的项目规则",
+            "只改变通用治理约束的取得和呈现方式",
         ):
             self.assertIn(marker, managed)
+        for forbidden in (
+            "progress update",
+            "内部任务路由",
+            "必需上下文加载",
+            "已读取/已加载/命中哪个内部治理能力",
+        ):
+            self.assertNotIn(forbidden, managed)
 
     def test_runtime_public_progress_rule_reinforces_silent_control_plane(self) -> None:
-        """每次 MCP 公共返回携带的进度规则也必须持续强化静默控制面，而不是只靠首次 Bootstrap。"""
+        """每次 MCP 公共返回携带的进度规则继续承担详细静默控制面约束。"""
         store = RuntimeStore(build_bundle(ROOT), release_version="9.9.9-test")
         payloads = [store.status(), store.route_contract(), store.start_task("T-progress")]
         for payload in payloads:
