@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import importlib.util
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime import project_installer as PROJECT_INSTALLER
 from runtime.agent_skills_runtime.project_installer import install_project
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 
@@ -55,6 +58,23 @@ class RuntimeSidecarlessStateTest(unittest.TestCase):
         self.assertIn("legacy", source.lower())
         self.assertNotIn("def _build_manifest(", source)
         self.assertNotIn('manifest_path: _build_manifest(', source)
+
+    def test_old_runtime_install_state_query_has_bounded_timeout(self) -> None:
+        """旧 Runtime 卡死时 ownership 查询必须在有限时间失败，不能让升级无限等待。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            runtime = Path(temp_dir) / "agent-skills-mcp"
+            runtime.write_bytes(b"runtime-fixture")
+            timeout = PROJECT_INSTALLER._INSTALL_STATE_QUERY_TIMEOUT_SECONDS
+            with patch.object(
+                PROJECT_INSTALLER.subprocess,
+                "run",
+                side_effect=subprocess.TimeoutExpired(cmd=[str(runtime)], timeout=timeout),
+            ) as run:
+                with self.assertRaisesRegex(RuntimeError, "install-state 查询超过 .* 秒"):
+                    PROJECT_INSTALLER._query_installed_runtime_state(runtime)
+
+            self.assertGreater(timeout, 0)
+            self.assertEqual(run.call_args.kwargs["timeout"], timeout)
 
     def test_runtime_has_internal_install_state_without_expanding_public_status(self) -> None:
         """旧 binary 必须能内部返回 ownership，但普通 status/MCP 不新增 managed 文件清单。"""
