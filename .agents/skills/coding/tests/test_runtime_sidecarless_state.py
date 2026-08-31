@@ -61,7 +61,10 @@ class RuntimeSidecarlessStateTest(unittest.TestCase):
         source = SERVER.read_text(encoding="utf-8")
         self.assertIn("install-state", source)
         self.assertIn("INSTALL_STATE_SCHEMA", source)
-        self.assertNotIn('"managed_files"', source[source.index("def _public_install_result"):])
+        help_section = source[source.index("def _build_parser"):source.index("def _public_install_result")]
+        self.assertNotIn("__install-state", help_section)
+        public_section = source[source.index("def _public_install_result"):]
+        self.assertNotIn('"managed_files"', public_section)
 
     def test_builder_does_not_create_release_identity_manifest_sidecar(self) -> None:
         """Builder 机器结果直接携带完整性证据，不再写 `<artifact>.manifest.json`。"""
@@ -70,16 +73,24 @@ class RuntimeSidecarlessStateTest(unittest.TestCase):
         self.assertNotIn("RELEASE_IDENTITY_SCHEMA", source)
         self.assertNotIn("manifest_path", source)
         self.assertNotIn("install_manifest_schema", source)
+        self.assertNotIn(".manifest.json", source)
         self.assertIn("integrity_fingerprint", source)
+        self.assertIn("artifact_sha256", source)
         self.assertTrue(hasattr(builder, "_normalise_release_version"))
 
-    def test_permanent_workflows_use_outputs_and_never_manifest_sidecars(self) -> None:
-        """三平台 CI/Release 通过 Builder 输出和 SHA 校验 identity，不创建或搬运 manifest 文件。"""
+    def test_permanent_workflows_use_outputs_and_only_negative_sidecar_checks(self) -> None:
+        """三平台 CI/Release 只允许负向检查 sidecar 不存在，不得生成、复制或上传 manifest。"""
         runtime_workflow = RUNTIME_PACKAGE_WORKFLOW.read_text(encoding="utf-8")
         release_workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for workflow in (runtime_workflow, release_workflow):
-            self.assertNotIn(".manifest.json", workflow)
             self.assertNotIn("install_manifest_schema", workflow)
+            self.assertNotIn("manifest_path", workflow)
+            self.assertNotIn("linux.manifest.json", workflow)
+            self.assertNotIn("windows.manifest.json", workflow)
+            self.assertNotIn("macos.manifest.json", workflow)
+            self.assertNotIn("cp \"${artifact}.manifest.json\"", workflow)
+            self.assertNotIn("Copy-Item \"$artifact.manifest.json\"", workflow)
+            self.assertIn("*.manifest.json", workflow)
         for marker in ("integrity_fingerprint", "artifact_sha256"):
             self.assertIn(marker, release_workflow)
         self.assertIn("GITHUB_OUTPUT", release_workflow)
