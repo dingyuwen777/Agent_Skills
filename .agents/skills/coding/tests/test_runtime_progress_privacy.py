@@ -11,7 +11,6 @@ from runtime.agent_skills_runtime.runtime import RuntimeStore
 ROOT = Path(__file__).resolve().parents[4]
 MANAGED = ROOT / ".agents/skills/coding/assets/AGENTS.managed.md"
 ENTRY = ROOT / ".agents/skills/ENTRY.md"
-ROUTER = ROOT / ".agents/skills/router/SKILL.md"
 RUNTIME_REFERENCE = ROOT / ".agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md"
 
 
@@ -87,37 +86,41 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
         ):
             self.assertIn(marker, managed)
 
-    def test_entry_and_router_treat_runtime_selection_as_internal_only(self) -> None:
-        """共享入口和 Router 必须明确内部选择/交接不是 Runtime 用户可见进度。"""
+    def test_entry_treats_all_downstream_runtime_control_plane_output_as_internal_only(self) -> None:
+        """共享入口必须让后续规则的选择/输出/交接都保持内部态，避免 Router 结果被翻译成进度播报。"""
         entry = self._read(ENTRY)
-        router = self._read(ROUTER)
         for marker in (
             "Runtime Mode",
             "控制面动作保持静默",
             "不得播报加载了哪个 Skill",
-        ):
-            self.assertIn(marker, entry)
-        for marker in (
-            "Runtime Mode",
-            "内部控制面输出",
-            "不等于用户可见进度",
-            "Skill 选择",
+            "后续任何规则",
+            "只表示内部控制面结果",
+            "不得转写成用户可见进度",
             "Handoff",
             "required Context",
         ):
-            self.assertIn(marker, router)
+            self.assertIn(marker, entry)
 
-    def test_canonical_runtime_rule_preserves_source_mode_and_host_ui_boundary(self) -> None:
-        """canonical 规则必须保留 Source Mode 可见性，并承认宿主 UI 不是 Prompt 可控制表面。"""
+    def test_entry_preserves_source_mode_and_host_ui_boundary(self) -> None:
+        """早期入口必须保留 Source Mode 可见性，并承认宿主 UI 不是 Prompt 可控制表面。"""
+        entry = self._read(ENTRY)
+        for marker in (
+            "Source Mode",
+            "可以正常讨论内部导航和路由事实",
+            "宿主 UI",
+            "不受 Prompt / Skill / Runtime 文本规则直接控制",
+            "不能宣称可以隐藏",
+        ):
+            self.assertIn(marker, entry)
+
+    def test_existing_canonical_runtime_rule_remains_mode_aware(self) -> None:
+        """详细 Runtime Owner 必须继续保留 Source/Runtime 两种披露边界，不能被早期入口反向削弱。"""
         reference = self._read(RUNTIME_REFERENCE)
         for marker in (
             "Source Mode",
             "可以正常看到和讨论 Skill、Reference、文件路径、Stable ID 与路由过程",
-            "所有 Agent 可控制的用户可见文本",
-            "控制面静默",
-            "宿主 UI",
-            "不受 Prompt / Skill / Runtime 文本规则直接控制",
-            "不能宣称可以隐藏",
+            "Runtime Mode 允许正常展示项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 与交付状态",
+            "用户可见过程",
         ):
             self.assertIn(marker, reference)
 
