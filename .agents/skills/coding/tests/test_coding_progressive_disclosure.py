@@ -95,11 +95,14 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
         self.assertIn("运行目标及整体相关验证", ref09)
 
     def test_main_skill_keeps_bounded_core_while_total_light_route_shrinks(self) -> None:
-        """显式 Fast Path 可让 Core 小幅增长，但必须保持有界；轻量路由通过少加载重型 Reference 实现净减负。"""
-        lines = self._read("SKILL.md").splitlines()
-        self.assertLessEqual(len(lines), 740)
+        """显式 Source Mode Fast Path 允许约 2 KiB Core 增量，但必须保持硬上限，轻量路由仍靠少加载大型 Reference 净减负。"""
+        skill = self._read("SKILL.md")
+        lines = skill.splitlines()
+        self.assertLessEqual(len(lines), 760)
         self.assertGreaterEqual(len(lines), 450)
-        self.assertIn("简单代码 Fast Path", self._read("SKILL.md"))
+        self.assertLessEqual(len(skill.encode("utf-8")), 51_000)
+        self.assertIn("简单代码 Fast Path", skill)
+        self.assertIn("Repository L1 Fast Path", skill)
 
 
 if __name__ == "__main__":
