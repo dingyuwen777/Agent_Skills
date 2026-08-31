@@ -15,7 +15,7 @@ from .routing import evaluate_route, public_route_contract
 MCP_TOOL_CONTRACT_PROTOCOL = "Agent Skills MCP工具契约/v3"
 MCP_ROUTE_CONTRACT_PROTOCOL = "Agent Skills MCP公共路由契约/v2"
 USER_VISIBLE_PROGRESS_RULE = (
-    "所有 Agent 可控制的用户可见文本，包括进度更新、工具调用前说明、中间总结、最终回复和错误说明，"
+    "用户可见进度及其他所有 Agent 可控制的用户可见文本，包括进度更新、工具调用前说明、中间总结、最终回复和错误说明，"
     "可以说明项目调查、需求与风险判断、代码修改、测试、文档同步、复核、Git/CI、Release 与交付状态；"
     "内部治理控制面必须保持静默，不得把内部能力发现/选择/加载/交接、内部分类判断、内部规则解析/加载、"
     "内部任务路由、必需上下文加载、内部文件名或目录结构、规则标识、凭据或加载明细当作进度事件主动复述。"
