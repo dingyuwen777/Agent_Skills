@@ -178,7 +178,7 @@ coding/assets/AGENTS.template.md
 
 coding/assets/AGENTS.managed.md
 → 写入目标项目 AGENTS.md 的 Runtime 薄 Bootstrap
-→ 负责项目事实优先 + 项目级治理 MCP + 高优先级模式覆盖边界 + 首次校准 + 用户可见披露边界 + MCP 不可用时 fail closed
+→ 负责项目事实优先 + 项目级治理 MCP + 首次校准 + 用户可见披露边界 + MCP 不可用时 fail closed
 → 不直接暴露内部 Router / Skill / Reference 导航
 
 .agents/skills/ENTRY.md
@@ -227,7 +227,7 @@ python .agents/skills/coding/scripts/coding.py bootstrap --root . --json
 初版必须包含：
 
 1. Agent Skills managed block；
-2. managed block 默认通过已配置的项目级治理 MCP 取得本次任务完整约束；更高优先级指令明确选择其他 Agent_Skills 执行模式时，按第 7 节模式覆盖契约执行；不直接暴露内部 Router/Skill/Reference 导航；
+2. managed block 通过已配置的项目级治理 MCP 取得本次任务完整约束，不直接暴露内部 Router/Skill/Reference 导航；
 3. 项目 Overlay 的维护边界；
 4. 初始化时真实存在的项目规则、Manifest/Lock/Build、需求/Spec、Contract/Schema、Migration、README/Architecture/Documentation 等事实入口导航；
 5. 明确“事实入口存在”不等于“已经确认某个框架、数据库或架构”；
@@ -446,7 +446,6 @@ Claude Code
 - Project Payload `shared_files` 显式认领 `ENTRY.md`，该文件原样进入目标项目；Router Core 由动态 Skill Catalog 原样分发；
 - Source Mode 的根入口继续显式导航 Entry 与唯一 Router，Runtime 安装后的根 `AGENTS.md` 不出现 `.agents/skills/`、Entry/Router/Reference 文件名、Stable ID 等内部治理导航；
 - Runtime 安装后的根 `AGENTS.md` 仍明确允许显示代码修改、测试、文档同步、复核、Git/CI 和交付等真实工程过程；
-- Runtime managed block 默认使用项目级 MCP；更高优先级明确选择其他 Agent_Skills 执行模式时，不强制冲突的 Runtime/MCP 取得路径或 Runtime 披露限制，并继续保留项目自己的规则、事实、Contract、Schema、CI、部署和验收边界；
 - MCP `status/route_contract/submit/load/checkpoint` 公共 envelope 不公开 Skill Catalog、命中 Skill、Reference 身份/文件名/路径/hash/size、内部风险或加载计数；
 - `load_required_context` 返回的 `完整原文` 与 canonical source 逐字一致，不能为了保密删除 routing metadata；
 - install manifest v3 显式认领 `managed_files` 与 `shared_files`；
