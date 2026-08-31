@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260831-managed-source-mode-override
 title: Runtime managed block 支持高优先级 Source Mode 覆盖
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: change/managed-source-mode-override
 created: 2026-08-31
@@ -35,14 +35,14 @@ data_changes: []
 
 # 成功标准
 
-- [ ] 没有更高优先级 Agent_Skills 模式覆盖时，managed block 仍默认要求通过当前项目已配置的治理 MCP 取得完整约束，普通 Release 用户行为不变。
-- [ ] 存在更高优先级明确 Agent_Skills 执行模式时，managed block 明确服从该模式，而不是继续强制 Runtime/MCP 获取路径。
-- [ ] 模式覆盖只影响 Agent_Skills 规则取得路径和与该模式冲突的 Runtime 控制面披露要求，不得让 Agent 忽略目标项目自己的 Overlay、事实、Contract、Schema、CI、部署或验收规则。
-- [ ] managed block 不复制 Source Mode 的 canonical 仓库地址、Entry/Router/Reference 路径、Stable ID、Maintenance 细节或第二套 Router；普通 Runtime 用户仍不需要知道内部治理导航。
-- [ ] Source Mode 失败边界仍由更高优先级 Source Mode 指令和 canonical Agent_Skills 规则负责；managed block 不新增网页搜索、旧 Runtime 或缓存等兜底路径。
-- [ ] Bootstrap canonical Reference 与 managed block 唯一模板语义同步，现有 Runtime/Source Mode Ownership 不发生漂移。
-- [ ] targeted preservation/behavior tests 先在旧实现上失败，再在实现后通过；完整 Skill Tests 与受影响 CI 通过。
-- [ ] 独立 Requirement / 内容守恒 / Runtime 披露边界 Review 无 BLOCKER/HIGH/MEDIUM Finding。
+- [x] 没有更高优先级 Agent_Skills 模式覆盖时，managed block 仍默认要求通过当前项目已配置的治理 MCP 取得完整约束，普通 Release 用户行为不变。
+- [x] 存在更高优先级明确 Agent_Skills 执行模式时，managed block 明确服从该模式，而不是继续强制 Runtime/MCP 获取路径。
+- [x] 模式覆盖只影响 Agent_Skills 规则取得路径和与该模式冲突的 Runtime 控制面披露要求，不得让 Agent 忽略目标项目自己的 Overlay、事实、Contract、Schema、CI、部署或验收规则。
+- [x] managed block 不复制 Source Mode 的 canonical 仓库地址、Entry/Router/Reference 路径、Stable ID、Maintenance 细节或第二套 Router；普通 Runtime 用户仍不需要知道内部治理导航。
+- [x] Source Mode 失败边界仍由更高优先级 Source Mode 指令和 canonical Agent_Skills 规则负责；managed block 不新增网页搜索、旧 Runtime 或缓存等兜底路径。
+- [x] Bootstrap canonical Reference 与 managed block 唯一模板语义同步，现有 Runtime/Source Mode Ownership 不发生漂移。
+- [x] targeted preservation/behavior tests 先在旧实现上失败，再在实现后通过；完整 Skill Tests 通过。
+- [x] 独立 Requirement / 内容守恒 / Runtime 披露边界 Review 无未解决 BLOCKER/HIGH/MEDIUM Finding。
 
 # 方案比较与选择
 
@@ -97,33 +97,40 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 维护者网页/Codex Source Mode 不应被目标项目 Runtime managed block 强制切回本地 MCP | user:managed-source-mode-override | not_satisfied | 待通过 managed block 模式覆盖契约和 targeted tests 证明。 |
-| R2 | 普通 Release 用户仍默认使用 Runtime/MCP | user:managed-source-mode-override | not_satisfied | 待通过默认 Runtime 文案与回归测试证明。 |
-| R3 | Source Mode 覆盖不得跳过项目自身 Overlay 与真实项目事实 | user:managed-source-mode-override | not_satisfied | 待通过 managed block 显式边界和正向断言证明。 |
-| R4 | 不复制 Source Mode canonical 仓库/内部导航到普通 Runtime managed block | .agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md | not_satisfied | 待通过 disclosure regression 证明。 |
-| R5 | Source/Runtime 两种模式继续共享同一 canonical 规则语义，只改变取得通路与披露层 | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | not_satisfied | 待通过内容守恒 Review、targeted/full tests 证明。 |
+| R1 | 维护者网页/Codex Source Mode 不应被目标项目 Runtime managed block 强制切回本地 MCP | https://github.com/dingyuwen777/Agent_Skills/issues/113 | satisfied | `AGENTS.managed.md` 明确 Runtime 为默认模式，并让位于更高优先级显式 Agent_Skills 模式；`test_managed_bootstrap_defaults_runtime_but_allows_higher_priority_mode_override` 通过。 |
+| R2 | 普通 Release 用户仍默认使用 Runtime/MCP | https://github.com/dingyuwen777/Agent_Skills/issues/113 | satisfied | managed block 首段、模式声明、步骤 2/8 都限定默认 Runtime；原 Runtime MCP 流程与项目安装回归继续通过。 |
+| R3 | Source Mode 覆盖不得跳过项目自身 Overlay 与真实项目事实 | https://github.com/dingyuwen777/Agent_Skills/issues/113 | satisfied | managed block 显式保留项目规则、事实、Contract、Schema、CI、部署和验收边界；Bootstrap 与真实 Project Payload 安装测试均断言该语义。 |
+| R4 | 不复制 Source Mode canonical 仓库/内部导航到普通 Runtime managed block | .agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md | satisfied | disclosure regression 禁止 `dingyuwen777/Agent_Skills`、GitHub App、Maintenance、内部路径进入 managed/安装后的根 AGENTS；本轮 263 个测试通过。 |
+| R5 | Source/Runtime 两种模式继续共享同一 canonical 规则语义，只改变取得通路与披露层 | .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md | satisfied | 未修改 MCP/Bundle/Router/Runtime Python；Source navigation、Runtime projection、exact-text、routing conformance、context footprint 和 disclosure 回归全部通过。 |
 
 # Validation Matrix
 
 | 验证层 | 是否要求 | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | managed block 正反向语义测试：默认 Runtime、明确更高优先级模式覆盖、Overlay 保留。 |
-| 接口 / Contract | required | `AGENTS.managed.md` 作为 Runtime/LLM 消费的 Bootstrap Contract；模板和 ref12 必须一致。 |
-| 集成 / Persistence / Runtime Dependency | required | canonical Project Payload/Installer 生成的目标 `AGENTS.md` 必须包含新模式契约且保留原 marker/Runtime 行为。 |
-| 用户 / Workflow Acceptance | required | 维护者 Source Mode 与普通 Runtime 两种入口从根规则得到无冲突、可执行的模式选择语义。 |
-| 跨组件 Golden Path | not_applicable | 不修改 MCP/Runtime 执行链；本次只改变安装到项目的 Bootstrap 规则文本。 |
+| 行为 / Unit / Component | required | GitHub Actions run `33379066539`：self-contained suite `Ran 263 tests`，`OK`；覆盖默认 Runtime、higher-priority override、Overlay 保留。 |
+| 接口 / Contract | required | `AGENTS.managed.md` 与 ref12 同步；PR #111 diff 只新增薄模式契约，不改变 MCP Tool Contract、Stable ID 或 schema。 |
+| 集成 / Persistence / Runtime Dependency | required | `test_canonical_runtime_install_creates_pending_governance_agents` 与 `test_real_project_install_keeps_internal_runtime_assets_out_of_root_guidance` 使用 canonical Bundle/Project Payload/Installer 生成真实临时项目并通过。 |
+| 用户 / Workflow Acceptance | required | 普通 Runtime 路径与维护者 Source Mode 两条入口反向审查通过；首段 Runtime 职责歧义在 Review 中发现后增加回归并修复。 |
+| 跨组件 Golden Path | not_applicable | 未修改 MCP/Runtime 执行链；本次只改变安装到项目的 Bootstrap 规则文本及其 canonical 说明。 |
 | 外部依赖 Probe | not_applicable | 不依赖第三方 Provider 或现时网络事实。 |
-| Build / Package / Runtime | not_applicable | 不修改 Runtime Python、Builder、Package workflow 或 binary 构建边界；Project Payload/Installer 语义由 self-contained integration test 覆盖。 |
-| Docs / Governance / Other | required | ref12、managed block、内容守恒、Ready Check、独立 Review 与 CI。 |
+| Build / Package / Runtime | not_applicable | 未修改 `runtime/`、Builder、package/release workflow；按当前 path-scoped 门禁不要求三平台 onefile。Skill Tests 中 Python compile、CLI smoke、Project Payload/Installer integration 均通过。 |
+| Docs / Governance / Other | required | ref12 同步；context footprint migration 继续通过；A1/A2 Deep Review 完成；Change 切换 `ready_for_review` 后由下一轮 Ready Check 验证。 |
+
+# TDD / 验证证据
+
+- 初始 Red：PR #111 run `33377500225`，旧 managed block 上 `263` 个测试中新增断言造成 `10` 个失败，均为缺少模式覆盖语义。
+- Green 收敛：实现后曾触发 required-context 8 KiB 历史预算，未提高阈值，改为压缩 ref12 重复说明；预算最终通过。
+- Review 回归 Red：run `33379005282`，新加“首段 Runtime 职责必须限定默认模式”断言后 `263` 个测试中仅 `1` 个失败，原因与 Review Finding 一致。
+- Review 修复 Green：run `33379066539`，compile 与 CLI smoke 通过，self-contained suite `Ran 263 tests in 4.310s`，`OK`；workflow 唯一失败为 Change 当时仍是 `in_progress`，Ready Check 明确报告这一项。
 
 # 实施任务
 
-1. 在现有实现上先补 managed block 模式覆盖回归测试，取得正确原因的 Red。
-2. 最小修改 `AGENTS.managed.md`：声明默认 Runtime + higher-priority mode override + Overlay 保留边界。
-3. 同步 ref12 managed block 职责、默认/覆盖语义和验证条目，不修改 ref13 Runtime 分发正文。
-4. 运行 targeted tests、完整 self-contained Skill Tests、Ready Check。
-5. 执行独立 Deep Review：A1 上游要求完整性、A2 实现/测试/文档、内容守恒、披露边界和兼容性。
-6. 更新本 Change 到 `ready_for_review`，创建 PR，读取新鲜 CI；合并后验证 main fresh CI，再独立归档 Change。
+1. [x] 在旧实现上补 managed block 模式覆盖回归测试并取得正确原因的 Red。
+2. [x] 最小修改 `AGENTS.managed.md`：声明默认 Runtime + higher-priority mode override + Overlay 保留边界。
+3. [x] 同步 ref12 managed block 职责，不修改 ref13 Runtime 分发正文。
+4. [x] 收敛 required-context 增量，不提高历史预算门禁。
+5. [x] 执行独立 Deep Review；发现并修复首段无条件 Runtime 职责这一 MEDIUM Finding，并以单独 Red → Green 回归证明。
+6. [x] 更新本 Change 到 `ready_for_review`；下一轮 PR CI 必须通过 Ready Check 后才能解除 Draft/合并。
 
 # Migration / 部署 / 回滚
 
@@ -137,23 +144,30 @@ data_changes: []
 - 更高优先级模式选择来自宿主指令优先级，不由目标项目 Runtime 推断用户身份。
 - 不降低项目规则、权限、CI、Git、Contract、Schema、部署和验收约束。
 - 不把 Prompt/managed block 描述成安全隔离；Runtime 控制面静默仍只是用户可见披露边界。
+- 私有仓库/GitHub App 是否可访问仍属于 Source Mode 宿主能力门禁，本次 managed block 不复制或发明该能力；读取失败继续由更高优先级 Source Mode 指令与 canonical 规则 fail closed。
 
 # Completion Audit
 
-- [ ] upstream_re_read：完成前重新读取用户要求、根 AGENTS、Maintenance、ref12/ref13/ref15 与受影响测试。
-- [ ] change_coverage：逐项比较用户目标与本 Change，确认没有遗漏“默认 Runtime / Source override / Overlay 保留 / 私有仓库能力边界”。
-- [ ] reverse_audit：从普通 Runtime 和维护者 Source Mode 两条入口反向检查最终 managed block，不出现互斥强制路径。
-- [ ] unresolved_cleared：所有 Requirement Traceability `not_satisfied` 清零，未验证项明确。
+- [x] upstream_re_read：在进入 Ready 前重新读取 Issue #113、当前 main 根 `AGENTS.md`、`.agents/MAINTENANCE.md`、分支 managed/ref12、当前 ref13/ref15 与受影响测试/PR diff。
+- [x] change_coverage：逐项比较 Issue #113 与实现，默认 Runtime、Source override、Overlay 保留、内部身份不泄露均有实现和测试；私有仓库访问能力保持在 Source Mode Owner，本次不错误复制到 Runtime managed block。
+- [x] reverse_audit：从普通 Runtime 和维护者 Source Mode 两条入口反向检查最终 managed block；首段 Runtime 职责也已限定默认模式，不再残留无条件 Runtime 强制路径。
+- [x] unresolved_cleared：R1–R5 全部 `satisfied`；无待决策项。三平台 onefile 未运行是按 path-scope 明确判定 `not_applicable`，不是漏测。
 
 # Review
 
-状态：待实现后执行独立 Deep Review。
+- Review 深度：L3 Deep Review；目标为 Issue #113 + 当前 main + PR #111。
+- A1 Requirement Review：PASS。Issue 中默认 Runtime、显式高优先级模式覆盖、Overlay 保留、不泄露 Source 内部导航、非目标/回滚均已映射到实现和测试。
+- A2 Implementation / Test Review：PASS after fix。首次审查发现 1 个 MEDIUM：managed block 第一段仍无条件声明 Runtime 负责完整约束；已增加回归测试，在 run `33379005282` 正确失败后修正为“在默认 Runtime Mode 下”，run `33379066539` 的 263 个测试全部通过。
+- 内容守恒：PASS。只改变 Runtime Bootstrap 模式优先级契约；Router/Skill/Reference、MCP/Bundle/Runtime Python、Project Payload ownership 与 Source Mode 明文导航均未弱化。
+- 披露边界：PASS。Runtime managed/真实安装根 AGENTS 不出现 canonical 仓库地址、GitHub App、Maintenance、内部 Reference 导航；默认 Runtime 的静默规则仍受原测试覆盖。
+- 当前开放 Findings：无 BLOCKER / HIGH / MEDIUM；无需要阻止 Ready 的 LOW。
 
 # Git / PR / Release 状态
 
 - Branch：`change/managed-source-mode-override`
-- Commit：已创建 Change 初始化提交；实现提交待产生。
-- PR：待创建。
-- Merge：待 CI/Review 门禁完成后执行。
+- 当前实现 HEAD：`eaf294193e1e70351f0d129158fe894f1c960d5a`；本 Change ready 提交后会产生新 HEAD。
+- Requirement Source：Issue #113 `https://github.com/dingyuwen777/Agent_Skills/issues/113`
+- PR：#111（Draft）；待本 Change ready 提交后的新鲜 CI 全绿后转 Ready。
+- Merge：待分支更新到最新 main、最终 CI/Review 门禁完成后执行。
 - Main fresh CI：待 merge 后执行。
-- Release：本任务不创建正式 Release。
+- Release：本任务不创建正式 Release；AIMA_UGC 当前已安装旧 Release 不会自动获得该 managed block。
