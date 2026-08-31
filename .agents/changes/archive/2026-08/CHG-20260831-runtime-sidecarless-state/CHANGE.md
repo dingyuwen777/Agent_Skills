@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260831-runtime-sidecarless-state
 title: Runtime 安装与构建取消 sidecar manifest
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: change/runtime-sidecarless-state
 created: 2026-08-31
@@ -122,12 +122,12 @@ Runtime build / Release
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 安装/升级后不生成 `.agents/agent-skills-install.json` | https://github.com/dingyuwen777/Agent_Skills/issues/114 | satisfied | `test_runtime_sidecarless_state`、`test_single_binary_project_install`；Runtime Package #94 三平台项目安装均断言不存在。 |
+| R1 | 安装/升级后不生成 `.agents/agent-skills-install.json` | https://github.com/dingyuwen777/Agent_Skills/issues/114 | satisfied | `test_runtime_sidecarless_state`、`test_single_binary_project_install`；PR #115 / main Runtime Package #98 三平台项目安装均断言不存在。 |
 | R2 | Builder/CI/Release 不生成 `*.manifest.json` | https://github.com/dingyuwen777/Agent_Skills/issues/114 | satisfied | Builder 删除 identity sidecar 写入；Workflow 只保留负向 absence check；sidecarless/release preservation tests 全绿。 |
 | R3 | previous ownership 与项目内容保护不因 sidecar 删除而降级 | https://github.com/dingyuwen777/Agent_Skills/issues/114 | satisfied | `install_state.py` 严格状态校验；旧 Runtime state、stale managed file 删除、项目 Skill/Reference/Host 配置保留、collision fail-closed 回归全绿。 |
 | R4 | legacy v3 一次迁移，成功删除、失败恢复 | https://github.com/dingyuwen777/Agent_Skills/issues/114 | satisfied | migration、non-v3 rejection、Entry/Runtime failure rollback、rollback-failure reporting 回归全绿。 |
-| R5 | 三平台 Release identity/SHA 证据保持 | https://github.com/dingyuwen777/Agent_Skills/issues/114 | satisfied | Builder JSON 携带完整 identity；Release job outputs 比较公共 identity并重算下载 binary SHA；ZIP 精确成员测试全绿；Runtime Package #94 三平台成功。 |
-| R6 | Runtime/安装/Release 文档与永久 CI 同步 | https://github.com/dingyuwen777/Agent_Skills/issues/114 | satisfied | Bootstrap/Runtime Reference/Maintenance/Runtime README 已同步；265 个 self-contained tests 包含内容守恒与 Context budget 均通过。 |
+| R5 | 三平台 Release identity/SHA 证据保持 | https://github.com/dingyuwen777/Agent_Skills/issues/114 | satisfied | Builder JSON 携带完整 identity；Release job outputs 比较公共 identity并重算下载 binary SHA；ZIP 精确成员测试全绿；main Runtime Package #98 三平台成功。 |
+| R6 | Runtime/安装/Release 文档与永久 CI 同步 | https://github.com/dingyuwen777/Agent_Skills/issues/114 | satisfied | Bootstrap/Runtime Reference/Maintenance/Runtime README 已同步；main Skill Tests #728 与 Runtime Package #98 均成功。 |
 
 # Validation Matrix
 
@@ -137,10 +137,10 @@ Runtime build / Release
 | 行为 / Unit / Component | PASS | install-state schema/path/digest、legacy migration、collision、rollback、Builder no-sidecar、Workflow contract、10 秒旧 Runtime 查询 timeout 均有回归。 |
 | 接口 / Contract | PASS | 内部 `agent-skills-runtime-install-state/v1`；`__install-state` 不进入 MCP Tool/public help/status；Builder `--json` 直接携带 identity。 |
 | 集成 / Persistence | PASS | temp filesystem 验证 first install、same-artifact reinstall、old Runtime state upgrade、legacy migration、stale managed file 删除、项目自有内容保留与失败恢复。 |
-| 用户 / Workflow Acceptance | PASS | Runtime Package #94 / run `33384578383`：Linux、Windows、macOS 真实 onefile、stdio MCP、项目级安装全部成功。 |
-| Build / Package / Runtime | PASS | Runtime Package #94 三平台 success；实际 binary SHA 与 Builder JSON 对照；构建目录无 identity manifest，目标项目无 install manifest。 |
-| Docs / Governance | PASS | head `d1beb325...` 的 Skill Tests #716 / run `33384578358`：265 个 self-contained tests 全部通过；workflow 总结论仅因 Change 当时仍为 `in_progress` 被 changed-Change Ready gate按设计拦截。 |
-| Context footprint | PASS | 合并最新 main 后曾触发 8 KiB Context budget 回归；未放宽预算，通过消除 Bootstrap/Runtime 重复规则恢复预算，当前 265 tests 已通过。 |
+| 用户 / Workflow Acceptance | PASS | PR Runtime Package #97 与 main Runtime Package #98：Linux、Windows、macOS 真实 onefile、stdio MCP、项目级安装全部成功。 |
+| Build / Package / Runtime | PASS | main Runtime Package #98 / run `33388569162` 三平台 success；构建目录无 identity manifest，目标项目无 install manifest。 |
+| Docs / Governance | PASS | main Skill Tests #728 / run `33388569163` success，active Change Ready gate success。 |
+| Context footprint | PASS | 合并并发 main 后曾触发 8 KiB Context budget 回归；未放宽预算，通过消除 Bootstrap/Runtime 重复规则恢复预算；最终 PR/main Skill Tests 均继续通过。 |
 | Review | PASS | L3 Deep Review A1/A2；见下节。 |
 
 # Deep Review
@@ -166,10 +166,10 @@ Residual Risk：目标项目 Owner/机器 Owner 可以替换本地旧 Runtime；
 
 # Completion Audit
 
-- [x] upstream_re_read：重新读取 Issue #114、当前 Runtime/安装/Release Owner、Review/Coding 规则，并在 main 前进后合入 `main@d80ced07...` 的最新模式覆盖合同。
+- [x] upstream_re_read：重新读取 Issue #114、当前 Runtime/安装/Release Owner、Review/Coding 规则；任务期间先后同步 `main@d80ced07...` 与 `main@ce25a682...`，并验证组合态无路径/语义回归。
 - [x] change_coverage：R1–R6 全部 `satisfied`，无延期项。
 - [x] reverse_audit：从首次安装、重复安装、legacy 升级、sidecarless previous ownership、Skill 删除、Host ownership、失败回滚、Build identity、三平台 Release 反向核对，均有实现和证据。
-- [x] unresolved_cleared：265 个 self-contained tests 全部通过；Runtime Package #94 三平台成功；Deep Review 的唯一 MEDIUM 已修复并复核无 findings；无未解释失败。
+- [x] unresolved_cleared：PR final Skill Tests #727、Runtime Package #97、main Skill Tests #728、main Runtime Package #98 全部成功；Deep Review 唯一 MEDIUM 已修复并复核无 findings；无未解释失败。
 
 # 施工记录
 
@@ -179,12 +179,15 @@ Residual Risk：目标项目 Owner/机器 Owner 可以替换本地旧 Runtime；
 - [x] 实现 manifest-free Builder、Runtime Package CI 与 Release identity 通道。
 - [x] Windows Builder 标准输出固定 UTF-8。
 - [x] 迁移旧 manifest-centric 测试到新合同，同时保留项目内容/rollback/Host 安全语义。
-- [x] 合入任务期间前进的最新 main，并语义合并高优先级 Source Mode 覆盖合同。
+- [x] 合入任务期间前进的 `main@d80ced07...`，语义合并高优先级 Source Mode 覆盖合同。
 - [x] 不放宽 Context budget；通过减少 Bootstrap 与 Runtime Owner 重复恢复固定预算。
 - [x] Deep Review 修复旧 Runtime install-state 查询 timeout。
 - [x] 同步 Bootstrap、Runtime Reference、Maintenance 与 Runtime README。
-- [x] 完成 265 个 self-contained tests 与三平台 Runtime Package #94。
-- [x] 完成 Completion Audit 并进入 `ready_for_review`。
+- [x] 合入第二次前进的 `main@ce25a682...`；与轻量渐进治理变更路径无重叠，组合态 Skill Tests #727 / Runtime Package #97 全绿。
+- [x] PR #115 以 head guard 正常合并，merge commit `2e85586f83557179a063cc38839c6f14b9d69a97`。
+- [x] main fresh Skill Tests #728 / run `33388569163` success；Runtime Package #98 / run `33388569162` Linux/Windows/macOS 全部 success。
+- [x] Issue #114 由 `Closes #114` 正常关闭为 completed。
+- [x] 完成 Completion Audit 并进入归档。
 
 # 文档影响
 
@@ -199,14 +202,12 @@ Residual Risk：目标项目 Owner/机器 Owner 可以替换本地旧 Runtime；
 
 # Git / PR / 发布状态
 
-- Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/114（open，PR 合并后由 `Closes #114` 关闭）。
+- Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/114，已 closed / completed。
 - 分支：`change/runtime-sidecarless-state`。
-- 功能 PR：#115 `Runtime 安装与构建取消 sidecar manifest`，普通非 Draft PR。
-- 原始 base：`0fc35ac54...`；任务期间 main 前进后已通过双父 merge commit `b75a77e8...` 合入 `main@d80ced07...`，唯一重叠 Bootstrap 文件完成语义合并。
-- 当前已验证产品代码/规则 head：`d1beb325a35f139a13212dd140a4a5534a4453ed`；Skill Tests self-contained 全绿，Runtime Package #94 三平台全绿。
-- 本次 Change Ready 提交后必须重新取得 final-head fresh Skill Tests；若最终 head 只变更 Change 证据，Runtime Package #94 继续作为同一产品代码 head 的三平台 package evidence，不伪造未触发的 package check。
-- 合并前必须重新读取 PR head/base、main、ruleset 与 required checks，使用 head guard 正常合并，禁止绕过。
-- 功能合并后必须执行 main fresh CI，再单独把本 Change 更新为 `done` 并移动到 `archive/YYYY-MM/...`。
+- 功能 PR：#115 `Runtime 安装与构建取消 sidecar manifest`，已合并。
+- PR final 组合态 head：`00e65be17861de33301ba25488da7d01ad7604ac`；Skill Tests #727 / run `33385940137` success；Runtime Package #97 / run `33385940136` 三平台 success。
+- 功能 merge commit：`2e85586f83557179a063cc38839c6f14b9d69a97`。
+- main fresh Skill Tests #728 / run `33388569163` success；Runtime Package #98 / run `33388569162` 三平台 success。
 - 本任务不创建正式 Release/tag；现有 v3.0.0 Release 不包含本变更，变更进入下一次正常正式 Release。
 
 施工前曾误在 main 短暂创建空 `.agents/changes/active/.keep`，已立即删除并验证文件树恢复；该误操作不承载需求、产品变更或本 PR diff。
