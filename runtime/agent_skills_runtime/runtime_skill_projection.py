@@ -9,6 +9,9 @@ from urllib.parse import unquote
 
 RUNTIME_CONTEXT_LABEL = "当前场景所需完整约束"
 _RUNTIME_CONSTRAINT_TERM = "完整约束"
+_FRONTMATTER = re.compile(r"\A---\r?\n.*?\r?\n---\r?\n", re.DOTALL)
+_ROUTING_BLOCK = re.compile(r"<!--\s*agent-routing:v1\s*\r?\n.*?\r?\n\s*-->", re.DOTALL)
+_ROUTING_PLACEHOLDER = "\x00AGENT_SKILLS_ROUTING_METADATA\x00"
 _MARKDOWN_LINK = re.compile(r"\[([^\]\n]+)\]\(([^)\n]+)\)")
 _REFERENCE_PATH = re.compile(
     r"(?i)(?<![\w-])(?:\.\.?/)*(?:\.agents/skills/[a-z0-9-]+/)?references(?:/[^\s`)\]}>，。；;,|]+)?"
@@ -88,7 +91,7 @@ def _assert_projection_hides_reference_identity(
     text: str,
     identities: tuple[str, ...],
 ) -> None:
-    """最终扫描 Runtime Core；发现 canonical Reference 身份残留时必须失败关闭。"""
+    """扫描 Runtime Core；发现 canonical Reference 身份残留时必须失败关闭。"""
     for identity in identities:
         if identity in text:
             raise ValueError("Runtime Skill Projection 仍残留 canonical Reference 身份")
@@ -98,18 +101,40 @@ def _assert_projection_hides_reference_identity(
         raise ValueError("Runtime Skill Projection 仍残留 Reference 编号缩写")
 
 
+def _protect_skill_metadata(
+    text: str,
+    identities: tuple[str, ...],
+) -> tuple[str, str, str]:
+    """提取必须逐字保留的 frontmatter 与 Skill 路由 metadata，并在其泄露身份时失败关闭。"""
+    frontmatter_match = _FRONTMATTER.match(text)
+    frontmatter = frontmatter_match.group(0) if frontmatter_match else ""
+    body = text[len(frontmatter) :]
+
+    routing_matches = list(_ROUTING_BLOCK.finditer(body))
+    if len(routing_matches) != 1:
+        raise ValueError("Runtime Skill Projection 要求 canonical SKILL.md 恰好包含一个 agent-routing metadata block")
+    if _ROUTING_PLACEHOLDER in text:
+        raise ValueError("Runtime Skill Projection canonical SKILL.md 包含保留占位符")
+
+    routing = routing_matches[0].group(0)
+    _assert_projection_hides_reference_identity(frontmatter + routing, identities)
+    projected_body = body[: routing_matches[0].start()] + _ROUTING_PLACEHOLDER + body[routing_matches[0].end() :]
+    return frontmatter, routing, projected_body
+
+
 def project_runtime_skill_core(
     canonical_payload: bytes,
     references: Iterable[Mapping[str, object]],
 ) -> bytes:
-    """生成确定性 Runtime Skill Core，只去除 Reference 身份导航并保留其余 canonical 语义。"""
+    """生成确定性 Runtime Skill Core，只投影正文并逐字保留 frontmatter 与 Skill 路由 metadata。"""
     try:
         text = canonical_payload.decode("utf-8")
     except UnicodeDecodeError as error:
         raise ValueError("Runtime Skill Projection 的 canonical SKILL.md 不是合法 UTF-8") from error
 
     identities = _reference_identities(references)
-    projected = _remove_source_navigation_metadata(text)
+    frontmatter, routing, body = _protect_skill_metadata(text, identities)
+    projected = _remove_source_navigation_metadata(body)
     projected = _MARKDOWN_LINK.sub(
         lambda match: _rewrite_reference_link(match, identities),
         projected,
@@ -125,5 +150,8 @@ def project_runtime_skill_core(
     projected = projected.replace("Stable 完整约束 ID", "内部约束身份")
     projected = projected.replace("Stable 完整约束ID", "内部约束身份")
     projected = _collapse_projection_labels(projected)
+    if projected.count(_ROUTING_PLACEHOLDER) != 1:
+        raise ValueError("Runtime Skill Projection 路由 metadata 占位符被意外修改")
+    projected = frontmatter + projected.replace(_ROUTING_PLACEHOLDER, routing)
     _assert_projection_hides_reference_identity(projected, identities)
     return projected.encode("utf-8")
