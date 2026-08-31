@@ -104,10 +104,10 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | macOS、Linux、Windows 每个平台发布一个 ZIP | #96 | satisfied | `release.yml` 的 `Build platform distribution ZIPs` 显式生成三个平台包；`test_release_platform_zips.py` 与 Release 产品化测试验证 Draft/Publish 的精确三资产契约。 |
-| R2 | 每个 ZIP 内包含该平台二进制与 `USAGE.md` | #96 | satisfied | ZIP 组装使用每平台显式 `[binary, "USAGE.md"]` 白名单并重新打开核对成员；行为测试真实执行该 workflow shell block，验证其他平台 binary、manifest 和临时文件不进入 ZIP。 |
-| R3 | 三平台构建、identity、Draft/Publish 与失败清理门禁不得因分包降低 | #96 / 当前维护与 Runtime 分发规则 | satisfied | `release.yml` 保留 artifact SHA256、source commit、固定 Python、协议/digest 和三平台公共 identity 比较，之后才删除 manifest；Runtime Package Tests #42（run `33357201655`）在最终实现 head `cc91295ef993d5a574b0adec69c20819ac8871ab` 上完成 Linux/Windows/macOS onefile build/self-test、真实 stdio MCP 与项目安装，三平台均成功。 |
-| R4 | 分发 canonical 规则、最终用户说明与 workflow/test 保持一致 | #96 / 当前维护与 Runtime 分发规则 | satisfied | `USAGE.md`、`.agents/MAINTENANCE.md`、Runtime canonical Reference 与三组 Release 回归测试已同步；Skill Tests #613 的 self-contained tests 已全部成功，唯一 workflow 失败点是本 Change 在更新前仍为 `in_progress`，因此完成门禁按设计阻塞。 |
+| R1 | macOS、Linux、Windows 每个平台发布一个 ZIP | https://github.com/dingyuwen777/Agent_Skills/issues/96 | satisfied | `release.yml` 的 `Build platform distribution ZIPs` 显式生成三个平台包；`test_release_platform_zips.py` 与 Release 产品化测试验证 Draft/Publish 的精确三资产契约。 |
+| R2 | 每个 ZIP 内包含该平台二进制与 `USAGE.md` | https://github.com/dingyuwen777/Agent_Skills/issues/96 | satisfied | ZIP 组装使用每平台显式 `[binary, "USAGE.md"]` 白名单并重新打开核对成员；行为测试真实执行该 workflow shell block，验证其他平台 binary、manifest 和临时文件不进入 ZIP。 |
+| R3 | 三平台构建、identity、Draft/Publish 与失败清理门禁不得因分包降低 | https://github.com/dingyuwen777/Agent_Skills/issues/96 | satisfied | `release.yml` 保留 artifact SHA256、source commit、固定 Python、协议/digest 和三平台公共 identity 比较，之后才删除 manifest；Runtime Package Tests #42（run `33357201655`）在实现 head `cc91295ef993d5a574b0adec69c20819ac8871ab` 上完成 Linux/Windows/macOS onefile build/self-test、真实 stdio MCP 与项目安装，三平台均成功。 |
+| R4 | 分发 canonical 规则、最终用户说明与 workflow/test 保持一致 | https://github.com/dingyuwen777/Agent_Skills/issues/96 | satisfied | `USAGE.md`、`.agents/MAINTENANCE.md`、Runtime canonical Reference 与三组 Release 回归测试已同步；Skill Tests #613 的 self-contained tests 已全部成功，唯一 workflow 失败点是本 Change 在更新前仍为 `in_progress`，因此完成门禁按设计阻塞。 |
 
 # Validation Matrix
 
@@ -152,7 +152,7 @@ Skill Tests #604（run `33356381523`，head `969706524498037e7b1f0923b088ec945c9
 - Skill Tests #611（run `33357034982`）：所有三平台 ZIP、Release identity、Runtime/安装等目标测试已通过；246 tests 中唯一失败为 Markdown 导航门禁，定位到两处新增裸 `USAGE.md` 路径，随后最小修正。
 - Skill Tests #613（run `33357201653`，head `cc91295ef993d5a574b0adec69c20819ac8871ab`）：compile、CLI smoke、全部 self-contained tests 成功；最终 workflow 仅在 `Verify changed Coding Change` 阶段因本文件当时仍为 `in_progress` 而失败，证明完成门禁未被绕过。
 - Runtime Package Tests #42（run `33357201655`，同一 head）：Linux、Windows、macOS 三个平台均成功完成 onefile build/self-test、真实 stdio MCP contract、project-only single-binary installation。
-- 本次将 Change 更新为 `ready_for_review` 后，必须以新 head 再取得 Skill Tests 与 Runtime Package Tests fresh 结果，才可把 PR 转为 Ready。
+- 本 Change 更新为 `ready_for_review` 并修正 Requirement Source 语法后，必须以新 head 再取得 Skill Tests 与 Runtime Package Tests fresh 结果，才可把 PR 转为 Ready。
 
 ## Review
 
@@ -169,7 +169,7 @@ Review 绑定 PR #97 base `b2528fc91f15e170c6961beb26b1a374de74e496` 与实现 h
 
 - Requirement Source：Issue #96。
 - 分支：`change/release-platform-zips`。
-- PR：#97，当前仍为 Draft；必须等本次 Change 状态提交后的 fresh CI 通过后再转 Ready。
-- 实现审计 head：`cc91295ef993d5a574b0adec69c20819ac8871ab`；本文件更新会产生新的 final head。
+- PR：#97，当前仍为 Draft；必须等本次 Change 来源修正提交后的 fresh CI 通过后再转 Ready。
+- 实现审计 head：`cc91295ef993d5a574b0adec69c20819ac8871ab`；本文件来源修正会产生新的 final head。
 - 正式 Release：未执行，符合本 Change 非目标；因此真实 GitHub Draft/Publish 写操作未在本轮触发，剩余风险由 workflow 的精确资产校验和下一次正式 Release preflight 控制。
 - Merge：未执行；未获得用户明确合并授权。
