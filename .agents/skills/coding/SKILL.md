@@ -46,7 +46,7 @@ description: 面向不同项目形态、研发阶段和编程语言的可靠软�
 → 如实报告验证证据和限制
 ```
 
-这类任务不为形式创建 Change、扫描仓库文档、进入独立 Review 或启动 Git 流程。**Fast Path 不是降风险漏洞**：一旦发现需要持久改仓库、存在公共/数据/安全/依赖/运行时边界、真实外部副作用或正式交付要求，立即回到正常 Coding 路由，恢复目标项目事实并按 L1/L2/L3 重新判断。
+这类任务不为形式创建 Change、扫描仓库文档、进入独立 Review 或启动 Git 流程。**Fast Path 不是降风险漏洞**：一旦发现需要持久改仓库，先退出 Scratch Fast Path 并按当前项目事实重新判断 L1/L2/L3；如果仍是行为不变机械修改或边界明确、影响隔离的极小修复，则进入 [20_L1轻量实现与验证路径.md](references/20_L1轻量实现与验证路径.md) 的 `Repository L1 Fast Path`，不因“持久修改仓库”本身预付完整 Feature/Bug/Docs/Review 流程。只有发现公共/数据/安全/依赖/运行时边界、真实外部副作用或正式交付要求时，才按对应事实单调升级。
 
 本 Skill 不是 Python、Web、Backend 或 PostgreSQL 专用流程。它的固定部分是“怎样可靠研发”；具体语言、框架、数据库、目录、包管理器、CI 和部署方式必须来自当前项目事实或 Greenfield 阶段经确认的新建工程决策。
 
@@ -192,11 +192,12 @@ Greenfield 表示工程事实尚未建立或只建立了一部分。此时先确
 | 首次进入仓库、Greenfield 工程基线尚未建立、缓存缺失或可能过期 | [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) + [02_跨项目研发任务路由.md](references/02_跨项目研发任务路由.md) |
 | 需要识别项目形态、研发阶段或组合流程 | [02_跨项目研发任务路由.md](references/02_跨项目研发任务路由.md) |
 | 需要确认语言、Runtime、Manifest、锁文件、构建或包管理；新增/修改网络下载源、镜像或依赖安装链 | [03_编程语言与工具链适配规则.md](references/03_编程语言与工具链适配规则.md) |
+| Repository L1 持久实现、已确认根因的隔离小修复或 L1 targeted validation | [20_L1轻量实现与验证路径.md](references/20_L1轻量实现与验证路径.md) |
 | L3、已有 Active Change、明确要求变更记录/完成门禁或其他已确认持久施工契约 | [04_轻量变更管理.md](references/04_轻量变更管理.md) |
 | 新/当前 Change 使用 Completion Gate、正式仓库初始化、L3 或交付单元 | [10_完成定义追溯门禁.md](references/10_完成定义追溯门禁.md) |
-| 开发 Feature、修 Bug、重构、性能或调查失败 | [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md) |
+| L2/L3 的 Requirement/Feature/Bug/Refactor，或任意系统性诊断、Incident、Performance | [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md) |
 | Frontend / Web UI / Design-to-Code / Figma-to-code / 设计稿转代码；新增页面、跨页面 UI 或需要选择前端技术方案 | [16_前端与Design-to-Code实施规则.md](references/16_前端与Design-to-Code实施规则.md) |
-| 需要规划或审计验证证据；新增/修改永久 CI/Workflow 或测试/发布门禁 | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md) |
+| L2/L3 需要规划或审计 Validation Matrix；新增/修改永久 CI/Workflow 或测试/发布门禁 | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md)；L1 targeted validation 由 ref20 负责 |
 | Web/API/PostgreSQL/Provider 等专项边界真实存在 | [08_分层测试与验收策略.md](references/08_分层测试与验收策略.md) |
 | 跨模块、跨消费者、Contract/Schema/Migration/Owner/数据边界 | [06_仓库边界数据交换与条件式约束.md](references/06_仓库边界数据交换与条件式约束.md) |
 | 多人、多 Agent、多个分支或 Active Change 并行 | [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md) |
@@ -465,9 +466,25 @@ Real Provider Probe
 
 保留原专项职责：Browser Mock 广覆盖用户状态，Backend/DB 证明服务器与持久化，Contract 防机器接口漂移，Full-stack 用少量 Golden Path 证明真实接线，Provider Probe 仅必要时有界执行。CLI、Library、Mobile、Embedded、IaC 没有这些边界时不制造它们。
 
+L1 targeted validation 不为形式建立完整 Matrix；确认满足 Repository L1 前提时按 [20_L1轻量实现与验证路径.md](references/20_L1轻量实现与验证路径.md) 选择 parse/compile/typecheck/targeted test/regression/direct invocation 等最便宜且直接的证据。若只有 Contract、真实 persistence/runtime、跨组件或 package/release 等更强层才能证明目标，重新评估风险并退出轻量路径。
+
 ### 4.10 按研发阶段实施
 
-#### Feature / 行为变化 / Bug / Refactor
+#### Repository L1 Fast Path
+
+如果当前事实已经证明是行为不变机械修改，或根因已确认、边界明确且影响隔离的极小修复，并且不触及 public/数据/安全/依赖/运行时/CI/部署/交付等升级边界，则读取 [20_L1轻量实现与验证路径.md](references/20_L1轻量实现与验证路径.md)，按：
+
+```text
+最少相关事实
+→ 最小修改 / 最小回归
+→ targeted validation
+→ Docs Impact
+→ 按真实 Review / Git 门禁结束或升级
+```
+
+已确认根因的 L1 Bug 必须保留回归证据，但不因为 `阶段=缺陷修复` 本身进入完整系统性诊断。调查中发现根因未知、公共边界或其他更强风险后，立即退出本路径并重新路由。
+
+#### L2/L3 Feature / 行为变化 / Bug / Refactor
 
 读取 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)，默认：
 
@@ -497,9 +514,9 @@ Bug 修复必须有回归证据。测试验证真实行为，不只验证 Mock �
 
 不要伪造一个形式化 Red。
 
-#### 失败 / Bug / 性能 / 异常
+#### 需要诊断的失败 / Bug / 性能 / 异常
 
-先根因调查，不猜测式修补：
+根因未知、需要提出和证伪假设、Incident、性能或复杂异常先读取 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md) 并执行根因调查，不猜测式修补：
 
 ```text
 完整错误和调用栈
@@ -513,7 +530,7 @@ Bug 修复必须有回归证据。测试验证真实行为，不只验证 Mock �
 → 单一修复
 ```
 
-连续三次修复假设失败时停止叠加补丁，重新审视架构、前提和观测手段并报告阻塞。
+连续三次修复假设失败时停止叠加补丁，重新审视架构、前提和观测手段并报告阻塞。已确认根因且仍满足 Repository L1 的隔离小修复按上一节执行，不重复预付完整诊断上下文。
 
 #### 最小、精准、兼容
 
