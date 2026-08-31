@@ -9,6 +9,7 @@ from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_ro
 
 
 ROOT = Path(__file__).resolve().parents[4]
+CODING_CORE = ROOT / ".agents/skills/coding/SKILL.md"
 L1_REFERENCE = ROOT / ".agents/skills/coding/references/20_L1轻量实现与验证路径.md"
 L1_REFERENCE_ID = "coding.reference.21"
 
@@ -42,6 +43,21 @@ class RepositoryL1FastPathTest(unittest.TestCase):
         self.assertIn("持久修改", text)
         self.assertIn("targeted validation", text)
         self.assertIn("不是风险降级", text)
+
+    def test_source_mode_core_routes_repository_l1_without_stale_heavy_rows(self) -> None:
+        """Source Mode 的人类可读 Core 必须与 Runtime metadata 一致地进入 Repository L1 轻量路径。"""
+        text = CODING_CORE.read_text(encoding="utf-8")
+        self.assertIn("Repository L1 Fast Path", text)
+        self.assertIn("20_L1轻量实现与验证路径.md", text)
+        self.assertNotIn(
+            "| 开发 Feature、修 Bug、重构、性能或调查失败 | [05_设计实施与根因调试.md]",
+            text,
+        )
+        self.assertNotIn(
+            "#### Feature / 行为变化 / Bug / Refactor\n\n读取 [05_设计实施与根因调试.md]",
+            text,
+        )
+        self.assertIn("L1 targeted validation", text)
 
     def test_l1_repository_implementation_uses_compact_path_only(self) -> None:
         """普通仓库 L1 实现不预加载 Change、完整验证、治理或 Review。"""
