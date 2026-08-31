@@ -137,17 +137,24 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
             "未保护",
             "受保护",
             "Require a pull request before merging",
-            "Required status checks",
-            "Block force pushes / deletion",
-            "conversation resolution",
+            "Require status checks to pass before merging",
+            "Require branches to be up to date before merging",
+            "Required approvals",
+            "Require conversation resolution before merging",
+            "Block force pushes",
+            "Restrict deletions",
+            "Restrict updates",
             "strict",
             "loose",
             "Merge Queue",
+            "merge_group",
             "For pull requests only",
             "actor",
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
+        self.assertIn("初期可为 `0`", text)
+        self.assertIn("初期关闭（loose）", text)
 
     def test_review_depth_is_risk_scaled_and_routed(self) -> None:
         """Review 必须支持轻量、标准、深度三级并由真实审查路由自动加载。"""
