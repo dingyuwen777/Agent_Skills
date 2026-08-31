@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260831-code-component-abstraction
 title: 强化代码端公共组件抽象与 Figma 复用信号边界
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: change/code-component-abstraction
 created: 2026-08-31
@@ -67,59 +67,57 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Figma 公共组件只能作为代码复用参考，不能机械决定代码组件边界 | https://github.com/dingyuwen777/Agent_Skills/issues/84 | satisfied | Frontend/Design-to-Code reference 在 Design→Owner 与 Code-side Component Abstraction Gate 中明确 Figma Shared Component/Instance/Variant/模板只是复用候选信号，不自动成为代码组件边界、名称、目录或 public API；Green run 33343690523 全通过。 |
-| R2 | 写前端代码时应主动识别并建立真正有维护价值的公共组件/能力 | https://github.com/dingyuwen777/Agent_Skills/issues/84 | satisfied | Code-side Component Abstraction Gate 明确覆盖前端开发、页面重构与 Design-to-Code，并要求主动检查真实公共 UI/交互能力，不依赖 Figma 先组件化；Green run 33343690523 全通过。 |
-| R3 | 代码端公共抽象必须综合语义、行为、状态、Props/API、依赖、消费者范围和维护收益 | https://github.com/dingyuwen777/Agent_Skills/issues/84 | satisfied | Gate 显式覆盖同一业务/交互语义、行为和状态一致性、Props/Events/API、依赖方向、真实消费者范围、变化共因、测试边界与维护收益；preservation test 在 Green run 33343690523 通过。 |
-| R4 | 不过度抽象；Page-private / Feature-public / Shared 继续由真实复用范围决定 | https://github.com/dingyuwen777/Agent_Skills/issues/84 | satisfied | Gate 保留 Page-private / Feature-public / Shared 的最小正确 Owner，并明确没有实际收益时允许不抽象、禁止仅因视觉相似/一次重复/未来复用/Figma 是组件而建立 Shared；Green run 33343690523 全通过。 |
-| R5 | 保留既有 Frontend/Design-to-Code 与 Figma Handoff 语义 | .agents/MAINTENANCE.md | satisfied | PR #85 comment 5472127486 对 base `389884d8f90ccf110cf555afcef8826318efa0af` / head `61da2f352ba77df1060822d349a954d86edea8cb` 完成 A1/A2 与内容守恒 Review，结论 NO_FINDINGS_WITHIN_SCOPE；Green run 33343690523 的既有 Frontend/Figma/routing/Bundle 回归全部通过。 |
+| R1 | Figma 公共组件只能作为代码复用参考，不能机械决定代码组件边界 | https://github.com/dingyuwen777/Agent_Skills/issues/84 | satisfied | Frontend/Design-to-Code reference 在 Design→Owner 与 Code-side Component Abstraction Gate 中明确 Figma Shared Component/Instance/Variant/模板只是复用候选信号，不自动成为代码组件边界、名称、目录或 public API；final-head run 33343846576 全通过。 |
+| R2 | 写前端代码时应主动识别并建立真正有维护价值的公共组件/能力 | https://github.com/dingyuwen777/Agent_Skills/issues/84 | satisfied | Code-side Component Abstraction Gate 明确覆盖前端开发、页面重构与 Design-to-Code，并要求主动检查真实公共 UI/交互能力，不依赖 Figma 先组件化；final-head run 33343846576 全通过。 |
+| R3 | 代码端公共抽象必须综合语义、行为、状态、Props/API、依赖、消费者范围和维护收益 | https://github.com/dingyuwen777/Agent_Skills/issues/84 | satisfied | Gate 显式覆盖同一业务/交互语义、行为和状态一致性、Props/Events/API、依赖方向、真实消费者范围、变化共因、测试边界与维护收益；preservation test 在 final-head run 33343846576 通过。 |
+| R4 | 不过度抽象；Page-private / Feature-public / Shared 继续由真实复用范围决定 | https://github.com/dingyuwen777/Agent_Skills/issues/84 | satisfied | Gate 保留 Page-private / Feature-public / Shared 的最小正确 Owner，并明确没有实际收益时允许不抽象、禁止仅因视觉相似/一次重复/未来复用/Figma 是组件而建立 Shared；final-head run 33343846576 全通过。 |
+| R5 | 保留既有 Frontend/Design-to-Code 与 Figma Handoff 语义 | .agents/MAINTENANCE.md | satisfied | PR #85 final review comment 5472144538 绑定 base `389884d8f90ccf110cf555afcef8826318efa0af` / head `aab855091b4d388c3960d0a1f7067f3126f697ac`，结论 NO_FINDINGS_WITHIN_SCOPE；final-head run 33343846576 的既有 Frontend/Figma/routing/Bundle 回归全部通过。 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | Red run 33343548495 / job 99343381955：compile 与 CLI smoke 成功，222 tests 中只有新增 Code-side Component Abstraction preservation test 失败；Green run 33343690523 / job 99343764451：222 self-contained tests 全通过。 |
-| 接口 / Contract | not_applicable | 不修改 Agent_Skills Runtime/API Contract，也不建立具体业务组件 API。 |
+| 行为 / Unit / Component | required | Red run 33343548495 / job 99343381955：compile 与 CLI smoke 成功，222 tests 中只有新增 Code-side Component Abstraction preservation test 失败；Green run 33343690523 / job 99343764451：222 self-contained tests 全通过；final-head run 33343846576 / job 99344181815 再次全通过。 |
+| 接口 / Contract | not_applicable | 未修改 Agent_Skills Runtime/API Contract，也未建立具体业务组件 API。 |
 | 集成 / Persistence / Runtime Dependency | not_applicable | 规则变更自包含，不依赖业务仓库、数据库或真实 Figma 服务。 |
-| 用户 / Workflow Acceptance | required | PR #85 comment 5472127486 以 Issue #84 为 Requirement Source，A1/A2 反向检查 Figma signal → code abstraction decision → Page/Feature/Shared Owner → reuse/validation，未发现需求漏项。 |
-| 跨组件 Golden Path | required | Green run 33343690523 保持既有 Frontend/Design-to-Code 路由、Figma READY→Coding→Conformance、页面 Owner 与复用规则回归全绿。 |
+| 用户 / Workflow Acceptance | required | PR #85 initial review comment 5472127486 与 final review comment 5472144538 均以 Issue #84 为 Requirement Source；A1/A2 反向检查 Figma signal → code abstraction decision → Page/Feature/Shared Owner → reuse/validation，未发现需求漏项。 |
+| 跨组件 Golden Path | required | final-head run 33343846576 保持既有 Frontend/Design-to-Code 路由、Figma READY→Coding→Conformance、页面 Owner 与复用规则回归全绿。 |
 | 外部依赖 Probe | not_applicable | 本次不验证具体业务 API/Figma 文件的在线行为，真实外部 Probe 对 canonical 规则维护没有独立证明价值。 |
-| Build / Package / Runtime | not_applicable | 不修改 Runtime/Builder/MCP/Installer/Release，纯 Skill/Reference 变更不触发 Runtime Package Tests。 |
-| Docs / Governance / Other | required | Requirement Source Issue #84 已建立并由 PR #85 `Requirement-Source: #84` 关联；Green run 33343690523 只有 Change 当时仍为 in_progress 的 changed Change gate 按设计失败，本次状态已提升为 ready_for_review，需 final-head fresh CI 再确认。 |
+| Build / Package / Runtime | not_applicable | 未修改 Runtime/Builder/MCP/Installer/Release，纯 Skill/Reference 变更不触发 Runtime Package Tests。 |
+| Docs / Governance / Other | required | PR #85 使用 `Requirement-Source: #84`；final-head changed Change Ready Gate 成功；实现合并后 main fresh run 33343930367 / job 99344405456 全绿，包含 Active Change 校验。 |
 
 # 完成审计
 
 - [x] upstream_re_read：完成前重新读取当前 main/branch 的根 AGENTS、Maintenance、Router、Coding/Mutation/Frontend、Issue #84、Review Skill 和受影响测试，并以当前仓库事实重新建立 R1–R5。
 - [x] change_coverage：R1–R5 全部有唯一 Owner、规则实现、preservation test 和 A1/A2 证据；没有把 Figma 设计审计规则复制进 Coding。
 - [x] reverse_audit：从 Figma 复用候选信号 → 代码端语义/行为/依赖/消费者判断 → Page-private/Feature-public/Shared 或不抽象 → 真实消费者使用 → 测试/维护收益 → Figma Conformance 的回程路径检查无断点。
-- [x] unresolved_cleared：R1–R5 无 not_satisfied；required 行为、Workflow Acceptance、跨组件和治理证据已取得，final-head CI/re-review、merge/main CI/archive 属于后续交付门禁。
+- [x] unresolved_cleared：R1–R5 无 not_satisfied；全部 required Validation Matrix 项已有新鲜证据。
 
 # 任务
 
 - [x] 从 main `389884d8f90ccf110cf555afcef8826318efa0af` 重新读取根 AGENTS、Maintenance、Router、Coding、Mutation、Frontend reference 和现有 Frontend preservation tests。
 - [x] 建立 Requirement Source Issue #84，并在普通 PR #85 写入 `Requirement-Source: #84`。
 - [x] 路由为 Skill Mutation + Frontend/Design-to-Code + L2 + tests/governance。
-- [x] 先增加 preservation tests 并取得真实 Red：run 33343548495 / job 99343381955，222 tests 中仅新增门禁测试失败，既有回归通过。
+- [x] 增加 preservation tests 并取得真实 Red：run 33343548495 / job 99343381955，222 tests 中仅新增门禁测试失败，既有回归通过。
 - [x] 最小增强 Coding Frontend/Design-to-Code reference，不复制 Figma 详细规则。
-- [x] 执行 Green：run 33343690523 / job 99343764451 的 compile、CLI smoke、222 self-contained tests 全通过；changed Change gate 因当时 status=in_progress 按设计失败。
-- [x] 执行 A1/A2、项目中立性、内容守恒和独立 Review：PR #85 comment 5472127486，Requirement Source resolved，NO_FINDINGS_WITHIN_SCOPE。
-- [ ] 当前 ready_for_review final head 的 fresh CI 与 revision-bound re-review 全绿后按仓库门禁合并；在 main 上执行新鲜 CI。
-- [ ] 从验证后的 main 建独立 archive PR，归档为 `done` 并再次验证。
+- [x] 取得 Green：run 33343690523 / job 99343764451 的 compile、CLI smoke、222 self-contained tests 全通过。
+- [x] 完成 A1/A2、项目中立性、内容守恒与 final revision-bound Review；最终结论 NO_FINDINGS_WITHIN_SCOPE。
+- [x] final head `aab855091b4d388c3960d0a1f7067f3126f697ac` 的 run 33343846576 / job 99344181815 全绿并通过 changed Change Ready Gate。
+- [x] 使用 expected head guard 合并 PR #85；merge commit `e6ed93113c2bd982094d26cbb1f5f75f94dc3024`。
+- [x] main fresh run 33343930367 / job 99344405456 全绿。
+- [x] 从验证后的 main 建立独立 archive branch，将 Change 标记为 `done` 并移动到 `archive/2026-08/`。
 
 # 验证
-
-## 计划
-
-- 目标测试：`.agents/skills/coding/tests/test_frontend_design_to_code.py`
-- 相关测试：`.agents/skills/coding/tests/` 全部 self-contained tests。
-- CI：`.github/workflows/skill-tests.yml`。
-- Runtime Package Tests：not_applicable。
 
 ## 新鲜证据
 
 - Red：PR #85 / head `8d641aa4c46f7ec1f63d806e7fedfef7030ad08a` / run 33343548495 / job 99343381955；compile、CLI smoke 成功，新增 Code-side Component Abstraction test 失败，其余既有测试通过。
-- Green：PR #85 / head `61da2f352ba77df1060822d349a954d86edea8cb` / run 33343690523 / job 99343764451；compile、CLI smoke、222 self-contained tests 全通过；changed Change gate 因 status=in_progress 按设计失败。
-- Requirement Review：PR #85 comment 5472127486；Issue #84 resolved；reviewed_base_sha=`389884d8f90ccf110cf555afcef8826318efa0af`，reviewed_head_sha=`61da2f352ba77df1060822d349a954d86edea8cb`；NO_FINDINGS_WITHIN_SCOPE。
-- Final ready head、merge、main fresh CI 与 archive evidence 由后续交付门禁补充。
+- Green：PR #85 / head `61da2f352ba77df1060822d349a954d86edea8cb` / run 33343690523 / job 99343764451；compile、CLI smoke、222 self-contained tests 全通过。
+- Initial Requirement Review：PR #85 comment 5472127486；Issue #84 resolved；reviewed_base_sha=`389884d8f90ccf110cf555afcef8826318efa0af`，reviewed_head_sha=`61da2f352ba77df1060822d349a954d86edea8cb`；NO_FINDINGS_WITHIN_SCOPE。
+- Final PR CI：head `aab855091b4d388c3960d0a1f7067f3126f697ac` / run 33343846576 / job 99344181815；全部步骤成功。
+- Final Review：PR #85 comment 5472144538；reviewed_base_sha=`389884d8f90ccf110cf555afcef8826318efa0af`，reviewed_head_sha=`aab855091b4d388c3960d0a1f7067f3126f697ac`；NO_FINDINGS_WITHIN_SCOPE。
+- Merge：PR #85 使用 `expected_head_sha=aab855091b4d388c3960d0a1f7067f3126f697ac` 合并，merge commit `e6ed93113c2bd982094d26cbb1f5f75f94dc3024`。
+- Main fresh CI：run 33343930367 / job 99344405456；compile、CLI smoke、222 self-contained tests、Active Change 校验全部成功。
 
 # 文档影响
 
@@ -128,8 +126,7 @@ data_changes: []
 # 交付状态
 
 - Requirement Source：Issue #84
-- Branch：`change/code-component-abstraction`
-- PR：#85（普通 PR；Completion Gate 已进入 ready_for_review，等待 final-head fresh CI/re-review）
-- Merge：未完成
-- Main fresh CI：未完成
-- Archive：未完成
+- Implementation PR：#85，已合并
+- Implementation merge：`e6ed93113c2bd982094d26cbb1f5f75f94dc3024`
+- Main fresh CI：run 33343930367 / job 99344405456，success
+- Archive：本 Change 已在独立 archive branch 标记 `done`，归档 PR 负责将该治理移动合入 main。
