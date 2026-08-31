@@ -1,6 +1,6 @@
 # Runtime 源码维护说明
 
-`runtime/` 实现 Agent_Skills 当前唯一正式对外分发形态：**项目级 onefile Runtime + Shared Entry + Native Router/专业 Skill Core + Encrypted Canonical References + local stdio MCP**。
+`runtime/` 实现 Agent_Skills 当前唯一正式对外分发形态：**项目级 onefile Runtime + Shared Entry + Native Router/专业 Runtime Skill Projection + Encrypted Canonical References + local stdio MCP**。
 
 最终使用者不需要阅读本文件；下载、安装、升级、回滚和排障见根 [`USAGE.md`](../USAGE.md)。
 
@@ -19,8 +19,11 @@ agent_skills_runtime/routing.py
 agent_skills_runtime/crypto.py
 → AES-GCM 加密/认证 Reference Bundle
 
+agent_skills_runtime/runtime_skill_projection.py
+→ 从唯一 canonical SKILL.md 自动生成 Runtime Core 视图，去除 Reference 文件名、路径、Stable ID 和直接导航映射；残留身份时 fail closed
+
 agent_skills_runtime/project_payload.py
-→ 构建 Skills 根级共享运行资产与各 Skill Core/运行资产；显式禁止 Reference/Stub
+→ 构建 Skills 根级共享运行资产、各 Skill Runtime Projection 与其他运行资产；显式禁止 Reference/Stub
 
 agent_skills_runtime/project_installer.py
 → install v3 逐文件 ownership、宿主配置与回滚；非 v3 manifest 直接拒绝
@@ -32,9 +35,9 @@ agent_skills_runtime/server.py
 → CLI + stdio MCP Server
 ```
 
-Runtime 不负责重新解释专业 Skill 规则；跨 Skill 发现与 Handoff 由 [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md) 唯一负责，各 Skill 完整专业语义仍由自己的 `SKILL.md` 和 canonical `references/*.md` 定义。[`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 只做无条件进入 Router 的共享薄 Bootstrap。
+Runtime 不负责重新解释专业 Skill 规则；跨 Skill 发现与 Handoff 由 [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md) 唯一负责，各 Skill 完整专业语义仍由自己的 canonical `SKILL.md` 和 canonical `references/*.md` 定义。[`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 只做无条件进入 Router 的共享薄 Bootstrap。
 
-这里需要区分**规则事实源**与**用户可见入口**：Source Mode 直接使用源码仓库时，维护者先读 Entry，再显式读取 Router、Skill、Reference、路径和路由过程；Runtime Mode 虽然仍把 Entry、Router Core 和必要专业 Core 作为受管运行资产安装以维持宿主发现和 ownership，但目标项目根入口不引导模型直接枚举这些内部资产。Runtime 日常任务统一通过项目级 MCP 取得所需完整规则正文。
+这里需要区分**规则事实源**与**Runtime 明文视图**：Source Mode 直接使用源码仓库时，维护者先读 Entry，再显式读取 Router、Skill、Reference、路径和路由过程；Runtime Mode 仍安装 Entry 与动态发现的 Router/专业 Skill Core 以维持宿主原生发现和 ownership，但这些 `SKILL.md` 不是第二份人工规则，而是构建时从同一 canonical Core 自动生成的 deterministic Runtime Projection。Projection 只去除 Reference 身份和导航映射，不参与 canonical Routing Manifest 编译，也不改 required Context 原文。Runtime 日常任务统一通过项目级 MCP 取得所需完整规则正文。
 
 ## 2. 三个独立完整性域
 
@@ -59,12 +62,13 @@ Project Payload：
 
 ```text
 shared_files（当前 ENTRY.md）
-+ Native Core / assets / scripts / metadata
++ canonical SKILL.md → deterministic Runtime Skill Projection
++ assets / scripts / metadata
 → path / sha256 / size / mode
 → payload_digest
 ```
 
-`source_digest`、`routing_digest` 和 `payload_digest` 证明不同事实，不能互相替代。`shared_files` 是显式 Contract，不代表 Skills 根目录任意文件都会自动进入 Payload。
+`source_digest`、`routing_digest` 和 `payload_digest` 证明不同事实，不能互相替代。`shared_files` 是显式 Contract，不代表 Skills 根目录任意文件都会自动进入 Payload。Runtime Skill Projection 改变的是 Project Payload 中受管 Core bytes，因此只应体现在 `payload_digest`；不能反向改变 canonical Reference 的 `source_digest` 或 Routing Manifest 的 `routing_digest`。
 
 Project Payload 的 `mode` 以 Git index 的 executable bit 为 canonical 来源：普通文件固定为 `0644`，Git 标记 executable 的文件固定为 `0755`；非 Git 源仅按宿主是否具有任一执行位回退到同一组可移植权限。不能直接把 Windows `0666` 或其他宿主 `stat` mode 写进 `payload_digest`，否则同一 commit 会产生跨平台 identity 漂移。
 
@@ -76,9 +80,11 @@ Project Payload 明确排除：
 - tests；
 - Python cache/编译产物。
 
-因此像 [`coding/scripts/tzdata/README.md`](../.agents/skills/coding/scripts/tzdata/README.md) 这种源码维护说明可以留在私有源仓库，但不会安装到目标项目；真正运行需要的 `coding/scripts/tzdata/zoneinfo/Asia/Shanghai`、共享 [`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 和动态发现的 [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md) 仍会进入 Payload。
+Runtime Skill Projection 必须由当前 Bundle 中实际 canonical Reference 的 `filename` / `source_path` / Stable ID 动态驱动，不维护固定 Skill/Reference 白名单，也不要求新增、删除或改名 Reference 时同步第二份 Runtime 文件。构建会整体去除指向 canonical Reference 的 Markdown 导航，再处理裸身份和内部编号缩写；最终扫描仍发现当前 canonical Reference 身份或 `references/` 路径时直接失败关闭。维护者始终只改 canonical `SKILL.md`，不能新增 `SKILL.runtime.md` 等人工镜像。
 
-目标项目没有 Agent_Skills `references/`。Source Mode 直接读取源仓库 required References；Runtime Mode 通过中文 Task Route 和当前不透明 route token 取得 required 完整原文。完整原文继续逐字保留 canonical routing metadata；Runtime 的保密边界不能通过删改原文实现，否则会破坏 source/routing 完整性。
+因此像 [`coding/scripts/tzdata/README.md`](../.agents/skills/coding/scripts/tzdata/README.md) 这种源码维护说明可以留在私有源仓库，但不会安装到目标项目；真正运行需要的 `coding/scripts/tzdata/zoneinfo/Asia/Shanghai` 和共享 [`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 会原样进入 Payload，动态发现的 [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md) 与其他正式 Skill Core 则以 Runtime Projection 进入 Payload。
+
+目标项目没有 Agent_Skills `references/`。Source Mode 直接读取源仓库 required References；Runtime Mode 通过中文 Task Route 和当前不透明 route token 取得 required 完整原文。完整原文继续逐字保留 canonical routing metadata；Runtime 的保密边界不能通过删改 Reference 原文实现，否则会破坏 source/routing 完整性。
 
 ## 3. 项目安装边界
 
@@ -105,7 +111,7 @@ agent-skills-mcp install --target <project-root>
 - 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、manifest 与受管文本；
 - 如果回滚本身有任何失败，必须同时报告原始安装异常与未恢复路径/原因，不能静默吞掉 rollback failure。
 
-正式 Router 与其他 Skill Core 仍通过动态 Catalog 分发；Skills 根级 Entry 只通过 Project Payload 的显式 `shared_files` Contract 分发，二者职责不混淆。内部 Entry/Router/Core 存在于目标项目并不意味着它们必须成为用户可见的日常导航；安装 ownership 与用户披露是两个独立边界。
+正式 Router 与其他 Skill Core 仍通过动态 Catalog 分发，但写入目标项目的是各自 canonical Core 的确定性 Runtime Projection；Skills 根级 Entry 只通过 Project Payload 的显式 `shared_files` Contract 分发，二者职责不混淆。内部 Entry/Router/Core 存在于目标项目并不意味着它们必须成为用户可见的日常导航；安装 ownership 与用户披露是两个独立边界。
 
 ### 宿主连接级生命周期
 
@@ -171,7 +177,7 @@ python scripts/build_runtime.py --output-dir dist --json
 scripts/build_runtime.py ... --release-version <SemVer>
 ```
 
-构建器读取显式版本和真实 source commit，动态发现 Skill/Reference，编译 canonical metadata，构建/加密 Bundle v2 与 no-Stub Project Payload，生成当前平台 artifact，并执行 `status` / `self-test` 校验。由于公共 `status/self-test` 不再暴露详细内部摘要，Builder 会在维护侧用同一份 Bundle、Payload、release/source 身份计算一个不可逆整体完整性指纹，并要求 artifact `self-test` 返回完全一致的指纹；这样仍能证明 artifact 与当前构建材料一致，同时不把内部身份字段重新开放给 Runtime 日常调用。
+构建器读取显式版本和真实 source commit，动态发现 Skill/Reference，编译 canonical metadata，构建/加密 Bundle v2，并从同一 canonical Skill Core 自动生成 no-Stub Project Payload 中的 Runtime Projection，再生成当前平台 artifact 并执行 `status` / `self-test` 校验。由于公共 `status/self-test` 不再暴露详细内部摘要，Builder 会在维护侧用同一份 Bundle、Payload、release/source 身份计算一个不可逆整体完整性指纹，并要求 artifact `self-test` 返回完全一致的指纹；这样仍能证明 artifact 与当前构建材料一致，同时不把内部身份字段重新开放给 Runtime 日常调用。
 
 构建目录中的 `.manifest.json` 是 CI 校验用 Release identity，仍可记录维护侧详细摘要和 Catalog，用于 Release 交叉验证；它不作为正式 GitHub Release 资产发布，也不属于 Runtime MCP 公共披露面。
 
@@ -185,7 +191,7 @@ reference_bytes_by_skill
 base_router_plus_core_bytes
 ```
 
-它只量化 Entry / Router / Skill Core / canonical Reference 的聚合字节成本，不列出单个 Reference ID、文件名、路径或触发映射，也不改变 Runtime `status/self-test` 的公开披露合同。为保持现有构建报告消费者兼容，`router_bytes` 与 `base_router_plus_core_bytes` 字段名保留；新增 `entry_bytes` 单独记录薄入口成本。
+它只量化 Entry / Runtime Router Projection / 专业 Runtime Skill Projection / canonical Reference 的聚合字节成本，不列出单个 Reference ID、文件名、路径或触发映射，也不改变 Runtime `status/self-test` 的公开披露合同。为保持现有构建报告消费者兼容，`router_bytes` 与 `base_router_plus_core_bytes` 字段名保留；新增 `entry_bytes` 单独记录薄入口成本。
 
 “最新规则模式”允许网页端 Source Mode 读取当前 `main`、本地 Runtime 使用当前最新 Release，但二者在发布间隙可能短暂不同步；“精确复现模式”应以 Runtime 的 `Release版本` 定位对应正式 Release/tag，再从该 tag 的源码事实复现同一版本，而不是依赖 Runtime 日常状态接口导出源仓库内部 identity。
 
@@ -222,9 +228,10 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 - self-contained unit/preservation/portability tests；
 - Source Mode 唯一 Skills 根级 Router 与 Maintenance 职责、Runtime 薄 Bootstrap 可见性边界，以及 Project Payload shared-file 分发；
 - metadata compiler/evaluator、Routing Conformance、private manifest/encryption parity；
+- Runtime Projection 不暴露当前 canonical Reference 文件名、路径、Stable ID 或直接导航映射，同时保留 frontmatter、路由 metadata、核心工程语义并由动态 Reference 身份自动驱动；
 - Runtime 公共返回面不暴露内部治理身份，同时 required canonical Context exact-text 不被删改；
 - install v3 ownership、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、Codex marker/重复 table fail-closed 和失败/回滚诊断；
-- 动态 Skill Bundle + Project Payload 的源码级构建与内容守恒；
+- 动态 Skill Bundle + Project Payload 的源码级构建、投影确定性与内容守恒；
 - Active/changed Change Ready Check。
 
 这条 Workflow 不运行 PyInstaller，不构建 onefile，也不创建 Windows/macOS package job。规则正文会进入下一次正式 Runtime，但它的内容、路由、Bundle/Payload 和治理正确性由上述源码级自动化证明。
@@ -246,12 +253,12 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 
 正式 Release 由根 `.github/workflows/release.yml` 从 `main` 手工构建。输入 `v<SemVer>` tag 后，workflow 将同一 `release_version` 显式传入 Linux/Windows/macOS Builder；Release preflight 会重新运行完整 self-contained tests 与 Ready Check。
 
-所有三平台 artifact / identity 完成验证后，workflow 除逐一校验协议、digest 和 `artifact_sha256` 外，还会删除平台特有的 `artifact` / `artifact_sha256` 字段后比较其余公共 identity；三平台任一 source/routing/bundle/payload/protocol/Skill identity 漂移都会在发布前失败关闭。校验通过后删除构建期 manifest，把三个 binary、[`USAGE.md`](../USAGE.md) 和只覆盖这四个使用文件的 `SHA256SUMS` 组装为成员精确受控的 `agent-skills-v<SemVer>.zip`；Draft 与正式 Release 都只允许这一个 ZIP 资产。正式 Release 仍是三平台 artifact 的最终交付门禁，不因为常规 Skill CI 减少 PyInstaller 构建而降低验证责任。
+所有三平台 artifact / identity 完成验证后，workflow 逐一校验协议、digest 和 `artifact_sha256`，并删除平台特有的 `artifact` / `artifact_sha256` 字段后比较其余公共 identity；三平台任一 source/routing/bundle/payload/protocol/Skill identity 漂移都会在发布前失败关闭。校验通过后分别从白名单成员组装并回读验证三个最终分发 ZIP：`agent-skills-v<SemVer>-linux.zip`、`agent-skills-v<SemVer>-windows.zip`、`agent-skills-v<SemVer>-macos.zip`。每个 ZIP 根目录只包含当前平台 Runtime binary 与同一版本 [`USAGE.md`](../USAGE.md)，Draft 与正式 Release 都必须精确只有这三个平台 ZIP 资产；构建期 identity manifest 不进入最终 ZIP 或正式 Release。
 
 最终用户资产和使用方式以根 [`USAGE.md`](../USAGE.md) 为准。本文件不维护第二份最终用户教程，也不记录 Change/PR/Release 历史流水账。
 
 ## 9. 安全边界
 
-onefile + AES-GCM 的目标是减少目标项目中的普通明文浏览/复制面，并检测 Bundle 篡改；它不是 TEE/KMS。
+onefile + AES-GCM 的目标是减少目标项目中的普通明文浏览/复制面，并检测 Bundle 篡改；它不是 TEE/KMS。Runtime Skill Projection 进一步缩小安装后的普通明文面，但它只隐藏 canonical Reference 的身份/导航映射，不是加密层，也不能替代 Reference Bundle 的完整性与访问边界。
 
-模式感知披露只能减少正常 Agent 对话中主动复述内部治理结构的概率和产品表面，不等于阻止拥有机器控制权的用户查看受管明文 Core/Router、MCP 通信或进程内解密后的完整规则。不能宣称能够抵御机器 Owner、调试器、内存转储、进程 Hook、MCP 通信观测或专业逆向。真正限制谁能读取 canonical 源文件，必须依赖源仓库访问控制。
+模式感知披露只能减少正常 Agent 对话中主动复述内部治理结构的概率和产品表面，不等于阻止拥有机器控制权的用户查看受管明文 Runtime Core/Router、MCP 通信或进程内解密后的完整规则。不能宣称能够抵御机器 Owner、调试器、内存转储、进程 Hook、MCP 通信观测或专业逆向。真正限制谁能读取 canonical 源文件，必须依赖源仓库访问控制。
