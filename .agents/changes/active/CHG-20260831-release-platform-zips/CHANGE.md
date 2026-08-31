@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260831-release-platform-zips
 title: 将正式 Release 调整为三平台独立 ZIP 分发包
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: change/release-platform-zips
 created: 2026-08-31
@@ -34,16 +34,16 @@ data_changes: []
 
 # 成功标准
 
-- [ ] 正式 Release 页面精确发布三个 ZIP：`agent-skills-v<VERSION>-windows.zip`、`agent-skills-v<VERSION>-linux.zip`、`agent-skills-v<VERSION>-macos.zip`。
-- [ ] Windows ZIP 根目录精确包含 `agent-skills-mcp-v<VERSION>-windows.exe` 与 `USAGE.md`。
-- [ ] Linux ZIP 根目录精确包含 `agent-skills-mcp-v<VERSION>-linux` 与 `USAGE.md`。
-- [ ] macOS ZIP 根目录精确包含 `agent-skills-mcp-v<VERSION>-macos` 与 `USAGE.md`。
-- [ ] 构建期 identity manifest、临时文件、源码、canonical Reference、Routing Manifest 等维护资产不得进入任何最终 ZIP，也不得作为正式 Release asset 暴露。
-- [ ] 三个平台二进制仍分别在对应 Runner 构建，并继续执行 status/self-test、真实 stdio MCP smoke 与项目安装验证。
-- [ ] 发布 job 仍先完成三平台 release identity、artifact SHA256、source commit、协议与 digest 交叉校验，再组装平台 ZIP。
-- [ ] Draft Release 与 Publish 后都验证资产集合精确为三个平台 ZIP；失败 Draft 继续自动清理。
-- [ ] `USAGE.md` 的获取、升级和回退流程改为“下载当前平台 ZIP → 解压 → 运行该平台二进制”。
-- [ ] Maintenance、Runtime Release Reference 与 Release 回归测试同步到三平台独立 ZIP 正式分发契约。
+- [x] 正式 Release workflow 精确发布三个 ZIP：`agent-skills-v<VERSION>-windows.zip`、`agent-skills-v<VERSION>-linux.zip`、`agent-skills-v<VERSION>-macos.zip`。
+- [x] Windows ZIP 根目录精确包含 `agent-skills-mcp-v<VERSION>-windows.exe` 与 `USAGE.md`。
+- [x] Linux ZIP 根目录精确包含 `agent-skills-mcp-v<VERSION>-linux` 与 `USAGE.md`。
+- [x] macOS ZIP 根目录精确包含 `agent-skills-mcp-v<VERSION>-macos` 与 `USAGE.md`。
+- [x] 构建期 identity manifest、临时文件、源码、canonical Reference、Routing Manifest 等维护资产不得进入任何最终 ZIP，也不得作为正式 Release asset 暴露。
+- [x] 三个平台二进制仍分别在对应 Runner 构建，并继续执行 status/self-test、真实 stdio MCP smoke 与项目安装验证。
+- [x] 发布 job 仍先完成三平台 release identity、artifact SHA256、source commit、协议与 digest 交叉校验，再组装平台 ZIP。
+- [x] Draft Release 与 Publish 后都验证资产集合精确为三个平台 ZIP；失败 Draft 继续自动清理。
+- [x] `USAGE.md` 的获取、升级和回退流程改为“下载当前平台 ZIP → 解压 → 运行该平台二进制”。
+- [x] Maintenance、Runtime Release Reference 与 Release 回归测试同步到三平台独立 ZIP 正式分发契约。
 
 # 范围
 
@@ -72,7 +72,7 @@ data_changes: []
 
 ## 方案 A：维持单一跨平台 ZIP
 
-优点：Release 只有一个资产，转发最简单；现有实现无需变化。
+优点：Release 只有一个资产，转发最简单；旧实现无需变化。
 
 缺点：每个用户都下载三个平台二进制，文件更大；用户仍需在包内判断平台，不符合本轮用户决定。
 
@@ -80,15 +80,15 @@ data_changes: []
 
 优点：下载目标明确、体积更小、包内容最简单；同一份说明可随包离线使用；不改变 Runtime 本体和三平台验证链。
 
-缺点：Release 从 1 个资产变成 3 个；原 ZIP 内 `SHA256SUMS` 不再作为最终用户文件，需要由 workflow 自身继续完成 artifact/ZIP 完整性验证。
+缺点：Release 从 1 个资产变成 3 个；原 ZIP 内 `SHA256SUMS` 不再作为最终用户文件，需要由 workflow 内部 identity/artifact SHA 校验继续承担构建完整性证明。
 
-**采用方案 B。** 这是用户本轮明确指定的最终分发形态。
+**采用方案 B。** 这是 Requirement Source #96 明确要求的最终分发形态。
 
 ## 方案 C：三个平台 ZIP + 独立 checksum/manifest 资产
 
 优点：额外提供外部校验材料。
 
-缺点：Release 资产面不再只有三个平台包，增加最终用户选择与维护表面；用户未要求该额外产品面。
+缺点：Release 资产面不再只有三个平台包，增加最终用户选择与维护表面；Requirement Source 未要求该额外产品面。
 
 本轮不采用。
 
@@ -104,58 +104,72 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | macOS、Linux、Windows 每个平台发布一个 ZIP | user:release-platform-zips | not_satisfied | 待实现 workflow 与行为测试。 |
-| R2 | 每个 ZIP 内包含该平台二进制与 `USAGE.md` | user:release-platform-zips | not_satisfied | 待实现精确成员测试。 |
-| R3 | 三平台构建、identity、Draft/Publish 与失败清理门禁不得因分包降低 | `.agents/MAINTENANCE.md` / Runtime Release Reference | not_satisfied | 待保留并验证现有门禁。 |
-| R4 | 分发 canonical 规则、最终用户说明与 workflow/test 保持一致 | `.agents/MAINTENANCE.md` / `13_本地MCP_Runtime分发与原文上下文加载.md` | not_satisfied | 待同步文档与回归测试。 |
+| R1 | macOS、Linux、Windows 每个平台发布一个 ZIP | #96 | satisfied | `release.yml` 的 `Build platform distribution ZIPs` 显式生成三个平台包；`test_release_platform_zips.py` 与 Release 产品化测试验证 Draft/Publish 的精确三资产契约。 |
+| R2 | 每个 ZIP 内包含该平台二进制与 `USAGE.md` | #96 | satisfied | ZIP 组装使用每平台显式 `[binary, "USAGE.md"]` 白名单并重新打开核对成员；行为测试真实执行该 workflow shell block，验证其他平台 binary、manifest 和临时文件不进入 ZIP。 |
+| R3 | 三平台构建、identity、Draft/Publish 与失败清理门禁不得因分包降低 | #96 / 当前维护与 Runtime 分发规则 | satisfied | `release.yml` 保留 artifact SHA256、source commit、固定 Python、协议/digest 和三平台公共 identity 比较，之后才删除 manifest；Runtime Package Tests #42（run `33357201655`）在最终实现 head `cc91295ef993d5a574b0adec69c20819ac8871ab` 上完成 Linux/Windows/macOS onefile build/self-test、真实 stdio MCP 与项目安装，三平台均成功。 |
+| R4 | 分发 canonical 规则、最终用户说明与 workflow/test 保持一致 | #96 / 当前维护与 Runtime 分发规则 | satisfied | `USAGE.md`、`.agents/MAINTENANCE.md`、Runtime canonical Reference 与三组 Release 回归测试已同步；Skill Tests #613 的 self-contained tests 已全部成功，唯一 workflow 失败点是本 Change 在更新前仍为 `in_progress`，因此完成门禁按设计阻塞。 |
 
 # Validation Matrix
 
 | 验证层 | 是否要求 | Scope / 完成证据 |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | 新增平台 ZIP 行为测试，先证明旧单 ZIP workflow 因正确原因失败，再验证三个 ZIP 精确成员。 |
-| 接口 / Contract | required | 验证正式 Release asset surface 从单 ZIP 变为精确三个平台 ZIP；Runtime/MCP 协议不变。 |
-| 集成 / Persistence / Runtime Dependency | not_applicable | 无数据库/持久化变化；正式 GitHub Release 写操作不是本 Change 的运行时依赖验证目标。 |
-| 用户 / Workflow Acceptance | required | `USAGE.md` 下载、安装、升级、回退均只要求当前平台 ZIP。 |
-| 跨组件 Golden Path | required | Actions artifacts → identity 校验 → 三 ZIP 组装 → Draft 三资产 → Publish 三资产链路静态/行为验证。 |
-| 外部依赖 Probe | not_applicable | 不执行真实版本发布；不新增第三方 Provider。 |
-| Build / Package / Runtime | required | PR changed scope 应触发 Runtime Package Tests，Linux/Windows/macOS onefile build、MCP smoke、project install 均需 fresh green。 |
-| Docs / Governance / Other | required | Maintenance、Runtime canonical Reference、USAGE、Change、Ready Check 与相关测试同步。 |
+| 行为 / Unit / Component | required | Red：Skill Tests #604（run `33356381523`）共 249 tests，仅新增的 3 个平台 ZIP 目标测试因旧单 ZIP契约失败；Green：Skill Tests #613（run `33357201653`）的 compile、CLI smoke 与全部 self-contained tests 成功。 |
+| 接口 / Contract | required | 回归断言正式 Release asset surface 精确为三个平台 ZIP；每个 ZIP 精确两项成员；旧单 ZIP 与 `SHA256SUMS` 最终用户契约被明确排除；Runtime/MCP/install 协议测试继续通过。 |
+| 集成 / Persistence / Runtime Dependency | not_applicable | 无数据库或持久化变化；本 Change 不执行真实正式版本发布。 |
+| 用户 / Workflow Acceptance | required | `USAGE.md` 已覆盖 Windows/Linux/macOS 平台包选择、安装、升级与回退；平台 ZIP 命名和包内 binary 命名与 workflow 一致。 |
+| 跨组件 Golden Path | required | Actions artifact → 三平台 identity/artifact SHA 校验 → 三 ZIP 显式白名单组装 → Draft 三资产精确比较 → Publish 三资产精确比较的链路已通过静态与可执行行为测试；真实 Draft/Publish API 不在本 Change 中执行。 |
+| 外部依赖 Probe | not_applicable | 不新增第三方 Provider，且明确不执行真实正式版本发布。 |
+| Build / Package / Runtime | required | Runtime Package Tests #42（run `33357201655`）在 Linux、Windows、macOS 三个对应 Runner 全部成功，均覆盖 build/self-test、真实 stdio MCP 与 project install。 |
+| Docs / Governance / Other | required | Skill Tests #611 首次暴露两处新增裸 Markdown 路径，随后以最小文档修正；#613 self-contained tests 已全绿，Change gate 仅因状态仍为 `in_progress` 阻塞，现已完成审计并进入 `ready_for_review`。 |
 
 # Completion Audit
 
-- [ ] upstream_re_read：完成前重新读取本轮用户要求、当前 Release workflow、Maintenance、Runtime Release Reference、USAGE 与最终 PR diff。
-- [ ] change_coverage：R1–R4 均有实现与新鲜证据。
-- [ ] reverse_audit：从“用户只下载自己平台 ZIP”反向追到 Release asset 集合、ZIP 成员、identity 校验和对应 Runner 构建证据无断点。
-- [ ] unresolved_cleared：无 `not_satisfied`、TBD/TODO 或未说明阻塞后再进入 Ready。
+- [x] upstream_re_read：完成前重新读取 Requirement Source #96、当前 Release workflow、Maintenance、Runtime Release Reference、USAGE、PR #97 当前 base/head 与最终相关 diff；未从历史单 ZIP方案推断当前实现。
+- [x] change_coverage：R1–R4 全部有实现和新鲜测试/CI 证据；旧单 ZIP测试仅承担已废弃产品契约，其独立 identity/artifact SHA/失败清理责任仍由现行测试保留。
+- [x] reverse_audit：从“用户只下载自己平台 ZIP”反向追踪到 Release 三资产集合 → 每个平台 ZIP 精确成员 → 对应平台 binary → identity/artifact SHA → 对应 Runner build/self-test/MCP/install，未发现证据断点。
+- [x] unresolved_cleared：R1–R4 均为 `satisfied`；无 TBD/TODO；真实正式 Release 未执行是本 Change 明确非目标，并已作为剩余验证边界记录。
 
 # 任务
 
 - [x] 恢复当前 Release workflow、Maintenance、Runtime Reference、USAGE 与单 ZIP 回归测试事实。
-- [ ] 先新增三平台 ZIP 目标测试并取得 Red。
-- [ ] 修改 `release.yml` 组装、校验并发布三个平台 ZIP。
-- [ ] 更新原单 ZIP 测试、Release 产品化测试与仓库分发表面测试。
-- [ ] 更新 `USAGE.md`、Maintenance 与 Runtime Release Reference。
-- [ ] 运行完整 self-contained tests 与 Ready Check。
-- [ ] 运行 changed scope 对应的 Runtime Package Tests。
-- [ ] 执行独立 Review、修复 Finding 并 re-review。
-- [ ] 完成 Requirement Traceability 与 Completion Audit 后进入 Ready。
+- [x] 先新增三平台 ZIP 目标测试并取得 Red。
+- [x] 修改 `release.yml` 组装、校验并发布三个平台 ZIP。
+- [x] 更新原单 ZIP 测试、Release 产品化测试与仓库分发表面测试。
+- [x] 更新 `USAGE.md`、Maintenance 与 Runtime Release Reference。
+- [x] 运行完整 self-contained tests；Green 阶段全部通过，Change completion gate 将由本次状态更新后的 fresh CI 再次验证。
+- [x] 运行 changed scope 对应的 Runtime Package Tests；run `33357201655` 三平台全部成功。
+- [x] 执行两阶段独立 Review；需求符合性与代码/Workflow质量审查未发现 BLOCKER/HIGH/MEDIUM，期间 CI 发现的两处 Markdown 导航问题已最小修正并重验 self-contained tests。
+- [x] 完成 Requirement Traceability 与 Completion Audit，进入 `ready_for_review`。
 
 # 验证计划与新鲜证据
 
-当前只完成事实恢复；尚未执行本 Change 的 Red/Green/Runtime Package Tests，不宣称通过。
+## Red
+
+Skill Tests #604（run `33356381523`，head `969706524498037e7b1f0923b088ec945c977595`）：compile/CLI smoke 成功；249 个 self-contained tests 中精确只有新增的 3 个目标测试失败，分别证明旧 workflow 没有平台 ZIP 组装步骤、Release 仍为单 ZIP、USAGE 仍为单 ZIP。
+
+## Green 与回归
+
+- Skill Tests #611（run `33357034982`）：所有三平台 ZIP、Release identity、Runtime/安装等目标测试已通过；246 tests 中唯一失败为 Markdown 导航门禁，定位到两处新增裸 `USAGE.md` 路径，随后最小修正。
+- Skill Tests #613（run `33357201653`，head `cc91295ef993d5a574b0adec69c20819ac8871ab`）：compile、CLI smoke、全部 self-contained tests 成功；最终 workflow 仅在 `Verify changed Coding Change` 阶段因本文件当时仍为 `in_progress` 而失败，证明完成门禁未被绕过。
+- Runtime Package Tests #42（run `33357201655`，同一 head）：Linux、Windows、macOS 三个平台均成功完成 onefile build/self-test、真实 stdio MCP contract、project-only single-binary installation。
+- 本次将 Change 更新为 `ready_for_review` 后，必须以新 head 再取得 Skill Tests 与 Runtime Package Tests fresh 结果，才可把 PR 转为 Ready。
+
+## Review
+
+Review 绑定 PR #97 base `b2528fc91f15e170c6961beb26b1a374de74e496` 与实现 head `cc91295ef993d5a574b0adec69c20819ac8871ab`。需求符合性审查确认 R1–R4 均有唯一实现落点；代码/Workflow质量审查确认三平台 identity、artifact SHA、status/self-test、真实 MCP、项目安装、Draft/Publish 精确资产和失败 Draft 清理没有因分包而被删除或弱化。删除旧 `test_release_single_zip.py` 的 SHA256SUMS/单包责任属于已废弃产品契约；现行 artifact SHA 与 cross-platform identity 证明仍由产品化测试和 workflow 保留。当前无 BLOCKER/HIGH/MEDIUM Finding。
 
 # 文档影响
 
-- `USAGE.md`：必须更新正式下载、平台选择、升级与回退步骤。
-- `.agents/MAINTENANCE.md`：必须把单 ZIP 正式分发边界改为三平台独立 ZIP。
-- `.agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md`：必须同步 Release asset contract 与失败关闭条件。
-- `README.md`、`runtime/README.md` 当前仅承担维护入口/Runtime 源码说明，是否受影响以实际引用检查为准；未受影响不做无关修改。
+- `USAGE.md`：已更新正式下载、平台选择、升级与回退步骤。
+- `.agents/MAINTENANCE.md`：已把单 ZIP 正式分发边界改为三平台独立 ZIP，并保留内部 identity/artifact SHA 责任。
+- `.agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md`：已同步 Release asset contract、精确成员和失败关闭条件。
+- `README.md`、`runtime/README.md` 未承载单 ZIP 最终用户契约，本 Change 未做无关修改。
 
 # Git / PR / 发布状态
 
-- 分支：`change/release-platform-zips`
-- Commit：已创建本 Change；实现提交待完成。
-- PR：尚未创建。
-- CI：尚未运行本 Change 的 Red/Green 证据。
-- 正式 Release：不在本 Change 中执行。
+- Requirement Source：Issue #96。
+- 分支：`change/release-platform-zips`。
+- PR：#97，当前仍为 Draft；必须等本次 Change 状态提交后的 fresh CI 通过后再转 Ready。
+- 实现审计 head：`cc91295ef993d5a574b0adec69c20819ac8871ab`；本文件更新会产生新的 final head。
+- 正式 Release：未执行，符合本 Change 非目标；因此真实 GitHub Draft/Publish 写操作未在本轮触发，剩余风险由 workflow 的精确资产校验和下一次正式 Release preflight 控制。
+- Merge：未执行；未获得用户明确合并授权。
