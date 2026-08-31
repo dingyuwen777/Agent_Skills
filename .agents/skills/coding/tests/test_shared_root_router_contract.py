@@ -38,7 +38,7 @@ class SharedRootRouterContractTest(unittest.TestCase):
             self.assertIn(marker, router)
 
     def test_source_bootstraps_point_router_while_runtime_bootstrap_hides_internal_navigation(self) -> None:
-        """源码维护入口继续指向 Router，目标项目 Runtime managed block 只暴露治理能力。"""
+        """源码维护入口继续指向 Router，目标项目 managed block 只暴露项目侧行为契约。"""
         for relative in ("AGENTS.md", ".agents/MAINTENANCE.md"):
             text = (ROOT / relative).read_text(encoding="utf-8")
             self.assertIn(ENTRY_PATH, text, f"{relative} 未指向薄 ENTRY.md")
@@ -49,8 +49,11 @@ class SharedRootRouterContractTest(unittest.TestCase):
         self.assertNotIn(ROUTER_PATH, managed)
         self.assertNotIn(".agents/skills/", managed)
         self.assertNotIn("coding/assets/AGENT_SKILLS_ROUTER.md", managed)
-        self.assertIn("研发治理 MCP", managed)
-        self.assertIn("Runtime Mode", managed)
+        self.assertNotIn("研发治理 MCP", managed)
+        self.assertNotIn("Runtime Mode", managed)
+        self.assertIn("无论采用哪种通用治理执行方式", managed)
+        self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", managed)
+        self.assertIn("只改变通用治理约束的取得和呈现方式", managed)
 
     def test_project_payload_explicitly_models_shared_entry_and_formal_router(self) -> None:
         """Project Payload 必须显式携带共享 Entry，并由动态 Skill 分发正式 Router。"""
@@ -97,8 +100,9 @@ class SharedRootRouterContractTest(unittest.TestCase):
             self.assertIn("router/SKILL.md", state["managed_files"])
             agents = (target / "AGENTS.md").read_text(encoding="utf-8")
             self.assertNotIn(".agents/skills/", agents)
-            self.assertIn("研发治理 MCP", agents)
-            self.assertIn("用户可见", agents)
+            self.assertNotIn("研发治理 MCP", agents)
+            self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", agents)
+            self.assertIn("治理能力自身的运行与实现细节不属于项目进度或交付内容", agents)
 
 
 if __name__ == "__main__":
