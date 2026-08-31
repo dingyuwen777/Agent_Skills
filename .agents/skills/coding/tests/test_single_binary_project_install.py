@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime import project_installer as INSTALLER
+from runtime.agent_skills_runtime.install_state import LEGACY_INSTALL_SCHEMA, build_install_state
 from runtime.agent_skills_runtime.project_installer import INSTALL_MANIFEST_PATH, install_project
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime.routing import REFERENCE_ROUTE_PROTOCOL, SKILL_ROUTE_PROTOCOL
@@ -23,7 +24,7 @@ def _routing_block(payload: dict[str, object]) -> str:
 
 
 class SingleBinaryProjectInstallTest(unittest.TestCase):
-    """验证单二进制项目级安装、Skill/shared ownership 与宿主配置边界。"""
+    """验证无 sidecar 单二进制项目安装、升级 ownership 与宿主配置边界。"""
 
     def setUp(self) -> None:
         """为每个安装测试建立隔离 source、target、共享 Entry、Router 和 Runtime artifact。"""
@@ -110,8 +111,17 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         bundle = build_bundle(self.source)
         return build_project_payload(self.source, bundle)
 
+    def _legacy_manifest(self, payload: dict[str, object], release_version: str) -> Path:
+        """写入合法 legacy v3 ownership，模拟旧正式版本的一次迁移输入。"""
+        state = build_install_state(payload, release_version)
+        state["schema"] = LEGACY_INSTALL_SCHEMA
+        path = self.target / INSTALL_MANIFEST_PATH
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(state, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+        return path
+
     def test_first_install_is_project_scoped_and_preserves_project_owned_content(self) -> None:
-        """首次安装只认领 Release Skill/shared files，并保留项目自有内容。"""
+        """首次安装只认领当前 Payload，不生成 install manifest，并保留项目自有内容。"""
         custom = self.target / ".agents" / "skills" / "company-internal"
         custom.mkdir(parents=True)
         (custom / "SKILL.md").write_text("# company\n", encoding="utf-8")
@@ -121,15 +131,14 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         cursor.parent.mkdir()
         cursor.write_text(json.dumps({"mcpServers": {"other": {"command": "other"}}}), encoding="utf-8")
 
-        result = install_project(
-            self.target,
-            self._payload(),
-            self.runtime_artifact,
-            release_version="1.2.3",
-        )
+        payload = self._payload()
+        result = install_project(self.target, payload, self.runtime_artifact, release_version="1.2.3")
 
         self.assertEqual(result["skills"], ["coding", "docs", "review", "router"])
         self.assertEqual(result["shared_files"], ["ENTRY.md"])
+        self.assertEqual(result["ownership_source"], "first-install")
+        self.assertNotIn("manifest", result)
+        self.assertFalse((self.target / INSTALL_MANIFEST_PATH).exists())
         self.assertEqual((custom / "SKILL.md").read_text(encoding="utf-8"), "# company\n")
         agents = (self.target / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("KEEP-AGENTS", agents)
@@ -142,13 +151,10 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.assertIn("KEEP-CLAUDE", (self.target / "CLAUDE.md").read_text(encoding="utf-8"))
         self.assertIn("@AGENTS.md", (self.target / "CLAUDE.md").read_text(encoding="utf-8"))
         self.assertEqual((self.target / ".agents/runtime/agent-skills-mcp.exe").read_bytes(), b"runtime-v1")
-        manifest = json.loads((self.target / INSTALL_MANIFEST_PATH).read_text(encoding="utf-8"))
-        self.assertEqual(manifest["schema"], "agent-skills-install/v3")
-        self.assertEqual(manifest["skills"], ["coding", "docs", "review", "router"])
-        self.assertEqual(manifest["shared_files"], ["ENTRY.md"])
-        self.assertEqual(manifest["release_version"], "1.2.3")
-        self.assertIn("coding/SKILL.md", manifest["managed_files"])
-        self.assertFalse(any("/references/" in path for path in manifest["managed_files"]))
+        expected_state = build_install_state(payload, "1.2.3")
+        for relative in expected_state["managed_files"]:
+            self.assertTrue((self.target / ".agents/skills" / relative).is_file(), relative)
+        self.assertFalse(any("/references/" in path for path in expected_state["managed_files"]))
         self.assertFalse((self.target / ".agents/skills/coding/references/01_规则.md").exists())
         cursor_data = json.loads(cursor.read_text(encoding="utf-8"))
         self.assertEqual(cursor_data["mcpServers"]["other"]["command"], "other")
@@ -166,7 +172,7 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
             self._payload()
 
     def test_first_install_refuses_unowned_shared_entry_before_mutation(self) -> None:
-        """目标已有未认领同名 Entry 时必须在 Runtime/AGENTS/manifest 写入前 fail closed。"""
+        """目标已有未认领同名 Entry 时必须在 Runtime/AGENTS 写入前 fail closed。"""
         existing = self.target / ENTRY_RELATIVE
         existing.parent.mkdir(parents=True)
         existing.write_text("# project-owned entry\n", encoding="utf-8")
@@ -183,7 +189,7 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.assertFalse((self.target / ".agents/runtime").exists())
 
     def test_first_install_refuses_unowned_same_name_skill_before_mutation(self) -> None:
-        """首次安装遇到同名但未被 manifest 认领的 Skill 时必须 fail closed。"""
+        """首次安装遇到同名但无 previous ownership 的 Skill 时必须 fail closed。"""
         collision = self.target / ".agents" / "skills" / "coding"
         collision.mkdir(parents=True)
         (collision / "SKILL.md").write_text("# project-owned coding\n", encoding="utf-8")
@@ -198,60 +204,48 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.assertFalse((self.target / INSTALL_MANIFEST_PATH).exists())
         self.assertFalse((self.target / ".agents/runtime").exists())
 
-    def test_non_v3_install_manifest_schemas_are_rejected_without_compatibility(self) -> None:
-        """安装器只接受当前 v3 manifest，不保留任何旧 schema 兼容入口。"""
+    def test_non_v3_legacy_manifest_schemas_are_rejected_without_compatibility(self) -> None:
+        """legacy migration 只接受 v3；v1/v2/未知 schema 均失败关闭。"""
         manifest = self.target / INSTALL_MANIFEST_PATH
         manifest.parent.mkdir(parents=True)
         for schema in ("agent-skills-install/v1", "agent-skills-install/v2", "agent-skills-install/v4"):
             with self.subTest(schema=schema):
-                manifest.write_text(
-                    json.dumps(
-                        {
-                            "schema": schema,
-                            "skills": ["coding"],
-                            "shared_files": ["ENTRY.md"],
-                        }
-                    ),
-                    encoding="utf-8",
-                )
+                manifest.write_text(json.dumps({"schema": schema}), encoding="utf-8")
                 with self.assertRaisesRegex(ValueError, "schema 不受支持"):
-                    install_project(
-                        self.target,
-                        self._payload(),
-                        self.runtime_artifact,
-                        release_version="2.0.0",
-                    )
+                    install_project(self.target, self._payload(), self.runtime_artifact, release_version="2.0.0")
                 self.assertFalse((self.target / "AGENTS.md").exists())
                 self.assertFalse((self.target / ".agents/runtime").exists())
 
-    def test_install_result_has_no_legacy_migration_surface(self) -> None:
-        """当前安装结果只描述 v3 行为，不保留旧 Stub 迁移字段。"""
-        result = install_project(
-            self.target,
-            self._payload(),
-            self.runtime_artifact,
-            release_version="2.0.0",
-        )
+    def test_same_artifact_reinstall_uses_embedded_current_payload_without_sidecar(self) -> None:
+        """同一个 onefile artifact 连续安装不需要 manifest 或执行项目外状态猜测。"""
+        payload = self._payload()
+        install_project(self.target, payload, self.runtime_artifact, release_version="2.0.0")
+        result = install_project(self.target, payload, self.runtime_artifact, release_version="2.0.0")
+        self.assertEqual(result["ownership_source"], "same-artifact")
+        self.assertFalse((self.target / INSTALL_MANIFEST_PATH).exists())
 
-        self.assertNotIn("removed_legacy_stubs", result)
-
-    def test_v3_upgrade_preserves_project_reference_inside_managed_skill(self) -> None:
-        """v3 逐文件 ownership 升级不能删除安装后新增的项目自有 Reference。"""
-        install_project(self.target, self._payload(), self.runtime_artifact, release_version="1.2.3")
+    def test_legacy_v3_upgrade_preserves_project_reference_and_removes_manifest(self) -> None:
+        """legacy v3 迁移后项目新增 Reference 保留，旧 manifest 在成功事务末端删除。"""
+        first_payload = self._payload()
+        install_project(self.target, first_payload, self.runtime_artifact, release_version="1.2.3")
+        legacy_manifest = self._legacy_manifest(first_payload, "1.2.3")
         project_reference = self.target / ".agents/skills/coding/references/99_项目规则.md"
         project_reference.parent.mkdir(parents=True)
         project_reference.write_text("# keep project reference\n", encoding="utf-8")
         (self.source / ENTRY_RELATIVE).write_text("# Entry v2\n", encoding="utf-8")
 
-        install_project(self.target, self._payload(), self.runtime_artifact, release_version="1.3.0")
+        result = install_project(self.target, self._payload(), self.runtime_artifact, release_version="1.3.0")
 
+        self.assertEqual(result["ownership_source"], "legacy-manifest")
         self.assertEqual(project_reference.read_text(encoding="utf-8"), "# keep project reference\n")
+        self.assertFalse(legacy_manifest.exists())
 
-    def test_upgrade_removes_only_previous_managed_skill_and_keeps_project_skill(self) -> None:
-        """Release 删除 Skill 时只删除旧 manifest 明确认领项，未知项目 Skill 永久保留。"""
+    def test_upgrade_uses_old_runtime_state_to_remove_only_previous_managed_skill(self) -> None:
+        """不同 binary 升级从旧 Runtime 自描述取得 ownership，只删除旧受管 Skill，保留项目 Skill。"""
         self._write_skill("security")
         first_payload = self._payload()
         install_project(self.target, first_payload, self.runtime_artifact, release_version="1.2.3")
+        old_state = build_install_state(first_payload, "1.2.3")
         custom = self.target / ".agents" / "skills" / "company-internal"
         custom.mkdir()
         (custom / "SKILL.md").write_text("# company\n", encoding="utf-8")
@@ -266,25 +260,27 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.runtime_artifact.write_bytes(b"runtime-v2")
         second_payload = self._payload()
 
-        result = install_project(self.target, second_payload, self.runtime_artifact, release_version="1.3.0")
+        with patch.object(INSTALLER, "_query_installed_runtime_state", return_value=old_state) as query:
+            result = install_project(self.target, second_payload, self.runtime_artifact, release_version="1.3.0")
 
+        query.assert_called_once()
+        self.assertEqual(result["ownership_source"], "runtime-install-state")
         self.assertFalse((self.target / ".agents/skills/security").exists())
         self.assertTrue((custom / "SKILL.md").is_file())
         self.assertTrue((self.target / ROUTER_RELATIVE).is_file())
         self.assertEqual((self.target / ".agents/runtime/agent-skills-mcp.exe").read_bytes(), b"runtime-v2")
         self.assertEqual(result["removed_skills"], ["security"])
         self.assertEqual(result["removed_shared_files"], [])
-        manifest = json.loads((self.target / INSTALL_MANIFEST_PATH).read_text(encoding="utf-8"))
-        self.assertEqual(manifest["skills"], ["coding", "docs", "review", "router"])
-        self.assertEqual(manifest["shared_files"], ["ENTRY.md"])
-        self.assertEqual(manifest["release_version"], "1.3.0")
+        self.assertFalse((self.target / INSTALL_MANIFEST_PATH).exists())
 
-    def test_managed_entry_write_failure_restores_previous_entry(self) -> None:
-        """新 Entry 写入失败时必须恢复旧 Entry、受管文件与旧 manifest。"""
-        install_project(self.target, self._payload(), self.runtime_artifact, release_version="1.2.3")
+    def test_managed_entry_write_failure_restores_previous_entry_and_legacy_manifest(self) -> None:
+        """legacy 迁移中 Entry 写入失败时必须恢复旧 Entry、受管文件与旧 manifest。"""
+        first_payload = self._payload()
+        install_project(self.target, first_payload, self.runtime_artifact, release_version="1.2.3")
+        legacy_manifest = self._legacy_manifest(first_payload, "1.2.3")
         target_entry = (self.target / ENTRY_RELATIVE).resolve()
         old_entry = target_entry.read_bytes()
-        old_manifest = (self.target / INSTALL_MANIFEST_PATH).read_bytes()
+        old_manifest = legacy_manifest.read_bytes()
 
         (self.source / ENTRY_RELATIVE).write_text("# Entry v2\n", encoding="utf-8")
         second_payload = self._payload()
@@ -305,12 +301,13 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
 
         self.assertTrue(target_entry.is_file())
         self.assertEqual(target_entry.read_bytes(), old_entry)
-        self.assertEqual((self.target / INSTALL_MANIFEST_PATH).read_bytes(), old_manifest)
+        self.assertEqual(legacy_manifest.read_bytes(), old_manifest)
 
-    def test_runtime_failure_after_shared_switch_restores_previous_entry(self) -> None:
-        """共享 Entry 已切换后若 Runtime 校验失败，安装器必须恢复旧 Entry 和旧 Runtime。"""
+    def test_runtime_failure_after_shared_switch_restores_previous_entry_and_runtime(self) -> None:
+        """不同 binary 升级在 Runtime 校验失败时恢复旧 Entry/Runtime，且不生成 manifest。"""
         first_payload = self._payload()
         install_project(self.target, first_payload, self.runtime_artifact, release_version="1.2.3")
+        old_state = build_install_state(first_payload, "1.2.3")
         old_entry = (self.target / ENTRY_RELATIVE).read_bytes()
         old_runtime = (self.target / ".agents/runtime/agent-skills-mcp.exe").read_bytes()
 
@@ -319,11 +316,10 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         second_payload = self._payload()
         runtime_target = (self.target / ".agents/runtime/agent-skills-mcp.exe").resolve()
         artifact = self.runtime_artifact.resolve()
-
         original_sha = INSTALLER._sha256_file
 
         def controlled_sha(path: Path) -> str:
-            """只制造安装后 Runtime hash 不一致，其他路径继续使用真实 SHA。"""
+            """让 preflight 识别不同 binary，并只在安装后 Runtime 校验阶段制造 SHA 不一致。"""
             resolved = Path(path).resolve()
             if resolved == runtime_target:
                 return "installed-mismatch"
@@ -331,14 +327,14 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
                 return "artifact-expected"
             return original_sha(path)
 
-        with patch.object(INSTALLER, "_sha256_file", side_effect=controlled_sha):
-            with self.assertRaisesRegex(RuntimeError, "SHA256"):
-                install_project(self.target, second_payload, self.runtime_artifact, release_version="1.3.0")
+        with patch.object(INSTALLER, "_query_installed_runtime_state", return_value=old_state):
+            with patch.object(INSTALLER, "_sha256_file", side_effect=controlled_sha):
+                with self.assertRaisesRegex(RuntimeError, "SHA256"):
+                    install_project(self.target, second_payload, self.runtime_artifact, release_version="1.3.0")
 
         self.assertEqual((self.target / ENTRY_RELATIVE).read_bytes(), old_entry)
         self.assertEqual((self.target / ".agents/runtime/agent-skills-mcp.exe").read_bytes(), old_runtime)
-        manifest = json.loads((self.target / INSTALL_MANIFEST_PATH).read_text(encoding="utf-8"))
-        self.assertEqual(manifest["release_version"], "1.2.3")
+        self.assertFalse((self.target / INSTALL_MANIFEST_PATH).exists())
 
 
 if __name__ == "__main__":
