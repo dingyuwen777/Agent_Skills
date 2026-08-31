@@ -25,14 +25,17 @@ agent_skills_runtime/runtime_skill_projection.py
 agent_skills_runtime/project_payload.py
 → 构建 Skills 根级共享运行资产、各 Skill Runtime Projection 与其他运行资产；显式禁止 Reference/Stub
 
+agent_skills_runtime/install_state.py
+→ 从已验证 Project Payload 确定性派生 Runtime 内嵌 installation ownership；严格校验 legacy v3 migration 与安全 managed path
+
 agent_skills_runtime/project_installer.py
-→ install v3 逐文件 ownership、宿主配置与回滚；非 v3 manifest 直接拒绝
+→ 无 sidecar 项目安装/升级、previous ownership、宿主配置与回滚；legacy v3 仅作为一次迁移输入
 
 agent_skills_runtime/runtime.py
 → 维护 task/route token、单调 required Context、渐进式披露、用户可见进度边界与 checkpoint
 
 agent_skills_runtime/server.py
-→ CLI + stdio MCP Server
+→ CLI + stdio MCP Server；另有不进入普通 help/MCP 的内部 install-state 自描述入口供下一版安装器升级使用
 ```
 
 Runtime 不负责重新解释专业 Skill 规则；跨 Skill 发现与 Handoff 由 [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md) 唯一负责，各 Skill 完整专业语义仍由自己的 canonical `SKILL.md` 和 canonical `references/*.md` 定义。[`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 只做无条件进入 Router 的共享薄 Bootstrap。
@@ -94,22 +97,49 @@ onefile binary 无参数运行默认安装/升级当前目录；也支持：
 agent-skills-mcp install --target <project-root>
 ```
 
-当前 Project Payload 使用 v2，install manifest 使用 v3 `managed_files` 逐文件 Contract。安装器只接受当前 v3 manifest；v1、v2、未知或损坏 schema 全部失败关闭，不扫描旧 Stub，也不根据旧目录结构推断 ownership。本迁移不承诺旧安装版本升级；只验证全新安装、重复安装和当前 v3 ownership 更新。
+当前 Project Payload 使用 v2。**新安装和升级不再生成 `.agents/agent-skills-install.json` 或其他 ownership sidecar。** 当前 Runtime 的 installation ownership 由 `install_state.py` 直接从已验证 Project Payload 确定性派生，协议为：
+
+```text
+agent-skills-runtime-install-state/v1
+```
+
+它包含当前 Release 的 `skills`、`shared_files`、`managed_files`、`source_digest`、`payload_digest` 和版本身份，但只作为 Runtime 内部自描述状态存在，不落独立文件，不进入 MCP Tool Contract，也不作为普通用户 CLI/help 入口。
+
+升级时 previous ownership 来源严格限定为：
+
+```text
+合法 legacy agent-skills-install/v3
+→ 只作为一次迁移输入
+→ 成功安装事务末端删除
+
+否则
+
+旧已安装 .agents/runtime/agent-skills-mcp[.exe]
+→ 内部 __install-state --json
+→ 返回旧 Runtime 内嵌 Project Payload 对应的 ownership
+→ 新安装器严格校验后使用
+```
+
+v1、v2、未知或损坏 legacy manifest 直接失败；旧 Runtime 不存在、不可执行、返回非法 JSON/schema/path/digest 或无法证明 previous ownership 时同样失败关闭，不扫描旧 Stub，也不根据目录/文件名猜 ownership。
 
 项目安装需要保持：
 
-- `.agents/agent-skills-install.json` 用 `managed_files` 认领 Agent_Skills 可证明的具体文件，并另列公开 Skill/`shared_files`；
-- 首次同名未认领 Skill 或 shared file 均 fail closed；
-- 新 Release 删除文件时只删除旧 v3 `managed_files` 明确认领项，不替换整棵 Skill 目录；
+- previous `managed_files` 只认领 Agent_Skills 可证明的具体文件；`skills` / `shared_files` 只作 Catalog/ownership 导航，不授权整目录替换；
+- 首次同名未认领 Skill、shared file 或 managed file 均 fail closed；
+- 新 Release 删除文件时只删除 previous `managed_files` 明确认领项，不替换整棵 Skill 目录；
+- 项目后来添加到受管 Skill 目录中的 Reference/asset/其他文件继续是项目自有，普通升级不能删除；
 - `.agents/runtime/` 为项目本地运行资产并加入 `.gitignore`；
 - `AGENTS.md` / CLAUDE / Codex 使用 managed marker；
 - 目标项目 `AGENTS.md` managed block 只做 Runtime 薄 Bootstrap：先恢复项目真实事实，再通过已配置的项目级治理 MCP 获取本次任务所需完整约束；不得把受管源码维护导航当作 Runtime 日常读取入口；
 - Runtime 用户可见过程可以正常描述项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 和交付状态；不得主动复述内部治理分类、文件名、目录路径、规则标识、路由映射、内部凭据或加载明细；
 - Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产和未认领 shared file 保留；
-- Codex 同名 MCP table 存在但 managed marker 缺失，或合法 managed block 外另有重复同名 table 时，即使 install manifest 仍存在也 fail closed，不猜测 table ownership；
-- 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、manifest 与受管文本；
+- Codex 同名 MCP table 存在但 managed marker 缺失，或合法 managed block 外另有重复同名 table 时，即使 legacy v3 或旧 Runtime install-state 能证明历史安装存在也 fail closed，不猜测 table ownership；
+- 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、legacy manifest（如存在）与受管文本；
+- legacy v3 manifest 只在所有新文件、Runtime、宿主配置都成功后删除；失败回滚必须恢复它；
 - 如果回滚本身有任何失败，必须同时报告原始安装异常与未恢复路径/原因，不能静默吞掉 rollback failure。
+
+取消 sidecar 后有一个必须明确的信任边界：如果没有 legacy v3，升级需要执行目标项目里原先安装的旧 Runtime 来取得其内嵌 install-state。因此 sidecarless upgrade 以**用户已经信任并明确选择的目标工作区**为前提；普通文件/非符号链接校验和 install-state schema/digest/path 校验不是代码签名、TEE 或抵御项目 Owner 恶意替换旧 Runtime 的安全保证。旧 Runtime 无法提供合法状态时宁可停止升级，也不能猜 ownership。
 
 正式 Router 与其他 Skill Core 仍通过动态 Catalog 分发，但写入目标项目的是各自 canonical Core 的确定性 Runtime Projection；Skills 根级 Entry 只通过 Project Payload 的显式 `shared_files` Contract 分发，二者职责不混淆。内部 Entry/Router/Core 存在于目标项目并不意味着它们必须成为用户可见的日常导航；安装 ownership 与用户披露是两个独立边界。
 
@@ -153,7 +183,7 @@ agent_skills_checkpoint
 
 这些变化只收窄**公共 envelope**，不改变加密 Bundle 内部 provenance、hash/size、依赖图、风险下限、路由求值或 canonical 原文。`checkpoint` 仍不能替代 Requirement Traceability、Completion Audit、Review、Docs Impact 或真实测试。Task Route 的授权字段只是数据，不能产生 Git、发布或部署权限。
 
-Runtime 给宿主的每个关键返回都携带同一用户可见进度规则：允许说明真实工程活动及其原因；不得把 MCP 内部调用、治理资产身份、分类、路由和加载明细作为用户可见过程复述。这里是输出层约束，不是禁止模型执行这些治理步骤。
+内部 `__install-state --json` 不是第七个 MCP Tool，也不加入普通 CLI help；它只服务后续 Runtime 安装器恢复 previous ownership。Runtime 给宿主的每个关键 MCP 返回仍携带同一用户可见进度规则：允许说明真实工程活动及其原因；不得把 MCP 内部调用、治理资产身份、分类、路由和加载明细作为用户可见过程复述。这里是输出层约束，不是禁止模型执行这些治理步骤。
 
 ## 5. 本地构建
 
@@ -174,12 +204,24 @@ python scripts/build_runtime.py --output-dir dist --json
 正式 Release 不读取仓库根版本文件。`.github/workflows/release.yml` 从用户输入的 `v<SemVer>` tag 派生无 `v` 的 `release_version`，然后三平台统一显式调用：
 
 ```text
-scripts/build_runtime.py ... --release-version <SemVer>
+scripts/build_runtime.py ... --release-version <SemVer> --json
 ```
 
 构建器读取显式版本和真实 source commit，动态发现 Skill/Reference，编译 canonical metadata，构建/加密 Bundle v2，并从同一 canonical Skill Core 自动生成 no-Stub Project Payload 中的 Runtime Projection，再生成当前平台 artifact 并执行 `status` / `self-test` 校验。由于公共 `status/self-test` 不再暴露详细内部摘要，Builder 会在维护侧用同一份 Bundle、Payload、release/source 身份计算一个不可逆整体完整性指纹，并要求 artifact `self-test` 返回完全一致的指纹；这样仍能证明 artifact 与当前构建材料一致，同时不把内部身份字段重新开放给 Runtime 日常调用。
 
-构建目录中的 `.manifest.json` 是 CI 校验用 Release identity，仍可记录维护侧详细摘要和 Catalog，用于 Release 交叉验证；它不作为正式 GitHub Release 资产发布，也不属于 Runtime MCP 公共披露面。
+**Builder 不再生成 `.manifest.json` sidecar。** `--json` 直接返回维护侧 build identity，至少包括：
+
+```text
+artifact / artifact_sha256
+release_version / source_commit / python_version
+integrity_fingerprint
+bundle_schema / bundle_version
+Task Route / Routing Manifest / MCP Tool / Project Payload protocol
+source_digest / routing_digest / payload_digest
+Skill 集合与 context_budget
+```
+
+这些字段由普通 Runtime Package CI 直接解析；正式 Release 的每个平台 job 再通过 `GITHUB_OUTPUT` 把公共 identity 和该平台 `artifact_sha256` 传给发布 job。构建目录因此只有实际 onefile binary 等必要构建产物，不再需要 `agent-skills-mcp*.manifest.json` 作为第二份身份副本。
 
 Builder 的维护者 JSON 输出还包含聚合 `context_budget`：
 
@@ -193,21 +235,21 @@ base_router_plus_core_bytes
 
 它只量化 Entry / Runtime Router Projection / 专业 Runtime Skill Projection / canonical Reference 的聚合字节成本，不列出单个 Reference ID、文件名、路径或触发映射，也不改变 Runtime `status/self-test` 的公开披露合同。为保持现有构建报告消费者兼容，`router_bytes` 与 `base_router_plus_core_bytes` 字段名保留；新增 `entry_bytes` 单独记录薄入口成本。
 
-“最新规则模式”允许网页端 Source Mode 读取当前 `main`、本地 Runtime 使用当前最新 Release，但二者在发布间隙可能短暂不同步；“精确复现模式”应以 Runtime 的 `Release版本` 定位对应正式 Release/tag，再从该 tag 的源码事实复现同一版本，而不是依赖 Runtime 日常状态接口导出源仓库内部 identity。
+“最新规则模式”允许网页端 Source Mode 读取当前 `main`、本地 Runtime 使用当前最新 Release，但二者在发布间隙可能短暂不同步；“精确复现模式”应以 Runtime 的 `Release版本` 定位对应正式 Release/tag，再从该 tag 的源码事实复现同一版本。development `0.0.0-dev` 的精确构建证据以 Builder JSON/CI 记录为准，不再依赖磁盘 identity manifest。
 
-Linux/macOS 默认产物：
+Linux/macOS 默认输出目录中正式 onefile：
 
 ```text
 dist/agent-skills-mcp
-dist/agent-skills-mcp.manifest.json
 ```
 
 Windows：
 
 ```text
 dist/agent-skills-mcp.exe
-dist/agent-skills-mcp.manifest.json
 ```
+
+同目录不应出现同名或版本化 `*.manifest.json`。
 
 ## 6. 真实 MCP 验证
 
@@ -230,7 +272,8 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 - metadata compiler/evaluator、Routing Conformance、private manifest/encryption parity；
 - Runtime Projection 不暴露当前 canonical Reference 文件名、路径、Stable ID 或直接导航映射，同时保留 frontmatter、路由 metadata、核心工程语义并由动态 Reference 身份自动驱动；
 - Runtime 公共返回面不暴露内部治理身份，同时 required canonical Context exact-text 不被删改；
-- install v3 ownership、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、Codex marker/重复 table fail-closed 和失败/回滚诊断；
+- sidecarless install-state、legacy v3 一次迁移、v1/v2/未知 schema 拒绝、项目自有 Reference 保留、同名冲突、Codex marker/重复 table fail-closed 和失败/回滚诊断；
+- Builder JSON identity 与 no-sidecar Release preservation；
 - 动态 Skill Bundle + Project Payload 的源码级构建、投影确定性与内容守恒；
 - Active/changed Change Ready Check。
 
@@ -242,8 +285,12 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 
 - onefile build/status/self-test；
 - development `release_version=0.0.0-dev` 与固定 Python identity；
+- Builder JSON 的 `integrity_fingerprint` 和实际 binary `artifact_sha256`；
+- 构建目录不存在 `*.manifest.json`；
 - real stdio MCP；
-- project-only single-binary 首次安装、升级和无参数安装；
+- project-only single-binary 首次安装、重复安装/升级和无参数安装；
+- 安装项目不存在 `.agents/agent-skills-install.json`；
+- 已安装 Runtime 的内部 install-state 能认领当前 Entry/Router，但不进入 MCP；
 - 项目内 Runtime status/MCP smoke；
 - Windows/macOS 对应平台 package/install。
 
@@ -253,12 +300,25 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 
 正式 Release 由根 `.github/workflows/release.yml` 从 `main` 手工构建。输入 `v<SemVer>` tag 后，workflow 将同一 `release_version` 显式传入 Linux/Windows/macOS Builder；Release preflight 会重新运行完整 self-contained tests 与 Ready Check。
 
-所有三平台 artifact / identity 完成验证后，workflow 逐一校验协议、digest 和 `artifact_sha256`，并删除平台特有的 `artifact` / `artifact_sha256` 字段后比较其余公共 identity；三平台任一 source/routing/bundle/payload/protocol/Skill identity 漂移都会在发布前失败关闭。校验通过后分别从白名单成员组装并回读验证三个最终分发 ZIP：`agent-skills-v<SemVer>-linux.zip`、`agent-skills-v<SemVer>-windows.zip`、`agent-skills-v<SemVer>-macos.zip`。每个 ZIP 根目录只包含当前平台 Runtime binary 与同一版本 [`USAGE.md`](../USAGE.md)，Draft 与正式 Release 都必须精确只有这三个平台 ZIP 资产；构建期 identity manifest 不进入最终 ZIP 或正式 Release。
+三个平台 build job 都直接解析 Builder JSON，并把下列**公共 identity**通过 job outputs 传给最终发布 job：
+
+```text
+release_version / source_commit / python_version
+integrity_fingerprint
+Bundle/Task Route/Routing Manifest/MCP Tool/Project Payload protocols
+bundle_version / source_digest / routing_digest / payload_digest
+```
+
+同时每个平台单独传递自己的 `artifact_sha256`。发布 job 要求三平台公共 identity 完全一致，并要求 `source_commit == GITHUB_SHA`、Python 与协议固定值正确、digest/fingerprint 格式合法；随后对下载后的 Linux、Windows、macOS binary 分别重新计算 SHA256，并与对应平台 output 比对。平台 binary 不同，因此三个 `artifact_sha256` **不做互相相等比较**，而是各自绑定自己的真实 artifact。
+
+Release 流程明确不生成、上传或打包任何 identity `*.manifest.json`。所有三平台 artifact / identity 完成验证后，workflow 从显式白名单成员分别组装并回读验证三个最终分发 ZIP：`agent-skills-v<SemVer>-linux.zip`、`agent-skills-v<SemVer>-windows.zip`、`agent-skills-v<SemVer>-macos.zip`。每个 ZIP 根目录只包含当前平台 Runtime binary 与同一版本 [`USAGE.md`](../USAGE.md)，Draft 与正式 Release 都必须精确只有这三个平台 ZIP 资产；Builder JSON、checksum 文件、独立 binary、说明文件或其他维护资产都不进入正式 Release。
 
 最终用户资产和使用方式以根 [`USAGE.md`](../USAGE.md) 为准。本文件不维护第二份最终用户教程，也不记录 Change/PR/Release 历史流水账。
 
 ## 9. 安全边界
 
 onefile + AES-GCM 的目标是减少目标项目中的普通明文浏览/复制面，并检测 Bundle 篡改；它不是 TEE/KMS。Runtime Skill Projection 进一步缩小安装后的普通明文面，但它只隐藏 canonical Reference 的身份/导航映射，不是加密层，也不能替代 Reference Bundle 的完整性与访问边界。
+
+sidecarless installation ownership 同样不是新的安全隔离层。它减少的是目标项目和构建目录中的状态副本：当前 ownership 已经存在于 Runtime 内嵌 Project Payload，Builder identity 已经存在于构建结果与 CI。升级通过旧 Runtime 的内部 install-state 读取 previous ownership，以用户已经信任并明确选择的目标工作区为前提；普通文件/路径/schema/digest 校验不能抵御项目 Owner 主动替换旧 Runtime，也不能宣称等价于代码签名、TEE 或可信远程证明。旧 Runtime 不可验证时必须停止升级而不是猜 ownership。
 
 模式感知披露只能减少正常 Agent 对话中主动复述内部治理结构的概率和产品表面，不等于阻止拥有机器控制权的用户查看受管明文 Runtime Core/Router、MCP 通信或进程内解密后的完整规则。不能宣称能够抵御机器 Owner、调试器、内存转储、进程 Hook、MCP 通信观测或专业逆向。真正限制谁能读取 canonical 源文件，必须依赖源仓库访问控制。

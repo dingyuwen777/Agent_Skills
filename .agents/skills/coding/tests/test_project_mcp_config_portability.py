@@ -5,8 +5,11 @@ import tempfile
 import tomllib
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime import project_installer as INSTALLER
+from runtime.agent_skills_runtime.install_state import build_install_state
 from runtime.agent_skills_runtime.project_installer import INSTALL_MANIFEST_PATH, install_project
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime.routing import REFERENCE_ROUTE_PROTOCOL, SKILL_ROUTE_PROTOCOL
@@ -18,7 +21,7 @@ def _routing_block(payload: dict[str, object]) -> str:
 
 
 class ProjectMcpConfigPortabilityTest(unittest.TestCase):
-    """验证项目级 MCP Host 配置不绑定安装机器绝对路径。"""
+    """验证项目级 MCP Host 配置不绑定安装机器绝对路径，且无需 install manifest。"""
 
     def setUp(self) -> None:
         """建立最小可安装 Skill source 与隔离目标根目录。"""
@@ -103,6 +106,7 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         artifact.parent.mkdir()
         artifact.write_bytes(b"runtime")
         install_project(target, self._payload(), artifact, release_version="1.2.3")
+        self.assertFalse((target / INSTALL_MANIFEST_PATH).exists())
         return target
 
     def _assert_portable_host_commands(self, target: Path, runtime_name: str) -> None:
@@ -110,7 +114,6 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         cursor = json.loads((target / ".cursor/mcp.json").read_text(encoding="utf-8"))
         claude = json.loads((target / ".mcp.json").read_text(encoding="utf-8"))
         codex = tomllib.loads((target / ".codex/config.toml").read_text(encoding="utf-8"))
-        manifest = json.loads((target / INSTALL_MANIFEST_PATH).read_text(encoding="utf-8"))
 
         expected_cursor = (
             "${workspaceFolder}${pathSeparator}.agents${pathSeparator}runtime${pathSeparator}"
@@ -125,7 +128,7 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         self.assertEqual(claude["mcpServers"]["agent-skills"]["args"], ["serve"])
         self.assertEqual(codex["mcp_servers"]["agent-skills"]["command"], expected_codex)
         self.assertEqual(codex["mcp_servers"]["agent-skills"]["args"], ["serve"])
-        self.assertEqual(manifest["runtime"], f".agents/runtime/{runtime_name}")
+        self.assertFalse((target / INSTALL_MANIFEST_PATH).exists())
 
         absolute_target = str(target.resolve())
         for command in (
@@ -142,7 +145,6 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
             Path(".cursor/mcp.json"),
             Path(".mcp.json"),
             Path(".codex/config.toml"),
-            INSTALL_MANIFEST_PATH,
         )
         for relative in persisted_paths:
             content = (target / relative).read_text(encoding="utf-8")
@@ -163,8 +165,10 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         self._assert_portable_host_commands(target, "agent-skills-mcp")
 
     def test_upgrade_rewrites_old_absolute_commands_without_losing_user_config(self) -> None:
-        """升级受管安装时应移除旧机器路径并保留其他 Host 用户配置。"""
+        """无 sidecar 升级仍应移除旧机器路径并保留其他 Host 用户配置。"""
         target = self._install("agent-skills-mcp.exe", "upgrade-target")
+        old_payload = self._payload()
+        old_state = build_install_state(old_payload, "1.2.3")
         old_command = r"C:\\old-machine\\repo\\.agents\\runtime\\agent-skills-mcp.exe"
 
         cursor_path = target / ".cursor/mcp.json"
@@ -193,7 +197,8 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         artifact = self.root / "upgrade-runtime" / "agent-skills-mcp.exe"
         artifact.parent.mkdir()
         artifact.write_bytes(b"runtime-v2")
-        install_project(target, self._payload(), artifact, release_version="1.3.0")
+        with patch.object(INSTALLER, "_query_installed_runtime_state", return_value=old_state):
+            install_project(target, self._payload(), artifact, release_version="1.3.0")
 
         self._assert_portable_host_commands(target, "agent-skills-mcp.exe")
         cursor_after = json.loads(cursor_path.read_text(encoding="utf-8"))

@@ -24,19 +24,14 @@ if str(SOURCE_ROOT) not in sys.path:
 
 from runtime.agent_skills_runtime.catalog import build_bundle, serialize_bundle
 from runtime.agent_skills_runtime.crypto import encrypt_bundle, generate_bundle_key
-from runtime.agent_skills_runtime.project_installer import INSTALL_SCHEMA
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime.routing import ROUTING_MANIFEST_PROTOCOL, TASK_ROUTE_PROTOCOL
-from runtime.agent_skills_runtime.runtime import (
-    MCP_TOOL_CONTRACT_PROTOCOL,
-    runtime_integrity_fingerprint,
-)
+from runtime.agent_skills_runtime.runtime import MCP_TOOL_CONTRACT_PROTOCOL, runtime_integrity_fingerprint
 
 
 VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
 DEVELOPMENT_VERSION = "0.0.0-dev"
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
-RELEASE_IDENTITY_SCHEMA = "agent-skills-runtime-release-identity/v1"
 
 
 def _normalise_release_version(value: str | None) -> str:
@@ -112,9 +107,7 @@ def _context_budget(source_root: str | Path, bundle: Mapping[str, Any]) -> dict[
         "skill_core_bytes": skill_core_bytes,
         "reference_bytes_by_skill": reference_bytes_by_skill,
         "base_router_plus_core_bytes": {
-            skill: entry_bytes + router_bytes + (
-                0 if skill == "router" else skill_core_bytes[skill]
-            )
+            skill: entry_bytes + router_bytes + (0 if skill == "router" else skill_core_bytes[skill])
             for skill in skills
         },
     }
@@ -194,7 +187,7 @@ def build_runtime(
     name: str = "agent-skills-mcp",
     release_version: str | None = None,
 ) -> dict[str, Any]:
-    """构建自包含 onefile Runtime 与仅供本地/CI 校验的 Release identity。"""
+    """构建自包含 onefile Runtime，并直接返回构建身份而不生成磁盘 sidecar。"""
     source = Path(source_root).resolve()
     output = Path(output_dir).resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -216,14 +209,7 @@ def build_runtime(
             package_copy,
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo", "_embedded_payload.py"),
         )
-        _write_embedded_payload(
-            package_copy,
-            key,
-            envelope,
-            project_payload,
-            release_version,
-            source_commit,
-        )
+        _write_embedded_payload(package_copy, key, envelope, project_payload, release_version, source_commit)
         entrypoint = temp_root / "entrypoint.py"
         _write_entrypoint(entrypoint)
         command = [
@@ -278,47 +264,27 @@ def build_runtime(
     if self_test.get("通过") is not True:
         raise RuntimeError("构建产物 self-test 未通过")
 
+    artifact_sha256 = _sha256_file(artifact)
     python_version = platform.python_version()
-    manifest = {
-        "schema": RELEASE_IDENTITY_SCHEMA,
-        "release_version": release_version,
-        "source_commit": source_commit,
-        "artifact": artifact.name,
-        "artifact_sha256": _sha256_file(artifact),
-        "python_version": python_version,
-        "bundle_schema": bundle["schema"],
-        "bundle_version": bundle["bundle_version"],
-        "TaskRoute协议": TASK_ROUTE_PROTOCOL,
-        "RoutingManifest协议": ROUTING_MANIFEST_PROTOCOL,
-        "MCP工具契约协议": MCP_TOOL_CONTRACT_PROTOCOL,
-        "source_digest": expected_digest,
-        "Routing摘要": expected_routing_digest,
-        "project_payload_schema": project_payload["schema"],
-        "install_manifest_schema": INSTALL_SCHEMA,
-        "payload_digest": expected_payload_digest,
-        "skills": list(project_payload["skills"]),
-        "skill_count": len(project_payload["skills"]),
-    }
-    manifest_path = output / f"{name}.manifest.json"
-    manifest_path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
     return {
         "artifact": str(artifact),
-        "manifest": str(manifest_path),
-        "artifact_sha256": manifest["artifact_sha256"],
+        "artifact_sha256": artifact_sha256,
         "release_version": release_version,
         "source_commit": source_commit,
+        "integrity_fingerprint": expected_integrity_fingerprint,
+        "python_version": python_version,
+        "bundle_schema": str(bundle["schema"]),
+        "bundle_version": str(bundle["bundle_version"]),
+        "task_route_protocol": TASK_ROUTE_PROTOCOL,
+        "routing_manifest_protocol": ROUTING_MANIFEST_PROTOCOL,
+        "mcp_tool_contract_protocol": MCP_TOOL_CONTRACT_PROTOCOL,
+        "project_payload_schema": str(project_payload["schema"]),
         "source_digest": expected_digest,
         "routing_digest": expected_routing_digest,
         "payload_digest": expected_payload_digest,
         "payload_file_count": len(project_payload["files"]),
         "skills": list(project_payload["skills"]),
         "skill_count": len(project_payload["skills"]),
-        "bundle_version": manifest["bundle_version"],
-        "python_version": python_version,
         "context_budget": context_budget,
     }
 
@@ -353,8 +319,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print(
                 f"release_version={result['release_version']} artifact={result['artifact']} "
-                f"manifest={result['manifest']} source_digest={result['source_digest']} "
-                f"payload_digest={result['payload_digest']} skills={result['skill_count']}"
+                f"artifact_sha256={result['artifact_sha256']} integrity_fingerprint={result['integrity_fingerprint']}"
             )
         return 0
     except (FileNotFoundError, OSError, RuntimeError, ValueError) as error:

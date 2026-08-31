@@ -12,6 +12,7 @@ from typing import Any, Mapping, Sequence
 
 from .catalog import deserialize_bundle
 from .crypto import decrypt_bundle
+from .install_state import INSTALL_STATE_SCHEMA, build_install_state
 from .project_installer import install_project
 from .project_payload import validate_project_payload
 from .runtime import RuntimeStore, USER_VISIBLE_PROGRESS_RULE
@@ -22,6 +23,7 @@ _PROJECT_PAYLOAD: dict[str, Any] | None = None
 _RELEASE_VERSION: str | None = None
 _SOURCE_COMMIT: str | None = None
 _COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+_INTERNAL_INSTALL_STATE_COMMAND = "__install-state"
 
 
 def _normalise_source_commit(value: Any) -> str | None:
@@ -95,6 +97,15 @@ def _runtime_artifact_path() -> Path:
     if artifact.is_symlink() or not artifact.is_file():
         raise RuntimeError(f"当前 Runtime artifact 不是可安装普通文件：{artifact}")
     return artifact
+
+
+def _internal_install_state_payload() -> dict[str, Any]:
+    """返回旧安装器升级所需的最小 ownership 自描述，不进入 MCP/public status。"""
+    _, payload, release_version = _load_embedded_material()
+    state = build_install_state(payload, release_version)
+    if state.get("schema") != INSTALL_STATE_SCHEMA:
+        raise RuntimeError("Runtime install-state schema 构建失败")
+    return state
 
 
 def create_mcp_server():
@@ -205,12 +216,26 @@ def _self_test_payload() -> dict[str, Any]:
     return result
 
 
+def _run_internal_command(argv: Sequence[str]) -> int | None:
+    """处理不进入普通 help/MCP 的 Runtime 内部升级命令；非内部命令返回空值。"""
+    if not argv or argv[0] != _INTERNAL_INSTALL_STATE_COMMAND:
+        return None
+    if list(argv) != [_INTERNAL_INSTALL_STATE_COMMAND, "--json"]:
+        raise ValueError("内部 install-state 只接受 --json")
+    _print_result(_internal_install_state_payload(), True)
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """无参数默认安装当前项目；显式 serve/status/self-test 保持稳定可脚本化入口。"""
-    parser = _build_parser()
-    arguments = parser.parse_args(argv)
-    command = arguments.command or "install"
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
     try:
+        internal_result = _run_internal_command(raw_argv)
+        if internal_result is not None:
+            return internal_result
+        parser = _build_parser()
+        arguments = parser.parse_args(raw_argv)
+        command = arguments.command or "install"
         if command == "serve":
             create_mcp_server().run()
             return 0

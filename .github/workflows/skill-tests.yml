@@ -65,6 +65,7 @@ jobs:
           runtime/agent_skills_runtime/catalog.py
           runtime/agent_skills_runtime/crypto.py
           runtime/agent_skills_runtime/project_payload.py
+          runtime/agent_skills_runtime/install_state.py
           runtime/agent_skills_runtime/project_installer.py
           runtime/agent_skills_runtime/runtime.py
           runtime/agent_skills_runtime/server.py
@@ -76,11 +77,26 @@ jobs:
           python scripts/runtime_mcp_smoke.py --help
 
       - name: Run self-contained tests
-        run: >-
-          python -m unittest discover
-          -s .agents/skills/coding/tests
-          -p 'test_*.py'
-          -v
+        shell: bash
+        run: |
+          set +e
+          python -m unittest discover \
+            -s .agents/skills/coding/tests \
+            -p 'test_*.py' \
+            -v > self-contained-tests.log 2>&1
+          exit_code=$?
+          cat self-contained-tests.log
+          if [ "${exit_code}" -ne 0 ]; then
+            {
+              echo "### Self-contained test failure summary"
+              echo '```text'
+              tail -n 160 self-contained-tests.log
+              echo '```'
+            } >> "${GITHUB_STEP_SUMMARY}"
+            annotation="$(tail -n 120 self-contained-tests.log | python -c 'import sys; text=sys.stdin.read(); print(text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"), end="")')"
+            echo "::error title=Self-contained tests failed::${annotation}"
+            exit "${exit_code}"
+          fi
 
       - name: Verify active Coding Change
         if: github.event_name == 'push'

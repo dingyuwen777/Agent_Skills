@@ -97,11 +97,15 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         for relative in removed:
             self.assertFalse((ROOT / relative).exists(), f"旧分发入口仍存在：{relative}")
 
-    def test_repository_has_no_install_compatibility_and_keeps_change_archives(self) -> None:
-        """仓库只保留当前 v3 安装路径，同时把完成 Change 作为独立历史记录归档。"""
+    def test_repository_keeps_only_v3_legacy_migration_and_change_archives(self) -> None:
+        """新安装无 sidecar，但允许旧 v3 manifest 一次迁移；更老兼容和 Stub 仍必须删除。"""
         installer = self._read("runtime/agent_skills_runtime/project_installer.py")
+        self.assertIn("LEGACY_INSTALL_SCHEMA", installer)
+        self.assertIn("legacy Agent Skills install manifest", installer)
+        self.assertIn("__install-state", installer)
+        self.assertNotIn("def _build_manifest(", installer)
+        self.assertNotIn("manifest_path: _build_manifest(", installer)
         for obsolete in (
-            "LEGACY_INSTALL_SCHEMA",
             "_LEGACY_STUB_MARKERS",
             "_legacy_stub_paths",
             "removed_legacy_stubs",
@@ -216,12 +220,18 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             self.assertNotIn(obsolete, readme)
 
     def test_release_validates_identity_and_publishes_only_platform_zips(self) -> None:
-        """正式 Release 校验三平台 identity，最终只发布三个平台 ZIP。"""
+        """正式 Release 使用 job outputs + binary SHA 校验三平台 identity，最终只发布三个平台 ZIP。"""
         workflow = self._read(".github/workflows/release.yml")
         self.assertIn("USAGE.md", workflow)
         self.assertIn("--notes-file", workflow)
         self.assertNotIn("--generate-notes", workflow)
-        self.assertIn("rm release-assets/*.manifest.json", workflow)
+        self.assertIn("GITHUB_OUTPUT", workflow)
+        self.assertIn("integrity_fingerprint", workflow)
+        self.assertIn("artifact_sha256", workflow)
+        self.assertIn("sha256sum", workflow)
+        self.assertNotIn("linux.manifest.json", workflow)
+        self.assertNotIn("windows.manifest.json", workflow)
+        self.assertNotIn("macos.manifest.json", workflow)
         self.assertIn("Build platform distribution ZIPs", workflow)
         for marker in (
             'f"agent-skills-v{version}-linux.zip"',
@@ -241,9 +251,6 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             "agent-skills-mcp-v${RELEASE_VERSION}-linux",
             '"agent-skills-mcp-v$env:RELEASE_VERSION-windows"',
             "agent-skills-mcp-v${RELEASE_VERSION}-macos",
-            "linux.manifest.json",
-            "windows.manifest.json",
-            "macos.manifest.json",
         ):
             self.assertIn(binary, workflow)
         for forbidden in (

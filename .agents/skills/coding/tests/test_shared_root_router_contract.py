@@ -6,6 +6,7 @@ from pathlib import Path
 
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime import project_installer, project_payload
+from runtime.agent_skills_runtime.install_state import build_install_state
 from runtime.agent_skills_runtime.project_installer import INSTALL_MANIFEST_PATH, install_project
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 
@@ -69,14 +70,14 @@ class SharedRootRouterContractTest(unittest.TestCase):
             project_payload._safe_payload_path("coding\\SKILL.md")
 
     def test_shared_file_ownership_rejects_backslash_segments(self) -> None:
-        """install manifest/shared_files 也必须拒绝 Windows 语义下可能越界的反斜杠路径。"""
+        """Runtime install-state/shared_files 也必须拒绝 Windows 语义下可能越界的反斜杠路径。"""
         with self.assertRaisesRegex(ValueError, "反斜杠"):
             project_installer._normalise_shared_files(["..\\..\\escape.md"], "fixture")
         with self.assertRaisesRegex(ValueError, "反斜杠"):
             project_installer._normalise_shared_files(["nested\\ENTRY.md"], "fixture")
 
-    def test_installer_manifest_owns_shared_entry_without_exposing_internal_navigation(self) -> None:
-        """安装 manifest 认领共享 Entry 与 Router Core，但根 AGENTS 不暴露内部路径。"""
+    def test_runtime_install_state_owns_shared_entry_without_persistent_manifest(self) -> None:
+        """Runtime 自描述认领共享 Entry 与 Router Core，目标项目不落 manifest，根 AGENTS 不暴露内部路径。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             target = root / "target"
@@ -89,14 +90,12 @@ class SharedRootRouterContractTest(unittest.TestCase):
 
             self.assertTrue((target / ".agents/skills/ENTRY.md").is_file())
             self.assertTrue((target / ".agents/skills/router/SKILL.md").is_file())
-            manifest = (target / INSTALL_MANIFEST_PATH).read_text(encoding="utf-8")
-            self.assertIn('"schema": "agent-skills-install/v3"', manifest)
-            self.assertIn('"shared_files"', manifest)
-            self.assertIn('"managed_files"', manifest)
-            self.assertIn('"ENTRY.md"', manifest)
-            self.assertIn('"router/SKILL.md"', manifest)
+            self.assertFalse((target / INSTALL_MANIFEST_PATH).exists())
+            state = build_install_state(payload, "test")
+            self.assertEqual(state["schema"], "agent-skills-runtime-install-state/v1")
+            self.assertIn("ENTRY.md", state["shared_files"])
+            self.assertIn("router/SKILL.md", state["managed_files"])
             agents = (target / "AGENTS.md").read_text(encoding="utf-8")
-            self.assertNotIn(".agents/skills/", agents)
             self.assertNotIn(".agents/skills/", agents)
             self.assertIn("研发治理 MCP", agents)
             self.assertIn("用户可见", agents)
