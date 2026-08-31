@@ -5,9 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
+from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
+
 
 ROOT = Path(__file__).resolve().parents[4]
 REFERENCE = ROOT / ".agents/skills/coding/references/17_需求来源与PR追溯治理.md"
+REFERENCE_ID = "coding.reference.18"
 FORM_DIR = ROOT / ".github/ISSUE_TEMPLATE"
 WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"
 
@@ -118,6 +121,25 @@ class IssueFormsContractTest(unittest.TestCase):
         for fragment in required_fragments:
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
+
+    def test_issue_governance_intent_loads_traceability_reference(self) -> None:
+        """单独创建/整理 Issue 或工单时，也必须主动加载同一追溯规则。"""
+        manifest = compile_routing(ROOT)
+        result = evaluate_route(
+            manifest,
+            {
+                "协议": TASK_ROUTE_PROTOCOL,
+                "信号": {
+                    "执行模式": ["方案"],
+                    "意图": ["Issue/工单治理"],
+                    "风险": ["L2"],
+                    "能力": ["Git"],
+                },
+                "未知项": [],
+                "依据": ["Issue governance route regression"],
+            },
+        )
+        self.assertIn(REFERENCE_ID, result["必需Reference"])
 
     def test_skill_tests_watch_issue_form_changes(self) -> None:
         """以后只改 Issue Form 时也必须触发永久 Skill Tests。"""
