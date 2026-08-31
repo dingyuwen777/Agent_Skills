@@ -118,7 +118,7 @@ Task Route 是 Agent/Runtime 内部协议，不是用户日常配置；用户继
 | 案例 | 命中原因与叠加 | Source Mode 读取 | Runtime Mode 任务信号 |
 | --- | --- | --- | --- |
 | L1 机械修改 | 已确认行为、接口、数据和验收不变；只叠加事实恢复与 L1 验证，不创建 L2/L3 Change | Coding Core + canonical 任务路由规则；只读当前项目直接事实 | `执行模式=实现；风险=L1` |
-| L2 Feature | 新增可观察行为；叠加 Change、设计实施、Validation Matrix 和 Completion Gate | Coding Core + Feature、Change、验证与完成门禁 canonical References | `执行模式=实现；阶段=功能开发；风险=L2；治理=存在活动变更,要求完成门禁；能力=测试` |
+| L2 Feature | 新增可观察行为；先建立最小充分任务契约和 Validation Matrix，只有出现跨 Owner/跨 PR/长期审计/项目门禁等持久治理事实时再追加 Change 与 Completion Gate | Coding Core + Feature、最小充分治理与验证 canonical References；命中持久治理事实时再加载 Change/完成门禁 | `执行模式=实现；阶段=功能开发；风险=L2；能力=测试`；发现真实持久治理事实后再追加对应 `治理` 信号 |
 | L3 public API | 修改公共消费者 Contract；在 Feature 上叠加公共边界、兼容、独立 Review 和交付验证 | Coding Core + L3 Change、Contract、验证、完成与 Review canonical References | `执行模式=方案,实现；阶段=需求设计,功能开发；风险=L3；范围=公共契约,API` |
 | Schema Migration | writer/reader 与历史数据都会受影响；叠加 Schema、Migration、回滚和真实依赖验证 | Coding Core + Contract/Schema/Migration、Change、验证与完成 canonical References | `执行模式=方案,实现；阶段=需求设计；风险=L3；范围=Schema,Migration` |
 | Bug / Failure / Incident | 先复现并证伪根因；修复时叠加回归测试，Incident 再叠加运维/恢复边界 | Coding Core + 根因调试、风险对应 Change/验证/完成 canonical References | `执行模式=诊断,实现；阶段=缺陷修复`；Incident 追加 `运维,故障处置,L3` |
