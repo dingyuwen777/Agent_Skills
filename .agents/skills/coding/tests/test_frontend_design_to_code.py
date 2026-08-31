@@ -58,6 +58,26 @@ class FrontendDesignToCodeRulesTest(unittest.TestCase):
         ):
             self.assertIn(marker, reference)
 
+    def test_code_side_component_abstraction_is_not_determined_by_figma_components(self) -> None:
+        """Figma 公共组件只能提供复用信号，代码端必须重新判断有意义的组件抽象。"""
+        reference = REFERENCE_PATH.read_text(encoding="utf-8")
+        for marker in (
+            "Code-side Component Abstraction Gate",
+            "复用候选信号",
+            "不自动成为代码组件边界",
+            "同一业务 / 交互语义",
+            "行为和状态一致性",
+            "Props / Events / API",
+            "依赖方向",
+            "真实消费者范围",
+            "变化共因",
+            "维护收益",
+            "没有实际收益时允许不抽象",
+            "Figma 未组件化",
+            "已有公共代码 Owner",
+        ):
+            self.assertIn(marker, reference)
+
     def test_page_owner_is_independent_without_forcing_one_file_or_one_project(self) -> None:
         """页面独立应体现明确 Owner 和定位边界，而不是一页一工程或单文件巨石。"""
         reference = REFERENCE_PATH.read_text(encoding="utf-8")

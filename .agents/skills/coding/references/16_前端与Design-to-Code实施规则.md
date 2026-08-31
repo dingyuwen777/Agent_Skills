@@ -298,6 +298,8 @@ Test Framework / Browser automation framework
 | 颜色/字体/间距/圆角 | 当前 Design Token / Theme / styling system |
 | 权限、资格、状态机、业务规则 | Feature/Domain/Service 的真实业务 Owner |
 
+Figma 中的 Shared Component、Instance、Variant、模板或 Design System 结构可以作为“这里可能存在稳定复用语义”的**复用候选信号**，但**不自动成为代码组件边界**、组件名称、目录层级或 public API。代码实现仍必须回到当前仓库真实消费者和 Owner 判断；同一个 Figma Component 可以映射到已有代码组件、Feature 组合、现有 UI Library 能力或多个更低层实现，不要求机械 1:1。
+
 ### 5.1 设计示例不是线上事实
 
 设计中的：
@@ -389,7 +391,68 @@ fetch URL
 
 不要把 Component、Store、API、业务规则和 Token 都塞进一个 `utils`/helper 文件。
 
-### 7.1 按真实复用范围提升
+### 7.1 Code-side Component Abstraction Gate
+
+写前端代码、重构页面或执行 Design-to-Code 时，必须主动检查当前实现是否存在真正有维护价值的公共 UI/交互能力；不能只在 Figma 已经建立公共组件时才考虑代码复用，也不能看到 Figma Component 就直接照搬一个同名代码组件。
+
+Figma Shared Component / Instance / Variant / 模板只提供**复用候选信号**。代码端是否抽象，至少综合检查：
+
+```text
+同一业务 / 交互语义
+→ 消费者是否在做同一件事，而不只是长得像？
+
+行为和状态一致性
+→ loading / disabled / error / open / selected / events 等是否真正共享？
+
+Props / Events / API
+→ 能否形成稳定、可理解、不过度配置化的输入输出边界？
+
+依赖方向
+→ 抽象后是否保持 Shared / Feature / Page 的依赖方向，而不是让低层组件反向依赖具体业务？
+
+真实消费者范围
+→ 当前是否存在真实消费者；复用范围属于一个 Page、一个 Feature 还是跨 Feature？
+
+变化共因
+→ 这些消费者是否会因为同一个产品/交互原因一起变化，还是只是当前视觉恰好相似？
+
+测试边界
+→ 抽象后是否能形成更清楚、更稳定的行为验证，而不是增加难以理解的间接层？
+
+维护收益
+→ 是否实际减少重复实现、漂移、修复面和理解成本？
+```
+
+决策不是“抽 / 不抽”二选一，而是选择最小正确 Owner：
+
+```text
+只有当前页面需要，但拆出后能显著降低页面复杂度 / 提高可测试性
+→ Page-private Component
+
+同一 Feature 多个真实消费者共享稳定语义和变化原因
+→ Feature-public Component
+
+跨 Feature 多个真实消费者长期共享同一稳定语义
+→ Shared Component
+
+语义仍在变化 / 只是视觉相似 / 边界需要大量开关才能统一 / 间接层成本高于收益
+→ 没有实际收益时允许不抽象
+```
+
+硬规则：
+
+- **已有公共代码 Owner** 时，优先复用、修正或在其真实能力边界内扩展；不因为 Figma 新增了一个模板就复制出平行组件；
+- Figma 中两个区域都使用同一 Component，代码端仍要验证它们是否共享同一业务/交互语义；设计复用不能强迫不同业务 Owner 合并；
+- **Figma 未组件化**，但代码端从真实消费者发现稳定同语义复用时，可以建立合理的 Page-private / Feature-public / Shared Owner；不能为了“跟设计结构一模一样”故意复制代码；
+- 一个代码公共组件不要求与一个 Figma Component 机械 1:1；真实项目可能使用 UI Library primitive + 项目 wrapper + Feature composition，或直接复用现有库能力；
+- 不用固定重复次数、文件行数或组件数量作为抽象阈值；一次出现也可以因独立边界形成 Page-private，多个重复也可能因为语义不同而保持分离；
+- 禁止只因为视觉相似、一次重复、未来可能复用、追求组件数量/复用率或“Figma 里是组件”就建立 Shared；
+- 禁止为了覆盖所有消费者把组件做成大量 boolean/config switch 的万能组件；如果分支代表不同业务语义，应拆回正确 Owner；
+- 抽象完成后必须确认真实消费者实际使用新 Owner，旧的平行实现已在当前范围内收敛；不能只创建“公共组件”文件但页面仍各自复制实现。
+
+如果代码端合理抽象与当前 Figma 组件结构不一致，先保证生产代码架构正确；Design-to-Code 完成后把该差异交回 Figma Skill 的 Implementation ↔ Figma Conformance。是否需要修改 Figma 公共 Component/Owner 由 Figma Skill 判断，Coding 不自行复制 Figma 设计规则。
+
+### 7.2 按真实复用范围提升
 
 默认顺序：
 
@@ -406,7 +469,7 @@ fetch URL
 
 **不要因为以后可能复用**就提前提升成 Shared，也不要因为两个区域“长得像”就把不同业务语义合并成万能组件。
 
-### 7.2 跨 Feature 依赖
+### 7.3 跨 Feature 依赖
 
 如果项目已经有 Feature boundary/public entry 约定：
 
@@ -416,7 +479,7 @@ fetch URL
 
 不要为了消除一个 import 就把业务专属实现全部搬进全局 Shared。
 
-### 7.3 基础 UI 不拥有业务规则
+### 7.4 基础 UI 不拥有业务规则
 
 例如：
 
@@ -650,7 +713,7 @@ Visual Snapshot 不默认成为所有页面的强制测试；稳定 Shared UI/Ap
 → 建立设计 → 实现 Owner 映射
 → 确认现有 API/SDK/Contract 和数据来源
 → 判断是否需要技术决策门禁
-→ 先复用现有 Shared/Feature 能力
+→ 执行 Code-side Component Abstraction Gate，复用现有 Owner 并识别真正有维护价值的公共能力
 → Page / Screen 最小增量实现
 → 目标测试
 → 相关回归
@@ -668,7 +731,7 @@ Greenfield Web 前端推荐顺序：
 → 用户确认关键长期选择
 → 建立最小工程基线
 → 先完成一个可独立验收的页面/纵切
-→ 再从真实复用事实抽象 Shared/Feature 能力
+→ 再从真实复用事实执行 Code-side Component Abstraction Gate，抽象有实际收益的 Shared/Feature/Page-private 能力
 → 验证和交付
 ```
 
@@ -703,6 +766,9 @@ Greenfield Web 前端推荐顺序：
 当前 Shared/Feature 公共能力
 → 是否被消费者真正复用，还是仍有平行实现？
 
+Figma Component / 重复 UI 信号
+→ 代码端是否执行了 Code-side Component Abstraction Gate，而不是机械 1:1 或完全忽略真实复用？
+
 新增 Page
 → Route/Screen registry/Navigation/Test 是否接通？
 
@@ -730,7 +796,8 @@ Greenfield Web
 Greenfield Web 默认首选推荐 Vue，但不强制迁移已有项目
 新技术先证明必要，再让关键决策可选择
 页面有明确 Owner，但不复制工程
-公共复用按语义和范围选择正确形式
+公共复用按语义、行为、依赖、真实消费者和维护收益选择正确形式与层级
+Figma 公共组件只提供复用候选信号，不反向决定代码组件架构
 设计工具只传递设计意图，不反向决定代码架构
 服务器/系统事实有唯一来源
 视觉、行为、Contract、Build、Accessibility 分别用合适证据验证
@@ -784,7 +851,7 @@ Prototype / 状态规格入口
 已知 Notes
 ```
 
-本 reference 再把这些事实映射到目标项目当前 Framework、Router/Navigation、State/ViewModel、UI Library/Design System、API/SDK/generated client、Build/Test 体系。设计系统与代码组件不要求机械 1:1，但同一真实语义必须保持唯一 Owner。
+本 reference 再把这些事实映射到目标项目当前 Framework、Router/Navigation、State/ViewModel、UI Library/Design System、API/SDK/generated client、Build/Test 体系。设计系统与代码组件不要求机械 1:1，但同一真实语义必须保持唯一 Owner。Figma 给出的 Shared / Feature / Page 组件层级是设计侧证据，不替代本 reference 的 Code-side Component Abstraction Gate；代码端仍按真实消费者、依赖和维护收益决定实现层级。
 
 `READY_WITH_NOTES` 的 Notes 只能是已经证明不会阻止正确实施的非阻塞事项；Coding 不能把 Figma 尚未解决的 P0/阻塞 P1 自行降级成 Notes。
 
@@ -811,6 +878,7 @@ Coding / 本 reference 负责：
 ```text
 当前仓库和技术栈事实
 生产代码 Owner 映射
+代码端组件/逻辑/状态/API/Token 的真实抽象边界
 Change / TDD / 根因调试
 Validation Matrix
 代码 Review / Docs / CI
