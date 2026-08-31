@@ -40,7 +40,7 @@ class ProjectBootstrapTest(unittest.TestCase):
         (router / "SKILL.md").write_text("# Router\n", encoding="utf-8")
 
     def test_bootstrap_creates_agents_for_greenfield_without_inventing_stack(self) -> None:
-        """空项目应创建可用 AGENTS 初版，并通过薄 managed block 进入项目级治理 MCP。"""
+        """空项目应创建可用 AGENTS 初版，并通过项目侧 managed block 进入治理流程。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._install_minimal_coding(root)
@@ -52,9 +52,13 @@ class ProjectBootstrapTest(unittest.TestCase):
             self.assertNotIn(".agents/skills/figma/SKILL.md", content)
             self.assertNotIn(".agents/skills/review/SKILL.md", content)
             self.assertNotIn(".agents/skills/docs/SKILL.md", content)
-            self.assertIn("研发治理 MCP", content)
+            self.assertIn("无论采用哪种通用治理执行方式", content)
+            self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", content)
+            self.assertIn("只改变通用治理约束的取得和呈现方式", content)
+            self.assertNotIn("研发治理 MCP", content)
+            self.assertNotIn("Runtime Mode", content)
             self.assertIn("代码修改", content)
-            self.assertIn("用户可见", content)
+            self.assertIn("治理能力自身的运行与实现细节不属于项目进度或交付内容", content)
             self.assertIn("不能直接推导未被证据证明的架构结论", content)
             self.assertNotIn("本项目使用 FastAPI", content)
             self.assertNotIn("数据库：PostgreSQL", content)
