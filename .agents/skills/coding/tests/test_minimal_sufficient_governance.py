@@ -5,16 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
+from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.routing import evaluate_route
+
 
 ROOT = Path(__file__).resolve().parents[4]
-CODING = ROOT / ".agents/skills/coding/SKILL.md"
 ROUTER = ROOT / ".agents/skills/ROUTER.md"
 CHANGE = ROOT / ".agents/skills/coding/references/04_轻量变更管理.md"
-COLLAB = ROOT / ".agents/skills/coding/references/09_多人和多智能体并行协作.md"
 COMPLETION = ROOT / ".agents/skills/coding/references/10_完成定义追溯门禁.md"
-GIT = ROOT / ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
-TRACEABILITY = ROOT / ".agents/skills/coding/references/17_需求来源与PR追溯治理.md"
-REVIEW = ROOT / ".agents/skills/review/SKILL.md"
+GOVERNANCE = ROOT / ".agents/skills/coding/references/18_最小充分治理与升级门禁.md"
+REVIEW_DEPTH = ROOT / ".agents/skills/review/references/04_审查深度选择.md"
 
 
 class MinimalSufficientGovernanceTest(unittest.TestCase):
@@ -24,9 +24,22 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
         """读取指定 canonical Markdown。"""
         return path.read_text(encoding="utf-8")
 
-    def test_coding_core_requires_minimal_sufficient_governance(self) -> None:
-        """Core 必须明确能力存在不等于每次任务都启用。"""
-        text = self._read(CODING)
+    def test_all_coding_tasks_load_minimal_governance_gate(self) -> None:
+        """治理升级门禁必须在正常实现入口可达，而不是依赖用户记住内部规则。"""
+        manifest = build_bundle(ROOT)["routing_manifest"]
+        result = evaluate_route(
+            manifest,
+            {
+                "执行模式": ["实现"],
+                "阶段": ["功能开发"],
+                "风险": ["L2"],
+            },
+        )
+        self.assertIn("coding.reference.19", result["required_reference_ids"])
+
+    def test_governance_gate_requires_minimal_sufficient_process(self) -> None:
+        """能力存在不等于每次任务都启用。"""
+        text = self._read(GOVERNANCE)
         self.assertIn("最小充分治理", text)
         self.assertIn("不得为了流程完整性", text)
         for noun in ("Issue", "Change", "PR", "Review"):
@@ -41,22 +54,32 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
         self.assertIn("PR body", text)
         self.assertIn("跨 PR", text)
         self.assertIn("跨 Owner", text)
+        self.assertIn("L2 ≠ always CHANGE.md", text)
         self.assertNotIn("L2：新功能、业务行为变化、重要 Bug、多文件修改、多人并行或需要审计。必须有一个可审计施工契约。", text)
 
     def test_l3_keeps_persistent_governance_and_deep_safety(self) -> None:
         """减负不能降低 L3 的持久施工、兼容、迁移与回滚责任。"""
         change = self._read(CHANGE)
         completion = self._read(COMPLETION)
+        governance = self._read(GOVERNANCE)
         self.assertIn("L3", change)
         self.assertIn("持久", change)
         self.assertIn("Migration", change)
         self.assertIn("回滚", change)
+        self.assertIn("L3 不因减负降级", governance)
         self.assertIn("Requirement Traceability", completion)
         self.assertIn("Completion Audit", completion)
 
+    def test_light_l2_completion_does_not_require_formal_change_table(self) -> None:
+        """轻量 L2 仍核对上游目标，但不为了格式创建 Traceability/Completion 文件。"""
+        text = self._read(COMPLETION)
+        self.assertIn("轻量 L2 的最小完成核对", text)
+        self.assertIn("不要求为了打勾生成", text)
+        self.assertIn("持久 gated L2", text)
+
     def test_collaboration_is_current_handoff_not_repository_label(self) -> None:
         """Protected/历史协作者等仓库线索不能单独把当前任务升级为多人协作。"""
-        text = self._read(COLLAB)
+        text = self._read(GOVERNANCE)
         for fragment in (
             "当前任务",
             "跨 Owner",
@@ -65,24 +88,20 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
             "CODEOWNERS",
             "历史 PR",
             "不能单独证明",
-            "unknown",
-            "shared",
+            "unknown != shared",
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
 
     def test_issue_has_necessity_gate_independent_from_l2_pr_and_protection(self) -> None:
         """Issue 是需要时的持久索引，不是 L2/PR/Protected 的固定前置步骤。"""
-        text = self._read(TRACEABILITY)
+        text = self._read(GOVERNANCE)
         self.assertIn("Issue Necessity Gate", text)
         for fragment in (
-            "L2",
-            "PR",
-            "Protected Branch",
-            "不能单独触发 Issue",
+            "L2、PR、Protected Branch 均不能单独触发 Issue",
             "跨 Owner",
             "多个 PR",
-            "跨会话",
+            "跨多个会话",
             "长期审计",
             "用户明确要求",
             "项目规则",
@@ -91,16 +110,15 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
                 self.assertIn(fragment, text)
 
     def test_git_protection_only_controls_delivery_and_scales_progressively(self) -> None:
-        """Git Owner 必须区分未保护/受保护并提供渐进式 Ruleset 升级路径。"""
-        text = self._read(GIT)
+        """保护规则只控制 Git 交付，并按真实并发逐级增强。"""
+        text = self._read(GOVERNANCE)
         for fragment in (
-            "Branch Protection / Ruleset",
+            "Branch Protection / Ruleset 只影响 Git 交付",
             "未保护",
             "受保护",
-            "只影响 Git 交付",
             "Require a pull request before merging",
             "Required status checks",
-            "Block force pushes",
+            "Block force pushes / deletion",
             "conversation resolution",
             "strict",
             "loose",
@@ -111,12 +129,23 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
 
-    def test_review_depth_is_risk_scaled(self) -> None:
-        """Review 必须支持轻量、标准、深度三级，而不是所有 PR 固定全量审查。"""
-        text = self._read(REVIEW)
+    def test_review_depth_is_risk_scaled_and_routed(self) -> None:
+        """Review 必须支持轻量、标准、深度三级并由真实审查路由自动加载。"""
+        text = self._read(REVIEW_DEPTH)
         for fragment in ("Quick Review", "Standard Review", "Deep Review", "最小充分", "L3"):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
+
+        manifest = build_bundle(ROOT)["routing_manifest"]
+        result = evaluate_route(
+            manifest,
+            {
+                "执行模式": ["审查"],
+                "阶段": ["审查"],
+                "意图": ["代码审查"],
+            },
+        )
+        self.assertIn("review.reference.04", result["required_reference_ids"])
 
     def test_router_l2_example_does_not_predeclare_heavy_governance(self) -> None:
         """普通 L2 示例不能先假定已经存在 Change 和 Completion Gate。"""
