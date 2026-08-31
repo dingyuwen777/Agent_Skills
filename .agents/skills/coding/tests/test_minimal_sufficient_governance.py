@@ -14,6 +14,7 @@ CODING = ROOT / ".agents/skills/coding/SKILL.md"
 CHANGE = ROOT / ".agents/skills/coding/references/04_轻量变更管理.md"
 COMPLETION = ROOT / ".agents/skills/coding/references/10_完成定义追溯门禁.md"
 GOVERNANCE = ROOT / ".agents/skills/coding/references/18_最小充分治理与升级门禁.md"
+L1_PATH = ROOT / ".agents/skills/coding/references/20_L1轻量实现与验证路径.md"
 REVIEW_DEPTH = ROOT / ".agents/skills/review/references/04_审查深度选择.md"
 
 
@@ -36,13 +37,24 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
             },
         )
 
-    def test_all_coding_tasks_load_minimal_governance_gate(self) -> None:
-        """治理升级门禁必须在正常实现入口可达，而不是依赖用户记住内部规则。"""
+    def test_plain_l2_does_not_preload_governance_gate(self) -> None:
+        """普通 L2 只保持升级能力，不预加载完整治理正文。"""
         result = self._evaluate(
             {
                 "执行模式": ["实现"],
                 "阶段": ["功能开发"],
                 "风险": ["L2"],
+            }
+        )
+        self.assertNotIn("coding.reference.19", result["必需Reference"])
+
+    def test_governance_gate_loads_when_governance_fact_exists(self) -> None:
+        """真实治理事实出现后必须自动加载升级门禁，而不是依赖用户记住内部规则。"""
+        result = self._evaluate(
+            {
+                "执行模式": ["实现"],
+                "风险": ["L2"],
+                "治理": ["要求完成门禁"],
             }
         )
         self.assertIn("coding.reference.19", result["必需Reference"])
@@ -57,17 +69,26 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
                 self.assertIn(noun, text)
 
     def test_l1_implementation_does_not_preload_heavy_governance(self) -> None:
-        """隔离 L1 实现只走最小路由，不预加载 Change/Completion/两阶段 Review。"""
+        """隔离 L1 实现使用紧凑路径，不预加载 Change/完整验证/治理/两阶段 Review。"""
         result = self._evaluate({"执行模式": ["实现"], "风险": ["L1"]})
         references = set(result["必需Reference"])
         self.assertIn("coding.reference.02", references)
-        self.assertIn("coding.reference.19", references)
+        self.assertIn("coding.reference.21", references)
         self.assertFalse(
-            {"coding.reference.04", "coding.reference.10", "coding.reference.11"} & references
+            {
+                "coding.reference.04",
+                "coding.reference.05",
+                "coding.reference.07",
+                "coding.reference.10",
+                "coding.reference.11",
+                "coding.reference.19",
+            }
+            & references
         )
+        self.assertIn("Repository L1 Fast Path", self._read(L1_PATH))
 
     def test_light_l2_does_not_preload_persistent_governance_or_review(self) -> None:
-        """普通轻量 L2 保留验证和治理升级门禁，但不因风险等级单独进入持久 Change/Completion/Review。"""
+        """普通轻量 L2 保留完整实施/验证，但不因风险等级单独进入持久治理或 Review。"""
         result = self._evaluate(
             {
                 "执行模式": ["实现"],
@@ -77,24 +98,31 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
             }
         )
         references = set(result["必需Reference"])
-        for required in ("coding.reference.02", "coding.reference.05", "coding.reference.07", "coding.reference.19"):
+        for required in ("coding.reference.02", "coding.reference.05", "coding.reference.07"):
             self.assertIn(required, references)
         self.assertFalse(
-            {"coding.reference.04", "coding.reference.10", "coding.reference.11"} & references
+            {
+                "coding.reference.04",
+                "coding.reference.10",
+                "coding.reference.11",
+                "coding.reference.19",
+                "coding.reference.21",
+            }
+            & references
         )
 
     def test_validation_only_does_not_imply_independent_review(self) -> None:
-        """执行 targeted validation 本身不能把普通任务升级成完整两阶段 Review。"""
+        """执行 L2 targeted validation 本身不能把普通任务升级成治理或完整两阶段 Review。"""
         result = self._evaluate({"执行模式": ["验证"], "风险": ["L2"]})
         references = set(result["必需Reference"])
         self.assertIn("coding.reference.07", references)
-        self.assertIn("coding.reference.19", references)
         self.assertFalse(
-            {"coding.reference.04", "coding.reference.10", "coding.reference.11"} & references
+            {"coding.reference.04", "coding.reference.10", "coding.reference.11", "coding.reference.19"}
+            & references
         )
 
     def test_gated_l2_upgrades_to_persistent_change_and_completion(self) -> None:
-        """出现明确 Completion Gate 后，L2 必须单调升级到持久 Change 与完整 Completion。"""
+        """出现明确 Completion Gate 后，L2 必须单调升级到持久 Change、Completion 与治理上下文。"""
         result = self._evaluate(
             {
                 "执行模式": ["实现"],
@@ -105,6 +133,7 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
         references = set(result["必需Reference"])
         self.assertIn("coding.reference.04", references)
         self.assertIn("coding.reference.10", references)
+        self.assertIn("coding.reference.19", references)
 
     def test_review_and_delivery_still_load_full_review_path(self) -> None:
         """显式 Review 或交付信号仍保留完整两阶段 Review/Completion 能力。"""
@@ -119,6 +148,7 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
             self.assertIn("coding.reference.04", references)
             self.assertIn("coding.reference.10", references)
             self.assertIn("coding.reference.11", references)
+            self.assertIn("coding.reference.19", references)
 
     def test_coding_core_does_not_require_independent_review_for_every_implementation(self) -> None:
         """Coding Core 必须把独立 Review 设为条件式下游，而不是所有实现任务的固定终点。"""
@@ -160,6 +190,7 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
         )
         self.assertIn("coding.reference.04", result["必需Reference"])
         self.assertIn("coding.reference.10", result["必需Reference"])
+        self.assertIn("coding.reference.19", result["必需Reference"])
 
     def test_light_l2_completion_does_not_require_formal_change_table(self) -> None:
         """轻量 L2 仍核对上游目标，但不为了格式创建 Traceability/Completion 文件。"""
