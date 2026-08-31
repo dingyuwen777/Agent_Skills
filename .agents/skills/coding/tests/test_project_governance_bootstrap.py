@@ -89,6 +89,23 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
         self.assertNotIn("本项目使用 React", template)
         self.assertNotIn("数据库：PostgreSQL", template)
 
+    def test_managed_bootstrap_defaults_runtime_but_allows_higher_priority_mode_override(self) -> None:
+        """managed block 必须以 Runtime 为默认，同时服从更高优先级的显式 Agent_Skills 模式选择。"""
+        managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
+        for marker in (
+            "本 managed block 定义 Agent_Skills 的默认 Runtime Mode",
+            "系统、开发者或用户级更高优先级指令",
+            "明确选择其他 Agent_Skills 执行模式",
+            "与该模式冲突的 Runtime/MCP 规则取得路径",
+            "与该模式冲突的 Runtime 用户可见披露限制",
+            "项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, managed)
+        self.assertNotIn("dingyuwen777/Agent_Skills", managed)
+        self.assertNotIn("GitHub App", managed)
+        self.assertNotIn("Maintenance Mode", managed)
+
     def test_managed_bootstrap_uses_runtime_mcp_before_governance_calibration(self) -> None:
         """Runtime Mode 必须先取得当前任务约束，再执行首次项目治理校准。"""
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
