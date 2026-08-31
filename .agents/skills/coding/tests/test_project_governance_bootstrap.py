@@ -42,29 +42,29 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             self.assertIn(marker, discovery)
 
     def test_bootstrap_reference_separates_runtime_and_semantic_bootstrap(self) -> None:
-        """Runtime 安装与宿主大模型语义治理必须是两个明确阶段，并保留模式覆盖契约。"""
+        """Runtime 安装与宿主大模型语义治理必须是两个明确阶段，并保持项目规则优先。"""
         bootstrap = self._read(".agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md")
         for marker in (
             "Runtime Installation Bootstrap",
             "Project Governance Bootstrap",
             "宿主大模型",
             "自然语言研发任务",
-            "默认 Runtime Mode",
-            "更高优先级指令",
-            "只停止执行与该模式冲突的 Runtime/MCP 规则取得路径和 Runtime 用户可见披露限制",
-            "项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效",
+            "无论采用哪种通用治理执行方式",
+            "只改变通用治理约束的取得和呈现方式",
+            "不得因此跳过、替代或降低目标项目自身规则",
             "规范性规则",
             "描述性事实",
             "managed block 外",
             "不能通过修改 `AGENTS.md` 让错误实现合法化",
+            "项目 Overlay 只描述项目自己的规则、事实和长期工程边界",
             "重新读取最终 `AGENTS.md`",
             "继续原始研发任务",
             "继续原始只读任务",
         ):
             self.assertIn(marker, bootstrap)
 
-    def test_agents_assets_expose_structural_template_and_runtime_first_use_trigger(self) -> None:
-        """目标 AGENTS 固定结构而非技术栈，Runtime managed block 能触发首次治理校准。"""
+    def test_agents_assets_expose_structural_template_and_project_facing_trigger(self) -> None:
+        """目标 AGENTS 固定项目结构，managed block 只表达项目侧治理入口。"""
         template = self._read(".agents/skills/coding/assets/AGENTS.template.md")
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
         for marker in (
@@ -77,52 +77,68 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             "开发与验证入口",
             "CI / Git / Release / 部署",
             "项目特殊长期约束",
+            "项目自有 Overlay 只描述本项目的规则、事实和长期工程边界",
         ):
             self.assertIn(marker, template)
         for marker in (
             "首次接入",
-            "自然语言研发任务",
-            "研发治理 MCP",
             "有界的项目治理校准",
-            "Runtime Mode",
-            "用户可见",
+            "无论采用哪种通用治理执行方式",
+            "必须先读取并遵守当前目录及上级适用的项目规则",
+            "只改变通用治理约束的取得和呈现方式",
+            "治理能力自身的运行与实现细节不属于项目进度或交付内容",
         ):
             self.assertIn(marker, managed)
-        self.assertNotIn(".agents/skills/", managed)
-        self.assertNotIn("ROUTER.md", managed)
+        for forbidden in (
+            ".agents/skills/",
+            "ROUTER.md",
+            "Runtime Mode",
+            "Source Mode",
+            "研发治理 MCP",
+            "内部任务路由",
+            "必需上下文加载",
+        ):
+            self.assertNotIn(forbidden, managed)
         self.assertNotIn("本项目使用 React", template)
         self.assertNotIn("数据库：PostgreSQL", template)
 
-    def test_managed_bootstrap_defaults_runtime_but_allows_higher_priority_mode_override(self) -> None:
-        """managed block 必须以 Runtime 为默认，同时服从更高优先级的显式 Agent_Skills 模式选择。"""
+    def test_higher_priority_mode_override_cannot_skip_project_rules(self) -> None:
+        """更高优先级执行方式只能切换通用治理取得方式，不能使项目 Overlay 失效。"""
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
+        project_rule = "必须先读取并遵守当前目录及上级适用的项目规则"
+        override = "只改变通用治理约束的取得和呈现方式"
+        self.assertIn(project_rule, managed)
+        self.assertIn(override, managed)
+        self.assertLess(managed.index(project_rule), managed.index(override))
         for marker in (
-            "在默认 Runtime Mode 下，已配置的项目级 Runtime 负责提供",
-            "本 managed block 定义 Agent_Skills 的默认 Runtime Mode",
             "系统、开发者或用户级更高优先级指令",
-            "明确选择其他 Agent_Skills 执行模式",
-            "与该模式冲突的 Runtime/MCP 规则取得路径",
-            "与该模式冲突的 Runtime 用户可见披露限制",
-            "项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效",
+            "不得因此跳过、替代或降低目标项目自身规则",
+            "Contract",
+            "Schema/Migration",
+            "CI",
+            "正式设计",
+            "部署",
+            "验收边界",
         ):
-            with self.subTest(marker=marker):
-                self.assertIn(marker, managed)
+            self.assertIn(marker, managed)
         self.assertNotIn("dingyuwen777/Agent_Skills", managed)
         self.assertNotIn("GitHub App", managed)
         self.assertNotIn("Maintenance Mode", managed)
 
-    def test_managed_bootstrap_uses_runtime_mcp_before_governance_calibration(self) -> None:
-        """Runtime Mode 必须先取得当前任务约束，再执行首次项目治理校准。"""
+    def test_managed_bootstrap_reads_project_rules_before_mode_override(self) -> None:
+        """项目规则与真实事实恢复必须先于任何通用治理执行方式覆盖。"""
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
-        mcp_step = "使用当前项目已经配置的研发治理 MCP"
+        project_step = "必须先读取并遵守当前目录及上级适用的项目规则"
+        override_step = "只改变通用治理约束的取得和呈现方式"
         governance_step = "有界的项目治理校准"
-        self.assertIn(mcp_step, managed)
+        self.assertIn(project_step, managed)
+        self.assertIn(override_step, managed)
         self.assertIn(governance_step, managed)
-        self.assertLess(managed.index(mcp_step), managed.index(governance_step))
-        self.assertNotIn(".agents/skills/ROUTER.md", managed)
+        self.assertLess(managed.index(project_step), managed.index(override_step))
+        self.assertLess(managed.index(override_step), managed.index(governance_step))
 
     def test_canonical_runtime_install_creates_pending_governance_agents(self) -> None:
-        """真实 canonical Project Payload 安装到新项目后必须落地待校准治理骨架和 Runtime 薄入口。"""
+        """真实 canonical Project Payload 安装到新项目后必须落地待校准治理骨架和薄项目入口。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         with tempfile.TemporaryDirectory() as directory:
@@ -143,8 +159,9 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             self.assertIn("<!-- agent-skills:project-governance:v1 -->", agents)
             self.assertIn("状态：待校准", agents)
             self.assertIn("项目治理校准状态", agents)
-            self.assertIn("自然语言研发任务", agents)
-            self.assertIn("研发治理 MCP", agents)
+            self.assertIn("无论采用哪种通用治理执行方式", agents)
+            self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", agents)
+            self.assertIn("只改变通用治理约束的取得和呈现方式", agents)
             self.assertIn("代码修改", agents)
             self.assertIn("测试", agents)
             self.assertIn("文档同步", agents)
@@ -152,11 +169,13 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             self.assertIn("CI / Git / Release / 部署", agents)
             self.assertNotIn(".agents/skills/", agents)
             self.assertNotIn("ROUTER.md", agents)
+            self.assertNotIn("progress update", agents)
+            self.assertNotIn("内部任务路由", agents)
             self.assertNotIn("本项目使用 React", agents)
             self.assertNotIn("数据库：PostgreSQL", agents)
 
     def test_usage_explains_first_bootstrap_and_normal_development(self) -> None:
-        """最终用户应知道安装后如何让 MCP/Agent 先校准 AGENTS，再进行代码修改。"""
+        """最终用户应知道安装后如何先校准 AGENTS，再进行代码修改。"""
         usage = self._read("USAGE.md")
         for marker in (
             "安装成功不等于项目治理已经完成",
