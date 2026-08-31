@@ -10,20 +10,21 @@
 
 Runtime 还必须建立**模式感知的信息披露边界**：Source Mode 直接使用明文仓库时，维护者可以正常看到和讨论 Skill、Reference、文件路径、Stable ID 与路由过程；Runtime Mode 允许正常展示项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 与交付状态，但不应把治理系统内部文件名、目录结构、规则标识、命中映射、内部凭据或加载明细作为用户可见过程主动复述。
 
-本文件只规定 Runtime 分发、动态 Skill 发现、Skills 根级共享运行资产、Project Payload、Reference 原文加载、项目级安装/升级、宿主接入、完整性、Release、披露和失败边界。Coding / Review / Docs / Figma 的研发语义仍由各自 canonical `SKILL.md` 与 canonical References 定义；跨 Skill 入口、Reference 取得方式和 Handoff 由唯一 Router 定义。
+本文件只规定 Runtime 分发、动态 Skill 发现、Skills 根级共享运行资产、Project Payload、Reference 原文加载、**无 sidecar 项目级 installation ownership**、宿主接入、完整性、Release、披露和失败边界。Coding / Review / Docs / Figma 的研发语义仍由各自 canonical `SKILL.md` 与 canonical References 定义；跨 Skill 入口、Reference 取得方式和 Handoff 由唯一 Router 定义。
 
 ## 1. 何时必须读取
 
 出现以下任务时必须读取本文件：
 
 - 构建、Release、安装或升级 `agent-skills-mcp`；
-- 修改 Project Payload、动态 Skill Catalog、Skills 根级 shared Entry、Router Skill、installation manifest 或项目宿主 MCP 配置；
-- 修改 Runtime Bundle、Project Payload、install manifest、路由 metadata/Stable ID、加密格式、MCP Tool Contract、`source_digest`、`routing_digest` 或 `payload_digest`；
+- 修改 Project Payload、动态 Skill Catalog、Skills 根级 shared Entry、Router Skill、Runtime install-state 或项目宿主 MCP 配置；
+- 修改 Runtime Bundle、Project Payload、previous ownership、legacy install manifest 迁移、路由 metadata/Stable ID、加密格式、MCP Tool Contract、`source_digest`、`routing_digest` 或 `payload_digest`；
 - 修改 Runtime Skill Projection、Runtime 用户可见进度、MCP 公共返回字段或治理实现细节披露边界；
 - 调试中文 Task Route → 私有 Routing Manifest → required canonical Context 链；
 - Review Runtime 是否仍逐字返回 canonical Reference；
 - 修改正式 Skill 或 shared runtime file，使其进入下一次 Runtime Release；
-- 修改 onefile 项目安装、升级、rollback 或 fail-closed ownership 逻辑。
+- 修改 onefile 项目安装、升级、rollback 或 fail-closed ownership 逻辑；
+- 修改 Builder/Release identity 证据的传递方式、三平台 SHA 校验或平台 ZIP 资产合同。
 
 ## 2. 设计目标与非目标
 
@@ -66,6 +67,9 @@ canonical references/*.md
 
 Project-local Runtime
 → 安装在目标项目 .agents/runtime/
+→ 自身内嵌当前 Release 的 Project Payload ownership
+→ 后续升级通过内部 install-state 提供 previous managed_files
+→ 不写 .agents/agent-skills-install.json 或其他 ownership sidecar
 → Codex / Cursor / Claude Code 只配置当前项目 Runtime
 
 Local MCP
@@ -73,6 +77,12 @@ Local MCP
 → 只返回当前路由 required 的完整 canonical 原文
 → 公共 envelope 不附带不必要的 Skill / Reference 身份、文件路径、hash/size 或内部求值明细
 → 不摘要、不重写、不生成新的研发规则
+
+Runtime Builder / Release
+→ build_runtime.py --json 直接返回 release/source/python/integrity/digest/artifact SHA identity
+→ GitHub Actions job outputs 传递三平台公共 identity
+→ Release job 比较公共 identity 并对下载后的每个平台 binary 重算 SHA256
+→ 不生成或搬运 *.manifest.json identity sidecar
 
 Runtime 用户可见过程
 → 可以说明真实工程活动与验证证据
@@ -85,7 +95,9 @@ Runtime 用户可见过程
 - 为**安装、升级、status/self-test 或 MCP Runtime** 预先安装 Python、pip、venv；
 - 外部安装脚本；
 - Runtime Kit ZIP；
-- 用户级或全局 Runtime 前置安装。
+- 用户级或全局 Runtime 前置安装；
+- 维护 `.agents/agent-skills-install.json`；
+- 处理 Builder/Release `*.manifest.json` sidecar。
 
 但 Project Payload 会保留正式 Skill 自己需要的运行资产。当前 Coding Core 明确使用 `coding/scripts/coding.py` 和 `coding/scripts/ready_check.py` 完成项目发现、Change 辅助与 Ready Check，因此这两个 Python helper 仍必须随 Skill 安装。目标项目/宿主没有可用 Python 时，Coding 只能按对应规则使用明确 manual fallback；无法执行的机器门禁必须记为未验证，不能用 onefile Runtime 的存在冒充已执行。
 
@@ -102,11 +114,12 @@ Runtime 用户可见过程
 - 不用 Runtime 替代项目 `AGENTS.md`、CI、PR、Review、Migration、安全和授权门禁；
 - 不把网页端 Remote MCP / secure tunnel 混进本地 stdio Runtime；
 - 不在本规则建立在线许可证、远程 KMS 或自动更新服务；
-- 不为了 shared files 自动打包 `.agents/skills/` 根目录下所有文件。
+- 不为了 shared files 自动打包 `.agents/skills/` 根目录下所有文件；
+- 不用 SQLite、注册表、隐藏 JSON、改名 manifest 或其他替代 sidecar 保存 installation ownership。
 
 ## 3. 动态正式 Skill Catalog
 
-Runtime、Project Payload、manifest、测试和 Release **不得维护固定完整 Skill 名单**。
+Runtime、Project Payload、install-state、测试和 Release **不得维护固定完整 Skill 名单**。
 
 正式 Skill 从：
 
@@ -127,7 +140,7 @@ Runtime、Project Payload、manifest、测试和 Release **不得维护固定完
 
 [`.agents/skills/ENTRY.md`](../../ENTRY.md) 是根级普通文件，**不能被识别成正式 Skill**；[`.agents/skills/router/SKILL.md`](../../router/SKILL.md) 必须作为正式 Skill 被动态发现。Router 是所有任务的保留控制面，Coding 只在研发任务命中后负责自己的专业工作。Router 在 Source Mode 可以展示当前 Catalog 供 Agent/维护者导航，但 Catalog 明细不是 Runtime 分发白名单；Runtime MCP 的公共 route contract 不需要把 Catalog 再次暴露给用户可见过程。
 
-Runtime Projection 同样不得维护固定 Skill 或 Reference 身份白名单。新增、删除或改名合法 Reference 后，构建器从当前 Bundle 中实际 `filename`、`source_path` 与 Stable ID 自动更新去身份集合；新增普通 Skill 也自动对其 `SKILL.md` 应用同一投影规则。
+Runtime Projection 和 install-state 同样不得维护固定 Skill 或 Reference 身份白名单。新增、删除或改名合法 Reference 后，构建器从当前 Bundle 中实际 `filename`、`source_path` 与 Stable ID 自动更新去身份集合；新增普通 Skill 也自动进入 Project Payload，并由 `build_install_state()` 从同一 Payload 派生 ownership。
 
 ## 4. 规则与 Router 事实源
 
@@ -281,6 +294,8 @@ Project Payload 的 `mode` 必须以 Git index executable bit 为跨平台 canon
 
 目标项目因此没有 Agent_Skills 的同名 Reference 文件。Runtime Mode 命中规则时不得尝试打开本地 `references/<file>.md`，也不得寻找或生成 Stub，而是通过当前 Task Route 的路由令牌取得 required canonical Context。目标根 `AGENTS.md` 同时明确禁止把受管源码维护导航当作 Runtime 日常 required Context 入口。
 
+Project Payload 还承担**当前 Runtime install-state 的唯一结构化 ownership 来源**：`build_install_state()` 只从已验证 Payload 派生当前 `skills/shared_files/managed_files/source_digest/payload_digest`。安装器不得在另一份 JSON 中复制一套长期 ownership 状态。
+
 ## 9. 单一 Routing Compiler / Evaluator
 
 Source Mode 与 Runtime Mode 使用同一 canonical metadata、Stable ID、依赖图和风险下限。唯一 evaluator 语义是：
@@ -336,9 +351,10 @@ magic
 - 反编译、Hook 或 MCP 通信观测不能取得规则；
 - Prompt/managed block 可以成为机密安全边界；
 - Runtime Skill Projection 是加密或可信执行环境；
-- Runtime 是可信执行环境。
+- Runtime 是可信执行环境；
+- 旧 Runtime install-state 可以抵御目标项目 Owner 恶意替换本地 `.agents/runtime` binary。
 
-源仓库 canonical 文本的访问控制必须由仓库权限承担。
+源仓库 canonical 文本的访问控制必须由仓库权限承担。执行 Runtime 安装/升级同样以**用户已经信任并明确选择的目标项目工作区**为前提；无 sidecar ownership 解决的是普通升级状态重复问题，不是恶意工作区代码签名机制。
 
 ## 11. MCP Tool Contract v3 与用户可见披露边界
 
@@ -353,7 +369,7 @@ agent_skills_load_required_context
 agent_skills_checkpoint
 ```
 
-正式 Runtime 不再提供 `agent_skills_manifest` 或接受 `ids` 的任意加载 Tool。MCP v3 收窄的是**返回字段**，不是调用顺序、canonical 规则或路由语义。
+正式 Runtime 不再提供 `agent_skills_manifest` 或接受 `ids` 的任意加载 Tool。**内部 `__install-state --json` 不属于 MCP Tool Contract，也不进入普通 CLI help；它只供下一版安装器从旧已安装 Runtime 取得 previous ownership。** MCP v3 收窄的是返回字段，不是调用顺序、canonical 规则或路由语义。
 
 所有关键工具响应都携带同一 `用户可见进度规则`，语义必须覆盖：
 
@@ -485,7 +501,7 @@ Builder 在维护侧用同一构建材料独立计算期望指纹，要求 artif
 
 ## 12. 最终用户 CLI 与项目级安装
 
-稳定入口：
+稳定公开入口：
 
 ```text
 无参数
@@ -511,31 +527,56 @@ Windows: .agents/runtime/agent-skills-mcp.exe
 POSIX:   .agents/runtime/agent-skills-mcp
 ```
 
-`.agents/runtime/` 是本地运行资产，应被目标项目 `.gitignore` 忽略。
+`.agents/runtime/` 是本地运行资产，应被目标项目 `.gitignore` 忽略。安装结果不创建 `.agents/agent-skills-install.json`。
 
-## 13. Install Manifest v3 与逐文件 ownership
+## 13. Sidecarless Install State 与逐文件 ownership
 
-当前项目安装协议：
+当前正常项目安装**没有持久 install manifest schema**。当前 ownership 自描述协议是：
 
 ```text
-agent-skills-install/v3
+agent-skills-runtime-install-state/v1
 ```
 
-manifest 记录 Release、`source_digest`、`payload_digest`、公开 Skill/`shared_files`、项目 Runtime、宿主配置和显式 `managed_files`。真正决定更新/删除边界的是相对 `.agents/skills` 的逐文件 `managed_files`，不是“整个 Skill 目录归安装器”。这些维护/ownership 字段存在于项目 manifest 不等于它们必须通过 MCP `status` 或用户过程输出再次公开。
+它不是磁盘 sidecar，也不是 MCP Tool。每个 Runtime 根据自身内嵌且已验证的 Project Payload 确定性派生：
+
+```text
+release_version
+source_digest / payload_digest
+skills
+shared_files
+managed_files
+```
+
+真正决定更新/删除边界的是相对 `.agents/skills` 的逐文件 `managed_files`，不是“整个 Skill 目录归安装器”。
+
+升级 previous ownership 来源只有：
+
+```text
+历史合法 agent-skills-install/v3
+→ 只作为一次迁移输入
+→ 成功升级事务末端删除
+
+否则
+
+旧已安装 .agents/runtime/agent-skills-mcp[.exe]
+→ 内部 __install-state --json
+→ 返回旧 Runtime 内嵌 Project Payload 对应的 install-state
+→ 新安装器严格校验 schema/digest/path/skills/shared_files/managed_files
+```
 
 规则：
 
 ```text
 新 Payload 文件 + 目标不存在
-→ 创建并在 v3 manifest 认领
+→ 创建并由当前 Runtime install-state 认领
 
-目标文件 + 旧 v3 manifest 明确认领
+目标文件 + previous managed_files 明确认领
 → 原子升级
 
-旧 v3 managed file + 新 Payload 已删除
+previous managed file + 新 Payload 已删除
 → 只删除该受管文件
 
-目标同名文件 + 旧 manifest 未认领
+目标同名文件 + previous ownership 未认领
 → 项目自有/归属不明
 → fail closed，不猜 ownership
 
@@ -543,9 +584,11 @@ manifest 记录 Release、`source_digest`、`payload_digest`、公开 Skill/`sha
 → 保留
 ```
 
-首次安装遇到未认领的同名正式 Skill 目录或 `ENTRY.md` 仍必须在任何写入前失败关闭。不同名项目 Skill、项目自有 `.agents` 内容、AGENTS marker 外文本和其他 MCP server 永不因当前 v3 ownership 更新而清理。
+首次安装遇到未认领的同名正式 Skill 目录、`ENTRY.md` 或其他同名 managed file 仍必须在任何写入前失败关闭。不同名项目 Skill、项目自有 `.agents` 内容、AGENTS marker 外文本和其他 MCP server 永不因当前 ownership 更新而清理。
 
-安装器只接受 `agent-skills-install/v3`。v1、v2、未知或损坏 manifest 全部失败关闭；实现中不保留旧 schema 解析、目录级 ownership 推断、旧 Stub 识别或自动清理分支。需要从旧安装切换时，由项目 Owner 在当前安装器之外先备份并显式处理旧安装边界。
+Legacy 兼容只保留 `agent-skills-install/v3` → sidecarless 的一次迁移；v1、v2、未知或损坏 manifest 全部失败关闭。不存在合法 legacy v3 且旧 Runtime 无法返回合法 install-state 时同样失败关闭；不得根据目录、文件名、内容相似或当前 Payload 猜 previous ownership。
+
+该机制以用户已经信任并明确选择升级的目标工作区为前提。读取旧 Runtime install-state 不是对项目 Owner 的防篡改证明，不能宣称为代码签名或安全隔离。
 
 ## 14. AGENTS / `.gitignore` / 宿主配置保护
 
@@ -562,9 +605,9 @@ manifest 记录 Release、`source_digest`、`payload_digest`、公开 Skill/`sha
 - AGENTS/CLAUDE/Codex 使用 managed marker；
 - JSON 只认领 `mcpServers.agent-skills`；
 - 其他配置、其他 MCP server、marker 外文本保持；
-- 已存在未被 manifest 认领的同名 Agent Skills MCP 时拒绝静默覆盖；
-- **Codex 已存在 `[mcp_servers.agent-skills]` 但 managed marker 缺失时，即使旧 install manifest 仍存在，也必须 fail closed；manifest 不能证明当前 TOML table 仍是可安全替换的原受管块；**
-- 已存在未被 manifest 认领的同名 Skill/shared file 时拒绝静默覆盖；
+- 已存在没有 previous Agent Skills ownership 证据的同名 MCP 时拒绝静默覆盖；
+- **Codex 已存在 `[mcp_servers.agent-skills]` 但 managed marker 缺失时，即使 legacy v3 或旧 Runtime install-state 能证明历史安装存在，也必须 fail closed；ownership 不能证明当前 TOML table 仍是可安全替换的原受管块；**
+- 已存在 previous ownership 未认领的同名 Skill/shared/managed file 时拒绝静默覆盖；
 - marker 损坏、文本编码不可安全增量编辑、受管路径为符号链接时预检失败。
 
 Runtime managed block 还必须明确：正常工程过程可以显示，但内部治理实现细节不作为用户过程输出；Runtime Mode 不根据受管运行资产里的 Source Mode 导航去本地枚举或尝试读取不存在的 Reference。Codex workspace trust 以及 Cursor/Claude 的首次确认属于宿主安全边界，安装器不得绕过。
@@ -574,18 +617,19 @@ Runtime managed block 还必须明确：正常工程过程可以显示，但内�
 安装器修改项目研发入口，必须先完整预检，再进入可恢复写入：
 
 1. 验证 Project Payload v2、path/hash/size/mode/shared files/no-reference 边界；
-2. 校验 v3 install manifest、逐文件 ownership、同名冲突、符号链接、AGENTS/host marker 和 JSON/TOML 边界；
-3. 对全部新/旧 managed files、Runtime、manifest 和受管文本保留原始 bytes/权限快照；
+2. 恢复并校验 previous ownership：legacy v3 或旧 Runtime install-state；校验同名冲突、符号链接、AGENTS/host marker 和 JSON/TOML 边界；
+3. 对全部新/旧 managed files、Runtime、legacy manifest（如存在）和受管文本保留原始 bytes/权限快照；
 4. 每个受管文件使用同目录临时文件 + 原子替换，不移动或替换整棵 Skill 目录；
-5. 只删除旧 v3 明确认领且新 Payload 已删除的文件；
+5. 只删除 previous managed_files 明确认领且新 Payload 已删除的文件；
 6. 安装 Runtime 并验证 artifact SHA256；
-7. 写入 AGENTS、`.gitignore`、宿主配置和 v3 manifest；
-8. 任一步异常时恢复本轮 touched 文件、Runtime、manifest 与受管文本快照；
-9. **任何快照恢复失败都必须聚合到明确的“回滚不完整”错误中，并把原始安装异常保留为 cause；不得用 `except: pass` 静默吞掉回滚失败后只报告最初异常。**
+7. 写入 AGENTS、`.gitignore` 与宿主配置；不写新的 install manifest；
+8. legacy v3 迁移成功时，在其他新状态全部完成后才删除旧 manifest；
+9. 任一步异常时恢复本轮 touched 文件、Runtime、legacy manifest 与受管文本快照；
+10. **任何快照恢复失败都必须聚合到明确的“回滚不完整”错误中，并把原始安装异常保留为 cause；不得用 `except: pass` 静默吞掉回滚失败后只报告最初异常。**
 
-目标路径任一上级是符号链接、目标是特殊文件、manifest 损坏或 ownership 不可证明时必须失败关闭。回滚不得使用 `git reset --hard`、`git clean`、强制推送或历史重写。
+目标路径任一上级是符号链接、目标是特殊文件、legacy manifest 损坏、旧 Runtime install-state 非法或 ownership 不可证明时必须失败关闭。回滚不得使用 `git reset --hard`、`git clean`、强制推送或历史重写。
 
-普通文件系统不是数据库事务；实现必须把所有可预检失败前移，并让故障注入测试证明 Router 写入失败、Runtime hash 失败以及安装失败后 rollback 自身失败时的可恢复/可诊断行为。
+普通文件系统不是数据库事务；实现必须把所有可预检失败前移，并让故障注入测试证明 Entry/Router 写入失败、Runtime hash 失败、legacy manifest 恢复以及安装失败后 rollback 自身失败时的可恢复/可诊断行为。
 
 ## 16. 构建与验证
 
@@ -603,6 +647,7 @@ Builder 固定顺序：
 → AES-256-GCM 认证加密 Bundle
 → 生成当前平台 onefile
 → artifact status / self-test + 不透明完整性指纹交叉验证
+→ 直接返回 Builder JSON identity + artifact SHA256
 → 真实 stdio MCP smoke
 ```
 
@@ -618,9 +663,11 @@ Builder 固定顺序：
 8. 真实 MCP `tools/list` 恰为六个 Tool，中文 property 可调用，Runtime 公共 envelope 不泄露内部身份，route→submit→load exact-text→checkpoint 成功；
 9. `load_required_context` 每项公开 envelope 只含 `完整原文`，且原文与 canonical source 逐字一致；
 10. 同一 task 多次 route 只能单调扩展，旧 token/任意 ID load/未知词汇失败关闭，未知事实保守扩大；
-11. 首次安装、无参数安装、显式 target、v3 升级、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、符号链接、Codex marker 丢失 fail-closed 和 rollback/rollback-failure reporting；
+11. 首次安装、无参数安装、显式 target、无 sidecar 重复安装/升级、legacy v3 一次迁移、v1/v2/未知 schema 拒绝、项目自有 Reference 保留、同名冲突、符号链接、Codex marker 丢失 fail-closed 和 rollback/rollback-failure reporting；
 12. Source Mode 根入口继续可见唯一 Router；Runtime 安装后的根 `AGENTS.md` 不主动暴露 `.agents/skills/`、Router/Reference 名称、Stable ID 或内部路由细节，同时保留代码、测试、文档、复核、Git/CI 等工程进度语义；
-13. 维护侧 `release_version`、`python_version`、`source_commit`、Bundle/Task Route/Routing Manifest/MCP/Project Payload/install schema、三个 digest、Project Payload 和 artifact identity 仍通过构建 manifest + 完整性指纹交叉一致。
+13. Builder JSON 必须包含 `release_version`、`python_version`、`source_commit`、Bundle/Task Route/Routing Manifest/MCP/Project Payload 协议、三个 digest、不可逆完整性指纹和真实 `artifact_sha256`；Builder 输出目录不得生成 `*.manifest.json`；
+14. 三平台 Runtime Package Tests 必须重新计算实际 artifact SHA，验证 Builder 输出，完成 onefile status/self-test、真实 stdio MCP、首次安装、重复安装和目标项目无 install manifest；
+15. Release 三个平台必须通过 job outputs 传递公共 identity；Release job 对公共 identity 逐字段一致性比较，并对下载后的 Linux/Windows/macOS binary 分别重新计算 SHA256 与各平台 Builder 输出比对。
 
 Routing Conformance Benchmark 必须永久覆盖 Greenfield、Fact Recovery、L1/L2/L3、Feature/Bug/Incident/Refactor/Performance/Schema、Frontend/Figma/Docs/Review、多 Agent/多 Change、Dependency/CI/Git/PR/Release、Runtime/Project Payload/Skill Mutation/Security、unknown 和复杂组合。最低门禁是 `Expected Required ⊆ Actual Required`；每次修改 trigger/依赖/风险下限都同步审查正例、必要反例和 ambiguous case，并力求 `Expected == Actual`。Runtime Projection 不参与 trigger/依赖/风险求值；如果 Projection 变更导致 Routing Conformance 结果变化，应视为实现错误而不是接受新的路由语义。
 
@@ -628,20 +675,15 @@ Routing Conformance Benchmark 必须永久覆盖 Greenfield、Fact Recovery、L1
 
 ## 17. Release Identity 与正式资产
 
-构建器生成的 artifact identity manifest 只用于本地/CI 校验，不是 Reference manifest，也不进入正式 Release 资产。当前 schema：
-
-```text
-agent-skills-runtime-release-identity/v1
-```
-
-维护侧构建 manifest 可以包含：
+Builder **不生成 artifact identity manifest sidecar**。维护侧 Release identity 直接由 `scripts/build_runtime.py --json` 返回，至少包含：
 
 ```text
 release_version / source_commit
 artifact / artifact_sha256 / python_version
+integrity_fingerprint
 Bundle/Task Route/Routing Manifest/MCP Tool/Project Payload protocol
 bundle_version / source_digest / routing_digest / payload_digest
-Skill 集合
+Skill 集合与聚合 context_budget
 ```
 
 这些维护侧 identity 字段不等于 Runtime MCP 公共状态。Runtime `status --json` 只公开 Release 版本和最小任务状态；`self-test --json` 只额外公开通过状态和不可逆整体完整性指纹。不得通过 Runtime 公共 Tool 枚举 Reference ID、文件名、路径、数量、trigger mapping、依赖图或 canonical 原文 Catalog。
@@ -668,15 +710,17 @@ agent-skills-v<SemVer>-macos.zip
 └── USAGE.md
 ```
 
-每个 ZIP 根目录的成员集合必须精确为当前平台 Runtime binary 与同一版本 [`USAGE.md`](../../../../USAGE.md) 两项。构建期 identity manifest、源包、Python 安装器、Runtime Kit、私有 Routing Manifest、公开 Reference Catalog、临时文件、其他平台 binary 或其他维护资产都不得进入任一 ZIP，也不得作为独立正式 Release asset 暴露。
+每个 ZIP 根目录的成员集合必须精确为当前平台 Runtime binary 与同一版本 [`USAGE.md`](../../../../USAGE.md) 两项。源包、Python 安装器、Runtime Kit、私有 Routing Manifest、公开 Reference Catalog、临时文件、其他平台 binary、Builder JSON 缓存或其他维护资产都不得进入任一 ZIP，也不得作为独立正式 Release asset 暴露。
 
-构建期 identity manifest 至少绑定 `release_version`、真实 `source_commit`、artifact 文件名/SHA256、构建 `python_version`、source/routing/payload digest 以及 Bundle/Task Route/Routing Manifest/MCP/Project Payload/install 协议版本。workflow 必须先逐一验证协议、digest 与 `artifact_sha256`，再删除平台特有 `artifact` / `artifact_sha256` 字段并比较三平台其余公共 identity；任一 release/source/routing/bundle/payload/protocol/Skill identity 漂移都必须失败关闭。完成交叉校验后删除这些 manifest；随后使用显式成员白名单分别组装三个平台 ZIP，每个 ZIP 只加入当前平台 binary 与 [`USAGE.md`](../../../../USAGE.md)，并逐一重新打开核对精确成员集合，不能通过 `release-assets/*` 等宽泛通配把临时文件、其他平台 binary 或维护资产带入最终包。
+三平台 Builder 通过 GitHub job outputs 向发布 job 传递公共 identity 与各自 `artifact_sha256`。发布 job 必须先比较三平台的 `release_version/source_commit/python_version/integrity_fingerprint`、Bundle/Task Route/Routing Manifest/MCP/Project Payload 协议、bundle/source/routing/payload identity 完全一致；`artifact_sha256` 因平台 binary 不同**不参与公共 identity 相等比较**，而是分别绑定 Linux、Windows、macOS 对应 artifact。下载 artifact 后必须重新计算每个平台 binary SHA256，并与对应平台 job output 比对。任一公共 identity 漂移、任一平台 SHA 不一致或出现 `*.manifest.json` sidecar 都必须失败关闭。
 
-Release workflow 必须从 main 构建，在正式构建前校验 tag 不存在、Release 不存在，再在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check。workflow 不依赖自定义 PAT/Actions Secret，也不读取或要求仓库 Release Immutability 设置；tag/Release 操作使用 GitHub Actions 自动提供的 `github.token`，发布 job 只申请最小 `contents: write` 权限。三平台继续使用同一固定 Python 版本，且 identity 必须满足 `source_commit == GITHUB_SHA`、`release_version == tag 去 v 后值`、artifact SHA256 和协议/digest 一致。
+随后使用显式成员白名单分别组装三个平台 ZIP，每个 ZIP 只加入当前平台 binary 与 [`USAGE.md`](../../../../USAGE.md)，并逐一重新打开核对精确成员集合，不能通过 `release-assets/*` 等宽泛通配把临时文件、其他平台 binary 或维护资产带入最终包。
 
-正式资产完成交叉校验和三个 ZIP 成员核对后，workflow 必须先创建 **Draft Release**，并且只上传 `agent-skills-v<SemVer>-linux.zip`、`agent-skills-v<SemVer>-windows.zip`、`agent-skills-v<SemVer>-macos.zip` 三个资产；Draft Release 资产集合必须精确等于这三个平台 ZIP，不能同时上传独立 binary、说明文件、checksum 或 identity manifest。核对 Draft 通过后才 Publish；发布后再核对 tag 指向当前 `GITHUB_SHA`，且已发布资产集合仍精确只有这三个平台 ZIP。Release 页面正文可以继续使用源码仓库同版本 [`USAGE.md`](../../../../USAGE.md) 作为 notes，但最终分发文件以各平台 ZIP 内说明为准。正式发布不使用 Release Immutability，有仓库管理权限的维护者仍可修改或删除已发布资产；workflow 拒绝覆盖已有 tag/Release，但不能把这项流程保护描述成不可变存储。Draft 上传不完整、identity 不一致、任一平台 ZIP 成员不一致或发布后 tag/资产不可验证时必须失败关闭。
+Release workflow 必须从 main 构建，在正式构建前校验 tag 不存在、Release 不存在，再在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check。workflow 不依赖自定义 PAT/Actions Secret，也不读取或要求仓库 Release Immutability 设置；tag/Release 操作使用 GitHub Actions 自动提供的 `github.token`，发布 job 只申请最小 `contents: write` 权限。三平台继续使用同一固定 Python 版本，且 identity 必须满足 `source_commit == GITHUB_SHA`、`release_version == tag 去 v 后值`、协议/digest/integrity 一致以及各自 artifact SHA256 正确。
 
-版本语义分为两种：网页端读取当前 main、Runtime 使用当前最新 Release 时追求“最新规则”，但发布间隙允许短暂版本差；需要严格复现正式 Runtime 时，使用 Runtime `status --json` 的 `Release版本` 定位对应正式 Release/tag，再读取该 tag/commit 的 Source Mode 规则。development `0.0.0-dev` 不能仅靠公共 Runtime 状态反推出任意构建 commit；维护者需要使用本次构建保留的 identity manifest 或 CI 证据完成精确复现。
+正式资产完成交叉校验和三个 ZIP 成员核对后，workflow 必须先创建 **Draft Release**，并且只上传 `agent-skills-v<SemVer>-linux.zip`、`agent-skills-v<SemVer>-windows.zip`、`agent-skills-v<SemVer>-macos.zip` 三个资产；Draft Release 资产集合必须精确等于这三个平台 ZIP，不能同时上传独立 binary、说明文件、checksum 或 identity sidecar。核对 Draft 通过后才 Publish；发布后再核对 tag 指向当前 `GITHUB_SHA`，且已发布资产集合仍精确只有这三个平台 ZIP。Release 页面正文可以继续使用源码仓库同版本 [`USAGE.md`](../../../../USAGE.md) 作为 notes，但最终分发文件以各平台 ZIP 内说明为准。正式发布不使用 Release Immutability，有仓库管理权限的维护者仍可修改或删除已发布资产；workflow 拒绝覆盖已有 tag/Release，但不能把这项流程保护描述成不可变存储。Draft 上传不完整、identity 不一致、任一平台 ZIP 成员不一致或发布后 tag/资产不可验证时必须失败关闭。
+
+版本语义分为两种：网页端读取当前 main、Runtime 使用当前最新 Release 时追求“最新规则”，但发布间隙允许短暂版本差；需要严格复现正式 Runtime 时，使用 Runtime `status --json` 的 `Release版本` 定位对应正式 Release/tag，再读取该 tag/commit 的 Source Mode 规则。development `0.0.0-dev` 的精确构建 identity 由本次 Builder JSON/CI 证据记录，不再依赖磁盘 identity manifest。
 
 AES-GCM、onefile 和 Runtime Skill Projection 共同减少普通明文浏览面并检测静态篡改，但它们不是 TEE/KMS，也不能抵御机器 Owner、调试器、内存转储、Hook、MCP 通信观测或专业逆向。canonical 源码访问仍由仓库/制品渠道权限控制；如果源仓库是 Public，则 canonical Skill/Reference 本身就是公开内容，Runtime 加密/投影不能反向把公开源码变成保密事实。Runtime 的用户可见 disclosure rule 同样不是安全隔离承诺。
 
@@ -687,24 +731,27 @@ AES-GCM、onefile 和 Runtime Skill Projection 共同减少普通明文浏览面
 ```text
 校验当前平台 artifact / SHA256
 → 校验 Bundle v2 / Project Payload v2 / routing identity
-→ 只读取并校验 v3 manifest
-→ 预检 managed_files / 项目自有内容 / host config
+→ 恢复 previous ownership
+   ├─ legacy v3 manifest：严格校验，一次迁移
+   └─ 旧已安装 Runtime：内部 install-state
+→ 预检 previous managed_files / 项目自有内容 / host config
 → 逐文件原子升级 Runtime + Runtime Router/Skill Projection + managed 配置
-→ 写入 v3 manifest
+→ legacy v3 成功迁移则删除旧 manifest
+→ 不写新的 ownership sidecar
 → status / self-test / MCP / install smoke
 ```
 
 Reference bytes 变化只通过新 Bundle 与 `source_digest` 体现；route metadata/依赖/风险变化通过 `routing_digest` 体现；canonical Core/Router 或其他运行资产变化会使 Runtime Projection/Project Payload bytes 变化，并通过 `payload_digest` 体现。三者不能互相代替。
 
-v1/未知 install schema、Bundle v1、旧 MCP Contract 或损坏状态不静默兼容。需要跨不兼容 Contract 迁移时必须建立独立 Change，给出明确迁移/回滚与验证，不保留无限期双路径。
+legacy v1/v2/未知 schema、Bundle v1、旧 MCP Contract 或损坏状态不静默兼容。需要跨其他不兼容 Contract 迁移时必须建立独立 Change，给出明确迁移/回滚与验证，不保留无限期双路径。
 
 ## 19. 回滚
 
-安装过程内失败由 v3 Installer 快照恢复；用户手工回退必须取得目标版本的完整同平台资产并重新运行安装，不能只替换 Runtime、投影 Router/Skill Core 或 manifest。
+安装过程内失败由 sidecarless Installer 快照恢复；若本轮从 legacy v3 迁移，旧 manifest 也是必须恢复的快照之一。用户手工回退必须取得目标版本的完整同平台资产并重新运行该版本正式安装流程，不能只替换 Runtime 或投影 Router/Skill Core。
 
 如果安装过程自身失败且任何快照恢复失败，安装器必须明确报告“回滚不完整”及未恢复路径/原因，并保留最初安装异常作为根因链；不得因 rollback exception 被吞掉而让维护者误判项目已经恢复。
 
-如果目标版本不理解当前 schema/ownership，应停止并按该版本正式迁移说明处理。不得手工删除归属不明的 `.agents` 内容，不得用 Git destructive 命令冒充安装回滚。
+如果目标版本不理解当前 ownership/install-state，应停止并按该版本正式迁移说明处理。不得手工删除归属不明的 `.agents` 内容，不得用 Git destructive 命令冒充安装回滚。
 
 ## 20. 正常任务生命周期
 
