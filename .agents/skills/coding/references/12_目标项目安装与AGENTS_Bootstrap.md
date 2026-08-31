@@ -69,7 +69,7 @@ Agent_Skills 源仓库根 `AGENTS.md` 是源码直读/维护模式的薄 Bootstr
 
 Source Mode 从 [`.agents/skills/ENTRY.md`](../../ENTRY.md) 无条件进入 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md)。Entry 是 Skills 根级 shared runtime file，Router 是动态发现的正式 Skill；Runtime Mode 仍安装这些运行资产，但目标项目根 `AGENTS.md` 不把内部 Router / Skill / Reference 导航作为日常用户入口。
 
-目标项目中的项目自有内容、`AGENTS.md` managed marker 外文本、其他 MCP server、项目自有 Skill/Reference/资产都不是普通安装/升级的清理目标。Agent Skills 当前受管范围由当前 Release 的 Project Payload 和可验证 previous ownership 决定，不按整个 `.agents` 或整个 Skill 目录猜归属。
+目标项目中的项目自有内容、`AGENTS.md` managed marker 外文本、其他 MCP server、项目自有 Skill/Reference/资产都不是普通安装/升级的清理目标。**Runtime 安装自己的受管运行资产，但不认领目标项目其余 `.agents` 内容。** Agent Skills 当前受管范围由当前 Release 的 Project Payload 和可验证 previous ownership 决定，不按整个 `.agents` 或整个 Skill 目录猜归属。
 
 **新版本安装不创建 `.agents/agent-skills-install.json` 或其他 ownership sidecar。** 当前 ownership 来自 Runtime 内嵌 Project Payload；后续升级的 previous ownership 来自旧已安装 Runtime 的内嵌 install-state。历史 `agent-skills-install/v3` 只允许作为一次迁移输入，成功升级后删除。详细 schema、校验与安全边界由 Runtime 规则承担。
 
