@@ -18,7 +18,7 @@ SKILL_TESTS_WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"
 RUNTIME_PACKAGE_WORKFLOW = ROOT / ".github/workflows/runtime-package-tests.yml"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 SETUP_PYTHON_SHA = "5fda3b95a4ea91299a34e894583c3862153e4b97"
-PINNED_PYTHON = "3.12.10"
+PINNED_PYTHON = "3.14.7"
 
 
 def _load_module(name: str, path: Path):
@@ -92,7 +92,7 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
             artifact.write_bytes(b"runtime-fixture")
             install_project(target, payload, artifact, release_version="1.0.0")
 
-            router_target = (target / ".agents/skills/ROUTER.md").resolve()
+            entry_target = (target / ".agents/skills/ENTRY.md").resolve()
             agents_target = (target / "AGENTS.md").resolve()
             original_atomic_write = INSTALLER._atomic_write
             original_restore_file = INSTALLER._restore_file
@@ -100,9 +100,9 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
             rollback_failed = False
 
             def controlled_atomic_write(path: Path, content: bytes, mode: int | None = None) -> None:
-                """只在第二次安装写 Router 时制造原始安装失败。"""
+                """只在第二次安装写 Entry 时制造原始安装失败。"""
                 nonlocal install_failed
-                if Path(path).resolve() == router_target and not install_failed:
+                if Path(path).resolve() == entry_target and not install_failed:
                     install_failed = True
                     raise OSError("fixture install write failure")
                 original_atomic_write(path, content, mode)
@@ -218,6 +218,7 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
         bundle = build_bundle(ROOT)
         budget = builder._context_budget(ROOT, bundle)
         skills = list(bundle["skills"])
+        self.assertGreater(budget["entry_bytes"], 0)
         self.assertGreater(budget["router_bytes"], 0)
         self.assertEqual(sorted(budget["skill_core_bytes"]), skills)
         self.assertEqual(sorted(budget["reference_bytes_by_skill"]), skills)
@@ -227,7 +228,9 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
             self.assertEqual(budget["skill_core_bytes"][skill], len(core_path.read_bytes()))
             self.assertEqual(
                 budget["base_router_plus_core_bytes"][skill],
-                budget["router_bytes"] + budget["skill_core_bytes"][skill],
+                budget["entry_bytes"]
+                + budget["router_bytes"]
+                + (0 if skill == "router" else budget["skill_core_bytes"][skill]),
             )
             expected_reference_bytes = sum(
                 int(entry["size"])

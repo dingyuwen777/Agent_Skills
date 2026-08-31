@@ -95,7 +95,7 @@
 
 ## 6. 跨 Skill 规则 Ownership 也必须守恒
 
-当一组规则从 Coding 迁移到更专门的正式 Skill 时，内容守恒不仅要求“文字还在”，还要求**唯一 Owner、触发入口和回程路径同时存在**。不能因为拆出独立 Skill 就让规则变成只有用户显式点名才会加载，也不能为了保险在 Coding 中长期复制第二套详细规则。
+当一组规则迁移到更专门的正式 Skill 时，内容守恒不仅要求“文字还在”，还要求**唯一 Owner、Router 触发入口和回程路径同时存在**。不能因为拆出独立 Skill 就让规则变成只有用户显式点名才会加载，也不能为了保险在 Coding 中长期复制第二套详细规则。
 
 当前 Figma 设计规则的 Ownership 明确为：
 
@@ -107,16 +107,19 @@ Prototype Variable / Reaction / Flow
 Figma Findings / Ready / 写后 Canvas-level Review
 → 唯一详细规则 Owner：.agents/skills/figma/SKILL.md + 其 references
 
+Router
+→ 负责跨 Skill 触发、上下文装配、顺序与 Handoff
+
 Coding
-→ 负责跨 Skill 触发、仓库事实、Change、代码实现、验证、Review、CI、Git 与交付
+→ 负责仓库事实、Change、代码实现、验证、Review、CI、Git 与交付
 → READY 后的真实前端 / Design-to-Code 实施继续由 Coding reference 17 承担
 ```
 
 硬规则：
 
-- 同仓存在 [`.agents/skills/figma/SKILL.md`](../../figma/SKILL.md) 时，Figma 创建、修改、整理、审查、Prototype、正式设计基线验收或 Figma-to-code 任务必须通过 Coding 的任务路由进入 Figma Skill；不能依赖用户记住 Skill 名称；
+- 同仓存在 [`.agents/skills/figma/SKILL.md`](../../figma/SKILL.md) 时，Figma 创建、修改、整理、审查、Prototype、正式设计基线验收或 Figma-to-code 任务必须通过 Router 进入 Figma Skill；不能依赖用户记住 Skill 名称；
 - **不得在 Coding references 下恢复第二套 Figma 页面、Canvas、Spacing、Annotation、Prototype 或 Ready 详细设计规则**；需要设计细节时引用并加载 Figma Skill 的 canonical 规则；
-- Coding 可以维护 `NOT_READY → 阻止生产实现`、`READY / READY_WITH_NOTES → Coding Handoff` 这类跨 Skill Contract，但不能复制 Figma 如何判定布局、Prototype、状态或 Canvas Ready 的完整检查表；
+- Router 可以维护 `NOT_READY → 阻止生产实现`、`READY / READY_WITH_NOTES → Coding Handoff` 这类跨 Skill Contract，但不能复制 Figma 如何判定布局、Prototype、状态或 Canvas Ready 的完整检查表；
 - Figma Skill 也不得复制 Coding 的 Change、TDD、Validation Matrix、Review、CI、Git、PR、Release 细则；进入生产实现后必须回到目标项目 Coding 工作流；
 - 从旧 Coding 规则迁入 Figma 时，必须逐条对照原触发条件、Canvas fallback、Prototype 状态、Owner、失败处理、修复后验证和完成判定；通用化只允许把项目特定假设条件化，不能删除原规则强度；
 - Runtime 模式还必须证明 Figma canonical References 经 Bundle/MCP required Context 加载逐字对应，新增正式 Figma Skill 能被动态 Catalog、公共 route contract、Project Payload、Installer 和 manifest 自动发现，不得为第四个 Skill 引入静态白名单。
@@ -125,7 +128,7 @@ Coding
 
 ```text
 Figma 审查 / 修改 / Ready 用户意图
-→ Coding 四维路由
+→ Router
 → .agents/skills/figma/SKILL.md
 → 命中的 Figma reference
 → 原设计规则完整可达
@@ -155,7 +158,8 @@ dingyuwen777/Agent_Skills
 ```text
 .agents/skills/<skill>/SKILL.md
 .agents/skills/<skill>/references/*.md
-.agents/skills/ROUTER.md
+.agents/skills/ENTRY.md
+.agents/skills/router/SKILL.md
 以及该 Skill 明确认领的 metadata / assets / scripts / tests
 ```
 
@@ -176,7 +180,8 @@ dingyuwen777/Agent_Skills
 ```text
 重新读取 Agent_Skills 当前目标分支根 AGENTS.md
 → .agents/MAINTENANCE.md
-→ .agents/skills/ROUTER.md
+→ .agents/skills/ENTRY.md
+→ .agents/skills/router/SKILL.md
 → .agents/skills/coding/SKILL.md
 → coding/references/15_规则内容守恒与Skill维护.md
 → 本次真正受影响 Skill 的 SKILL.md / references
@@ -238,7 +243,7 @@ dingyuwen777/Agent_Skills
 
 1. 正式入口为 `.agents/skills/<name>/SKILL.md`；目录名、frontmatter `name` 与现有动态发现 Contract 一致；
 2. 不在 Runtime、Project Payload、manifest、Workflow 或测试里新增固定完整 Skill 白名单；正式集合继续从 `.agents/skills/*/SKILL.md` **动态发现**；
-3. 如果 [`.agents/skills/ROUTER.md`](../../ROUTER.md) 展示“当前 Catalog”，同步这个人类可读导航，但明确它不是分发白名单；
+3. 如果 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md) 展示“当前 Catalog”，同步这个人类可读导航，但明确它不是分发白名单；薄 [`.agents/skills/ENTRY.md`](../../ENTRY.md) 不复制 Catalog；
 4. 新 Skill 的职责必须与现有 Owner 去重；需要跨 Skill Handoff 时明确触发和回程，不复制另一 Skill 的完整细则；
 5. 新 Skill/Reference 写入显式 metadata，验证 Stable ID 全局唯一、依赖无环且无悬空项；没有 references 也必须能被 Catalog/Project Payload 正确发现；
 6. 永久测试至少证明 Bundle、公开 route contract、Project Payload、Installer/manifest 能通过动态发现携带新 Skill，且 Payload 不包含 Reference/Stub；

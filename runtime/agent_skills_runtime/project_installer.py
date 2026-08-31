@@ -25,7 +25,7 @@ CODEX_MANAGED_START = "# agent-skills:mcp:start"
 CODEX_MANAGED_END = "# agent-skills:mcp:end"
 CACHE_IGNORE_RULE = ".agents/project-context.json"
 RUNTIME_IGNORE_RULE = "/.agents/runtime/"
-SKILL_ROUTER_ASSET = "ROUTER.md"
+SKILL_ENTRY_ASSET = "ENTRY.md"
 _SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _CODEX_SERVER_PATTERN = re.compile(r"(?m)^\s*\[mcp_servers\.agent-skills\]\s*$")
 _FACT_SOURCE_NAMES = {
@@ -152,11 +152,8 @@ def _payload_asset(payload_files: Mapping[str, bytes], path: str) -> str:
 
 
 def _project_agents_managed_text(payload_files: Mapping[str, bytes]) -> str:
-    """把源模板 Router 链接转换为写入项目根 AGENTS 后仍可点击的目标。"""
-    text = _payload_asset(payload_files, "coding/assets/AGENTS.managed.md")
-    source_link = "[`.agents/skills/ROUTER.md`](../../ROUTER.md)"
-    project_link = "[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)"
-    return text.replace(source_link, project_link)
+    """读取不暴露内部 Skill 路径的目标项目 managed block。"""
+    return _payload_asset(payload_files, "coding/assets/AGENTS.managed.md")
 
 
 def _normalise_shared_files(raw: Any, label: str) -> list[str]:
@@ -202,8 +199,8 @@ def _fact_sources(root: Path) -> str:
 
 
 def _updated_agents_content(root: Path, existing: bytes | None, payload_files: Mapping[str, bytes]) -> bytes:
-    """按 Coding Bootstrap Contract 创建或增量更新根 AGENTS.md，并预检统一 Router 运行资产。"""
-    _payload_asset(payload_files, SKILL_ROUTER_ASSET)
+    """按 Coding Bootstrap Contract 创建或增量更新根 AGENTS.md，并预检统一薄入口。"""
+    _payload_asset(payload_files, SKILL_ENTRY_ASSET)
     managed_text = _project_agents_managed_text(payload_files).rstrip("\r\n")
     if existing is None:
         template = Template(_payload_asset(payload_files, "coding/assets/AGENTS.template.md"))

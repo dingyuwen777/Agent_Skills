@@ -83,11 +83,14 @@ def _source_commit(source_root: str | Path) -> str | None:
 
 
 def _context_budget(source_root: str | Path, bundle: Mapping[str, Any]) -> dict[str, Any]:
-    """量化 Router/Core/Reference 聚合字节，供维护者观察上下文成本而不公开 Reference 明细。"""
+    """量化 Entry/Router/Core/Reference 聚合字节，供维护者观察上下文成本。"""
     root = Path(source_root).resolve()
-    router = root / ".agents" / "skills" / "ROUTER.md"
+    entry_path = root / ".agents" / "skills" / "ENTRY.md"
+    if entry_path.is_symlink() or not entry_path.is_file():
+        raise FileNotFoundError(f"共享 Entry 不存在或不是普通文件：{entry_path}")
+    router = root / ".agents" / "skills" / "router" / "SKILL.md"
     if router.is_symlink() or not router.is_file():
-        raise FileNotFoundError(f"共享 Router 不存在或不是普通文件：{router}")
+        raise FileNotFoundError(f"Router Skill 不存在或不是普通文件：{router}")
     skills = [str(item) for item in bundle["skills"]]
     skill_core_bytes: dict[str, int] = {}
     reference_bytes_by_skill = {skill: 0 for skill in skills}
@@ -96,18 +99,23 @@ def _context_budget(source_root: str | Path, bundle: Mapping[str, Any]) -> dict[
         if core.is_symlink() or not core.is_file():
             raise FileNotFoundError(f"Skill Core 不存在或不是普通文件：{core}")
         skill_core_bytes[skill] = len(core.read_bytes())
-    for entry in bundle["references"]:
-        skill = str(entry["skill"])
+    for reference in bundle["references"]:
+        skill = str(reference["skill"])
         if skill not in reference_bytes_by_skill:
             raise ValueError(f"Context footprint 遇到未声明 Skill：{skill}")
-        reference_bytes_by_skill[skill] += int(entry["size"])
+        reference_bytes_by_skill[skill] += int(reference["size"])
+    entry_bytes = len(entry_path.read_bytes())
     router_bytes = len(router.read_bytes())
     return {
+        "entry_bytes": entry_bytes,
         "router_bytes": router_bytes,
         "skill_core_bytes": skill_core_bytes,
         "reference_bytes_by_skill": reference_bytes_by_skill,
         "base_router_plus_core_bytes": {
-            skill: router_bytes + skill_core_bytes[skill] for skill in skills
+            skill: entry_bytes + router_bytes + (
+                0 if skill == "router" else skill_core_bytes[skill]
+            )
+            for skill in skills
         },
     }
 

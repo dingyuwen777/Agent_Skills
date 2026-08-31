@@ -11,7 +11,7 @@ from runtime.agent_skills_runtime.routing import public_route_contract
 ROOT = Path(__file__).resolve().parents[4]
 CODING_ROOT = ROOT / ".agents/skills/coding"
 FIGMA_ROOT = ROOT / ".agents/skills/figma"
-ROUTER_PATH = ROOT / ".agents/skills/ROUTER.md"
+ROUTER_PATH = ROOT / ".agents/skills/router/SKILL.md"
 
 
 class UniversalFigmaSkillTest(unittest.TestCase):
@@ -234,7 +234,8 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         router = self._read(ROUTER_PATH)
         root_readme = self._read(ROOT / "README.md")
 
-        self.assertIn(".agents/skills/ROUTER.md", root_agents)
+        self.assertIn(".agents/skills/ENTRY.md", root_agents)
+        self.assertIn(".agents/skills/router/SKILL.md", root_agents)
         self.assertNotIn(".agents/skills/", managed)
         self.assertNotIn("ROUTER.md", managed)
         self.assertNotIn("figma", managed.lower())

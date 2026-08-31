@@ -1,14 +1,15 @@
 # Agent_Skills
 
-`Agent_Skills` 是通用 Agent Skill 的**源仓库与维护仓库**。它保存正式 Skill、唯一跨 Skill Router、canonical References、项目级 Runtime、构建/验证脚本和维护期 Change 记录。
+`Agent_Skills` 是通用 Agent Skill 的**源仓库与维护仓库**。它保存薄 Entry、正式 Router Skill、专业 Skills、canonical References、项目级 Runtime、构建/验证脚本和维护期 Change 记录。
 
 最终使用者不需要理解本仓库的维护过程，也不需要访问源码。正式构建产物只有：
 
 ```text
 GitHub Release
-→ 当前平台 agent-skills-mcp binary
-→ USAGE.md
-→ SHA256SUMS
+→ agent-skills-v<SemVer>.zip（唯一资产）
+  → Linux / Windows / macOS 三个平台 Runtime binary
+  → USAGE.md
+  → SHA256SUMS
 ```
 
 最终用户入口见 [`USAGE.md`](USAGE.md)。
@@ -23,12 +24,13 @@ GitHub Release
 
 | Skill | 职责 | 正式入口 |
 | --- | --- | --- |
-| `coding` | 研发、调试、验证、Git/CI/交付与跨 Skill 主流程 | [`.agents/skills/coding/SKILL.md`](.agents/skills/coding/SKILL.md) |
+| `router` | 所有任务的无条件入口、动态 Catalog、跨 Skill 选择、上下文与 Handoff | [`.agents/skills/router/SKILL.md`](.agents/skills/router/SKILL.md) |
+| `coding` | 研发、调试、验证、Git/CI 与交付 | [`.agents/skills/coding/SKILL.md`](.agents/skills/coding/SKILL.md) |
 | `review` | 独立 Code Review、Findings 与测试充分性审查 | [`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md) |
 | `docs` | 技术文档事实同步、审查、编写与更新 | [`.agents/skills/docs/SKILL.md`](.agents/skills/docs/SKILL.md) |
 | `figma` | Figma 设计事实、Canvas/Prototype、Ready 与 Design-to-Code 交接 | [`.agents/skills/figma/SKILL.md`](.agents/skills/figma/SKILL.md) |
 
-这四个名称只是当前事实，不是永久白名单。正式 Skill 始终从：
+这些名称只是当前事实，不是永久白名单。正式 Skill 始终从：
 
 ```text
 .agents/skills/*/SKILL.md
@@ -38,16 +40,20 @@ GitHub Release
 
 ## 2. 规则事实源与 Runtime
 
-跨 Skill 入口只维护一份：
+跨 Skill 入口分成薄 Bootstrap 和唯一正式 Router，两者职责不重叠：
 
 ```text
-.agents/skills/ROUTER.md
-→ Skills 根级共享运行资产
-→ 唯一 Skill Catalog / Router
+.agents/skills/ENTRY.md
+→ Skills 根级唯一共享运行资产
+→ 只恢复项目事实、无条件进入 Router、失败关闭
+
+.agents/skills/router/SKILL.md
+→ 动态 Catalog 中的正式 Router Skill
+→ 唯一跨 Skill Catalog / Router
 → 负责项目事实优先、Skill 发现、Reference 加载方式和跨 Skill Handoff
 ```
 
-`ROUTER.md` 不属于任何一个具体 Skill，也不是第五个 Skill；正式 Skill 仍只由各一级目录中的 `SKILL.md` 建立入口。
+[`ENTRY.md`](.agents/skills/ENTRY.md) 不是 Skill，也不复制 Catalog、路由矩阵或专业规则；Router 则和其他正式 Skill 一样由自己的 `SKILL.md` 建立入口。Router 只选择和交接，不生成项目执行计划、不创建子 Agent，也不接管专业工作流。
 
 各专业 Skill 的正式规则边界：
 
@@ -69,7 +75,7 @@ Source Mode
 → 直接读取源仓库中的完整 canonical 原文
 
 Runtime Mode
-→ ROUTER.md + Native Core / 必要运行资产进入 no-Stub Project Payload
+→ ENTRY.md + Router / 其他 Native Core + 必要运行资产进入 no-Stub Project Payload
 → canonical References + 私有 Routing Manifest 认证加密嵌入 onefile
 → 宿主提交中文 Task Route
 → 本地 MCP 只返回当前 route required 的完整原文
@@ -83,8 +89,8 @@ Runtime 不安装 `references/` 或公开 Reference manifest，不接受任意 I
 
 根 [`AGENTS.md`](AGENTS.md) 是 Agent 进入本仓库时的**薄 Bootstrap**：
 
-- ChatGPT 网页端 / GitHub 直接使用 Agent_Skills 帮助另一个项目时，先要求读取目标项目自己的规则和真实事实，再进入唯一 Router；
-- 当前任务是在维护 Agent_Skills 源仓库本身时，进入 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md)，再按 Router / Coding 执行。
+- ChatGPT 网页端 / GitHub 直接使用 Agent_Skills 帮助另一个项目时，先要求读取目标项目自己的规则和真实事实，再进入 [`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)；
+- 当前任务是在维护 Agent_Skills 源仓库本身时，进入 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md) 和 Entry，再由 Router 选择专业 Skill。
 
 它不再保存第二套完整 Router 或完整源仓库维护规则，也不得复制到目标项目。
 
@@ -92,15 +98,15 @@ Runtime 不安装 `references/` 或公开 Reference manifest，不接受任意 I
 
 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md) 是 Agent_Skills **源仓库自身**的开发、Review、测试、CI、Git、Release、内容守恒和 Runtime 维护规则。普通外部项目任务不读取它。
 
-### 唯一 Router
+### Entry 与唯一 Router
 
-[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md) 是源码直读与 Runtime 安装两种模式共同使用的唯一跨 Skill Router。
+[`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md) 是源码直读与 Project Payload 共同使用的薄入口；它无条件进入 [`.agents/skills/router/SKILL.md`](.agents/skills/router/SKILL.md)。后者是两种模式共享的唯一跨 Skill Router 正文。
 
 源码直读时，required Reference 直接从本源仓库读取；Runtime 安装态通过 `agent_skills_route_contract → start_task → submit_route → load_required_context → checkpoint` 获取本任务最低必需的完整 Context。
 
 ### 目标项目 `AGENTS.md` managed block
 
-Runtime 安装后，[`.agents/skills/coding/assets/AGENTS.managed.md`](.agents/skills/coding/assets/AGENTS.managed.md) 只作为目标项目里的**薄 Bootstrap**：它要求先遵守目标项目事实，再读取本地 [`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)。Coding / Figma / Review / Docs 和 Reference 详细路由不再复制进 managed block。
+Runtime 安装后，[`.agents/skills/coding/assets/AGENTS.managed.md`](.agents/skills/coding/assets/AGENTS.managed.md) 只作为目标项目里的**用户可见薄 Bootstrap**：它要求先遵守目标项目事实，再通过项目级研发治理 MCP 建立任务约束；内部 Entry、Router、其他 Skill Core 和 Reference 详细路由都不复制到 managed block。
 
 ### [`USAGE.md`](USAGE.md)
 
@@ -117,7 +123,8 @@ Agent_Skills/
 │   ├── MAINTENANCE.md        # Agent_Skills 源仓库 AI 维护规范
 │   ├── changes/              # 仅存在 Active L2/L3 Change 时临时出现；完成后删除
 │   └── skills/
-│       ├── ROUTER.md         # 唯一跨 Skill Router / 共享运行资产
+│       ├── ENTRY.md          # 唯一共享薄入口
+│       ├── router/           # 唯一正式跨 Skill Router
 │       ├── coding/
 │       ├── review/
 │       ├── docs/
@@ -139,9 +146,9 @@ Agent_Skills/
 
 ## 5. 维护者常用验证
 
-开始维护前先读根 [`AGENTS.md`](AGENTS.md)，再按它进入 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md)、唯一 Router 和任务命中的正式 Skill/Reference。
+开始维护前先读根 [`AGENTS.md`](AGENTS.md)，再按它进入 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md)、[`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)、唯一 Router 和任务命中的正式 Skill/Reference。
 
-永久 CI 固定使用 Python `3.12.10` 构建 Runtime；本地维护者可以使用当前兼容 Python 执行源码测试，但正式三平台 artifact 必须以 CI/Release 中固定版本为准。
+永久 CI 固定使用 Python `3.14.7` 构建 Runtime；本地维护者可以使用当前兼容 Python 执行源码测试，但正式三平台 artifact 必须以 CI/Release 中固定版本为准。
 
 自包含回归：
 
@@ -155,7 +162,7 @@ python -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v
 python scripts/build_runtime.py --output-dir dist --json
 ```
 
-未显式传入版本时，Builder 使用 `0.0.0-dev` 作为 development identity；它不是正式 Release 版本。构建结果还会返回聚合 `context_budget`，用于量化 Router、各 Skill Core 和 canonical References 的上下文字节成本，不改变 Runtime `status/self-test` 的公开披露边界。
+未显式传入版本时，Builder 使用 `0.0.0-dev` 作为 development identity；它不是正式 Release 版本。构建结果还会返回聚合 `context_budget`，用于量化 Entry、Router、各 Skill Core 和 canonical References 的上下文字节成本，不改变 Runtime `status/self-test` 的公开披露边界。
 
 验证真实 stdio MCP：
 
@@ -186,7 +193,7 @@ main
 → 输入 v<SemVer>
 → 由 tag 派生 release_version
 → Preflight 校验 main/tag/Release + 全量自包含测试 + Ready
-→ Linux / Windows / macOS 使用 Python 3.12.10 分别构建并验证
+→ Linux / Windows / macOS 使用 Python 3.14.7 分别构建并验证
 → 交叉校验 identity / artifact SHA256
 → 创建 Draft Release 并上传完整正式资产
 → 核对 Draft 资产集合
@@ -198,14 +205,15 @@ Release workflow 不读取仓库管理设置，也不需要自定义 PAT 或 Act
 
 Draft→资产校验→Publish、发布后的 tag/资产核对和失败时只清理未发布 Draft 的边界保持不变。
 
-源仓库 Release 资产固定为三平台 binary、[`USAGE.md`](USAGE.md) 与 `SHA256SUMS`。构建期 identity manifest 只在 CI 内校验后删除；版本与 digest 身份仍可通过 binary 的 `status --json` 读取。Release 页面说明直接使用 [`USAGE.md`](USAGE.md)，不自动把维护 commit / PR 历史生成给最终使用者。最终交付给不具备源仓库权限的用户时，只复制这些 Release 资产，不暴露源仓库访问权。
+源仓库 Release 资产固定为唯一 `agent-skills-v<SemVer>.zip`；ZIP 内精确包含三平台 binary、[`USAGE.md`](USAGE.md) 与 `SHA256SUMS`。构建期 identity manifest 只在 CI 内校验后删除；版本与 digest 身份仍可通过 binary 的 `status --json` 读取。Release 页面说明直接使用 [`USAGE.md`](USAGE.md)，不自动把维护 commit / PR 历史生成给最终使用者。最终交付给不具备源仓库权限的用户时，只复制这个 ZIP，不暴露源仓库访问权。
 
 ## 7. 继续阅读
 
 - 最终用户：[`USAGE.md`](USAGE.md)
 - AI 统一入口：[`AGENTS.md`](AGENTS.md)
 - 源仓库 AI 维护规则：[`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md)
-- 唯一 Skill Router：[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)
+- 薄 Entry：[`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)
+- 唯一 Skill Router：[`.agents/skills/router/SKILL.md`](.agents/skills/router/SKILL.md)
 - Runtime 源码维护：[`runtime/README.md`](runtime/README.md)
 - 正式 Skill：`.agents/skills/*/SKILL.md`
 - Runtime 构建：[`scripts/build_runtime.py`](scripts/build_runtime.py)

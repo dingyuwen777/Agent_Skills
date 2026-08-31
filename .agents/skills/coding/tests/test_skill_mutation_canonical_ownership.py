@@ -8,7 +8,8 @@ from runtime.agent_skills_runtime.project_payload import build_project_payload, 
 
 
 ROOT = Path(__file__).resolve().parents[4]
-ROUTER_PATH = ".agents/skills/ROUTER.md"
+ENTRY_PATH = ".agents/skills/ENTRY.md"
+ROUTER_PATH = ".agents/skills/router/SKILL.md"
 MAINTENANCE_PATH = ".agents/MAINTENANCE.md"
 MANAGED_PATH = ".agents/skills/coding/assets/AGENTS.managed.md"
 REF13_PATH = ".agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md"
@@ -38,6 +39,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "Skill Mutation",
             CANONICAL_REPOSITORY,
             MAINTENANCE_PATH,
+            ENTRY_PATH,
             ROUTER_PATH,
             "更新 Skill",
             "修改 Skill",
@@ -187,7 +189,8 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         for marker in (
             ".agents/skills/<skill>/SKILL.md",
             ".agents/skills/<skill>/references/*.md",
-            ".agents/skills/ROUTER.md",
+            ".agents/skills/ENTRY.md",
+            ".agents/skills/router/SKILL.md",
             "metadata / assets / scripts / tests",
             "Runtime / Project Payload 本地安装副本",
             "Reference Stub",
@@ -204,9 +207,12 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         entries = {item["path"]: item for item in payload["files"]}
-        router_entry = entries.get("ROUTER.md")
+        entry_asset = entries.get("ENTRY.md")
+        router_entry = entries.get("router/SKILL.md")
         managed_entry = entries.get("coding/assets/AGENTS.managed.md")
+        self.assertIsNotNone(entry_asset)
         self.assertIsNotNone(router_entry)
+        self.assertEqual(decode_payload_file(entry_asset), (ROOT / ENTRY_PATH).read_bytes())
         self.assertIsNotNone(managed_entry)
         self.assertEqual(decode_payload_file(router_entry), (ROOT / ROUTER_PATH).read_bytes())
         self.assertEqual(decode_payload_file(managed_entry), (ROOT / MANAGED_PATH).read_bytes())

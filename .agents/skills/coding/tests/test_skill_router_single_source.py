@@ -8,7 +8,8 @@ from runtime.agent_skills_runtime.project_payload import build_project_payload, 
 
 
 ROOT = Path(__file__).resolve().parents[4]
-ROUTER_PATH = ".agents/skills/ROUTER.md"
+ENTRY_PATH = ".agents/skills/ENTRY.md"
+ROUTER_PATH = ".agents/skills/router/SKILL.md"
 MAINTENANCE_PATH = ".agents/MAINTENANCE.md"
 MANAGED_PATH = ".agents/skills/coding/assets/AGENTS.managed.md"
 RUNTIME_REFERENCE_PATH = ".agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md"
@@ -25,9 +26,11 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         """Source Mode 显式导航 Router；Runtime managed 只暴露项目治理能力，不复制或暴露内部导航。"""
         root_agents = self._read("AGENTS.md")
         managed = self._read(MANAGED_PATH)
+        self.assertTrue((ROOT / ENTRY_PATH).is_file(), "缺少唯一薄 Entry")
         self.assertTrue((ROOT / ROUTER_PATH).is_file(), "缺少唯一 canonical Skill Router")
         self.assertTrue((ROOT / MAINTENANCE_PATH).is_file(), "缺少 Agent_Skills 源仓库维护规则")
 
+        self.assertIn(ENTRY_PATH, root_agents)
         self.assertIn(ROUTER_PATH, root_agents)
         self.assertIn(MAINTENANCE_PATH, root_agents)
         self.assertNotIn("## 8. Runtime 维护不变量", root_agents)
@@ -127,21 +130,27 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         for marker in required_markers:
             self.assertIn(marker, maintenance, f"Maintenance 丢失源仓库治理规则：{marker}")
 
+        self.assertIn(ENTRY_PATH, maintenance)
         self.assertIn(ROUTER_PATH, maintenance)
         self.assertNotIn("当前正式 Skill：", maintenance)
 
-    def test_project_payload_distributes_router_exactly_as_internal_runtime_asset(self) -> None:
-        """根级 Router 必须原样进入 Project Payload，继续作为内部共享运行资产而非根用户入口。"""
+    def test_project_payload_distributes_entry_and_router_from_their_canonical_owners(self) -> None:
+        """薄 Entry 作为 shared file、Router 作为 Skill Core 原样进入 Project Payload。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
-        self.assertEqual(payload["shared_files"], ["ROUTER.md"])
+        self.assertEqual(payload["shared_files"], ["ENTRY.md"])
         entry = next(
-            (item for item in payload["files"] if item["path"] == "ROUTER.md"),
+            (item for item in payload["files"] if item["path"] == "ENTRY.md"),
             None,
         )
-        self.assertIsNotNone(entry, "Project Payload 没有分发 canonical Router 共享运行资产")
-        installed_router = decode_payload_file(entry)
-        self.assertEqual(installed_router, (ROOT / ROUTER_PATH).read_bytes())
+        router = next(
+            (item for item in payload["files"] if item["path"] == "router/SKILL.md"),
+            None,
+        )
+        self.assertIsNotNone(entry, "Project Payload 没有分发共享 Entry")
+        self.assertIsNotNone(router, "Project Payload 没有分发正式 Router Skill")
+        self.assertEqual(decode_payload_file(entry), (ROOT / ENTRY_PATH).read_bytes())
+        self.assertEqual(decode_payload_file(router), (ROOT / ROUTER_PATH).read_bytes())
 
     def test_runtime_reference_preserves_web_direct_and_local_stdio_boundary(self) -> None:
         """网页端源码直读不能被误写成本地 stdio MCP 已连接，Remote MCP 仍是另一部署形态。"""

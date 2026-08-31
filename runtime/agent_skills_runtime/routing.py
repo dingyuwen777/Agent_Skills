@@ -16,6 +16,7 @@ REFERENCE_ROUTE_PROTOCOL = "Agent Skills Reference路由/v1"
 TASK_ROUTE_PROTOCOL = "Agent Skills 任务路由/v1"
 ROUTING_MANIFEST_PROTOCOL = "Agent Skills 路由清单/v1"
 PUBLIC_ROUTE_CONTRACT_PROTOCOL = "Agent Skills 公共路由契约/v1"
+CONTROL_PLANE_SKILL = "router"
 
 ROUTE_DIMENSIONS = (
     "执行模式",
@@ -460,12 +461,16 @@ def evaluate_route(manifest: Mapping[str, Any], route: Mapping[str, Any]) -> dic
         for dimension in ROUTE_DIMENSIONS
     }
     references = {str(entry["标识"]): entry for entry in manifest["引用"]}
+    skill_names = {str(entry["Skill"]) for entry in manifest["技能"]}
     if normalized["未知项"]:
         required_ids = set(references)
-        matched_skills = {str(entry["Skill"]) for entry in manifest["技能"]}
+        matched_skills = set(skill_names)
     else:
         required_ids: set[str] = set()
-        matched_skills: set[str] = set()
+        # Router 是保留控制面，不依赖普通业务 trigger；其他 Skill 仍完全按动态 metadata 求值。
+        matched_skills: set[str] = (
+            {CONTROL_PLANE_SKILL} if CONTROL_PLANE_SKILL in skill_names else set()
+        )
         while True:
             before = (set(required_ids), set(matched_skills), set(signals["风险"]))
             for skill in manifest["技能"]:

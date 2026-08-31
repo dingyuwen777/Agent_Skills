@@ -788,7 +788,7 @@ def _managed_asset_text() -> str:
     text = _asset_text("AGENTS.managed.md")
     if text.count(AGENTS_MANAGED_START) != 1 or text.count(AGENTS_MANAGED_END) != 1:
         raise ValueError("AGENTS.managed.md managed marker 不完整或重复")
-    if ".agents/skills/" in text or "ROUTER.md" in text:
+    if ".agents/skills/" in text or "ENTRY.md" in text or "router/SKILL.md" in text:
         raise ValueError("AGENTS.managed.md 不得暴露 Runtime 内部治理路径")
     return text
 
@@ -903,9 +903,12 @@ def bootstrap_project(root: str | Path) -> dict[str, str]:
     coding_skill = project_root / ".agents/skills/coding/SKILL.md"
     if coding_skill.is_symlink() or not coding_skill.is_file():
         raise FileNotFoundError(f"目标项目缺少已安装的 .agents/skills/coding/SKILL.md：{coding_skill}")
-    router = project_root / ".agents/skills/ROUTER.md"
+    entry = project_root / ".agents/skills/ENTRY.md"
+    if entry.is_symlink() or not entry.is_file():
+        raise FileNotFoundError(f"目标项目缺少已安装的 .agents/skills/ENTRY.md：{entry}")
+    router = project_root / ".agents/skills/router/SKILL.md"
     if router.is_symlink() or not router.is_file():
-        raise FileNotFoundError(f"目标项目缺少已安装的 .agents/skills/ROUTER.md：{router}")
+        raise FileNotFoundError(f"目标项目缺少已安装的 .agents/skills/router/SKILL.md：{router}")
 
     agents_path = project_root / AGENTS_FILENAME
     gitignore_path = project_root / GITIGNORE_FILENAME

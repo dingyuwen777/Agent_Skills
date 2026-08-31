@@ -8,7 +8,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 CODING_PATH = ROOT / ".agents/skills/coding/scripts/coding.py"
-ROUTER_PATH = ".agents/skills/ROUTER.md"
+ENTRY_PATH = ".agents/skills/ENTRY.md"
+ROUTER_PATH = ".agents/skills/router/SKILL.md"
 
 
 def _load_module(name: str, path: Path):
@@ -28,12 +29,15 @@ class ProjectBootstrapTest(unittest.TestCase):
     """验证目标项目 AGENTS Overlay 与本地缓存忽略规则的安全、幂等行为。"""
 
     def _install_minimal_coding(self, root: Path) -> None:
-        """为 Bootstrap 测试建立最小已安装 Coding Skill 与共享 Router 事实。"""
+        """为 Bootstrap 测试建立最小已安装 Entry、Router 与 Coding 事实。"""
         skills = root / ".agents/skills"
         skill = skills / "coding"
         skill.mkdir(parents=True)
         (skill / "SKILL.md").write_text("# Coding\n", encoding="utf-8")
-        (skills / "ROUTER.md").write_text("# Router\n", encoding="utf-8")
+        (skills / "ENTRY.md").write_text("# Entry\n", encoding="utf-8")
+        router = skills / "router"
+        router.mkdir()
+        (router / "SKILL.md").write_text("# Router\n", encoding="utf-8")
 
     def test_bootstrap_creates_agents_for_greenfield_without_inventing_stack(self) -> None:
         """空项目应创建可用 AGENTS 初版，并通过薄 managed block 进入项目级治理 MCP。"""
@@ -136,13 +140,13 @@ class ProjectBootstrapTest(unittest.TestCase):
             self.assertEqual(updated.count("project-context.json"), 1)
 
     def test_bootstrap_requires_installed_router_before_mutation(self) -> None:
-        """Coding Skill 存在但共享 Router 缺失时不得在不完整运行资产上继续写入。"""
+        """Entry/Coding 存在但正式 Router 缺失时不得在不完整运行资产上继续写入。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._install_minimal_coding(root)
             (root / ROUTER_PATH).unlink()
 
-            with self.assertRaisesRegex(FileNotFoundError, "ROUTER.md"):
+            with self.assertRaisesRegex(FileNotFoundError, "router/SKILL.md"):
                 CODING.bootstrap_project(root)
 
             self.assertFalse((root / "AGENTS.md").exists())

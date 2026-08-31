@@ -11,16 +11,19 @@ from runtime.agent_skills_runtime.project_payload import build_project_payload
 
 
 ROOT = Path(__file__).resolve().parents[4]
-ROUTER_PATH = ".agents/skills/ROUTER.md"
+ENTRY_PATH = ".agents/skills/ENTRY.md"
+ROUTER_PATH = ".agents/skills/router/SKILL.md"
 LEGACY_ROUTER_PATH = ".agents/skills/coding/assets/AGENT_SKILLS_ROUTER.md"
 
 
 class SharedRootRouterContractTest(unittest.TestCase):
-    """验证统一 Router 是 Skills 根级共享运行资产，并区分 Source/Runtime 可见入口。"""
+    """验证薄 Entry 是共享资产、Router 是正式 Skill，并区分 Source/Runtime 可见入口。"""
 
-    def test_source_router_has_single_shared_root_location(self) -> None:
-        """源码只允许保留 `.agents/skills/ROUTER.md` 一个 Router 正文入口。"""
-        self.assertTrue((ROOT / ROUTER_PATH).is_file(), "缺少 Skills 根级 ROUTER.md")
+    def test_source_router_has_single_formal_skill_location(self) -> None:
+        """源码只允许保留薄 Entry 与 `.agents/skills/router/SKILL.md` Router 正文。"""
+        self.assertTrue((ROOT / ENTRY_PATH).is_file(), "缺少 Skills 根级 ENTRY.md")
+        self.assertTrue((ROOT / ROUTER_PATH).is_file(), "缺少正式 router/SKILL.md")
+        self.assertFalse((ROOT / ".agents/skills/ROUTER.md").exists(), "旧根级 ROUTER.md 仍存在")
         self.assertFalse((ROOT / LEGACY_ROUTER_PATH).exists(), "旧 Coding Router 路径仍存在")
 
         router = (ROOT / ROUTER_PATH).read_text(encoding="utf-8")
@@ -37,7 +40,8 @@ class SharedRootRouterContractTest(unittest.TestCase):
         """源码维护入口继续指向 Router，目标项目 Runtime managed block 只暴露治理能力。"""
         for relative in ("AGENTS.md", ".agents/MAINTENANCE.md"):
             text = (ROOT / relative).read_text(encoding="utf-8")
-            self.assertIn(ROUTER_PATH, text, f"{relative} 未指向共享 ROUTER.md")
+            self.assertIn(ENTRY_PATH, text, f"{relative} 未指向薄 ENTRY.md")
+            self.assertIn(ROUTER_PATH, text, f"{relative} 未指向正式 Router Skill")
             self.assertNotIn("coding/assets/AGENT_SKILLS_ROUTER.md", text)
 
         managed = (ROOT / ".agents/skills/coding/assets/AGENTS.managed.md").read_text(encoding="utf-8")
@@ -47,13 +51,14 @@ class SharedRootRouterContractTest(unittest.TestCase):
         self.assertIn("研发治理 MCP", managed)
         self.assertIn("Runtime Mode", managed)
 
-    def test_project_payload_explicitly_models_shared_router(self) -> None:
-        """Project Payload 必须显式声明并携带根级共享 Router，而不是借用某个 Skill 目录。"""
+    def test_project_payload_explicitly_models_shared_entry_and_formal_router(self) -> None:
+        """Project Payload 必须显式携带共享 Entry，并由动态 Skill 分发正式 Router。"""
         payload = build_project_payload(ROOT, build_bundle(ROOT))
         self.assertEqual(payload["schema"], "agent-skills-project-payload/v2")
-        self.assertEqual(payload["shared_files"], ["ROUTER.md"])
+        self.assertEqual(payload["shared_files"], ["ENTRY.md"])
         paths = {str(entry["path"]) for entry in payload["files"]}
-        self.assertIn("ROUTER.md", paths)
+        self.assertIn("ENTRY.md", paths)
+        self.assertIn("router/SKILL.md", paths)
         self.assertNotIn("coding/assets/AGENT_SKILLS_ROUTER.md", paths)
 
     def test_cross_platform_payload_paths_reject_backslash_segments(self) -> None:
@@ -68,10 +73,10 @@ class SharedRootRouterContractTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "反斜杠"):
             project_installer._normalise_shared_files(["..\\..\\escape.md"], "fixture")
         with self.assertRaisesRegex(ValueError, "反斜杠"):
-            project_installer._normalise_shared_files(["nested\\ROUTER.md"], "fixture")
+            project_installer._normalise_shared_files(["nested\\ENTRY.md"], "fixture")
 
-    def test_installer_manifest_owns_shared_router_without_exposing_it_in_root_guidance(self) -> None:
-        """安装 manifest 继续认领共享 Router，但目标根 AGENTS 不把它作为用户可见入口。"""
+    def test_installer_manifest_owns_shared_entry_without_exposing_internal_navigation(self) -> None:
+        """安装 manifest 认领共享 Entry 与 Router Core，但根 AGENTS 不暴露内部路径。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             target = root / "target"
@@ -82,14 +87,16 @@ class SharedRootRouterContractTest(unittest.TestCase):
 
             install_project(target, payload, artifact, release_version="test")
 
-            self.assertTrue((target / ".agents/skills/ROUTER.md").is_file())
+            self.assertTrue((target / ".agents/skills/ENTRY.md").is_file())
+            self.assertTrue((target / ".agents/skills/router/SKILL.md").is_file())
             manifest = (target / INSTALL_MANIFEST_PATH).read_text(encoding="utf-8")
             self.assertIn('"schema": "agent-skills-install/v3"', manifest)
             self.assertIn('"shared_files"', manifest)
             self.assertIn('"managed_files"', manifest)
-            self.assertIn('"ROUTER.md"', manifest)
+            self.assertIn('"ENTRY.md"', manifest)
+            self.assertIn('"router/SKILL.md"', manifest)
             agents = (target / "AGENTS.md").read_text(encoding="utf-8")
-            self.assertNotIn(".agents/skills/ROUTER.md", agents)
+            self.assertNotIn(".agents/skills/", agents)
             self.assertNotIn(".agents/skills/", agents)
             self.assertIn("研发治理 MCP", agents)
             self.assertIn("用户可见", agents)

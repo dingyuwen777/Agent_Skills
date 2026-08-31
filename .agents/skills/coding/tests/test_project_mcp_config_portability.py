@@ -32,8 +32,22 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         assets = coding / "assets"
         references.mkdir(parents=True)
         assets.mkdir()
-        (skills_root / "ROUTER.md").write_text(
-            "# Router\n\n读取 `.agents/skills/coding/SKILL.md`。\n",
+        (skills_root / "ENTRY.md").write_text(
+            "# Entry\n\n读取 `.agents/skills/router/SKILL.md`。\n",
+            encoding="utf-8",
+        )
+        router = skills_root / "router"
+        router.mkdir()
+        (router / "SKILL.md").write_text(
+            "---\nname: router\ndescription: fixture\n---\n\n"
+            + _routing_block(
+                {
+                    "协议": SKILL_ROUTE_PROTOCOL,
+                    "Skill": "router",
+                    "触发": {"包含": {"维度": "能力", "取值": ["router"]}},
+                }
+            )
+            + "# router\n",
             encoding="utf-8",
         )
         (coding / "SKILL.md").write_text(
@@ -63,7 +77,7 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         (assets / "AGENTS.managed.md").write_text(
             "<!-- agent-skills:managed:start -->\n"
             "## Agent Skills\n"
-            "读取 `.agents/skills/ROUTER.md`。\n"
+            "使用项目级研发治理 MCP 建立当前任务约束。\n"
             "<!-- agent-skills:managed:end -->\n",
             encoding="utf-8",
         )

@@ -1,0 +1,516 @@
+{
+  "cases": [
+    {
+      "context_bytes": 99572,
+      "forbidden_references": [
+        "coding.reference.04",
+        "coding.reference.10"
+      ],
+      "matched_skills": [
+        "coding"
+      ],
+      "minimum_risk": "L1",
+      "name": "L1 mechanical",
+      "required_references": [
+        "coding.reference.02",
+        "coding.reference.19"
+      ],
+      "signals": {
+        "\u6267\u884c\u6a21\u5f0f": [
+          "\u5b9e\u73b0"
+        ],
+        "\u98ce\u9669": [
+          "L1"
+        ]
+      },
+      "unknown": []
+    },
+    {
+      "context_bytes": 177174,
+      "forbidden_references": [],
+      "matched_skills": [
+        "coding"
+      ],
+      "minimum_risk": "L2",
+      "name": "L2 Feature",
+      "required_references": [
+        "coding.reference.02",
+        "coding.reference.04",
+        "coding.reference.05",
+        "coding.reference.07",
+        "coding.reference.10",
+        "coding.reference.19"
+      ],
+      "signals": {
+        "\u6267\u884c\u6a21\u5f0f": [
+          "\u5b9e\u73b0"
+        ],
+        "\u80fd\u529b": [
+          "\u6d4b\u8bd5"
+        ],
+        "\u9636\u6bb5": [
+          "\u529f\u80fd\u5f00\u53d1"
+        ],
+        "\u98ce\u9669": [
+          "L2"
+        ]
+      },
+      "unknown": []
+    },
+    {
+      "context_bytes": 200696,
+      "forbidden_references": [],
+      "matched_skills": [
+        "coding"
+      ],
+      "minimum_risk": "L3",
+      "name": "L3 public API",
+      "required_references": [
+        "coding.reference.02",
+        "coding.reference.04",
+        "coding.reference.05",
+        "coding.reference.06",
+        "coding.reference.07",
+        "coding.reference.08",
+        "coding.reference.10",
+        "coding.reference.19"
+      ],
+      "signals": {
+        "\u6267\u884c\u6a21\u5f0f": [
+          "\u65b9\u6848",
+          "\u5b9e\u73b0"
+        ],
+        "\u8303\u56f4": [
+          "\u516c\u5171\u5951\u7ea6",
+          "API"
+        ],
+        "\u9636\u6bb5": [
+          "\u9700\u6c42\u8bbe\u8ba1",
+          "\u529f\u80fd\u5f00\u53d1"
+        ],
+        "\u98ce\u9669": [
+          "L3"
+        ]
+      },
+      "unknown": []
+    },
+    {
+      "context_bytes": 264319,
+      "forbidden_references": [],
+      "matched_skills": [
+        "coding",
+        "figma",
+        "review"
+      ],
+      "minimum_risk": "L2",
+      "name": "Figma review-only",
+      "required_references": [
+        "coding.reference.02",
+        "coding.reference.04",
+        "coding.reference.07",
+        "coding.reference.10",
+        "coding.reference.11",
+        "coding.reference.19",
+        "figma.reference.00",
+        "figma.reference.01",
+        "figma.reference.06",
+        "figma.reference.07",
+        "review.reference.01",
+        "review.reference.04"
+      ],
+      "signals": {
+        "\u610f\u56fe": [
+          "Figma review-only"
+        ],
+        "\u6267\u884c\u6a21\u5f0f": [
+          "\u5ba1\u67e5"
+        ],
+        "\u80fd\u529b": [
+          "Figma"
+        ],
+        "\u98ce\u9669": [
+          "L2"
+        ]
+      },
+      "unknown": []
+    },
+    {
+      "context_bytes": 316469,
+      "forbidden_references": [],
+      "matched_skills": [
+        "coding",
+        "figma"
+      ],
+      "minimum_risk": "L2",
+      "name": "Figma \u2192 Code",
+      "required_references": [
+        "coding.reference.02",
+        "coding.reference.04",
+        "coding.reference.05",
+        "coding.reference.07",
+        "coding.reference.08",
+        "coding.reference.10",
+        "coding.reference.17",
+        "coding.reference.19",
+        "figma.reference.00",
+        "figma.reference.01",
+        "figma.reference.02",
+        "figma.reference.03",
+        "figma.reference.05"
+      ],
+      "signals": {
+        "\u610f\u56fe": [
+          "\u8bbe\u8ba1\u8f6c\u4ee3\u7801"
+        ],
+        "\u6267\u884c\u6a21\u5f0f": [
+          "\u5b9e\u73b0"
+        ],
+        "\u80fd\u529b": [
+          "Figma"
+        ],
+        "\u8303\u56f4": [
+          "\u524d\u7aef"
+        ],
+        "\u9636\u6bb5": [
+          "\u529f\u80fd\u5f00\u53d1"
+        ],
+        "\u9879\u76ee\u5f62\u6001": [
+          "\u524d\u7aefWeb"
+        ],
+        "\u98ce\u9669": [
+          "L2"
+        ]
+      },
+      "unknown": []
+    },
+    {
+      "context_bytes": 126248,
+      "forbidden_references": [],
+      "matched_skills": [
+        "coding",
+        "docs"
+      ],
+      "minimum_risk": "L1",
+      "name": "Docs targeted",
+      "required_references": [
+        "coding.reference.02",
+        "coding.reference.19",
+        "docs.reference.01",
+        "docs.reference.03"
+      ],
+      "signals": {
+        "\u610f\u56fe": [
+          "Docs targeted"
+        ],
+        "\u6267\u884c\u6a21\u5f0f": [
+          "\u5b9e\u73b0"
+        ],
+        "\u98ce\u9669": [
+          "L1"
+        ]
+      },
+      "unknown": []
+    },
+    {
+      "context_bytes": 197737,
+      "forbidden_references": [
+        "docs.reference.01"
+      ],
+      "matched_skills": [
+        "coding",
+        "review"
+      ],
+      "minimum_risk": "L2",
+      "name": "Review-only",
+      "required_references": [
+        "coding.reference.02",
+        "coding.reference.04",
+        "coding.reference.07",
+        "coding.reference.10",
+        "coding.reference.11",
+        "coding.reference.19",
+        "review.reference.01",
+        "review.reference.02",
+        "review.reference.04"
+      ],
+      "signals": {
+        "\u610f\u56fe": [
+          "Review-only"
+        ],
+        "\u6267\u884c\u6a21\u5f0f": [
+          "\u5ba1\u67e5"
+        ],
+        "\u98ce\u9669": [
+          "L2"
+        ]
+      },
+      "unknown": []
+    },
+    {
+      "context_bytes": 224100,
+      "forbidden_references": [],
+      "matched_skills": [
+        "coding"
+      ],
+      "minimum_risk": "L2",
+      "name": "Git Delivery",
+      "required_references": [
+        "coding.reference.02",
+        "coding.reference.03",
+        "coding.reference.04",
+        "coding.reference.07",
+        "coding.reference.10",
+        "coding.reference.11",
+        "coding.reference.15",
+        "coding.reference.18",
+        "coding.reference.19"
+      ],
+      "signals": {
+        "\u610f\u56fe": [
+          "Git \u4ea4\u4ed8"
+        ],
+        "\u6267\u884c\u6a21\u5f0f": [
+          "Git"
+        ],
+        "\u80fd\u529b": [
+          "Git"
+        ],
+        "\u9636\u6bb5": [
+          "\u4ea4\u4ed8"
+        ],
+        "\u98ce\u9669": [
+          "L2"
+        ]
+      },
+      "unknown": []
+    },
+    {
+      "context_bytes": 256597,
+      "forbidden_references": [],
+      "matched_skills": [
+        "coding"
+      ],
+      "minimum_risk": "L3",
+      "name": "Runtime Bundle",
+      "required_references": [
+        "coding.reference.02",
+        "coding.reference.03",
+        "coding.reference.04",
+        "coding.reference.06",
+        "coding.reference.07",
+        "coding.reference.10",
+        "coding.reference.13",
+        "coding.reference.14",
+        "coding.reference.19"
+      ],
+      "signals": {
+        "\u5de5\u5177\u94fe": [
+          "\u5df2\u786e\u8ba4"
+        ],
+        "\u610f\u56fe": [
+          "Runtime Bundle"
+        ],
+        "\u6267\u884c\u6a21\u5f0f": [
+          "\u5b9e\u73b0"
+        ],
+        "\u8303\u56f4": [
+          "Runtime",
+          "Runtime Bundle",
+          "MCP"
+        ],
+        "\u98ce\u9669": [
+          "L3"
+        ]
+      },
+      "unknown": []
+    },
+    {
+      "context_bytes": 192508,
+      "forbidden_references": [],
+      "matched_skills": [
+        "coding"
+      ],
+      "minimum_risk": "L2",
+      "name": "Skill Mutation",
+      "required_references": [
+        "coding.reference.02",
+        "coding.reference.04",
+        "coding.reference.07",
+        "coding.reference.10",
+        "coding.reference.11",
+        "coding.reference.16",
+        "coding.reference.19"
+      ],
+      "signals": {
+        "\u610f\u56fe": [
+          "Skill Mutation"
+        ],
+        "\u6267\u884c\u6a21\u5f0f": [
+          "\u5b9e\u73b0"
+        ],
+        "\u98ce\u9669": [
+          "L2"
+        ]
+      },
+      "unknown": []
+    },
+    {
+      "context_bytes": 603060,
+      "forbidden_references": [],
+      "matched_skills": [
+        "coding",
+        "docs",
+        "figma",
+        "review"
+      ],
+      "minimum_risk": "L3",
+      "name": "Unknown facts",
+      "required_references": [
+        "coding.reference.01",
+        "coding.reference.02",
+        "coding.reference.03",
+        "coding.reference.04",
+        "coding.reference.05",
+        "coding.reference.06",
+        "coding.reference.07",
+        "coding.reference.08",
+        "coding.reference.09",
+        "coding.reference.10",
+        "coding.reference.11",
+        "coding.reference.13",
+        "coding.reference.14",
+        "coding.reference.15",
+        "coding.reference.16",
+        "coding.reference.17",
+        "coding.reference.18",
+        "coding.reference.19",
+        "docs.reference.01",
+        "docs.reference.02",
+        "docs.reference.03",
+        "docs.reference.04",
+        "figma.reference.00",
+        "figma.reference.01",
+        "figma.reference.02",
+        "figma.reference.03",
+        "figma.reference.04",
+        "figma.reference.05",
+        "figma.reference.06",
+        "figma.reference.07",
+        "review.reference.01",
+        "review.reference.02",
+        "review.reference.03",
+        "review.reference.04"
+      ],
+      "signals": {
+        "\u6267\u884c\u6a21\u5f0f": [
+          "\u65b9\u6848"
+        ],
+        "\u98ce\u9669": [
+          "L2"
+        ]
+      },
+      "unknown": [
+        "\u9879\u76ee\u5f62\u6001"
+      ]
+    },
+    {
+      "context_bytes": 532610,
+      "forbidden_references": [],
+      "matched_skills": [
+        "coding",
+        "docs",
+        "figma",
+        "review"
+      ],
+      "minimum_risk": "L3",
+      "name": "\u590d\u6742\u591a\u6761\u4ef6\u53e0\u52a0",
+      "required_references": [
+        "coding.reference.02",
+        "coding.reference.03",
+        "coding.reference.04",
+        "coding.reference.05",
+        "coding.reference.06",
+        "coding.reference.07",
+        "coding.reference.08",
+        "coding.reference.09",
+        "coding.reference.10",
+        "coding.reference.11",
+        "coding.reference.13",
+        "coding.reference.14",
+        "coding.reference.15",
+        "coding.reference.17",
+        "coding.reference.18",
+        "coding.reference.19",
+        "docs.reference.01",
+        "docs.reference.02",
+        "docs.reference.03",
+        "figma.reference.00",
+        "figma.reference.01",
+        "figma.reference.02",
+        "figma.reference.03",
+        "figma.reference.05",
+        "review.reference.01",
+        "review.reference.02",
+        "review.reference.03",
+        "review.reference.04"
+      ],
+      "signals": {
+        "\u5de5\u5177\u94fe": [
+          "TypeScript"
+        ],
+        "\u610f\u56fe": [
+          "\u8bbe\u8ba1\u8f6c\u4ee3\u7801",
+          "Docs full",
+          "Review-and-fix",
+          "Git \u4ea4\u4ed8"
+        ],
+        "\u6267\u884c\u6a21\u5f0f": [
+          "\u5b9e\u73b0",
+          "\u5ba1\u67e5",
+          "\u9a8c\u8bc1",
+          "Git"
+        ],
+        "\u6388\u6743": [
+          "\u5141\u8bb8\u4fee\u6539\u9879\u76ee"
+        ],
+        "\u6cbb\u7406": [
+          "\u591a\u4e2a\u6d3b\u52a8\u53d8\u66f4",
+          "\u8981\u6c42\u5b8c\u6210\u95e8\u7981"
+        ],
+        "\u80fd\u529b": [
+          "Figma",
+          "Git",
+          "\u6d4b\u8bd5",
+          "\u591a Agent"
+        ],
+        "\u8303\u56f4": [
+          "\u524d\u7aef",
+          "API",
+          "\u516c\u5171\u5951\u7ea6",
+          "Runtime Bundle"
+        ],
+        "\u9636\u6bb5": [
+          "\u529f\u80fd\u5f00\u53d1",
+          "\u4ea4\u4ed8"
+        ],
+        "\u9879\u76ee\u5f62\u6001": [
+          "\u524d\u7aefWeb",
+          "\u5168\u6808\u5e94\u7528"
+        ],
+        "\u98ce\u9669": [
+          "L3"
+        ]
+      },
+      "unknown": []
+    }
+  ],
+  "router_bytes": 21094,
+  "schema": "agent-skills-router-legacy-baseline/v1",
+  "skill_core_bytes": {
+    "coding": 43660,
+    "docs": 13349,
+    "figma": 29204,
+    "review": 10533
+  },
+  "source_commit": "3d22ca4e71bd7fcc83e35fd48abeae8eec00dd5e"
+}

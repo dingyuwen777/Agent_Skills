@@ -142,8 +142,9 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         paths = {entry["path"] for entry in payload["files"]}
         self.assertNotIn("coding/scripts/tzdata/README.md", paths)
         self.assertIn("coding/scripts/tzdata/zoneinfo/Asia/Shanghai", paths)
-        self.assertIn("ROUTER.md", paths)
-        self.assertEqual(payload["shared_files"], ["ROUTER.md"])
+        self.assertIn("ENTRY.md", paths)
+        self.assertIn("router/SKILL.md", paths)
+        self.assertEqual(payload["shared_files"], ["ENTRY.md"])
 
         runtime_readme = self._read("runtime/README.md")
         runtime_reference = self._read(
@@ -157,10 +158,11 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         """源码入口保留完整 Router 导航，Runtime managed 只暴露工程治理能力，Maintenance 独立负责源仓库。"""
         root_agents = self._read("AGENTS.md")
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
-        router = self._read(".agents/skills/ROUTER.md")
+        router = self._read(".agents/skills/router/SKILL.md")
         maintenance = self._read(".agents/MAINTENANCE.md")
 
-        self.assertIn(".agents/skills/ROUTER.md", root_agents)
+        self.assertIn(".agents/skills/ENTRY.md", root_agents)
+        self.assertIn(".agents/skills/router/SKILL.md", root_agents)
         self.assertIn(".agents/MAINTENANCE.md", root_agents)
         self.assertIn("不得复制到目标项目", root_agents)
 
@@ -196,7 +198,8 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             "USAGE.md",
             "AGENTS.md",
             ".agents/MAINTENANCE.md",
-            ".agents/skills/ROUTER.md",
+            ".agents/skills/ENTRY.md",
+            ".agents/skills/router/SKILL.md",
             "runtime/README.md",
             ".agents/skills/*/SKILL.md",
             "scripts/build_runtime.py",
@@ -247,7 +250,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertIn('_EXCLUDED_TOP_LEVEL = {"tests"}', payload)
         self.assertIn('relative.name == "README.md"', payload)
         self.assertIn('relative.parts[0] == "references"', payload)
-        self.assertIn('SHARED_RUNTIME_FILES = ("ROUTER.md",)', payload)
+        self.assertIn('SHARED_RUNTIME_FILES = ("ENTRY.md",)', payload)
         self.assertNotIn("render_reference_stub", payload)
         self.assertNotIn("agent_skills_load_context", payload)
         self.assertIn("Project Payload 不得包含 Runtime Reference 或 Stub", payload)
