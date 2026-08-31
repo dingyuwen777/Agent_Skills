@@ -5,7 +5,6 @@ from pathlib import Path
 
 from runtime.agent_skills_runtime.catalog import build_bundle
 
-
 ROOT = Path(__file__).resolve().parents[4]
 REFERENCES = ROOT / ".agents/skills/coding/references"
 RENAMES = {
@@ -22,12 +21,7 @@ class CodingReferenceNumberingTest(unittest.TestCase):
 
     def _live_text_files(self) -> list[Path]:
         """收集会参与源码导航/维护的 live 文本，排除测试和临时 Change 自身。"""
-        paths = [
-            ROOT / "AGENTS.md",
-            ROOT / "README.md",
-            ROOT / "runtime/README.md",
-            ROOT / ".agents/MAINTENANCE.md",
-        ]
+        paths = [ROOT / "AGENTS.md", ROOT / "README.md", ROOT / "runtime/README.md", ROOT / ".agents/MAINTENANCE.md"]
         skill_root = ROOT / ".agents/skills"
         for path in skill_root.rglob("*"):
             if not path.is_file() or path.suffix not in {".md", ".yaml", ".yml", ".py"}:
@@ -41,24 +35,18 @@ class CodingReferenceNumberingTest(unittest.TestCase):
         """Coding references 的两位数字文件前缀必须从 01 连续增长且无缺口。"""
         names = sorted(path.name for path in REFERENCES.glob("*.md"))
         prefixes = [int(name.split("_", 1)[0]) for name in names]
-        self.assertEqual(len(names), 18)
+        self.assertEqual(len(names), 19)
         self.assertEqual(prefixes, list(range(1, len(names) + 1)))
 
     def test_renamed_files_preserve_stable_reference_ids(self) -> None:
         """文件导航编号改变时，Runtime Stable Reference ID 不得随文件前缀漂移。"""
         bundle = build_bundle(ROOT)
-        coding_entries = {
-            str(entry["filename"]): str(entry["id"])
-            for entry in bundle["references"]
-            if str(entry["skill"]) == "coding"
-        }
+        coding_entries = {str(entry["filename"]): str(entry["id"]) for entry in bundle["references"] if str(entry["skill"]) == "coding"}
         for old_name, (new_name, stable_id) in RENAMES.items():
             self.assertNotIn(old_name, coding_entries)
             self.assertEqual(coding_entries.get(new_name), stable_id)
-        self.assertEqual(
-            coding_entries.get("18_最小充分治理与升级门禁.md"),
-            "coding.reference.19",
-        )
+        self.assertEqual(coding_entries.get("18_最小充分治理与升级门禁.md"), "coding.reference.19")
+        self.assertEqual(coding_entries.get("19_CI审查升级门禁.md"), "coding.reference.20")
 
     def test_live_navigation_contains_no_old_reference_filenames(self) -> None:
         """所有 live 规则/维护导航必须切到新文件名，避免 Source Mode 改名后断链。"""
