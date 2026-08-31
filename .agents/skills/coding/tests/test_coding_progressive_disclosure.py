@@ -10,14 +10,14 @@ MAINTENANCE = ROOT / ".agents/MAINTENANCE.md"
 
 
 class CodingProgressiveDisclosureTest(unittest.TestCase):
-    """验证 Coding 主规则瘦身只移动详细规则，不丢失任何高价值语义或硬路由。"""
+    """验证 Coding 主规则渐进披露只改变条件加载，不丢失高价值语义或硬路由。"""
 
     def _read(self, relative: str) -> str:
         """读取 Coding Skill 下的 UTF-8 文本。"""
         return (CODING_ROOT / relative).read_text(encoding="utf-8")
 
     def test_main_skill_keeps_hard_invariants_and_routes(self) -> None:
-        """主 SKILL 必须继续直接承载不可延迟的全局不变量、停止条件和 Review/Docs 硬路由。"""
+        """主 SKILL 必须继续直接承载不可延迟的全局不变量、停止条件和条件式 Review/Docs 路由。"""
         skill = self._read("SKILL.md")
         for marker in (
             "上位规则优先",
@@ -31,13 +31,14 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
             "日志前缀统一且可定位",
             "连续三次修复假设失败",
             "显式 Code Review / Audit",
-            "任何 Coding 实现任务",
+            "按实际门禁",
             ".agents/skills/docs/SKILL.md",
             "Requirement Traceability",
             "Validation Matrix",
             "Completion Audit",
         ):
             self.assertIn(marker, skill)
+        self.assertNotIn("任何 Coding 实现任务", skill)
 
     def test_detailed_delivery_and_maintenance_rules_move_to_references_without_loss(self) -> None:
         """被移出主文件的 Git/交付/宿主与规则维护细节必须在专门 reference 中完整可达。"""
@@ -70,24 +71,11 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
         self.assertIn("Git/PR/Release/Delivery", skill)
         self.assertIn("GitHub PR 零人工交付兼容策略", maintenance)
         for marker in (
-            "GitHub PR 零人工交付兼容策略",
-            "创建 Draft PR",
-            "Red / Green / Review / CI",
-            "fullDatabaseId",
-            "不得要求用户手动点击 `Ready for review`",
-            "先重新读取 PR 当前状态",
-            "如果已经 `draft=false`",
-            "只有仍为 Draft",
-            "关闭原 Draft PR",
-            "相同 head/base",
-            "重新运行新 PR 的 fresh CI",
-            "重新确认 `draft=false`、CI 和当前 head SHA",
-            "REST merge",
-            "expected_head_sha",
-            "main fresh CI",
-            "Change archive",
-            "非 GitHub",
-            "head/revision guard",
+            "GitHub PR 零人工交付兼容策略", "创建 Draft PR", "Red / Green / Review / CI", "fullDatabaseId",
+            "不得要求用户手动点击 `Ready for review`", "先重新读取 PR 当前状态", "如果已经 `draft=false`",
+            "只有仍为 Draft", "关闭原 Draft PR", "相同 head/base", "重新运行新 PR 的 fresh CI",
+            "重新确认 `draft=false`、CI 和当前 head SHA", "REST merge", "expected_head_sha", "main fresh CI",
+            "Change archive", "非 GitHub", "head/revision guard",
         ):
             self.assertIn(marker, delivery)
 
@@ -106,11 +94,12 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
         self.assertIn("检查实际 diff 和工作区", ref09)
         self.assertIn("运行目标及整体相关验证", ref09)
 
-    def test_main_skill_is_structurally_smaller_without_becoming_a_stub(self) -> None:
-        """主文件应明显减少重复细节，但仍保留足够完整的研发主链而不是变成短摘要。"""
+    def test_main_skill_keeps_bounded_core_while_total_light_route_shrinks(self) -> None:
+        """显式 Fast Path 可让 Core 小幅增长，但必须保持有界；轻量路由通过少加载重型 Reference 实现净减负。"""
         lines = self._read("SKILL.md").splitlines()
-        self.assertLessEqual(len(lines), 680)
+        self.assertLessEqual(len(lines), 740)
         self.assertGreaterEqual(len(lines), 450)
+        self.assertIn("简单代码 Fast Path", self._read("SKILL.md"))
 
 
 if __name__ == "__main__":
