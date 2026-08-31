@@ -72,7 +72,10 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertIn("identity != reference", workflow)
         self.assertIn("sha256sum", workflow)
         self.assertIn("check_sha", workflow)
-        self.assertNotIn(".manifest.json", workflow)
+        self.assertNotIn("linux.manifest.json", workflow)
+        self.assertNotIn("windows.manifest.json", workflow)
+        self.assertNotIn("macos.manifest.json", workflow)
+        self.assertIn("*.manifest.json", workflow)
         self.assertNotIn("install_manifest_schema", workflow)
         self.assertNotIn("agent-skills-runtime-release-identity/v1", workflow)
 
@@ -125,12 +128,12 @@ class ReleaseProductizationTest(unittest.TestCase):
             "release-runtime-linux",
             "release-runtime-windows",
             "release-runtime-macos",
+            'expected = [binary, "USAGE.md"]',
         ):
             self.assertIn(marker, workflow)
         self.assertIn("agent-skills-v${RELEASE_TAG#v}-linux.zip", workflow)
         self.assertIn("agent-skills-v${RELEASE_TAG#v}-windows.zip", workflow)
         self.assertIn("agent-skills-v${RELEASE_TAG#v}-macos.zip", workflow)
-        self.assertIn("binary + USAGE", "binary + USAGE")
 
     def test_release_draft_then_publish_gate_remains_atomic(self) -> None:
         """Release 仍必须先创建并验证 Draft，最终步骤才发布。"""
@@ -146,7 +149,7 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertIn("--draft", draft_block)
         self.assertIn("--target \"${GITHUB_SHA}\"", draft_block)
         self.assertIn("gh release upload", draft_block)
-        self.assertIn('test "$(gh release view "${RELEASE_TAG}" --json isDraft --jq \' .isDraft\')"', draft_block.replace("'.isDraft'", "' .isDraft'"))
+        self.assertIn("--json isDraft --jq '.isDraft'", draft_block)
         self.assertIn('gh release edit "${RELEASE_TAG}" --draft=false', publish_block)
         self.assertIn('test "$(git rev-list -n 1 "${RELEASE_TAG}")" = "${GITHUB_SHA}"', publish_block)
         self.assertIn("if: failure()", workflow[cleanup_index - 120 :])
