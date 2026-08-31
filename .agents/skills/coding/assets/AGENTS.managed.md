@@ -1,7 +1,7 @@
 <!-- agent-skills:managed:start -->
 ## 项目研发治理入口
 
-本项目已接入项目级研发治理能力。项目自己的 `AGENTS.md` / `CONTRIBUTING` / Spec / Contract / Schema / Migration / CI / 代码与测试负责说明“这个项目具体是什么”；已配置的项目级 Runtime 负责提供“怎样可靠研发”的当前完整约束。
+本项目已接入项目级研发治理能力。项目自己的 `AGENTS.md` / `CONTRIBUTING` / Spec / Contract / Schema / Migration / CI / 代码与测试负责说明“这个项目具体是什么”；在默认 Runtime Mode 下，已配置的项目级 Runtime 负责提供“怎样可靠研发”的当前完整约束。
 
 **本 managed block 定义 Agent_Skills 的默认 Runtime Mode。** 如果系统、开发者或用户级更高优先级指令已经明确选择其他 Agent_Skills 执行模式，则遵守该更高优先级模式：仅停止执行与该模式冲突的 Runtime/MCP 规则取得路径，以及与该模式冲突的 Runtime 用户可见披露限制；项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效。没有这类明确模式覆盖时，继续执行下面的默认 Runtime Mode。
 
