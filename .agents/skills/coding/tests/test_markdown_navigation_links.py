@@ -158,7 +158,11 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
         self.assertIn(PROJECT_ROUTER_LINK, source_root_agents)
         self.assertNotIn(PROJECT_ROUTER_LINK, managed)
         self.assertNotIn(".agents/skills/", managed)
-        self.assertIn("研发治理 MCP", managed)
+        self.assertNotIn("研发治理 MCP", managed)
+        self.assertNotIn("Runtime Mode", managed)
+        self.assertIn("无论采用哪种通用治理执行方式", managed)
+        self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", managed)
+        self.assertIn("只改变通用治理约束的取得和呈现方式", managed)
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -175,7 +179,9 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
             self.assertNotIn(PROJECT_ENTRY_LINK, generated)
             self.assertNotIn(PROJECT_ROUTER_LINK, generated)
             self.assertNotIn(".agents/skills/", generated)
-            self.assertIn("研发治理 MCP", generated)
+            self.assertNotIn("研发治理 MCP", generated)
+            self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", generated)
+            self.assertIn("只改变通用治理约束的取得和呈现方式", generated)
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -194,7 +200,9 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
             self.assertNotIn(PROJECT_ENTRY_LINK, generated)
             self.assertNotIn(PROJECT_ROUTER_LINK, generated)
             self.assertNotIn(".agents/skills/", generated)
-            self.assertIn("研发治理 MCP", generated)
+            self.assertNotIn("研发治理 MCP", generated)
+            self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", generated)
+            self.assertIn("只改变通用治理约束的取得和呈现方式", generated)
 
 
 if __name__ == "__main__":
