@@ -86,6 +86,21 @@ jobs:
     name: Release Runtime Linux
     needs: preflight
     runs-on: ubuntu-24.04
+    outputs:
+      release_version: ${{ steps.identity.outputs.release_version }}
+      source_commit: ${{ steps.identity.outputs.source_commit }}
+      integrity_fingerprint: ${{ steps.identity.outputs.integrity_fingerprint }}
+      artifact_sha256: ${{ steps.identity.outputs.artifact_sha256 }}
+      python_version: ${{ steps.identity.outputs.python_version }}
+      bundle_schema: ${{ steps.identity.outputs.bundle_schema }}
+      bundle_version: ${{ steps.identity.outputs.bundle_version }}
+      task_route_protocol: ${{ steps.identity.outputs.task_route_protocol }}
+      routing_manifest_protocol: ${{ steps.identity.outputs.routing_manifest_protocol }}
+      mcp_tool_contract_protocol: ${{ steps.identity.outputs.mcp_tool_contract_protocol }}
+      project_payload_schema: ${{ steps.identity.outputs.project_payload_schema }}
+      source_digest: ${{ steps.identity.outputs.source_digest }}
+      routing_digest: ${{ steps.identity.outputs.routing_digest }}
+      payload_digest: ${{ steps.identity.outputs.payload_digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -101,35 +116,54 @@ jobs:
         run: python -m pip install -r runtime/requirements-build.txt
 
       - name: Build and verify Linux single binary
+        id: identity
         env:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           set -euo pipefail
           name="agent-skills-mcp-v${RELEASE_VERSION}-linux"
-          python scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --release-version "${RELEASE_VERSION}" --json
+          build_json="$(python scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --release-version "${RELEASE_VERSION}" --json)"
+          printf '%s\n' "${build_json}"
+          BUILD_JSON="${build_json}" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(os.environ["BUILD_JSON"])
+          keys = (
+              "release_version", "source_commit", "integrity_fingerprint", "artifact_sha256",
+              "python_version", "bundle_schema", "bundle_version", "task_route_protocol",
+              "routing_manifest_protocol", "mcp_tool_contract_protocol", "project_payload_schema",
+              "source_digest", "routing_digest", "payload_digest",
+          )
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              for key in keys:
+                  value = payload.get(key)
+                  if value is None or isinstance(value, (dict, list)):
+                      raise SystemExit(f"Builder output 缺少可传递 identity 字段：{key}")
+                  output.write(f"{key}={value}\n")
+          PY
           artifact="${GITHUB_WORKSPACE}/.runtime-dist/${name}"
-          identity="${GITHUB_WORKSPACE}/.runtime-dist/${name}.manifest.json"
           "${artifact}" status --json
           "${artifact}" self-test --json
           python scripts/runtime_mcp_smoke.py --artifact "${artifact}" --json
+          test -z "$(find .runtime-dist -maxdepth 1 -name '*.manifest.json' -print -quit)"
 
           target="${RUNNER_TEMP}/agent-skills-release-target"
           mkdir -p "${target}"
           "${artifact}" install --target "${target}" --json
           test -x "${target}/.agents/runtime/agent-skills-mcp"
+          test ! -e "${target}/.agents/agent-skills-install.json"
           python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
 
           mkdir -p release-assets
           cp "${artifact}" "release-assets/${name}"
-          cp "${identity}" "release-assets/${name}.manifest.json"
 
       - name: Upload Linux binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-linux
-          path: |
-            release-assets/agent-skills-mcp-v*-linux
-            release-assets/agent-skills-mcp-v*-linux.manifest.json
+          path: release-assets/agent-skills-mcp-v*-linux
           if-no-files-found: error
           compression-level: 0
 
@@ -137,6 +171,21 @@ jobs:
     name: Release Runtime Windows
     needs: preflight
     runs-on: windows-2025
+    outputs:
+      release_version: ${{ steps.identity.outputs.release_version }}
+      source_commit: ${{ steps.identity.outputs.source_commit }}
+      integrity_fingerprint: ${{ steps.identity.outputs.integrity_fingerprint }}
+      artifact_sha256: ${{ steps.identity.outputs.artifact_sha256 }}
+      python_version: ${{ steps.identity.outputs.python_version }}
+      bundle_schema: ${{ steps.identity.outputs.bundle_schema }}
+      bundle_version: ${{ steps.identity.outputs.bundle_version }}
+      task_route_protocol: ${{ steps.identity.outputs.task_route_protocol }}
+      routing_manifest_protocol: ${{ steps.identity.outputs.routing_manifest_protocol }}
+      mcp_tool_contract_protocol: ${{ steps.identity.outputs.mcp_tool_contract_protocol }}
+      project_payload_schema: ${{ steps.identity.outputs.project_payload_schema }}
+      source_digest: ${{ steps.identity.outputs.source_digest }}
+      routing_digest: ${{ steps.identity.outputs.routing_digest }}
+      payload_digest: ${{ steps.identity.outputs.payload_digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -152,40 +201,52 @@ jobs:
         run: python -m pip install -r runtime/requirements-build.txt
 
       - name: Build and verify Windows single binary
+        id: identity
         shell: pwsh
         env:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           $name = "agent-skills-mcp-v$env:RELEASE_VERSION-windows"
-          python scripts/build_runtime.py --output-dir .runtime-dist --name $name --release-version $env:RELEASE_VERSION --json
+          $buildJson = (python scripts/build_runtime.py --output-dir .runtime-dist --name $name --release-version $env:RELEASE_VERSION --json | Out-String)
+          if ($LASTEXITCODE -ne 0) { throw "Windows Runtime build 失败" }
+          Write-Output $buildJson
+          $build = $buildJson | ConvertFrom-Json
+          foreach ($key in @(
+            "release_version", "source_commit", "integrity_fingerprint", "artifact_sha256",
+            "python_version", "bundle_schema", "bundle_version", "task_route_protocol",
+            "routing_manifest_protocol", "mcp_tool_contract_protocol", "project_payload_schema",
+            "source_digest", "routing_digest", "payload_digest"
+          )) {
+            $value = $build.$key
+            if ($null -eq $value -or $value -is [System.Array]) { throw "Builder output 缺少 identity 字段: $key" }
+            "$key=$value" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          }
           $artifact = (Resolve-Path ".\.runtime-dist\$name.exe").Path
-          $identity = (Resolve-Path ".\.runtime-dist\$name.manifest.json").Path
           & $artifact status --json
           if ($LASTEXITCODE -ne 0) { throw "Windows Runtime status 失败" }
           & $artifact self-test --json
           if ($LASTEXITCODE -ne 0) { throw "Windows Runtime self-test 失败" }
           python scripts/runtime_mcp_smoke.py --artifact $artifact --json
           if ($LASTEXITCODE -ne 0) { throw "Windows Runtime MCP smoke 失败" }
+          if (Get-ChildItem .\.runtime-dist -Filter *.manifest.json -File) { throw "Release build 不应生成 manifest sidecar" }
 
           $target = Join-Path $env:RUNNER_TEMP "agent-skills-release-target"
           New-Item -ItemType Directory -Force -Path $target | Out-Null
           & $artifact install --target $target --json
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目安装失败" }
+          if (Test-Path (Join-Path $target ".agents\agent-skills-install.json")) { throw "Release 安装不应生成 install manifest" }
           $installedRuntime = Join-Path $target ".agents\runtime\agent-skills-mcp.exe"
           python scripts/runtime_mcp_smoke.py --artifact $installedRuntime --json
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime MCP smoke 失败" }
 
           New-Item -ItemType Directory -Force -Path release-assets | Out-Null
           Copy-Item $artifact "release-assets\$name.exe"
-          Copy-Item $identity "release-assets\$name.manifest.json"
 
       - name: Upload Windows binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-windows
-          path: |
-            release-assets/agent-skills-mcp-v*-windows.exe
-            release-assets/agent-skills-mcp-v*-windows.manifest.json
+          path: release-assets/agent-skills-mcp-v*-windows.exe
           if-no-files-found: error
           compression-level: 0
 
@@ -193,6 +254,21 @@ jobs:
     name: Release Runtime macOS
     needs: preflight
     runs-on: macos-15
+    outputs:
+      release_version: ${{ steps.identity.outputs.release_version }}
+      source_commit: ${{ steps.identity.outputs.source_commit }}
+      integrity_fingerprint: ${{ steps.identity.outputs.integrity_fingerprint }}
+      artifact_sha256: ${{ steps.identity.outputs.artifact_sha256 }}
+      python_version: ${{ steps.identity.outputs.python_version }}
+      bundle_schema: ${{ steps.identity.outputs.bundle_schema }}
+      bundle_version: ${{ steps.identity.outputs.bundle_version }}
+      task_route_protocol: ${{ steps.identity.outputs.task_route_protocol }}
+      routing_manifest_protocol: ${{ steps.identity.outputs.routing_manifest_protocol }}
+      mcp_tool_contract_protocol: ${{ steps.identity.outputs.mcp_tool_contract_protocol }}
+      project_payload_schema: ${{ steps.identity.outputs.project_payload_schema }}
+      source_digest: ${{ steps.identity.outputs.source_digest }}
+      routing_digest: ${{ steps.identity.outputs.routing_digest }}
+      payload_digest: ${{ steps.identity.outputs.payload_digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -208,35 +284,54 @@ jobs:
         run: python -m pip install -r runtime/requirements-build.txt
 
       - name: Build and verify macOS single binary
+        id: identity
         env:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           set -euo pipefail
           name="agent-skills-mcp-v${RELEASE_VERSION}-macos"
-          python scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --release-version "${RELEASE_VERSION}" --json
+          build_json="$(python scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --release-version "${RELEASE_VERSION}" --json)"
+          printf '%s\n' "${build_json}"
+          BUILD_JSON="${build_json}" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(os.environ["BUILD_JSON"])
+          keys = (
+              "release_version", "source_commit", "integrity_fingerprint", "artifact_sha256",
+              "python_version", "bundle_schema", "bundle_version", "task_route_protocol",
+              "routing_manifest_protocol", "mcp_tool_contract_protocol", "project_payload_schema",
+              "source_digest", "routing_digest", "payload_digest",
+          )
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              for key in keys:
+                  value = payload.get(key)
+                  if value is None or isinstance(value, (dict, list)):
+                      raise SystemExit(f"Builder output 缺少可传递 identity 字段：{key}")
+                  output.write(f"{key}={value}\n")
+          PY
           artifact="${GITHUB_WORKSPACE}/.runtime-dist/${name}"
-          identity="${GITHUB_WORKSPACE}/.runtime-dist/${name}.manifest.json"
           "${artifact}" status --json
           "${artifact}" self-test --json
           python scripts/runtime_mcp_smoke.py --artifact "${artifact}" --json
+          test -z "$(find .runtime-dist -maxdepth 1 -name '*.manifest.json' -print -quit)"
 
           target="${RUNNER_TEMP}/agent-skills-release-target"
           mkdir -p "${target}"
           "${artifact}" install --target "${target}" --json
           test -x "${target}/.agents/runtime/agent-skills-mcp"
+          test ! -e "${target}/.agents/agent-skills-install.json"
           python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
 
           mkdir -p release-assets
           cp "${artifact}" "release-assets/${name}"
-          cp "${identity}" "release-assets/${name}.manifest.json"
 
       - name: Upload macOS binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-macos
-          path: |
-            release-assets/agent-skills-mcp-v*-macos
-            release-assets/agent-skills-mcp-v*-macos.manifest.json
+          path: release-assets/agent-skills-mcp-v*-macos
           if-no-files-found: error
           compression-level: 0
 
@@ -273,6 +368,48 @@ jobs:
         env:
           RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+          LINUX_RELEASE_VERSION: ${{ needs.runtime-linux.outputs.release_version }}
+          WINDOWS_RELEASE_VERSION: ${{ needs.runtime-windows.outputs.release_version }}
+          MACOS_RELEASE_VERSION: ${{ needs.runtime-macos.outputs.release_version }}
+          LINUX_SOURCE_COMMIT: ${{ needs.runtime-linux.outputs.source_commit }}
+          WINDOWS_SOURCE_COMMIT: ${{ needs.runtime-windows.outputs.source_commit }}
+          MACOS_SOURCE_COMMIT: ${{ needs.runtime-macos.outputs.source_commit }}
+          LINUX_INTEGRITY_FINGERPRINT: ${{ needs.runtime-linux.outputs.integrity_fingerprint }}
+          WINDOWS_INTEGRITY_FINGERPRINT: ${{ needs.runtime-windows.outputs.integrity_fingerprint }}
+          MACOS_INTEGRITY_FINGERPRINT: ${{ needs.runtime-macos.outputs.integrity_fingerprint }}
+          LINUX_ARTIFACT_SHA256: ${{ needs.runtime-linux.outputs.artifact_sha256 }}
+          WINDOWS_ARTIFACT_SHA256: ${{ needs.runtime-windows.outputs.artifact_sha256 }}
+          MACOS_ARTIFACT_SHA256: ${{ needs.runtime-macos.outputs.artifact_sha256 }}
+          LINUX_PYTHON_VERSION: ${{ needs.runtime-linux.outputs.python_version }}
+          WINDOWS_PYTHON_VERSION: ${{ needs.runtime-windows.outputs.python_version }}
+          MACOS_PYTHON_VERSION: ${{ needs.runtime-macos.outputs.python_version }}
+          LINUX_BUNDLE_SCHEMA: ${{ needs.runtime-linux.outputs.bundle_schema }}
+          WINDOWS_BUNDLE_SCHEMA: ${{ needs.runtime-windows.outputs.bundle_schema }}
+          MACOS_BUNDLE_SCHEMA: ${{ needs.runtime-macos.outputs.bundle_schema }}
+          LINUX_BUNDLE_VERSION: ${{ needs.runtime-linux.outputs.bundle_version }}
+          WINDOWS_BUNDLE_VERSION: ${{ needs.runtime-windows.outputs.bundle_version }}
+          MACOS_BUNDLE_VERSION: ${{ needs.runtime-macos.outputs.bundle_version }}
+          LINUX_TASK_ROUTE_PROTOCOL: ${{ needs.runtime-linux.outputs.task_route_protocol }}
+          WINDOWS_TASK_ROUTE_PROTOCOL: ${{ needs.runtime-windows.outputs.task_route_protocol }}
+          MACOS_TASK_ROUTE_PROTOCOL: ${{ needs.runtime-macos.outputs.task_route_protocol }}
+          LINUX_ROUTING_MANIFEST_PROTOCOL: ${{ needs.runtime-linux.outputs.routing_manifest_protocol }}
+          WINDOWS_ROUTING_MANIFEST_PROTOCOL: ${{ needs.runtime-windows.outputs.routing_manifest_protocol }}
+          MACOS_ROUTING_MANIFEST_PROTOCOL: ${{ needs.runtime-macos.outputs.routing_manifest_protocol }}
+          LINUX_MCP_TOOL_CONTRACT_PROTOCOL: ${{ needs.runtime-linux.outputs.mcp_tool_contract_protocol }}
+          WINDOWS_MCP_TOOL_CONTRACT_PROTOCOL: ${{ needs.runtime-windows.outputs.mcp_tool_contract_protocol }}
+          MACOS_MCP_TOOL_CONTRACT_PROTOCOL: ${{ needs.runtime-macos.outputs.mcp_tool_contract_protocol }}
+          LINUX_PROJECT_PAYLOAD_SCHEMA: ${{ needs.runtime-linux.outputs.project_payload_schema }}
+          WINDOWS_PROJECT_PAYLOAD_SCHEMA: ${{ needs.runtime-windows.outputs.project_payload_schema }}
+          MACOS_PROJECT_PAYLOAD_SCHEMA: ${{ needs.runtime-macos.outputs.project_payload_schema }}
+          LINUX_SOURCE_DIGEST: ${{ needs.runtime-linux.outputs.source_digest }}
+          WINDOWS_SOURCE_DIGEST: ${{ needs.runtime-windows.outputs.source_digest }}
+          MACOS_SOURCE_DIGEST: ${{ needs.runtime-macos.outputs.source_digest }}
+          LINUX_ROUTING_DIGEST: ${{ needs.runtime-linux.outputs.routing_digest }}
+          WINDOWS_ROUTING_DIGEST: ${{ needs.runtime-windows.outputs.routing_digest }}
+          MACOS_ROUTING_DIGEST: ${{ needs.runtime-macos.outputs.routing_digest }}
+          LINUX_PAYLOAD_DIGEST: ${{ needs.runtime-linux.outputs.payload_digest }}
+          WINDOWS_PAYLOAD_DIGEST: ${{ needs.runtime-windows.outputs.payload_digest }}
+          MACOS_PAYLOAD_DIGEST: ${{ needs.runtime-macos.outputs.payload_digest }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -280,75 +417,66 @@ jobs:
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
           expected=(
             "agent-skills-mcp-v${RELEASE_VERSION}-linux"
-            "agent-skills-mcp-v${RELEASE_VERSION}-linux.manifest.json"
             "agent-skills-mcp-v${RELEASE_VERSION}-windows.exe"
-            "agent-skills-mcp-v${RELEASE_VERSION}-windows.manifest.json"
             "agent-skills-mcp-v${RELEASE_VERSION}-macos"
-            "agent-skills-mcp-v${RELEASE_VERSION}-macos.manifest.json"
             "USAGE.md"
           )
           for asset in "${expected[@]}"; do
             test -f "release-assets/${asset}" || { echo "missing release asset: ${asset}" >&2; exit 1; }
           done
-          binaries=(
-            "agent-skills-mcp-v${RELEASE_VERSION}-linux"
-            "agent-skills-mcp-v${RELEASE_VERSION}-windows.exe"
-            "agent-skills-mcp-v${RELEASE_VERSION}-macos"
+          python - <<'PY'
+          import os
+          import re
+
+          fields = (
+              "RELEASE_VERSION", "SOURCE_COMMIT", "INTEGRITY_FINGERPRINT", "PYTHON_VERSION",
+              "BUNDLE_SCHEMA", "BUNDLE_VERSION", "TASK_ROUTE_PROTOCOL", "ROUTING_MANIFEST_PROTOCOL",
+              "MCP_TOOL_CONTRACT_PROTOCOL", "PROJECT_PAYLOAD_SCHEMA", "SOURCE_DIGEST",
+              "ROUTING_DIGEST", "PAYLOAD_DIGEST",
           )
-          identities=(
-            "agent-skills-mcp-v${RELEASE_VERSION}-linux.manifest.json"
-            "agent-skills-mcp-v${RELEASE_VERSION}-windows.manifest.json"
-            "agent-skills-mcp-v${RELEASE_VERSION}-macos.manifest.json"
-          )
-          normalized_identities=()
-          for index in "${!binaries[@]}"; do
-            binary="${binaries[$index]}"
-            identity="${identities[$index]}"
-            if ! jq -e \
-              --arg version "${RELEASE_VERSION}" \
-              --arg commit "${GITHUB_SHA}" \
-              --arg artifact "${binary}" \
-              '.schema == "agent-skills-runtime-release-identity/v1"
-               and .release_version == $version
-               and .source_commit == $commit
-               and .artifact == $artifact
-               and .python_version == "3.14.7"
-               and .bundle_schema == "agent-skills-runtime-bundle/v2"
-               and (.bundle_version | test("^[0-9a-f]{16}$"))
-               and ."TaskRoute协议" == "Agent Skills 任务路由/v1"
-               and ."RoutingManifest协议" == "Agent Skills 路由清单/v1"
-               and ."MCP工具契约协议" == "Agent Skills MCP工具契约/v3"
-               and .project_payload_schema == "agent-skills-project-payload/v2"
-               and .install_manifest_schema == "agent-skills-install/v3"
-               and (.source_digest | test("^[0-9a-f]{64}$"))
-               and (."Routing摘要" | test("^[0-9a-f]{64}$"))
-               and (.payload_digest | test("^[0-9a-f]{64}$"))' \
-              "release-assets/${identity}" >/dev/null; then
-              echo "Release identity 字段校验失败：${identity}" >&2
-              jq . "release-assets/${identity}" >&2 || true
-              exit 1
-            fi
-            recorded_sha="$(jq -r '.artifact_sha256' "release-assets/${identity}")"
+          identities = {}
+          for platform in ("LINUX", "WINDOWS", "MACOS"):
+              identities[platform] = {field: os.environ[f"{platform}_{field}"] for field in fields}
+          reference = identities["LINUX"]
+          for platform, identity in identities.items():
+              if identity != reference:
+                  raise SystemExit(f"三平台 Release identity 不一致：LINUX <> {platform}: {reference!r} != {identity!r}")
+          if reference["RELEASE_VERSION"] != os.environ["RELEASE_VERSION"]:
+              raise SystemExit("Release version 与三平台 Builder 输出不一致")
+          if reference["SOURCE_COMMIT"] != os.environ["GITHUB_SHA"]:
+              raise SystemExit("source_commit 与 Release checkout 不一致")
+          if reference["PYTHON_VERSION"] != "3.14.7":
+              raise SystemExit("三平台 Runtime Python 版本不是 3.14.7")
+          if reference["BUNDLE_SCHEMA"] != "agent-skills-runtime-bundle/v2":
+              raise SystemExit("Runtime Bundle schema 不一致")
+          if reference["TASK_ROUTE_PROTOCOL"] != "Agent Skills 任务路由/v1":
+              raise SystemExit("TaskRoute 协议不一致")
+          if reference["ROUTING_MANIFEST_PROTOCOL"] != "Agent Skills 路由清单/v1":
+              raise SystemExit("RoutingManifest 协议不一致")
+          if reference["MCP_TOOL_CONTRACT_PROTOCOL"] != "Agent Skills MCP工具契约/v3":
+              raise SystemExit("MCP Tool Contract 协议不一致")
+          if reference["PROJECT_PAYLOAD_SCHEMA"] != "agent-skills-project-payload/v2":
+              raise SystemExit("Project Payload schema 不一致")
+          for field in ("INTEGRITY_FINGERPRINT", "SOURCE_DIGEST", "ROUTING_DIGEST", "PAYLOAD_DIGEST"):
+              if not re.fullmatch(r"[0-9a-f]{64}", reference[field]):
+                  raise SystemExit(f"Release identity {field} 非法")
+          if not re.fullmatch(r"[0-9a-f]{16}", reference["BUNDLE_VERSION"]):
+              raise SystemExit("Bundle version 非法")
+          PY
+          check_sha() {
+            local binary="$1"
+            local expected_sha="$2"
+            local actual_sha
             actual_sha="$(sha256sum "release-assets/${binary}" | awk '{print $1}')"
-            test "${recorded_sha}" = "${actual_sha}" || {
-              echo "Release identity artifact SHA256 不一致：${binary}" >&2
+            test "${actual_sha}" = "${expected_sha}" || {
+              echo "Release artifact SHA256 不一致：${binary}" >&2
               exit 1
             }
-            normalized_identity="release-assets/${identity}.common"
-            jq -S 'del(.artifact, .artifact_sha256)' \
-              "release-assets/${identity}" > "${normalized_identity}"
-            normalized_identities+=("${normalized_identity}")
-          done
-          reference_identity="${normalized_identities[0]}"
-          for candidate_identity in "${normalized_identities[@]:1}"; do
-            if ! cmp -s "${reference_identity}" "${candidate_identity}"; then
-              echo "三平台 Release identity 不一致：${reference_identity} <> ${candidate_identity}" >&2
-              diff -u "${reference_identity}" "${candidate_identity}" >&2 || true
-              exit 1
-            fi
-          done
-          # Identity manifest 只用于跨平台构建校验；正式 Release 只发布三个平台 ZIP。
-          rm release-assets/*.manifest.json release-assets/*.manifest.json.common
+          }
+          check_sha "agent-skills-mcp-v${RELEASE_VERSION}-linux" "${LINUX_ARTIFACT_SHA256}"
+          check_sha "agent-skills-mcp-v${RELEASE_VERSION}-windows.exe" "${WINDOWS_ARTIFACT_SHA256}"
+          check_sha "agent-skills-mcp-v${RELEASE_VERSION}-macos" "${MACOS_ARTIFACT_SHA256}"
+          test -z "$(find release-assets -maxdepth 1 -name '*.manifest.json' -print -quit)"
           if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
             echo "tag 已存在，拒绝覆盖：${RELEASE_TAG}" >&2
             exit 1
@@ -370,10 +498,7 @@ jobs:
             "USAGE.md"
           )
           for asset in "${assets[@]}"; do
-            test -f "release-assets/${asset}" || {
-              echo "缺少 ZIP 输入资产：${asset}" >&2
-              exit 1
-            }
+            test -f "release-assets/${asset}" || { echo "缺少 ZIP 输入资产：${asset}" >&2; exit 1; }
           done
           mkdir -p release-package
           python - <<'PY'
@@ -392,12 +517,7 @@ jobs:
           for platform, package_name, binary in packages:
               expected = [binary, "USAGE.md"]
               package = package_dir / package_name
-              with zipfile.ZipFile(
-                  package,
-                  "w",
-                  compression=zipfile.ZIP_DEFLATED,
-                  compresslevel=9,
-              ) as archive:
+              with zipfile.ZipFile(package, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
                   for name in expected:
                       archive.write(source / name, arcname=name)
               with zipfile.ZipFile(package) as archive:
@@ -418,10 +538,7 @@ jobs:
             "agent-skills-v${RELEASE_TAG#v}-macos.zip"
           )
           for package in "${expected_packages[@]}"; do
-            test -f "release-package/${package}" || {
-              echo "缺少最终平台 ZIP：${package}" >&2
-              exit 1
-            }
+            test -f "release-package/${package}" || { echo "缺少最终平台 ZIP：${package}" >&2; exit 1; }
           done
           gh release create "${RELEASE_TAG}" \
             --draft \
@@ -432,10 +549,7 @@ jobs:
           test "$(gh release view "${RELEASE_TAG}" --json isDraft --jq '.isDraft')" = "true"
           expected_assets="$(printf '%s\n' "${expected_packages[@]}" | sort)"
           draft_assets="$(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name' | sort)"
-          test "${draft_assets}" = "${expected_assets}" || {
-            echo "Draft Release 资产集合不正确：${draft_assets}" >&2
-            exit 1
-          }
+          test "${draft_assets}" = "${expected_assets}" || { echo "Draft Release 资产集合不正确：${draft_assets}" >&2; exit 1; }
 
       - name: Publish GitHub Release
         env:
@@ -454,10 +568,7 @@ jobs:
           test "$(git rev-list -n 1 "${RELEASE_TAG}")" = "${GITHUB_SHA}"
           test "$(gh release view "${RELEASE_TAG}" --json isDraft --jq '.isDraft')" = "false"
           published_assets="$(gh release view "${RELEASE_TAG}" --json assets --jq '.assets[].name' | sort)"
-          test "${published_assets}" = "${expected_assets}" || {
-            echo "Release 已发布资产集合不正确：${published_assets}" >&2
-            exit 1
-          }
+          test "${published_assets}" = "${expected_assets}" || { echo "Release 已发布资产集合不正确：${published_assets}" >&2; exit 1; }
           gh release view "${RELEASE_TAG}" --json tagName,targetCommitish,isDraft,isPrerelease,url,assets
 
       - name: Cleanup failed draft Release
