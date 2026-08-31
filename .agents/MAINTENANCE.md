@@ -93,7 +93,7 @@ GitHub Release
     └── USAGE.md
 ```
 
-每个 ZIP 根目录只包含当前平台 Runtime binary 与同一版本的最终用户说明；该说明来自根 [`USAGE.md`](../USAGE.md)。构建期 identity manifest 和 artifact SHA256 继续只承担维护侧校验，不进入 ZIP 或正式 Release 资产。源码仓库不维护第二套明文安装包或源码安装产品面。
+每个 ZIP 根目录只包含当前平台 Runtime binary 与同一版本的最终用户说明；该说明来自根 [`USAGE.md`](../USAGE.md)。Builder 不再生成独立 `*.manifest.json` identity sidecar；release/source/python/protocol/digest/integrity/artifact SHA 证据由 `build_runtime.py --json`、Runtime `self-test` 和 GitHub Actions job outputs 直接传递并交叉验证。源码仓库不维护第二套明文安装包或源码安装产品面。
 
 目标项目中的运行边界：
 
@@ -106,9 +106,15 @@ canonical references/*.md
 → 构建时逐字 hash + AES-GCM 加密
 → 目标项目不安装 Reference 或 Stub
 → MCP 按当前路由令牌返回 required canonical_text
+
+项目安装 ownership
+→ 当前 Runtime 从内嵌 Project Payload 确定性派生 install-state
+→ 新安装不生成 .agents/agent-skills-install.json
+→ 升级 previous ownership 来自旧 Runtime install-state
+→ 历史 agent-skills-install/v3 仅一次迁移，成功后删除
 ```
 
-不能因为加密 onefile 存在就宣称可抵御机器 Owner、调试器、内存转储、Hook 或专业逆向。
+不能因为加密 onefile、Runtime Projection 或 sidecarless install-state 存在就宣称可抵御机器 Owner、调试器、内存转储、Hook、恶意替换项目内旧 Runtime 或专业逆向。
 
 ## 5. 人类文档与历史记录职责
 
@@ -171,15 +177,19 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、专业 Skill
 - Project Payload 独立 `payload_digest`，不拿 Reference digest 冒充 Core/资产完整性；
 - Payload 排除 canonical Reference 正文、tests 和维护 README，同时保留 Router、Core 和其他必要运行资产；
 - 目标项目不安装 canonical Reference 或 Stub；required 原文只由当前 Runtime 路由令牌加载；
-- `.agents/agent-skills-install.json` 只承担 ownership/version 导航；
-- 首次同名未认领 Skill fail closed；升级只修改旧 manifest 明确认领项；
-- `AGENTS.md` managed marker 外文本、项目自有 Skill、其他 MCP server 和宿主配置保持；
+- 新安装/升级不生成 `.agents/agent-skills-install.json` 或其他 ownership sidecar；当前 ownership 从内嵌 Project Payload 派生，previous ownership 只能来自合法 legacy v3 一次迁移或旧已安装 Runtime 的合法内部 install-state；
+- legacy `agent-skills-install/v3` 成功迁移后删除；v1/v2/未知/损坏 schema 或旧 Runtime install-state 不可验证时 fail closed，不猜 ownership；
+- 首次同名未认领 Skill/shared/managed file fail closed；升级只修改 previous install-state 明确认领项；
+- `AGENTS.md` managed marker 外文本、项目自有 Skill/Reference/未认领文件、其他 MCP server 和宿主配置保持；
 - Codex/Cursor/Claude Code 只写项目级 Agent Skills 边界并尊重宿主 trust/approval；
-- 同名 Codex MCP table 存在但 managed marker 缺失时，不能仅凭旧 manifest 猜 ownership，必须 fail closed；
+- 同名 Codex MCP table 存在但 managed marker 缺失时，即使能证明 historical Agent Skills ownership 也必须 fail closed；
+- sidecarless 升级以用户已经信任并明确选择的目标工作区为前提；执行旧 Runtime 的内部 install-state 通路不等于代码签名/TEE，不能声称抵御项目 Owner 恶意替换旧 binary；
 - 项目级 MCP 使用宿主启动的 stdio 子进程，采用**宿主连接级生命周期**：宿主可以在项目/会话连接存续期间保持 Runtime 进程以复用任务状态；Runtime 不自行 fork/detach，不注册 Windows Service、systemd、launchd 或其他系统 daemon；宿主断开 stdio/stdin 后进程应退出；
-- 安装能预检的错误必须先于写入发现，切换失败按快照恢复；回滚自身失败必须显式聚合报告并保留原始安装异常，不能静默吞掉；
+- 安装能预检的错误必须先于写入发现，切换失败按快照恢复；legacy manifest（如存在）也必须进入快照/回滚；回滚自身失败必须显式聚合报告并保留原始安装异常，不能静默吞掉；
 - 普通源码/PR/main Runtime 构建使用明确 development identity；正式 Release 版本只由 Release workflow 的 `v<SemVer>` tag 派生并显式传给 Builder；
+- Builder 机器身份直接通过 `--json` 输出，不生成 `*.manifest.json`；必须保留 source commit、固定 Python、协议/digest、不可逆整体 integrity fingerprint 和真实 artifact SHA256；
 - 正式 Linux、Windows、macOS Runtime 构建使用仓库当前固定的同一 Python 版本，不能依赖各 Runner 自带 Python 漂移；
+- Release 三平台通过 job outputs 比较公共 identity，并对下载后的每个平台 binary 分别重算 SHA256；不能因为删除 identity sidecar 降低 Evidence Preservation；
 - `status/self-test`、真实 stdio MCP、真实项目安装和项目内 Runtime smoke 都要验证最终平台 artifact；
 - Linux、Windows、macOS 必须分别在对应 Runner 构建验证。
 
@@ -201,21 +211,23 @@ Runtime Package Tests（仅 Runtime/Builder/MCP 安装/Release 路径变化时�
 → Linux onefile build/status/self-test
 → real stdio MCP
 → project-only install/upgrade/no-args install
+→ 无 install/build sidecar 验证
 → Windows onefile + 项目安装
 → macOS onefile + 项目安装
 
 Release
 → 对目标 main SHA 重新执行完整 preflight
-→ 三平台正式 artifact 构建与 identity 校验
+→ 三平台正式 artifact 构建与 Builder JSON identity
+→ job outputs 公共 identity 比较 + 每个平台 binary SHA256 重算
 → 组装并验证三个平台 ZIP
 → Draft Release 精确核对三个平台 ZIP 后发布
 ```
 
-`.github/workflows/skill-tests.yml` 对 Skill/Reference/Router/Change/治理及相关源码变化运行，不安装 PyInstaller，也不因为纯规则正文变化构建 onefile；但必须继续执行会真实构建 Bundle/Project Payload、校验 canonical exact-text、Routing Conformance、内容守恒和 Ready 的自包含测试。
+`.github/workflows/skill-tests.yml` 对 Skill/Reference/Router/Change/治理及相关源码变化运行，不安装 PyInstaller，也不因为纯规则正文变化构建 onefile；但必须继续执行会真实构建 Bundle/Project Payload、校验 canonical exact-text、Routing Conformance、sidecarless ownership、内容守恒和 Ready 的自包含测试。
 
 `.github/workflows/runtime-package-tests.yml` 只在 `runtime/**`、`scripts/build_runtime.py`、`scripts/runtime_mcp_smoke.py`、Runtime package workflow 自身或 Release workflow 等实际影响二进制构建/安装边界的路径变化时触发，并在 Linux、Windows、macOS 对应 Runner 真实构建和安装。不能用 Skill Tests 的绿色替代这一层，也不能把一个平台 artifact 当成其他平台证据。
 
-正式 Release 仍必须重新验证当前目标 main，并完整构建三平台 artifact；常规 CI 的分责优化不能降低 Release 候选的构建、安装、MCP、identity 或 ZIP 精确成员责任。
+正式 Release 仍必须重新验证当前目标 main，并完整构建三平台 artifact；常规 CI 的分责优化不能降低 Release 候选的构建、安装、MCP、identity、artifact SHA 或 ZIP 精确成员责任。
 
 删除旧产品能力时，应删除只为该能力保活的测试；但不能借 CI 拆分删除现行 Runtime、内容守恒、安全或交付责任。修改 Workflow 时必须保持 Evidence Preservation Mapping：每个原独立证明责任都能指出新的唯一或等价承担位置。
 
@@ -231,8 +243,9 @@ Release
 - Release 只从 main 手工运行 `.github/workflows/release.yml`，输入唯一正式版本来源 `v<SemVer>`；仓库不维护第二份根版本文件；
 - Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并拒绝覆盖已有 tag/Release；
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
-- 三平台 binary 与 identity 全部验证后，先删除只用于构建校验的 identity manifest，再使用显式白名单分别组装并重新打开验证 `agent-skills-v<SemVer>-linux.zip`、`agent-skills-v<SemVer>-windows.zip`、`agent-skills-v<SemVer>-macos.zip`；每个 ZIP 必须精确只有当前平台 binary 与 [`USAGE.md`](../USAGE.md)；
-- Draft Release 和已发布 Release 的资产集合都必须精确只有上述三个平台 ZIP，不能同时暴露独立 binary、说明文件、checksum 或 identity manifest；
+- Builder 不生成 identity manifest；三个平台 job 通过 `GITHUB_OUTPUT` 传递 release/source/python/protocol/digest/integrity identity 和各自 `artifact_sha256`；发布 job 比较三平台公共 identity，并对下载后的 Linux/Windows/macOS binary 分别重算 SHA256；
+- 使用显式白名单分别组装并重新打开验证 `agent-skills-v<SemVer>-linux.zip`、`agent-skills-v<SemVer>-windows.zip`、`agent-skills-v<SemVer>-macos.zip`；每个 ZIP 必须精确只有当前平台 binary 与 [`USAGE.md`](../USAGE.md)；
+- Draft Release 和已发布 Release 的资产集合都必须精确只有上述三个平台 ZIP，不能同时暴露独立 binary、说明文件、checksum、Builder JSON 或 identity sidecar；
 - Release workflow 不依赖自定义 PAT/Actions Secret，也不读取或要求仓库 Release Immutability 设置；发布使用 GitHub Actions 自动提供的 `github.token` 和最小 `contents: write` 权限；
 - 已存在 tag/Release 不覆盖、不移动；
 - Release 页面说明继续使用 [`USAGE.md`](../USAGE.md)，但该说明文件只作为三个平台 ZIP 内文件分发，不再作为独立 Release asset；不自动把维护 commit/PR 历史暴露给最终用户。
