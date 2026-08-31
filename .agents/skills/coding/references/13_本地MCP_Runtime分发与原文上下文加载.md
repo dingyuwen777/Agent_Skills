@@ -4,13 +4,13 @@
 
 # 本地 MCP Runtime 分发与原文上下文加载
 
-这份规则定义 Agent_Skills 当前唯一正式对外分发模式：**Shared Entry + Native Router/专业 Skill Core + Project-local MCP Runtime + Encrypted Canonical References + onefile binary**。
+这份规则定义 Agent_Skills 当前唯一正式对外分发模式：**Shared Entry + Native Router/专业 Runtime Skill Projection + Project-local MCP Runtime + Encrypted Canonical References + onefile binary**。
 
-目标是：正式 Release 为 Windows、Linux、macOS 分别发布一个平台 ZIP；每个 ZIP 根目录只包含对应平台 binary 与同一版本的 [`USAGE.md`](../../../../USAGE.md)，最终使用者只需下载并解压当前平台 ZIP，运行其中 binary 即可完成项目级接入。详细 canonical `references/*.md` 不作为普通 Markdown 分发到目标项目，同时保持现有自然语言 Skill 的执行语义和逐字完整性。薄入口是 [`.agents/skills/ENTRY.md`](../../ENTRY.md)，跨 Skill Catalog / Router 正文只维护在 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md)，源码直读和 Runtime 安装共享同一正文。
+目标是：正式 Release 为 Windows、Linux、macOS 分别发布一个平台 ZIP；每个 ZIP 根目录只包含对应平台 binary 与同一版本的 [`USAGE.md`](../../../../USAGE.md)，最终使用者只需下载并解压当前平台 ZIP，运行其中 binary 即可完成项目级接入。详细 canonical `references/*.md` 不作为普通 Markdown 分发到目标项目，同时保持现有自然语言 Skill 的执行语义和逐字完整性。薄入口是 [`.agents/skills/ENTRY.md`](../../ENTRY.md)，跨 Skill Catalog / Router 的唯一人工维护正文仍在 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md)；Source Mode 直接读取 canonical Core，Runtime 安装由同一 canonical Core 构建确定性的 Runtime Projection，不维护第二份人工 `SKILL.md`。
 
 Runtime 还必须建立**模式感知的信息披露边界**：Source Mode 直接使用明文仓库时，维护者可以正常看到和讨论 Skill、Reference、文件路径、Stable ID 与路由过程；Runtime Mode 允许正常展示项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 与交付状态，但不应把治理系统内部文件名、目录结构、规则标识、命中映射、内部凭据或加载明细作为用户可见过程主动复述。
 
-本文件只规定 Runtime 分发、动态 Skill 发现、Skills 根级共享运行资产、Project Payload、Reference 原文加载、项目级安装/升级、宿主接入、完整性、Release、披露和失败边界。Coding / Review / Docs / Figma 的研发语义仍由各自 `SKILL.md` 与 canonical References 定义；跨 Skill 入口、Reference 取得方式和 Handoff 由唯一 Router 定义。
+本文件只规定 Runtime 分发、动态 Skill 发现、Skills 根级共享运行资产、Project Payload、Reference 原文加载、项目级安装/升级、宿主接入、完整性、Release、披露和失败边界。Coding / Review / Docs / Figma 的研发语义仍由各自 canonical `SKILL.md` 与 canonical References 定义；跨 Skill 入口、Reference 取得方式和 Handoff 由唯一 Router 定义。
 
 ## 1. 何时必须读取
 
@@ -19,7 +19,7 @@ Runtime 还必须建立**模式感知的信息披露边界**：Source Mode 直�
 - 构建、Release、安装或升级 `agent-skills-mcp`；
 - 修改 Project Payload、动态 Skill Catalog、Skills 根级 shared Entry、Router Skill、installation manifest 或项目宿主 MCP 配置；
 - 修改 Runtime Bundle、Project Payload、install manifest、路由 metadata/Stable ID、加密格式、MCP Tool Contract、`source_digest`、`routing_digest` 或 `payload_digest`；
-- 修改 Runtime 用户可见进度、MCP 公共返回字段或治理实现细节披露边界；
+- 修改 Runtime Skill Projection、Runtime 用户可见进度、MCP 公共返回字段或治理实现细节披露边界；
 - 调试中文 Task Route → 私有 Routing Manifest → required canonical Context 链；
 - Review Runtime 是否仍逐字返回 canonical Reference；
 - 修改正式 Skill 或 shared runtime file，使其进入下一次 Runtime Release；
@@ -32,6 +32,7 @@ Runtime 还必须建立**模式感知的信息披露边界**：Source Mode 直�
 ```text
 Agent_Skills 源仓库 .agents/skills/*/SKILL.md
 → 构建时动态发现正式 Skill
+→ canonical Core 是唯一人工维护的 Skill 规则 Owner
 
 Agent_Skills 源仓库 .agents/skills/ENTRY.md
 → 显式 Skills 根级 shared runtime file
@@ -39,9 +40,14 @@ Agent_Skills 源仓库 .agents/skills/ENTRY.md
 
 Agent_Skills 源仓库 .agents/skills/router/SKILL.md
 → 动态发现的正式 Router Skill
-→ 唯一跨 Skill 选择与 Handoff 控制面
+→ 唯一跨 Skill 选择与 Handoff canonical 控制面
 
-Shared Entry + Native Router/专业 Core / 必要运行资产
+canonical SKILL.md
+→ 根据当前 Bundle 中实际 Reference 身份生成 deterministic Runtime Skill Projection
+→ 去除 Reference filename / source_path / Stable ID / 直接 Markdown 导航与内部编号映射
+→ 保留 frontmatter、Skill routing metadata、核心工作语义、失败关闭和完成门禁
+
+Shared Entry + Runtime Router/专业 Skill Projection / 必要运行资产
 → 构建成 Project Payload
 → 随 onefile Runtime 嵌入
 → 安装到目标项目 .agents/skills/
@@ -55,7 +61,7 @@ canonical references/*.md
 → 嵌入 Runtime
 
 目标项目 Project Payload
-→ 只安装 Entry、Router/专业 Skill Core 与运行资产
+→ 只安装 Entry、Router/专业 Skill Runtime Projection 与运行资产
 → 不安装 Reference 或 Stub
 
 Project-local Runtime
@@ -86,6 +92,7 @@ Runtime 用户可见过程
 ### 非目标
 
 - 不把 Markdown Skill 改写成 Policy DSL、布尔规则数据库或另一套 prompt 系统；
+- 不维护 `SKILL.runtime.md` 或其他人工 Runtime Core 镜像；
 - 不让 Runtime 自己成为第二个 Coding Agent；
 - 不自动扫描整个目标项目替 Agent 判断架构/业务语义；
 - 不提供任意路径读取、glob 或批量导出 canonical 规则接口；
@@ -120,6 +127,8 @@ Runtime、Project Payload、manifest、测试和 Release **不得维护固定完
 
 [`.agents/skills/ENTRY.md`](../../ENTRY.md) 是根级普通文件，**不能被识别成正式 Skill**；[`.agents/skills/router/SKILL.md`](../../router/SKILL.md) 必须作为正式 Skill 被动态发现。Router 是所有任务的保留控制面，Coding 只在研发任务命中后负责自己的专业工作。Router 在 Source Mode 可以展示当前 Catalog 供 Agent/维护者导航，但 Catalog 明细不是 Runtime 分发白名单；Runtime MCP 的公共 route contract 不需要把 Catalog 再次暴露给用户可见过程。
 
+Runtime Projection 同样不得维护固定 Skill 或 Reference 身份白名单。新增、删除或改名合法 Reference 后，构建器从当前 Bundle 中实际 `filename`、`source_path` 与 Stable ID 自动更新去身份集合；新增普通 Skill 也自动对其 `SKILL.md` 应用同一投影规则。
+
 ## 4. 规则与 Router 事实源
 
 每个正式 Skill 的专业规则事实源：
@@ -137,9 +146,9 @@ Router 是正式控制面 Skill，不是专业执行 Skill，也不得复制各 
 
 ### 源仓库 Mutation 与普通 Runtime 明文面
 
-源仓库 Mutation 的意图识别与 canonical Ownership 由 Agent_Skills **根 `AGENTS.md`** 独立承担，详细 Skill/Reference 内容守恒继续由 ref16 承担。普通 Runtime 安装给目标项目的 Entry、Router Core 与 `AGENTS.managed.md` 不复制这套源仓库 Mutation、canonical repository、Maintenance 或跨仓库同步治理。
+源仓库 Mutation 的意图识别与 canonical Ownership 由 Agent_Skills **根 `AGENTS.md`** 独立承担，详细 Skill/Reference 内容守恒继续由 ref16 承担。普通 Runtime 安装给目标项目的 Entry、Router Runtime Projection 与 `AGENTS.managed.md` 不复制这套源仓库 Mutation、canonical repository、Maintenance 或跨仓库同步治理。
 
-这不是建立第二个 Router：[`.agents/skills/router/SKILL.md`](../../router/SKILL.md) 仍是源码直读与 Runtime 安装共享的唯一 Router；根 `AGENTS.md` 只在 Agent_Skills 源仓库维护场景增加源仓库专用 Bootstrap。Custom Instructions 可以把维护者意图引导到当前根 `AGENTS.md`，但不进入 Project Payload，也不替代当前源码事实。
+这不是建立第二个 Router：[`.agents/skills/router/SKILL.md`](../../router/SKILL.md) 仍是唯一 canonical Router Owner；Source Mode 读取其原文，Runtime Mode 只安装由该原文构建的确定性 Runtime Projection。根 `AGENTS.md` 只在 Agent_Skills 源仓库维护场景增加源仓库专用 Bootstrap。Custom Instructions 可以把维护者意图引导到当前根 `AGENTS.md`，但不进入 Project Payload，也不替代当前源码事实。
 
 Builder 读取 canonical References 时：
 
@@ -150,31 +159,39 @@ Builder 读取 canonical References 时：
 - Bundle entry `content` 来自原始 UTF-8 bytes 直接 decode；
 - SHA256 与 size 对应同一份原始 bytes。
 
-Runtime Mode 不在目标项目创建同名 Reference。Core/Router 中的人类可读源码链接仍必须保留给 Source Mode 和同版本运行资产，但目标项目根 managed block 不再引导 Runtime 日常任务直接打开这些受管源码导航。Runtime 日常任务通过已配置的项目级治理 MCP 取得 route contract、提交 Task Route 并加载 required Context。
+Builder 读取 canonical `SKILL.md` 时也不修改源文件。Source Mode 的人类可读 Reference 链接、文件名和维护导航继续保留在 canonical Core；Runtime Mode 在 Project Payload 边界对 Core 做 deterministic Projection，去除这些 Reference 身份和直接导航，再安装到目标项目。Runtime 日常任务通过已配置的项目级治理 MCP 取得 route contract、提交 Task Route 并加载 required Context，不依赖本地投影 Core 重新猜具体 Reference 文件。
 
-**完整 canonical Context 本身不能为了用户可见保密而删改 routing metadata、Stable ID 或其他原文字节。** 模式感知披露只收窄 MCP 公共 envelope，并要求宿主不要把完整正文中的治理实现身份主动复述给用户；否则会破坏 source digest、routing provenance、逐字守恒和 Source/Runtime 同源性。
+**完整 canonical Context 本身不能为了用户可见保密而删改 routing metadata、Stable ID 或其他原文字节。** Runtime Skill Projection 只作用于 Project Payload 的 Core 明文视图，不作用于 canonical Reference、私有 Routing Manifest 或 MCP `load_required_context` 返回的完整原文，因此不能改变 `source_digest`、`routing_digest`、routing provenance 或逐字守恒。
 
-## 5. Entry、Native Core 与 Router 为什么继续明文
+## 5. Entry、Runtime Skill Projection 与 Router 为什么继续明文
 
-Core `SKILL.md` 负责：
+canonical Core `SKILL.md` 负责：
 
 - 让支持 Skill/Rules/AGENTS 的宿主进入本 Skill 的正式工作流；
-- 恢复项目事实并完成任务/风险/工具链路由；
-- 决定何时必须读取某个 Reference；
-- 保留 Reference 缺失/加载失败时的停止条件和完成门禁。
+- 保存 Skill 的完整核心工作语义、硬不变量、失败关闭和完成门禁；
+- 在 Source Mode 为维护者保留详细 Reference 导航；
+- 作为 Runtime Projection 的唯一人工维护输入。
+
+Runtime Skill Projection 负责：
+
+- 保留 frontmatter、Skill routing metadata、核心执行链、失败关闭和完成门禁，让支持原生 Skill/Rules 的宿主仍能进入工作流；
+- 把“必须取得当前场景详细约束”的工程语义保留下来；
+- 去除具体 Reference 文件名、路径、Stable ID、直接 Markdown 导航和内部编号缩写，不让 Runtime Core 再承担私有 Reference Catalog；
+- 由当前 Bundle Reference 身份自动驱动并确定性生成，不建立第二份人工规则源；
+- 输出后仍发现当前 canonical Reference 身份或 `references/` 路径时失败关闭。
 
 薄 Entry 与 Router 负责：
 
 - Entry 在 Source Mode 恢复项目事实并无条件进入 Router，在 Runtime Project Payload 中作为同版本 shared runtime asset；
-- Router 作为正式 Skill Core 提供唯一跨 Skill Catalog / Router，并只输出选择、上下文与 Handoff；
+- Router 的 canonical Core 仍是唯一跨 Skill Catalog / Handoff Owner，Runtime 安装的是该 Core 的投影视图；
 - Router 不生成项目执行计划、不创建子 Agent、不调用项目实现工具、不接管专业 Skill；
 - 固定项目事实优先；
-- 说明 Source Mode 直接读取 canonical Reference 与 Runtime Mode 通过 Task Route 加载 required Context 两种取得方式；
+- Source Mode 直接读取 canonical Reference；Runtime Mode 的具体 required Reference 选择由私有 Routing Manifest/evaluator 完成，再通过 Task Route 加载 required Context；
 - 把 Coding / Figma / Review / Docs Handoff 放在单一 Owner，而不是复制到两个 AGENTS 入口。
 
-如果 Core/Router 也完全从 Project Payload 删除，只留下 MCP Tool，支持原生 Skill/Rules 的宿主可能失去当前进入工作流所需的运行资产，会增加执行效果和兼容回归风险。因此 Core/Router/必要运行资产继续作为 Project Payload 明文安装；详细 canonical Reference 正文保留在加密 Bundle 中。
+如果 Router/专业 Core 也完全从 Project Payload 删除，只留下 MCP Tool，支持原生 Skill/Rules 的宿主可能失去当前进入工作流所需的运行资产，会增加执行效果和兼容回归风险。因此 Entry、Runtime Router/专业 Skill Projection 与必要运行资产继续作为 Project Payload 明文安装；详细 canonical Reference 正文保留在加密 Bundle 中。
 
-**“继续明文安装”与“用户可见过程不主动展示”是两个不同边界。** 目标项目 Owner 仍可查看这些本地文件，本方案不宣称物理隐藏；managed block 和 MCP Contract 只要求 Runtime 日常工作不把这些内部资产作为用户过程输出，也不把源码维护导航当作 required Context 的本地替代路径。
+**“继续明文安装投影 Core”与“用户可见过程不主动展示”是两个不同边界。** 目标项目 Owner 仍可查看这些本地投影文件，本方案不宣称物理隐藏；Projection 减少的是 Reference 身份/导航映射明文面，managed block 和 MCP Contract 继续要求 Runtime 日常工作不把内部资产作为用户过程输出。
 
 ## 6. Canonical 路由元数据与 Stable Reference ID
 
@@ -224,7 +241,7 @@ agent-skills-runtime-bundle/v2
 
 私有 Routing Manifest 不能单独作为公开构建产物，也不能通过普通 status、self-test 或 MCP route contract 枚举。MCP v3 进一步要求普通 required Context envelope 不附带 Reference ID、Skill、filename、source_path、SHA256 或 size；这些字段仍在 Runtime 内部用于完整性和路由。
 
-## 8. Project Payload v2：只分发 Core，不分发 Reference/Stub
+## 8. Project Payload v2：分发 Runtime Core Projection，不分发 Reference/Stub
 
 Project Payload 当前协议仍为：
 
@@ -236,17 +253,29 @@ agent-skills-project-payload/v2
 
 ```text
 ENTRY.md
-+ Router 与每个专业 Skill 的 SKILL.md / agents / assets / scripts / templates / schemas 等运行资产
++ Router 与每个专业 Skill 的 Runtime SKILL Projection
++ agents / assets / scripts / templates / schemas 等运行资产
 ```
 
 明确禁止进入 Project Payload：
 
-- `references/*.md`，无论是 canonical 正文还是 Stub；
+- canonical `references/*.md`，无论是正文还是 Stub；
 - 私有 Routing Manifest；
+- canonical `SKILL.md` 的 Reference 身份导航原样副本；
 - 任意深度的维护 `README.md`；
 - tests、Python cache 和编译产物。
 
-Payload 必须动态发现 Skill，显式记录 `skills`、`shared_files`、文件 path/hash/size/mode 和 `payload_digest`。`ENTRY.md` 当前是唯一 Skills 根级 shared file；Router 通过动态正式 Skill Catalog 进入 Payload，根级任意新文件不会自动进入。
+Payload 必须动态发现 Skill，显式记录 `skills`、`shared_files`、文件 path/hash/size/mode 和 `payload_digest`。`ENTRY.md` 当前是唯一 Skills 根级 shared file；Router 通过动态正式 Skill Catalog 进入 Payload，但写入的是 canonical Router Core 的 Runtime Projection，根级任意新文件不会自动进入。
+
+Runtime Projection 必须满足：
+
+1. 输入只来自当前 canonical `SKILL.md` 与同一 Bundle 中当前 Reference 身份，不创建人工第二副本；
+2. 保留 frontmatter、`agent-routing:v1` Skill metadata、核心工作语义、硬不变量、失败关闭和完成门禁；
+3. 指向 canonical Reference 的 Markdown 链接整体替换为不暴露标题/目标的通用约束语义；裸 `filename`、`source_path`、Stable ID、`references/` 路径和内部 `refN` 编号缩写也必须去除；
+4. Reference 身份集合由当前 Bundle 动态生成，不能写固定 Skill/Reference 白名单；
+5. 输出确定性；同一 canonical 输入重复构建必须得到相同 Runtime Core bytes 与 `payload_digest`；
+6. 输出后重新扫描当前 canonical Reference 身份，任何残留都必须让 Project Payload 构建失败关闭；
+7. Projection 只改变 Project Payload Core bytes，因此只体现在 `payload_digest`；不得改写 canonical Reference bytes、`source_digest`、Routing Manifest 或 `routing_digest`。
 
 Project Payload 的 `mode` 必须以 Git index executable bit 为跨平台 canonical 来源：普通文件映射为 `0644`，Git 标记 executable 的文件映射为 `0755`；非 Git 源只按宿主是否存在任一执行位回退到同一组可移植权限。不得直接把 Windows `0666` 或其他宿主 `stat` mode 写入 Payload identity，导致同一 source commit 在三平台得到不同 `payload_digest`。
 
@@ -269,7 +298,7 @@ Source Mode 与 Runtime Mode 使用同一 canonical metadata、Stable ID、依�
 
 canonical routing compiler 的原始 `public_route_contract()` 可以在 Source/维护侧包含动态 Skill Catalog，供一致性和构建测试使用；**Runtime MCP 公共路由 Contract v2 在返回宿主前移除 Skill Catalog**，只暴露构造 Task Route 所需的中文维度、合法取值与说明，并附带用户可见进度边界。两者都不得返回 Reference ID、文件名、路径、数量、trigger→Reference mapping 或依赖图。
 
-新增普通 Skill/Reference 通过 committed metadata 和动态发现进入编译，不修改 Runtime 固定白名单或 Task Route 顶层 schema。
+新增普通 Skill/Reference 通过 committed metadata 和动态发现进入编译，不修改 Runtime 固定白名单或 Task Route 顶层 schema。Runtime Projection 使用的是同一当前 Bundle Reference 身份集合，只减少 Core 明文导航，不参与或替代 evaluator 求值。
 
 Task Route 是宿主模型与 Runtime 的内部交换协议，不是用户配置文件。用户继续用自然语言提出任务；宿主模型依据目标项目事实构造路由，Runtime 只校验和求值，不扫描目标项目猜技术栈，也不调用模型。Task Route、命中 Skill、required ID 集合、风险下限和 route token 都属于 Runtime 执行细节，不应作为日常用户过程主动展示。
 
@@ -289,6 +318,7 @@ magic
 
 - 最终用户不需要源仓库访问权；
 - 目标项目不出现详细 Reference 普通 Markdown 正文；
+- Runtime Core 不再明文列出当前 canonical Reference 文件名、路径、Stable ID 或直接导航映射；
 - 普通静态浏览/复制门槛提高；
 - 密文篡改由 GCM tag 检测。
 
@@ -302,9 +332,10 @@ magic
 
 - 本机管理员无法提取 key；
 - 内存永远没有明文；
-- 目标项目 Owner 无法查看已安装的明文 Core/Router；
+- 目标项目 Owner 无法查看已安装的投影 Core/Router；
 - 反编译、Hook 或 MCP 通信观测不能取得规则；
 - Prompt/managed block 可以成为机密安全边界；
+- Runtime Skill Projection 是加密或可信执行环境；
 - Runtime 是可信执行环境。
 
 源仓库 canonical 文本的访问控制必须由仓库权限承担。
@@ -566,7 +597,8 @@ Builder 固定顺序：
 → 解析并校验 committed canonical metadata
 → 编译私有 Routing Manifest / routing_digest
 → 构建 Bundle v2 / source_digest / bundle_version
-→ 量化 Router / Skill Core / Reference 聚合 Context footprint
+→ 量化 canonical Router / Skill Core / Reference 聚合 Context footprint
+→ canonical Router/Skill Core → deterministic Runtime Skill Projection
 → 构建 no-Stub Project Payload v2 / payload_digest
 → AES-256-GCM 认证加密 Bundle
 → 生成当前平台 onefile
@@ -578,18 +610,19 @@ Builder 固定顺序：
 
 1. 所有 Skill/Reference metadata 协议、中文字段、Stable ID、依赖、风险下限合法；
 2. ID 全局唯一，依赖无环、无悬空项，文件 rename 不静默改变显式 ID；
-3. canonical 原始 bytes、SHA256、size 和 `source_digest` 在 build/encrypt/decrypt 后逐字一致；
+3. canonical Reference 原始 bytes、SHA256、size 和 `source_digest` 在 build/encrypt/decrypt 后逐字一致；
 4. Routing Manifest 稳定序列化、`routing_digest` 和同一 Task Route 求值在编译/加密 roundtrip 前后一致；
-5. Project Payload 动态包含 Router、全部 Skill Core/运行资产，但没有 `references/`、Stub 或私有 Routing Manifest；
-6. `status` 不公开 Skill Catalog、Reference count/ID/filename/path/loaded IDs 或内部 digest；`self-test` 只额外公开不可逆整体完整性指纹；Builder 的 `context_budget` 只允许输出 Router、各 Skill Core、各 Skill Reference 总字节和 Router+Core 聚合值，不得列单个 Reference 身份；
-7. 真实 MCP `tools/list` 恰为六个 Tool，中文 property 可调用，Runtime 公共 envelope 不泄露内部身份，route→submit→load exact-text→checkpoint 成功；
-8. `load_required_context` 每项公开 envelope 只含 `完整原文`，且原文与 canonical source 逐字一致；
-9. 同一 task 多次 route 只能单调扩展，旧 token/任意 ID load/未知词汇失败关闭，未知事实保守扩大；
-10. 首次安装、无参数安装、显式 target、v3 升级、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、符号链接、Codex marker 丢失 fail-closed 和 rollback/rollback-failure reporting；
-11. Source Mode 根入口继续可见唯一 Router；Runtime 安装后的根 `AGENTS.md` 不主动暴露 `.agents/skills/`、Router/Reference 名称、Stable ID 或内部路由细节，同时保留代码、测试、文档、复核、Git/CI 等工程进度语义；
-12. 维护侧 `release_version`、`python_version`、`source_commit`、Bundle/Task Route/Routing Manifest/MCP/Project Payload/install schema、三个 digest、Project Payload 和 artifact identity 仍通过构建 manifest + 完整性指纹交叉一致。
+5. Source Mode canonical `SKILL.md` 保持完整 Reference 导航；Project Payload 动态包含 Router/全部 Skill 的 Runtime Projection 与运行资产，Projection 不含当前 canonical Reference filename/source_path/Stable ID、`references/` 路径、直接导航或内部 `refN` 缩写，同时保留 frontmatter、Skill routing metadata、核心语义、失败关闭和完成门禁；新增 Skill/Reference 无需扩固定白名单；
+6. 同一 canonical 输入重复构建得到相同 Runtime Projection bytes 与 `payload_digest`，投影后仍残留当前 canonical Reference 身份时构建失败关闭；
+7. `status` 不公开 Skill Catalog、Reference count/ID/filename/path/loaded IDs 或内部 digest；`self-test` 只额外公开不可逆整体完整性指纹；Builder 的 `context_budget` 只允许输出 Router、各 Skill Core、各 Skill Reference 总字节和 Router+Core 聚合值，不得列单个 Reference 身份；
+8. 真实 MCP `tools/list` 恰为六个 Tool，中文 property 可调用，Runtime 公共 envelope 不泄露内部身份，route→submit→load exact-text→checkpoint 成功；
+9. `load_required_context` 每项公开 envelope 只含 `完整原文`，且原文与 canonical source 逐字一致；
+10. 同一 task 多次 route 只能单调扩展，旧 token/任意 ID load/未知词汇失败关闭，未知事实保守扩大；
+11. 首次安装、无参数安装、显式 target、v3 升级、非 v3 schema 拒绝、项目自有 Reference 保留、同名冲突、符号链接、Codex marker 丢失 fail-closed 和 rollback/rollback-failure reporting；
+12. Source Mode 根入口继续可见唯一 Router；Runtime 安装后的根 `AGENTS.md` 不主动暴露 `.agents/skills/`、Router/Reference 名称、Stable ID 或内部路由细节，同时保留代码、测试、文档、复核、Git/CI 等工程进度语义；
+13. 维护侧 `release_version`、`python_version`、`source_commit`、Bundle/Task Route/Routing Manifest/MCP/Project Payload/install schema、三个 digest、Project Payload 和 artifact identity 仍通过构建 manifest + 完整性指纹交叉一致。
 
-Routing Conformance Benchmark 必须永久覆盖 Greenfield、Fact Recovery、L1/L2/L3、Feature/Bug/Incident/Refactor/Performance/Schema、Frontend/Figma/Docs/Review、多 Agent/多 Change、Dependency/CI/Git/PR/Release、Runtime/Project Payload/Skill Mutation/Security、unknown 和复杂组合。最低门禁是 `Expected Required ⊆ Actual Required`；每次修改 trigger/依赖/风险下限都同步审查正例、必要反例和 ambiguous case，并力求 `Expected == Actual`。
+Routing Conformance Benchmark 必须永久覆盖 Greenfield、Fact Recovery、L1/L2/L3、Feature/Bug/Incident/Refactor/Performance/Schema、Frontend/Figma/Docs/Review、多 Agent/多 Change、Dependency/CI/Git/PR/Release、Runtime/Project Payload/Skill Mutation/Security、unknown 和复杂组合。最低门禁是 `Expected Required ⊆ Actual Required`；每次修改 trigger/依赖/风险下限都同步审查正例、必要反例和 ambiguous case，并力求 `Expected == Actual`。Runtime Projection 不参与 trigger/依赖/风险求值；如果 Projection 变更导致 Routing Conformance 结果变化，应视为实现错误而不是接受新的路由语义。
 
 正式平台构建的 Python 版本必须由永久 CI/Release workflow 显式固定；不能使用 Linux/Windows/macOS Runner 各自随机漂移的预装 Python 冒充同一构建环境。不同平台的 onefile 必须在 Linux、Windows、macOS 对应 Runner 构建、启动、MCP smoke 和 project install，不能把一个平台的产物当跨平台证据。
 
@@ -645,7 +678,7 @@ Release workflow 必须从 main 构建，在正式构建前校验 tag 不存在�
 
 版本语义分为两种：网页端读取当前 main、Runtime 使用当前最新 Release 时追求“最新规则”，但发布间隙允许短暂版本差；需要严格复现正式 Runtime 时，使用 Runtime `status --json` 的 `Release版本` 定位对应正式 Release/tag，再读取该 tag/commit 的 Source Mode 规则。development `0.0.0-dev` 不能仅靠公共 Runtime 状态反推出任意构建 commit；维护者需要使用本次构建保留的 identity manifest 或 CI 证据完成精确复现。
 
-AES-GCM 和 onefile 只减少普通明文浏览面并检测静态篡改，不是 TEE/KMS，也不能抵御机器 Owner、调试器、内存转储、Hook、MCP 通信观测或专业逆向。canonical 源码访问仍由仓库/制品渠道权限控制；如果源仓库是 Public，则 canonical Skill/Reference 本身就是公开内容，Runtime 加密不能反向把公开源码变成保密事实。Runtime 的用户可见 disclosure rule 同样不是安全隔离承诺。
+AES-GCM、onefile 和 Runtime Skill Projection 共同减少普通明文浏览面并检测静态篡改，但它们不是 TEE/KMS，也不能抵御机器 Owner、调试器、内存转储、Hook、MCP 通信观测或专业逆向。canonical 源码访问仍由仓库/制品渠道权限控制；如果源仓库是 Public，则 canonical Skill/Reference 本身就是公开内容，Runtime 加密/投影不能反向把公开源码变成保密事实。Runtime 的用户可见 disclosure rule 同样不是安全隔离承诺。
 
 ## 18. 升级
 
@@ -656,18 +689,18 @@ AES-GCM 和 onefile 只减少普通明文浏览面并检测静态篡改，不是
 → 校验 Bundle v2 / Project Payload v2 / routing identity
 → 只读取并校验 v3 manifest
 → 预检 managed_files / 项目自有内容 / host config
-→ 逐文件原子升级 Runtime + Core + Router + managed 配置
+→ 逐文件原子升级 Runtime + Runtime Router/Skill Projection + managed 配置
 → 写入 v3 manifest
 → status / self-test / MCP / install smoke
 ```
 
-Reference bytes 变化只通过新 Bundle 与 `source_digest` 体现；route metadata/依赖/风险变化通过 `routing_digest` 体现；Core/Router/运行资产变化通过 `payload_digest` 体现。三者不能互相代替。
+Reference bytes 变化只通过新 Bundle 与 `source_digest` 体现；route metadata/依赖/风险变化通过 `routing_digest` 体现；canonical Core/Router 或其他运行资产变化会使 Runtime Projection/Project Payload bytes 变化，并通过 `payload_digest` 体现。三者不能互相代替。
 
 v1/未知 install schema、Bundle v1、旧 MCP Contract 或损坏状态不静默兼容。需要跨不兼容 Contract 迁移时必须建立独立 Change，给出明确迁移/回滚与验证，不保留无限期双路径。
 
 ## 19. 回滚
 
-安装过程内失败由 v3 Installer 快照恢复；用户手工回退必须取得目标版本的完整同平台资产并重新运行安装，不能只替换 Runtime、Router、Skill Core 或 manifest。
+安装过程内失败由 v3 Installer 快照恢复；用户手工回退必须取得目标版本的完整同平台资产并重新运行安装，不能只替换 Runtime、投影 Router/Skill Core 或 manifest。
 
 如果安装过程自身失败且任何快照恢复失败，安装器必须明确报告“回滚不完整”及未恢复路径/原因，并保留最初安装异常作为根因链；不得因 rollback exception 被吞掉而让维护者误判项目已经恢复。
 
@@ -680,7 +713,7 @@ v1/未知 install schema、Bundle v1、旧 MCP Contract 或损坏状态不静默
 ```text
 目标项目 AGENTS / 真实事实
 → Agent_Skills 根 AGENTS / ROUTER
-→ 读取命中 Skill Core
+→ 读取命中 canonical Skill Core
 → 用 canonical metadata 的同一语义确定 Required References
 → 直接读取 Agent_Skills 源仓库中这些 Reference 的当前完整原文
 → Coding / Review / Docs / Figma Handoff
@@ -693,6 +726,7 @@ Source Mode 是明文维护/直读模式；在用户已经有源码访问权时�
 
 ```text
 目标项目 AGENTS managed block / 当前项目真实事实
+→ 受管 Runtime Router/专业 Skill Projection 提供宿主原生 Core 工作语义
 → 使用已配置的项目级治理 MCP
 → agent_skills_route_contract
 → agent_skills_start_task
@@ -705,9 +739,9 @@ Source Mode 是明文维护/直读模式；在用户已经有源码访问权时�
 → Coding / Review / Docs / Figma Handoff 与真实门禁
 ```
 
-目标项目中的 Router/Core 继续作为当前 Release 的受管内部运行资产存在，但根 managed block 不引导模型把这些 Source Mode 导航当作 Runtime 日常 required Context 取得路径。Runtime Mode 不尝试打开目标项目不存在的同名 Reference。
+目标项目中的 Router/专业 Skill 以当前 Release 的 Runtime Projection 作为受管内部运行资产存在；这些投影保留 Core 执行语义，但不保留 Source Mode 的具体 Reference 文件名、路径、Stable ID 和直接导航。Runtime Mode 不尝试打开目标项目不存在的同名 Reference，具体 required Context 始终由同一 canonical metadata 编译出的私有 Routing Manifest/evaluator 决定。
 
-两种模式共享同一 canonical Markdown、Stable ID、路由 metadata、依赖、风险下限和版本身份，只改变 Context 的取得通路和用户可见披露层。任何必需 Context 无法取得、digest/协议不一致或路由含未公开值时，明确报告并停止依赖该规则的动作。
+两种模式共享同一 canonical `SKILL.md + references/*.md`、Stable ID、路由 metadata、依赖、风险下限和版本身份；Runtime Projection 只是 Project Payload 的派生明文视图，不是第二个规则事实源。两种模式只改变 Core 的呈现/安装视图、Context 的取得通路和用户可见披露层，不能改变 required Context 求值结果。任何必需 Context 无法取得、digest/协议不一致或路由含未公开值时，明确报告并停止依赖该规则的动作。
 
 Runtime Mode 对用户可以继续说明：检查了哪些**目标项目**代码/配置/测试、准备补什么测试、修改了什么业务文件、是否同步文档、运行了什么验证、Review/CI/Git 状态如何；但不要把内部 Skill/Reference 文件、Stable ID、route token、命中集合或 Context 加载计数作为过程播报。需要解释“为什么补测试/同步文档/做 Review”时，直接说明工程风险和影响，不说“因为命中了某内部规则”。
 
