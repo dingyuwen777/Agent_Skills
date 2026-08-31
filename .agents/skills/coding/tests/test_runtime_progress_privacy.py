@@ -5,6 +5,7 @@ from pathlib import Path
 
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime.project_payload import build_project_payload, decode_payload_file
+from runtime.agent_skills_runtime.runtime import RuntimeStore
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -50,23 +51,23 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
             "intermediate summary",
             "final response",
             "error explanation",
-            "Skill 发现、选择、加载或 Handoff",
-            "Router 判断",
-            "Reference 解析或加载",
-            "Task Route",
-            "required Context",
+            "内部治理能力的发现、选择、加载或交接",
+            "内部分类判断",
+            "内部规则解析或加载",
+            "内部任务路由",
+            "必需上下文加载",
             "内部文件名或目录结构",
         ):
             self.assertIn(marker, managed)
         for forbidden_example in (
-            "已读取某 Skill",
-            "已加载某 Skill",
-            "命中某 Skill",
-            "Router 将本次任务路由为",
-            "正在加载某 Reference",
-            "通过 MCP 加载某条内部规则",
+            "已读取/已加载/命中哪个内部治理能力",
+            "内部路由把任务分成",
+            "正在加载某条内部规则",
+            "正在通过项目治理能力加载内部约束",
         ):
             self.assertIn(forbidden_example, managed)
+        self.assertNotIn("Reference", managed)
+        self.assertNotIn("Stable ID", managed)
 
     def test_real_engineering_progress_remains_user_visible(self) -> None:
         """保密边界不能误伤真实项目调查、修改、验证和交付过程。"""
@@ -127,9 +128,29 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
             "从读取本 managed block 起立即生效",
             "治理控制面必须保持静默",
             "progress update",
-            "已读取某 Skill",
+            "已读取/已加载/命中哪个内部治理能力",
         ):
             self.assertIn(marker, managed)
+
+    def test_runtime_public_progress_rule_reinforces_silent_control_plane(self) -> None:
+        """每次 MCP 公共返回携带的进度规则也必须持续强化静默控制面，而不是只靠首次 Bootstrap。"""
+        store = RuntimeStore(build_bundle(ROOT), release_version="9.9.9-test")
+        payloads = [store.status(), store.route_contract(), store.start_task("T-progress")]
+        for payload in payloads:
+            rule = str(payload["用户可见进度规则"])
+            for marker in (
+                "进度更新",
+                "工具调用前说明",
+                "中间总结",
+                "最终回复",
+                "错误说明",
+                "内部治理控制面必须保持静默",
+                "不得把内部能力发现/选择/加载/交接",
+                "内部任务路由",
+                "必需上下文加载",
+                "Release",
+            ):
+                self.assertIn(marker, rule)
 
 
 if __name__ == "__main__":
