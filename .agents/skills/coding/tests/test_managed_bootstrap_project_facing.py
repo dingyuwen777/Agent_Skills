@@ -14,6 +14,7 @@ from runtime.agent_skills_runtime.project_payload import build_project_payload
 ROOT = Path(__file__).resolve().parents[4]
 MANAGED = ROOT / ".agents/skills/coding/assets/AGENTS.managed.md"
 TEMPLATE = ROOT / ".agents/skills/coding/assets/AGENTS.template.md"
+BOOTSTRAP_REFERENCE = ROOT / ".agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md"
 RUNTIME_REFERENCE = ROOT / ".agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md"
 
 
@@ -83,15 +84,23 @@ class ManagedBootstrapProjectFacingTest(unittest.TestCase):
         ):
             self.assertIn(required, template)
 
-    def test_runtime_reference_remains_detailed_disclosure_owner(self) -> None:
-        """根入口变薄后，Runtime 详细披露边界仍必须有唯一内部 Owner。"""
-        reference = self._read(RUNTIME_REFERENCE)
+    def test_detailed_disclosure_remains_in_internal_owners(self) -> None:
+        """根入口变薄后，Bootstrap 和 Runtime 内部 Owner 仍必须完整承接披露语义。"""
+        bootstrap = self._read(BOOTSTRAP_REFERENCE)
         for required in (
-            "AGENTS.managed.md 只承担目标项目侧的外部行为契约",
-            "详细的 Runtime 用户可见披露规则继续由本 Reference",
-            "不得为了让最早入口更强而把内部控制面清单复制回目标项目根 `AGENTS.md`",
+            "详细的 Runtime 用户可见披露规则不由 managed block 承担",
+            "不得为了让最早入口“更强”而把这些内部控制面清单复制回目标项目根 `AGENTS.md`",
+            "项目 Overlay 只描述项目自己的规则、事实和长期工程边界",
         ):
-            self.assertIn(required, reference)
+            self.assertIn(required, bootstrap)
+
+        runtime_reference = self._read(RUNTIME_REFERENCE)
+        for required in (
+            "模式感知的信息披露边界",
+            "Runtime Mode 允许正常展示项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 与交付状态",
+            "不应把治理系统内部文件名、目录结构、规则标识、命中映射、内部凭据或加载明细作为用户可见过程主动复述",
+        ):
+            self.assertIn(required, runtime_reference)
 
     def test_real_install_keeps_project_facing_contract(self) -> None:
         """真实 Project Payload 安装后，根 AGENTS 仍应保持同一项目侧边界。"""
