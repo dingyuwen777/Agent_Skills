@@ -78,19 +78,22 @@ Agent_Skills 规定“怎样可靠工作”；目标项目规定“这个项目�
 
 如果完整 `SKILL.md` / canonical `references/*.md` 只允许维护者查看，**仓库访问控制必须由 GitHub Private Repository 保证**。Runtime 加密不是源仓库权限替代品。
 
-正式对外交付只有一个版本 ZIP：
+正式对外交付为三个按平台拆分的版本 ZIP：
 
 ```text
 GitHub Release
-→ agent-skills-v<SemVer>.zip
-  → Linux Runtime binary
-  → Windows Runtime binary
-  → macOS Runtime binary
-  → 最终用户说明
-  → SHA256SUMS
+├── agent-skills-v<SemVer>-linux.zip
+│   ├── Linux Runtime binary
+│   └── USAGE.md
+├── agent-skills-v<SemVer>-windows.zip
+│   ├── Windows Runtime binary
+│   └── USAGE.md
+└── agent-skills-v<SemVer>-macos.zip
+    ├── macOS Runtime binary
+    └── USAGE.md
 ```
 
-`SHA256SUMS` 位于 ZIP 内并校验三个 Runtime binary 与 ZIP 内的最终用户说明；该说明来自根 [`USAGE.md`](../USAGE.md)。构建期 identity manifest 只承担维护侧校验，不进入 ZIP 或正式 Release 资产。源码仓库不维护第二套明文安装包或源码安装产品面。
+每个 ZIP 根目录只包含当前平台 Runtime binary 与同一版本的最终用户说明；该说明来自根 [`USAGE.md`](../USAGE.md)。构建期 identity manifest 和 artifact SHA256 继续只承担维护侧校验，不进入 ZIP 或正式 Release 资产。源码仓库不维护第二套明文安装包或源码安装产品面。
 
 目标项目中的运行边界：
 
@@ -204,15 +207,15 @@ Runtime Package Tests（仅 Runtime/Builder/MCP 安装/Release 路径变化时�
 Release
 → 对目标 main SHA 重新执行完整 preflight
 → 三平台正式 artifact 构建与 identity 校验
-→ 组装并验证单一版本 ZIP
-→ Draft Release 核对单 ZIP 后发布
+→ 组装并验证三个平台 ZIP
+→ Draft Release 精确核对三个平台 ZIP 后发布
 ```
 
 `.github/workflows/skill-tests.yml` 对 Skill/Reference/Router/Change/治理及相关源码变化运行，不安装 PyInstaller，也不因为纯规则正文变化构建 onefile；但必须继续执行会真实构建 Bundle/Project Payload、校验 canonical exact-text、Routing Conformance、内容守恒和 Ready 的自包含测试。
 
 `.github/workflows/runtime-package-tests.yml` 只在 `runtime/**`、`scripts/build_runtime.py`、`scripts/runtime_mcp_smoke.py`、Runtime package workflow 自身或 Release workflow 等实际影响二进制构建/安装边界的路径变化时触发，并在 Linux、Windows、macOS 对应 Runner 真实构建和安装。不能用 Skill Tests 的绿色替代这一层，也不能把一个平台 artifact 当成其他平台证据。
 
-正式 Release 仍必须重新验证当前目标 main，并完整构建三平台 artifact；常规 CI 的分责优化不能降低 Release 候选的构建、安装、MCP、identity、ZIP 成员或 checksum 责任。
+正式 Release 仍必须重新验证当前目标 main，并完整构建三平台 artifact；常规 CI 的分责优化不能降低 Release 候选的构建、安装、MCP、identity 或 ZIP 精确成员责任。
 
 删除旧产品能力时，应删除只为该能力保活的测试；但不能借 CI 拆分删除现行 Runtime、内容守恒、安全或交付责任。修改 Workflow 时必须保持 Evidence Preservation Mapping：每个原独立证明责任都能指出新的唯一或等价承担位置。
 
@@ -228,11 +231,11 @@ Release
 - Release 只从 main 手工运行 `.github/workflows/release.yml`，输入唯一正式版本来源 `v<SemVer>`；仓库不维护第二份根版本文件；
 - Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并拒绝覆盖已有 tag/Release；
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
-- 三平台 binary 与 identity 全部验证后，先删除只用于构建校验的 identity manifest，生成 ZIP 内 `SHA256SUMS`，再组装并验证 `agent-skills-v<SemVer>.zip` 的精确成员；
-- Draft Release 和已发布 Release 的资产集合都必须精确只有该版本 ZIP，不能同时暴露独立 binary、说明文件、checksum 或 identity manifest；
+- 三平台 binary 与 identity 全部验证后，先删除只用于构建校验的 identity manifest，再使用显式白名单分别组装并重新打开验证 `agent-skills-v<SemVer>-linux.zip`、`agent-skills-v<SemVer>-windows.zip`、`agent-skills-v<SemVer>-macos.zip`；每个 ZIP 必须精确只有当前平台 binary 与 `USAGE.md`；
+- Draft Release 和已发布 Release 的资产集合都必须精确只有上述三个平台 ZIP，不能同时暴露独立 binary、说明文件、checksum 或 identity manifest；
 - Release workflow 不依赖自定义 PAT/Actions Secret，也不读取或要求仓库 Release Immutability 设置；发布使用 GitHub Actions 自动提供的 `github.token` 和最小 `contents: write` 权限；
 - 已存在 tag/Release 不覆盖、不移动；
-- Release 页面说明继续使用 [`USAGE.md`](../USAGE.md)，但该说明文件作为 ZIP 内文件分发，不再作为独立 Release asset；不自动把维护 commit/PR 历史暴露给最终用户。
+- Release 页面说明继续使用 [`USAGE.md`](../USAGE.md)，但该说明文件只作为三个平台 ZIP 内文件分发，不再作为独立 Release asset；不自动把维护 commit/PR 历史暴露给最终用户。
 
 ### GitHub PR 零人工交付兼容策略
 
