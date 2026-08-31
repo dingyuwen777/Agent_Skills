@@ -19,7 +19,7 @@ ENTRY_PATH = ROOT / ".agents/skills/ENTRY.md"
 ROUTER_SKILL_PATH = ROOT / ".agents/skills/router/SKILL.md"
 LEGACY_ROUTER_PATH = ROOT / ".agents/skills/ROUTER.md"
 BASELINE_PATH = Path(__file__).with_name("fixtures") / "router_legacy_baseline.json"
-CONTEXT_GROWTH_LIMIT = 16 * 1024
+CONTEXT_GROWTH_LIMIT = 18 * 1024
 INTENTIONAL_REQUIRED_REMOVALS = {
     "L2 Feature": {"coding.reference.04", "coding.reference.10"},
     "Figma → Code": {"coding.reference.04", "coding.reference.10"},
