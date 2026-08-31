@@ -1,4 +1,4 @@
-"""验证最小充分治理不会把 Protected、多人、Issue、Change 和 Review 机械串联。"""
+"""验证最小充分治理不会把 Protected、多人、Issue、Change、Completion 和 Review 机械串联。"""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_ro
 
 ROOT = Path(__file__).resolve().parents[4]
 ROUTER = ROOT / ".agents/skills/router/SKILL.md"
+CODING = ROOT / ".agents/skills/coding/SKILL.md"
 CHANGE = ROOT / ".agents/skills/coding/references/04_轻量变更管理.md"
 COMPLETION = ROOT / ".agents/skills/coding/references/10_完成定义追溯门禁.md"
 GOVERNANCE = ROOT / ".agents/skills/coding/references/18_最小充分治理与升级门禁.md"
@@ -55,6 +56,77 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
             with self.subTest(noun=noun):
                 self.assertIn(noun, text)
 
+    def test_l1_implementation_does_not_preload_heavy_governance(self) -> None:
+        """隔离 L1 实现只走最小路由，不预加载 Change/Completion/两阶段 Review。"""
+        result = self._evaluate({"执行模式": ["实现"], "风险": ["L1"]})
+        references = set(result["必需Reference"])
+        self.assertIn("coding.reference.02", references)
+        self.assertIn("coding.reference.19", references)
+        self.assertFalse(
+            {"coding.reference.04", "coding.reference.10", "coding.reference.11"} & references
+        )
+
+    def test_light_l2_does_not_preload_persistent_governance_or_review(self) -> None:
+        """普通轻量 L2 保留验证和治理升级门禁，但不因风险等级单独进入持久 Change/Completion/Review。"""
+        result = self._evaluate(
+            {
+                "执行模式": ["实现"],
+                "阶段": ["功能开发"],
+                "风险": ["L2"],
+                "能力": ["测试"],
+            }
+        )
+        references = set(result["必需Reference"])
+        for required in ("coding.reference.02", "coding.reference.05", "coding.reference.07", "coding.reference.19"):
+            self.assertIn(required, references)
+        self.assertFalse(
+            {"coding.reference.04", "coding.reference.10", "coding.reference.11"} & references
+        )
+
+    def test_validation_only_does_not_imply_independent_review(self) -> None:
+        """执行 targeted validation 本身不能把普通任务升级成完整两阶段 Review。"""
+        result = self._evaluate({"执行模式": ["验证"], "风险": ["L2"]})
+        references = set(result["必需Reference"])
+        self.assertIn("coding.reference.07", references)
+        self.assertIn("coding.reference.19", references)
+        self.assertFalse(
+            {"coding.reference.04", "coding.reference.10", "coding.reference.11"} & references
+        )
+
+    def test_gated_l2_upgrades_to_persistent_change_and_completion(self) -> None:
+        """出现明确 Completion Gate 后，L2 必须单调升级到持久 Change 与完整 Completion。"""
+        result = self._evaluate(
+            {
+                "执行模式": ["实现"],
+                "风险": ["L2"],
+                "治理": ["要求完成门禁"],
+            }
+        )
+        references = set(result["必需Reference"])
+        self.assertIn("coding.reference.04", references)
+        self.assertIn("coding.reference.10", references)
+
+    def test_review_and_delivery_still_load_full_review_path(self) -> None:
+        """显式 Review 或交付信号仍保留完整两阶段 Review/Completion 能力。"""
+        review_result = self._evaluate(
+            {"执行模式": ["审查"], "阶段": ["审查"], "风险": ["L2"], "意图": ["代码审查"]}
+        )
+        delivery_result = self._evaluate(
+            {"执行模式": ["Git"], "阶段": ["交付"], "风险": ["L2"], "意图": ["Git 交付"]}
+        )
+        for result in (review_result, delivery_result):
+            references = set(result["必需Reference"])
+            self.assertIn("coding.reference.04", references)
+            self.assertIn("coding.reference.10", references)
+            self.assertIn("coding.reference.11", references)
+
+    def test_coding_core_does_not_require_independent_review_for_every_implementation(self) -> None:
+        """Coding Core 必须把独立 Review 设为条件式下游，而不是所有实现任务的固定终点。"""
+        text = self._read(CODING)
+        self.assertIn("按实际门禁", text)
+        self.assertIn("简单代码", text)
+        self.assertNotIn("**任何 Coding 实现任务**", text)
+
     def test_l2_requires_task_contract_but_not_always_independent_change(self) -> None:
         """普通 L2 要把任务想清楚，但不能固定生成独立 CHANGE.md。"""
         text = self._read(CHANGE)
@@ -86,6 +158,7 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
                 "范围": ["公共契约"],
             }
         )
+        self.assertIn("coding.reference.04", result["必需Reference"])
         self.assertIn("coding.reference.10", result["必需Reference"])
 
     def test_light_l2_completion_does_not_require_formal_change_table(self) -> None:
