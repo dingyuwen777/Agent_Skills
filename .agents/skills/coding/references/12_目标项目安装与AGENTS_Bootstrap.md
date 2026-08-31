@@ -298,7 +298,7 @@ marker 后原文：逐字保留
 [`coding/assets/AGENTS.managed.md`](../assets/AGENTS.managed.md) 是 managed block 唯一模板事实源，但它现在只承担 **Runtime 薄 Bootstrap**。至少保持：
 
 1. 项目自己的规则和真实事实优先；
-2. 本 managed block 定义 Agent_Skills 的默认 Runtime Mode：没有更高优先级模式覆盖时，使用当前项目已经配置的研发治理 MCP 获取本次任务需要的完整约束；
+2. 默认 Runtime Mode：无更高优先级模式覆盖时，通过当前项目治理 MCP 获取完整约束；
 3. 系统、开发者或用户级更高优先级指令明确选择其他 Agent_Skills 执行模式时，只停止执行与该模式冲突的 Runtime/MCP 规则取得路径和 Runtime 用户可见披露限制；项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效；
 4. Runtime Mode 不根据受管运行资产中的源码维护导航去直接读取、本地枚举或猜测治理规则；Source Mode 维护者直接使用明文仓库时不受这个用户可见隐藏边界限制；
 5. 通用示例不能覆盖目标项目事实；
