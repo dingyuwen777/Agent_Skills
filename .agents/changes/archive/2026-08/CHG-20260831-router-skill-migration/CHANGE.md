@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: "CHG-20260831-router-skill-migration"
 title: "将跨 Skill Router 迁移为正式 Skill"
 level: L3
-status: ready_for_review
+status: done
 owner: "Codex"
 branch: "feature/router-skill-migration"
 created: 2026-08-31
@@ -39,7 +39,7 @@ data_changes:
 - [x] Source Mode 与 Runtime Mode 使用同一 Router Skill 正文；Runtime 用户可见 managed block 不暴露内部 Skill / Reference 路径。
 - [x] Bundle v2、Project Payload v2、Install Manifest v3 和单 ZIP Release 结构保持不变；新安装、重复安装和当前 Manifest v3 所有权更新通过验证。
 - [x] Skill、Runtime Package 与 Release CI 统一固定使用 Python 3.14.7。
-- [ ] PR CI 在适用平台通过，合并后 `main` 取得新鲜 CI 证据并完成 Change 归档。
+- [x] PR CI 在适用平台通过，合并后 `main` 取得新鲜 CI 证据并完成 Change 归档。
 
 # 范围
 
@@ -113,7 +113,7 @@ data_changes:
 | 用户 / 工作流验收 | required | 安装后 managed block 无内部路径；Runtime `status`、`self-test` 与 stdio MCP smoke 通过 |
 | 跨组件关键路径 | required | canonical Markdown → Routing/Bundle/Payload → Python 3.14.7 onefile → 项目安装闭环通过 |
 | 外部依赖 / 供应方探测 | required | Python 3.14.7 为 2026-08-05 正式维护版本；PyInstaller 6.22.2 官方文档声明支持 Python 3.14；本地真实构建证实当前组合 |
-| 构建 / 打包 / 运行 | required | Windows onefile 23,158,805 bytes；identity 为 Python 3.14.7；三平台 CI 与单 ZIP 最终证据在 PR 上取得 |
+| 构建 / 打包 / 运行 | required | Windows onefile 23,158,805 bytes；PR #94 与 main `576c087` 的 Linux/Windows/macOS Python 3.14.7 package/install/MCP jobs 全部通过；单 ZIP 契约测试通过 |
 | 文档 / 治理 / 其他 | required | README、Runtime README、USAGE、Maintenance、ref12/ref13/ref15、Workflow 与 Markdown 链接测试已同步 |
 
 通用规则见 [`.agents/skills/coding/references/07_通用验证与证据策略.md`](../../../skills/coding/references/07_通用验证与证据策略.md)。
@@ -192,6 +192,9 @@ data_changes:
 - Python 3.14.7 + PyInstaller 6.22.2：onefile 构建成功，artifact 23,158,805 bytes，identity `python_version=3.14.7`，`skill_count=5`，含 `router`。
 - onefile `status --json`、`self-test --json`、两次当前 v3 install 与已安装 artifact 的 `runtime_mcp_smoke.py` 全部退出码 0；MCP 6 tools、required Context 7 项。
 - 安装结果：schema `agent-skills-install/v3`，shared `ENTRY.md`，managed `router/SKILL.md`；旧 `ROUTER.md` 不存在，目标 `AGENTS.md` 无内部路径泄露。
+- PR #94 head `e9c0a6b`：Skill Tests、Runtime Linux/Windows/macOS Package 四项 checks 全部成功后 guarded squash merge。
+- main `576c087603e74622f94a9f14bbeee1fe1af10648`：Skill Tests run `33353385591` 成功；Runtime Package run `33353385589` 的 Linux、Windows、macOS 三个 jobs 全部成功。
+- GitHub Issue #93 已由 PR #94 合并自动关闭；Ruleset 为空且 main 未配置 Branch Protection，仍使用 expected head SHA 完成 guarded merge。
 
 ### Context Footprint
 
@@ -219,6 +222,6 @@ data_changes:
 
 # 交付
 
-- 提交：本地 Ready 后创建中文提交。
-- 拉取请求：将关联并关闭 Issue #93；PR CI 负责 Linux/Windows/macOS Python 3.14.7 新鲜打包证据。
+- 提交：`e9c0a6b`（将跨 Skill 路由迁移为正式 Router Skill）。
+- 拉取请求：#94 已 squash 合并；merge commit `576c087603e74622f94a9f14bbeee1fe1af10648`；Issue #93 已关闭。
 - 发布：不创建 tag 或 Release；用户未授权发布，本任务只保持并验证既有单 ZIP 发布契约。
