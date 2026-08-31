@@ -138,9 +138,9 @@ class ReleaseProductizationTest(unittest.TestCase):
     def test_release_draft_then_publish_gate_remains_atomic(self) -> None:
         """Release 仍必须先创建并验证 Draft，最终步骤才发布。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
-        draft_index = workflow.index("Create verified draft Release")
-        publish_index = workflow.index("Publish GitHub Release")
-        cleanup_index = workflow.index("Cleanup failed draft Release")
+        draft_index = workflow.index("- name: Create verified draft Release")
+        publish_index = workflow.index("- name: Publish GitHub Release")
+        cleanup_index = workflow.index("- name: Cleanup failed draft Release")
         self.assertLess(draft_index, publish_index)
         self.assertLess(publish_index, cleanup_index)
         draft_block = workflow[draft_index:publish_index]
