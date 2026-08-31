@@ -9,14 +9,25 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 from string import Template
+import subprocess
 import tempfile
 from typing import Any, Mapping
 
+from .install_state import (
+    INSTALL_STATE_SCHEMA,
+    LEGACY_INSTALL_MANIFEST_PATH,
+    LEGACY_INSTALL_SCHEMA,
+    build_install_state,
+    normalise_shared_files,
+    safe_managed_file,
+    validate_install_state,
+)
 from .project_payload import decode_payload_file, validate_project_payload
 
 
-INSTALL_SCHEMA = "agent-skills-install/v3"
-INSTALL_MANIFEST_PATH = Path(".agents") / "agent-skills-install.json"
+# 仅作为旧 v3 安装的一次性迁移兼容别名；新安装不再生成该文件。
+INSTALL_SCHEMA = LEGACY_INSTALL_SCHEMA
+INSTALL_MANIFEST_PATH = LEGACY_INSTALL_MANIFEST_PATH
 AGENTS_MANAGED_START = "<!-- agent-skills:managed:start -->"
 AGENTS_MANAGED_END = "<!-- agent-skills:managed:end -->"
 CLAUDE_MANAGED_START = "<!-- agent-skills:claude:start -->"
@@ -26,7 +37,6 @@ CODEX_MANAGED_END = "# agent-skills:mcp:end"
 CACHE_IGNORE_RULE = ".agents/project-context.json"
 RUNTIME_IGNORE_RULE = "/.agents/runtime/"
 SKILL_ENTRY_ASSET = "ENTRY.md"
-_SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _CODEX_SERVER_PATTERN = re.compile(r"(?m)^\s*\[mcp_servers\.agent-skills\]\s*$")
 _FACT_SOURCE_NAMES = {
     "AGENTS.md",
@@ -54,10 +64,11 @@ _FACT_SOURCE_DIRECTORIES = {
     "schemas",
     "specs",
 }
+_INTERNAL_INSTALL_STATE_COMMAND = "__install-state"
 
 
 def _sha256_file(path: Path) -> str:
-    """流式计算文件 SHA256，供 Runtime 自复制后的完整性验证使用。"""
+    """流式计算文件 SHA256，供 Runtime 自复制和同 binary 重装识别使用。"""
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
@@ -157,26 +168,13 @@ def _project_agents_managed_text(payload_files: Mapping[str, bytes]) -> str:
 
 
 def _normalise_shared_files(raw: Any, label: str) -> list[str]:
-    """校验 Skills 根级共享文件 ownership 清单并返回稳定列表。"""
-    if not isinstance(raw, list) or not raw:
-        raise ValueError(f"{label} shared_files 必须是非空列表")
-    shared_files = [str(item) for item in raw]
-    if shared_files != sorted(set(shared_files)):
-        raise ValueError(f"{label} shared_files 必须唯一且稳定排序")
-    for value in shared_files:
-        if "\\" in value:
-            raise ValueError(f"{label} shared file 不能包含反斜杠：{value!r}")
-        path = PurePosixPath(value)
-        if (
-            not value
-            or value.startswith("/")
-            or path.is_absolute()
-            or len(path.parts) != 1
-            or path.parts[0] in {".", ".."}
-            or ":" in path.parts[0]
-        ):
-            raise ValueError(f"{label} shared file 必须是 Skills 根级安全相对文件：{value!r}")
-    return shared_files
+    """保留旧内部调用名，实际由 install-state 单一校验 Owner 处理。"""
+    return normalise_shared_files(raw, label)
+
+
+def _safe_managed_file(value: str) -> str:
+    """保留旧内部调用名，实际由 install-state 单一校验 Owner 处理。"""
+    return safe_managed_file(value)
 
 
 def _fact_sources(root: Path) -> str:
@@ -241,45 +239,66 @@ def _updated_gitignore(existing: bytes | None) -> bytes:
 
 
 def _load_install_manifest(path: Path) -> dict[str, Any] | None:
-    """读取并严格校验当前 managed installation manifest；不存在时返回空值。"""
+    """读取并严格校验 legacy v3 manifest；它只作为一次 sidecarless 升级迁移输入。"""
     if not path.exists():
         return None
     if path.is_symlink() or not path.is_file():
-        raise ValueError(f"Agent Skills install manifest 必须是普通文件：{path}")
+        raise ValueError(f"legacy Agent Skills install manifest 必须是普通文件：{path}")
     try:
-        manifest = json.loads(path.read_text(encoding="utf-8"))
+        raw = json.loads(path.read_text(encoding="utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ValueError("现有 Agent Skills install manifest 损坏，拒绝猜测 managed ownership") from error
-    if not isinstance(manifest, dict) or manifest.get("schema") != INSTALL_SCHEMA:
-        raise ValueError("现有 Agent Skills install manifest schema 不受支持")
-    skills = manifest.get("skills")
-    if not isinstance(skills, list):
-        raise ValueError("现有 Agent Skills install manifest skills 无效")
-    normalized = [str(item) for item in skills]
-    if normalized != sorted(set(normalized)) or any(not _SKILL_NAME_PATTERN.fullmatch(item) for item in normalized):
-        raise ValueError("现有 Agent Skills install manifest skills 不是稳定唯一 Skill 列表")
-    manifest["skills"] = normalized
-    manifest["shared_files"] = _normalise_shared_files(manifest.get("shared_files"), "现有 Agent Skills install manifest")
-    managed_files = manifest.get("managed_files")
-    if not isinstance(managed_files, list):
-        raise ValueError("现有 Agent Skills install manifest managed_files 无效")
-    normalized_files = [_safe_managed_file(str(item)) for item in managed_files]
-    if normalized_files != sorted(set(normalized_files)):
-        raise ValueError("现有 Agent Skills install manifest managed_files 必须唯一且稳定排序")
-    manifest["managed_files"] = normalized_files
-    return manifest
+        raise ValueError("legacy Agent Skills install manifest 损坏，拒绝猜测 managed ownership") from error
+    if not isinstance(raw, dict):
+        raise ValueError("legacy Agent Skills install manifest 顶层必须是 JSON object")
+    return validate_install_state(
+        raw,
+        label="legacy Agent Skills install manifest",
+        expected_schema=LEGACY_INSTALL_SCHEMA,
+    )
 
 
-def _safe_managed_file(value: str) -> str:
-    """校验 install manifest 中相对 `.agents/skills` 的受管文件路径。"""
-    if "\\" in value:
-        raise ValueError(f"受管文件路径不能包含反斜杠：{value!r}")
-    candidate = PurePosixPath(value)
-    if not value or value.startswith("/") or candidate.is_absolute():
-        raise ValueError(f"受管文件路径必须是相对路径：{value!r}")
-    if any(part in {"", ".", ".."} for part in candidate.parts) or ":" in candidate.parts[0]:
-        raise ValueError(f"受管文件路径包含非法跳转或盘符：{value!r}")
-    return candidate.as_posix()
+def _query_installed_runtime_state(runtime_path: Path) -> dict[str, Any]:
+    """通过旧已安装 Runtime 的内部命令读取其内嵌 Project Payload ownership。"""
+    if runtime_path.is_symlink() or not runtime_path.is_file():
+        raise ValueError(f"旧 Agent Skills Runtime 必须是普通文件：{runtime_path}")
+    result = subprocess.run(
+        [str(runtime_path), _INTERNAL_INSTALL_STATE_COMMAND, "--json"],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip() or "未知错误"
+        raise RuntimeError(f"旧 Agent Skills Runtime 无法提供 install-state：{detail}")
+    try:
+        raw = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise RuntimeError("旧 Agent Skills Runtime install-state 不是合法 JSON") from error
+    if not isinstance(raw, dict):
+        raise RuntimeError("旧 Agent Skills Runtime install-state 顶层必须是 JSON object")
+    return validate_install_state(raw, label="旧 Agent Skills Runtime install-state")
+
+
+def _previous_install_state(
+    legacy_manifest_path: Path,
+    runtime_target: Path,
+    incoming_artifact: Path,
+    project_payload: Mapping[str, Any],
+    release_version: str,
+) -> tuple[dict[str, Any] | None, str]:
+    """按 legacy → 同 binary → 旧 Runtime 自描述顺序恢复 previous ownership。"""
+    legacy = _load_install_manifest(legacy_manifest_path)
+    if legacy is not None:
+        return legacy, "legacy-manifest"
+    if not runtime_target.exists() and not runtime_target.is_symlink():
+        return None, "first-install"
+    if runtime_target.is_symlink() or not runtime_target.is_file():
+        raise ValueError(f"旧 Agent Skills Runtime 必须是普通文件：{runtime_target}")
+    if _sha256_file(runtime_target) == _sha256_file(incoming_artifact):
+        return build_install_state(project_payload, release_version), "same-artifact"
+    return _query_installed_runtime_state(runtime_target), "runtime-install-state"
 
 
 def _ensure_path_not_symlink(root: Path, path: Path) -> None:
@@ -308,7 +327,7 @@ def _existing_bytes(path: Path) -> bytes | None:
 
 
 def _updated_json_mcp(existing: bytes | None, runtime_command: str, owned: bool, label: str) -> bytes:
-    """保留 JSON 配置其他字段，仅创建或更新 `mcpServers.agent-skills`。"""
+    """保留 JSON 配置其他字段，仅创建或更新可证明由旧安装认领的 Agent Skills server。"""
     if existing is None:
         data: dict[str, Any] = {}
     else:
@@ -328,7 +347,7 @@ def _updated_json_mcp(existing: bytes | None, runtime_command: str, owned: bool,
     else:
         raise ValueError(f"{label} 的 mcpServers 必须是 JSON object")
     if "agent-skills" in servers and not owned:
-        raise ValueError(f"{label} 已存在未被 Agent Skills manifest 认领的同名 MCP server")
+        raise ValueError(f"{label} 已存在无法由 previous installation state 证明 ownership 的同名 MCP server")
     servers["agent-skills"] = {"type": "stdio", "command": runtime_command, "args": ["serve"]}
     data["mcpServers"] = servers
     return (json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
@@ -354,7 +373,7 @@ def _updated_codex_config(existing: bytes | None, runtime_command: str, owned: b
         matches = list(_CODEX_SERVER_PATTERN.finditer(text))
         if marker is None:
             if matches:
-                owner_state = "现有 install manifest 仍认领该配置" if owned else "当前 install manifest 未认领该配置"
+                owner_state = "previous installation state 已认领该安装" if owned else "当前无法证明该配置 ownership"
                 raise ValueError(
                     ".codex/config.toml 已存在同名 MCP server，但 Agent Skills managed marker 缺失；"
                     f"{owner_state}，仍无法证明该 TOML table 可安全覆盖"
@@ -435,26 +454,6 @@ def _snapshot_file(path: Path) -> tuple[bytes, int] | None:
     return content, path.stat().st_mode
 
 
-def _build_manifest(
-    payload: Mapping[str, Any],
-    release_version: str,
-    runtime_relative: str,
-) -> bytes:
-    """生成描述 Agent_Skills Skill/shared ownership、版本和完整性的项目安装 manifest。"""
-    manifest = {
-        "schema": INSTALL_SCHEMA,
-        "release_version": release_version,
-        "source_digest": str(payload["source_digest"]),
-        "payload_digest": str(payload["payload_digest"]),
-        "skills": [str(item) for item in payload["skills"]],
-        "shared_files": [str(item) for item in payload["shared_files"]],
-        "managed_files": sorted(str(entry["path"]) for entry in payload["files"]),
-        "runtime": runtime_relative,
-        "host_configs": [".codex/config.toml", ".cursor/mcp.json", ".mcp.json", "CLAUDE.md"],
-    }
-    return (json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
-
-
 def install_project(
     target_root: str | Path,
     project_payload: Mapping[str, Any],
@@ -462,7 +461,7 @@ def install_project(
     *,
     release_version: str,
 ) -> dict[str, Any]:
-    """把当前 Runtime/Payload 原子接入目标项目，并只修改 Agent_Skills 可证明认领的边界。"""
+    """把当前 Runtime/Payload 原子接入目标项目，不持久化独立 ownership sidecar。"""
     target = Path(target_root).resolve()
     artifact = Path(runtime_artifact).resolve()
     if not target.is_dir():
@@ -474,28 +473,36 @@ def install_project(
     if not release_version:
         raise ValueError("release_version 不能为空")
 
-    new_skills = [str(item) for item in project_payload["skills"]]
-    new_shared_files = _normalise_shared_files(project_payload.get("shared_files"), "Project Payload")
+    new_state = build_install_state(project_payload, release_version)
+    new_skills = list(new_state["skills"])
+    new_shared_files = list(new_state["shared_files"])
+    new_managed_files = list(new_state["managed_files"])
     agents_root = target / ".agents"
     skills_root = agents_root / "skills"
-    manifest_path = target / INSTALL_MANIFEST_PATH
+    legacy_manifest_path = target / LEGACY_INSTALL_MANIFEST_PATH
     runtime_name = "agent-skills-mcp.exe" if artifact.suffix.lower() == ".exe" else "agent-skills-mcp"
     runtime_target = agents_root / "runtime" / runtime_name
     runtime_relative = runtime_target.relative_to(target).as_posix()
 
-    for path in (agents_root, skills_root, runtime_target.parent, manifest_path):
+    for path in (agents_root, skills_root, runtime_target.parent, legacy_manifest_path):
         _ensure_path_not_symlink(target, path)
-    old_manifest = _load_install_manifest(manifest_path)
-    old_skills = list(old_manifest["skills"]) if old_manifest is not None else []
-    old_shared_files = list(old_manifest["shared_files"]) if old_manifest is not None else []
-    old_managed_files = set(old_manifest["managed_files"]) if old_manifest is not None else set()
-    owned = old_manifest is not None
+    old_state, ownership_source = _previous_install_state(
+        legacy_manifest_path,
+        runtime_target,
+        artifact,
+        project_payload,
+        release_version,
+    )
+    old_skills = list(old_state["skills"]) if old_state is not None else []
+    old_shared_files = list(old_state["shared_files"]) if old_state is not None else []
+    old_managed_files = set(old_state["managed_files"]) if old_state is not None else set()
+    owned = old_state is not None
 
     for skill in sorted(set(old_skills) | set(new_skills)):
         skill_path = skills_root / skill
         _ensure_path_not_symlink(target, skill_path)
         if skill_path.exists() and skill not in old_skills:
-            raise ValueError(f"目标项目已存在未被 Agent Skills manifest 认领的同名 Skill：{skill}")
+            raise ValueError(f"目标项目已存在 previous installation state 未认领的同名 Skill：{skill}")
         if skill_path.exists() and (skill_path.is_symlink() or not skill_path.is_dir()):
             raise ValueError(f"受管 Skill 目标必须是普通目录：{skill_path}")
 
@@ -503,12 +510,11 @@ def install_project(
         shared_path = skills_root / relative
         _ensure_path_not_symlink(target, shared_path)
         if shared_path.exists() and relative not in old_shared_files:
-            raise ValueError(f"目标项目已存在未被 Agent Skills manifest 认领的同名共享文件：{relative}")
+            raise ValueError(f"目标项目已存在 previous installation state 未认领的同名共享文件：{relative}")
         if shared_path.exists() and (shared_path.is_symlink() or not shared_path.is_file()):
             raise ValueError(f"受管共享路径必须是普通文件：{shared_path}")
 
     payload_files = _payload_files(project_payload)
-    new_managed_files = sorted(_safe_managed_file(path) for path in payload_files)
     if new_managed_files != sorted(set(new_managed_files)):
         raise ValueError("Project Payload 受管文件路径必须唯一且稳定排序")
 
@@ -520,19 +526,16 @@ def install_project(
         _ensure_path_not_symlink(target, path)
         if path.exists() and (path.is_symlink() or not path.is_file()):
             raise ValueError(f"受管文件目标必须是普通文件：{path}")
-        if (
-            relative in new_managed_files
-            and path.exists()
-            and relative not in old_managed_files
-        ):
-            raise ValueError(f"目标项目已存在未被 Agent Skills manifest 认领的同名文件：{relative}")
+        if relative in new_managed_files and path.exists() and relative not in old_managed_files:
+            raise ValueError(f"目标项目已存在 previous installation state 未认领的同名文件：{relative}")
+
     agents_path = target / "AGENTS.md"
     gitignore_path = target / ".gitignore"
     cursor_path = target / ".cursor" / "mcp.json"
     claude_mcp_path = target / ".mcp.json"
     codex_path = target / ".codex" / "config.toml"
     claude_md_path = target / "CLAUDE.md"
-    text_paths = [agents_path, gitignore_path, cursor_path, claude_mcp_path, codex_path, claude_md_path, manifest_path]
+    text_paths = [agents_path, gitignore_path, cursor_path, claude_mcp_path, codex_path, claude_md_path]
     for path in text_paths:
         _ensure_path_not_symlink(target, path)
 
@@ -544,17 +547,13 @@ def install_project(
     text_updates = {
         agents_path: _updated_agents_content(target, _existing_bytes(agents_path), payload_files),
         gitignore_path: _updated_gitignore(_existing_bytes(gitignore_path)),
-        cursor_path: _updated_json_mcp(
-            _existing_bytes(cursor_path), cursor_runtime_command, owned, ".cursor/mcp.json"
-        ),
-        claude_mcp_path: _updated_json_mcp(
-            _existing_bytes(claude_mcp_path), claude_runtime_command, owned, ".mcp.json"
-        ),
+        cursor_path: _updated_json_mcp(_existing_bytes(cursor_path), cursor_runtime_command, owned, ".cursor/mcp.json"),
+        claude_mcp_path: _updated_json_mcp(_existing_bytes(claude_mcp_path), claude_runtime_command, owned, ".mcp.json"),
         codex_path: _updated_codex_config(_existing_bytes(codex_path), codex_runtime_command, owned),
         claude_md_path: _updated_claude_md(_existing_bytes(claude_md_path)),
-        manifest_path: _build_manifest(project_payload, release_version, runtime_relative),
     }
     snapshots = {path: _snapshot_file(path) for path in text_paths}
+    legacy_manifest_snapshot = _snapshot_file(legacy_manifest_path)
     runtime_snapshot = _snapshot_file(runtime_target)
     managed_snapshot_paths = set(managed_targets.values())
     managed_snapshots = {path: _snapshot_file(path) for path in managed_snapshot_paths}
@@ -570,11 +569,8 @@ def install_project(
             _remove_path(managed_targets[relative])
         for entry in project_payload["files"]:
             relative = _safe_managed_file(str(entry["path"]))
-            _atomic_write(
-                managed_targets[relative],
-                decode_payload_file(entry),
-                int(entry["mode"]),
-            )
+            _atomic_write(managed_targets[relative], decode_payload_file(entry), int(entry["mode"]))
+
         if artifact != runtime_target:
             with tempfile.NamedTemporaryFile(
                 "wb",
@@ -611,6 +607,10 @@ def install_project(
                 skill_root.rmdir()
             except OSError:
                 pass
+
+        # legacy v3 manifest 是迁移输入；所有新文件和 Runtime 已成功切换后才删除。
+        if legacy_manifest_snapshot is not None:
+            _remove_path(legacy_manifest_path)
     except Exception as install_error:
         rollback_errors: list[str] = []
         for path in reversed(text_paths):
@@ -627,10 +627,14 @@ def install_project(
                 _restore_file(path, managed_snapshots[path])
             except Exception as rollback_error:
                 rollback_errors.append(f"{path}: {type(rollback_error).__name__}: {rollback_error}")
+        try:
+            _restore_file(legacy_manifest_path, legacy_manifest_snapshot)
+        except Exception as rollback_error:
+            rollback_errors.append(
+                f"{legacy_manifest_path}: {type(rollback_error).__name__}: {rollback_error}"
+            )
         if rollback_errors:
-            raise RuntimeError(
-                "Agent Skills 安装失败且回滚不完整：" + "; ".join(rollback_errors)
-            ) from install_error
+            raise RuntimeError("Agent Skills 安装失败且回滚不完整：" + "; ".join(rollback_errors)) from install_error
         raise
 
     return {
@@ -645,6 +649,6 @@ def install_project(
         "removed_shared_files": removed_shared_files,
         "removed_managed_files": removed_managed_files,
         "runtime": runtime_relative,
-        "manifest": INSTALL_MANIFEST_PATH.as_posix(),
+        "ownership_source": ownership_source,
         "hosts": ["codex", "cursor", "claude-code"],
     }
