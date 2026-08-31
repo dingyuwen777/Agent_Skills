@@ -1,0 +1,131 @@
+name: 技术变更 / 工程改进
+description: 提交重构、基础设施、CI、性能、安全、依赖或可维护性等技术变更
+title: "[技术变更] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        技术变更应说明为什么必须改、当前与目标状态、兼容/迁移和回滚边界。不要用“代码更优雅”替代可验证的工程目标。
+
+  - type: checkboxes
+    id: duplicate_search
+    attributes:
+      label: 重复检查
+      description: 创建前先搜索现有 Issue、RFC/ADR、技术债、迁移计划或相关 PR。
+      options:
+        - label: 我已搜索现有事项，没有找到目标状态和验收语义相同的未完成技术变更；如存在相关事项，会在下方事实源中引用。
+          required: true
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation_root_cause
+    attributes:
+      label: 动机 / 根因
+      description: 当前工程问题、约束或根因是什么？为什么现在需要处理？有证据时附上证据，不要把未经验证的猜测写成事实。
+      placeholder: 描述技术债、性能瓶颈、安全风险、维护成本、CI/部署问题或其他可核实动机。
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_state
+    attributes:
+      label: 当前状态
+      description: 当前架构、实现、流程或配置真实是什么样？有哪些已知限制？
+      placeholder: 用当前代码、配置、指标、流程或失败证据描述现状。
+    validations:
+      required: true
+
+  - type: textarea
+    id: target_state
+    attributes:
+      label: 目标状态
+      description: 变更完成后，系统在结构、行为、性能、运维或安全方面应达到什么可观察状态？
+      placeholder: 描述目标边界和可验证结果，不必预设所有实现细节。
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 范围
+      description: 本次允许修改哪些模块、依赖、配置、流程或接口？
+      placeholder: |
+        - 包含……
+        - 包含……
+    validations:
+      required: true
+
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: 非目标
+      description: 本次明确不处理什么，避免借技术变更扩大成无边界重构。没有时写“无”。
+      placeholder: |
+        - 不迁移……
+        - 不改变……
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility_migration
+    attributes:
+      label: 兼容与迁移
+      description: 说明 public API、Schema、数据、配置、依赖、运行环境、部署和回滚兼容影响。完全无影响时写“无，并说明检查范围”。
+      placeholder: |
+        兼容影响：
+        数据 / Schema：
+        配置 / 部署：
+        迁移步骤：
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks_rollback
+    attributes:
+      label: 风险与回滚
+      description: 哪些失败模式最重要？如何检测？如果上线或迁移失败，怎样恢复到安全状态？
+      placeholder: |
+        主要风险：
+        监测方式：
+        回滚触发：
+        回滚步骤：
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: 验收标准
+      description: 用可观察、可验证条件定义技术变更完成，而不是只写“重构完成”。
+      placeholder: |
+        - [ ] ……行为保持兼容
+        - [ ] ……指标达到……
+        - [ ] ……旧路径安全移除/保留
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation_plan
+    attributes:
+      label: 验证计划
+      description: 需要哪些单元/集成/E2E、基准、迁移演练、安全检查、部署验证或人工验收？
+      placeholder: |
+        - 单元 / 集成：……
+        - 性能 / 安全：……
+        - 迁移 / 回滚演练：……
+        - 部署后验证：……
+    validations:
+      required: true
+
+  - type: textarea
+    id: upstream_sources
+    attributes:
+      label: 上游事实源 / 相关资料
+      description: 引用 RFC、ADR、Spec、架构文档、Contract、Schema/Migration、事故记录、性能数据或相关 Issue。没有更强来源时明确写“无”；待确认时说明缺口。
+      placeholder: |
+        - RFC / ADR：……
+        - Contract / Schema：……
+        - 指标 / 事故 / Related Issue：……
+    validations:
+      required: true
