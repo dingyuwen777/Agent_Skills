@@ -4,7 +4,7 @@
 
 # 目标项目安装与 AGENTS Bootstrap
 
-这份规则处理一个边界：**如何通过正式 Runtime binary 把当前 Release 的 Agent_Skills 安装/升级到目标项目，并安全建立目标项目自己的 `AGENTS.md` Overlay，使后续研发会话先恢复项目真实事实；默认 Runtime Mode 通过项目级治理 MCP 取得当前任务所需完整约束，而系统、开发者或用户级更高优先级指令已经明确选择其他 Agent_Skills 执行模式时，由该模式负责取得治理正文；同时保留 Source Mode 对 Router / Skill / Reference 的完整明文维护能力。**
+这份规则处理一个边界：**如何通过正式 Runtime binary 把当前 Release 的 Agent_Skills 安装/升级到目标项目，并安全建立目标项目自己的 `AGENTS.md` Overlay，使后续研发会话先恢复项目真实事实，再通过项目级治理 MCP 取得当前任务所需完整约束；同时保留 Source Mode 对 Router / Skill / Reference 的完整明文维护能力。**
 
 它不规定目标项目必须使用什么语言、框架、数据库、目录、CI 或部署方式，也不替代目标项目已有规则。
 
@@ -17,7 +17,7 @@ Runtime binary
 → 项目级安装 Runtime + Skills 根级 shared files + 全部正式 Skill Core/运行资产
 → 不在目标项目安装 canonical Reference 或 Stub
 → 创建/更新目标项目 AGENTS managed block
-→ managed block 只暴露项目事实恢复 + 默认 Runtime 治理入口 + 高优先级模式覆盖边界 + 用户可见进度边界
+→ managed block 只暴露项目事实恢复 + 项目级治理 MCP + 用户可见进度边界
 → 不把内部 Router / Skill / Reference 导航作为 Runtime 日常用户入口
 → 建立项目级 MCP 配置
 ```
@@ -36,8 +36,7 @@ Runtime Installation Bootstrap
 
 用户在 Codex / Cursor / Claude Code 等宿主中提出自然语言研发任务
 → 宿主大模型读取项目 AGENTS 与当前项目真实事实
-→ 没有更高优先级模式覆盖时，通过已配置的项目级治理 MCP 取得本任务需要的完整规则正文
-→ 已有更高优先级 Agent_Skills 执行模式时，按该模式取得治理正文，managed block 不再强制冲突的 Runtime/MCP 取得路径
+→ 通过已配置的项目级治理 MCP 取得本任务需要的完整规则正文
 → 首次接入 / 状态待校准 / 长期治理事实漂移时命中 Project Governance Bootstrap
 → 有界调查当前仓库真实实现
 → 只在 managed block 外创建/校准项目自己的 Overlay
@@ -120,7 +119,7 @@ Runtime 安装自己的：
 
 ### 普通 Runtime 与源仓库 Mutation 边界
 
-**普通 Runtime** 的 `AGENTS` managed block 只承担目标项目正常研发入口：项目事实优先、默认项目级治理 MCP、首次治理校准、失败停止、权限边界和用户可见进度边界。若系统、开发者或用户级更高优先级指令已明确选择其他 Agent_Skills 执行模式，managed block 只对冲突的 Runtime/MCP 规则取得路径与 Runtime 披露限制让位；项目自己的 Overlay、事实和长期约束仍继续生效。Entry/Router/Core 继续作为受管内部运行资产存在，但不要求用户可见过程复述其文件身份、分类或路由实现。
+**普通 Runtime** 的 `AGENTS` managed block 只承担目标项目正常研发入口：项目事实优先、项目级治理 MCP、首次治理校准、失败停止、权限边界和用户可见进度边界。Entry/Router/Core 继续作为受管内部运行资产存在，但不要求用户可见过程复述其文件身份、分类或路由实现。
 
 源仓库中针对 Skill / Reference 的新增、修改、删除、重命名、拆分、合并、通用化和跨仓库同步，由 Agent_Skills 根 `AGENTS.md` 识别 **源仓库 Mutation** 维护意图，再进入 [`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md)、Coding 与 ref16。普通目标项目只需要知道：安装器 manifest 明确认领的 `.agents` 运行资产不是项目自有规则，不应直接手工修改；项目自己的长期规则继续写在项目自己的正式事实源中。
 
@@ -161,13 +160,13 @@ Runtime binary 负责：
 4. 首次安装遇到未被认领的同名 Skill 或同名 shared file 时 fail closed；
 5. 预检并逐文件更新新受管 Core/shared files，其中 shared file 是 [`.agents/skills/ENTRY.md`](../../ENTRY.md)，唯一 Router 是动态 Skill Core [`.agents/skills/router/SKILL.md`](../../router/SKILL.md)；
 6. 安装/升级项目 `.agents/runtime/agent-skills-mcp[.exe]`；
-7. 创建或安全增量更新根 `AGENTS.md`，managed block 只暴露项目事实恢复、默认项目级治理 MCP、明确的高优先级模式覆盖边界、首次治理校准和用户可见进度边界，不直接暴露内部 Router/Skill/Reference 导航；
+7. 创建或安全增量更新根 `AGENTS.md`，managed block 只暴露项目事实恢复、项目级治理 MCP、首次治理校准和用户可见进度边界，不直接暴露内部 Router/Skill/Reference 导航；
 8. 增量更新 `.gitignore`；
 9. 建立 Codex / Cursor / Claude Code 项目级 MCP 入口和必要 bridge；
 10. 写入新的 managed installation manifest；
 11. 任一步失败时按安装前快照恢复本轮 touched managed files、Runtime、manifest 和受管文本。
 
-目标项目不安装 canonical Reference 或 Stub；默认 Runtime Mode 由项目级 MCP 先取得公共 route contract、提交中文 Task Route，再按不透明路由令牌加载当前 required 的完整 canonical Context。宿主可以使用这些内部结果执行治理，但用户可见过程应描述真实工程活动，不复述内部资产身份和加载明细。
+目标项目不安装 canonical Reference 或 Stub；Runtime Mode 由项目级 MCP 先取得公共 route contract、提交中文 Task Route，再按不透明路由令牌加载当前 required 的完整 canonical Context。宿主可以使用这些内部结果执行治理，但用户可见过程应描述真实工程活动，不复述内部资产身份和加载明细。
 
 ## 4. Bootstrap、Entry 与 Router 的唯一事实源
 
@@ -179,7 +178,7 @@ coding/assets/AGENTS.template.md
 
 coding/assets/AGENTS.managed.md
 → 写入目标项目 AGENTS.md 的 Runtime 薄 Bootstrap
-→ 负责项目事实优先 + 默认项目级治理 MCP + 高优先级模式覆盖边界 + 首次校准 + Runtime 用户可见披露边界 + 默认 Runtime MCP 不可用时 fail closed
+→ 负责项目事实优先 + 项目级治理 MCP + 高优先级模式覆盖边界 + 首次校准 + 用户可见披露边界 + MCP 不可用时 fail closed
 → 不直接暴露内部 Router / Skill / Reference 导航
 
 .agents/skills/ENTRY.md
@@ -228,12 +227,12 @@ python .agents/skills/coding/scripts/coding.py bootstrap --root . --json
 初版必须包含：
 
 1. Agent Skills managed block；
-2. managed block 明确默认 Runtime Mode 通过已配置的项目级治理 MCP 取得本次任务完整约束，并允许系统、开发者或用户级更高优先级指令显式选择其他 Agent_Skills 执行模式；无论采用哪种模式，都不直接暴露内部 Router/Skill/Reference 导航；
-3. 项目 Overlay 的维护边界，且模式覆盖不得让项目自己的规则、事实、Contract、Schema、CI、部署和验收失效；
+2. managed block 默认通过已配置的项目级治理 MCP 取得本次任务完整约束；更高优先级指令明确选择其他 Agent_Skills 执行模式时，按第 7 节模式覆盖契约执行；不直接暴露内部 Router/Skill/Reference 导航；
+3. 项目 Overlay 的维护边界；
 4. 初始化时真实存在的项目规则、Manifest/Lock/Build、需求/Spec、Contract/Schema、Migration、README/Architecture/Documentation 等事实入口导航；
 5. 明确“事实入口存在”不等于“已经确认某个框架、数据库或架构”；
 6. 项目特殊约束应由项目自己的规则/事实源维护；
-7. 默认 Runtime Mode 的用户可见过程允许说明代码、测试、文档、Review、Git/CI 和交付等真实工程活动，但不主动披露内部治理文件、目录、分类、标识、路由或加载明细；更高优先级模式已经明确选择其他披露边界时，不再强制冲突的 Runtime 披露限制。
+7. Runtime 用户可见过程允许说明代码、测试、文档、Review、Git/CI 和交付等真实工程活动，但不主动披露内部治理文件、目录、分类、标识、路由或加载明细。
 
 例如：
 
@@ -300,17 +299,16 @@ marker 后原文：逐字保留
 
 1. 项目自己的规则和真实事实优先；
 2. 本 managed block 定义 Agent_Skills 的默认 Runtime Mode：没有更高优先级模式覆盖时，使用当前项目已经配置的研发治理 MCP 获取本次任务需要的完整约束；
-3. 如果系统、开发者或用户级更高优先级指令已经明确选择其他 Agent_Skills 执行模式，则只停止执行与该模式冲突的 Runtime/MCP 规则取得路径和 Runtime 用户可见披露限制；项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效；
-4. Runtime Mode 不根据受管运行资产中的源码维护导航去直接读取、本地枚举或猜测治理规则；Source Mode 维护者直接使用明文仓库时不受 Runtime 用户可见隐藏边界限制；
+3. 系统、开发者或用户级更高优先级指令明确选择其他 Agent_Skills 执行模式时，只停止执行与该模式冲突的 Runtime/MCP 规则取得路径和 Runtime 用户可见披露限制；项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效；
+4. Runtime Mode 不根据受管运行资产中的源码维护导航去直接读取、本地枚举或猜测治理规则；Source Mode 维护者直接使用明文仓库时不受这个用户可见隐藏边界限制；
 5. 通用示例不能覆盖目标项目事实；
 6. 首次接入、治理状态未校准或长期治理事实漂移时，在实质性代码修改前执行有界 Project Governance Bootstrap；
 7. 用户可见处理过程可以正常说明项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git、CI 和交付状态；
-8. 默认 Runtime Mode 的用户可见输出不得主动展示、枚举或复述治理系统内部分类、文件名、目录结构、规则标识、路由映射、内部凭据或加载明细；解释原因时说明工程步骤本身，不引用内部治理资产；更高优先级模式已有不同明确披露规则时，不再强制冲突的 Runtime 披露限制；
+8. 默认 Runtime Mode 的用户可见输出不得主动展示、枚举或复述治理系统内部分类、文件名、目录结构、规则标识、路由映射、内部凭据或加载明细；解释原因时说明工程步骤本身，不引用内部治理资产；
 9. 安装器认领的 `.agents` 受管运行资产不是项目自有规则，不直接手工修改，项目长期规则维护在项目自身正式事实源；
-10. 默认 Runtime Mode 下，项目级治理 MCP 不可用、必需约束不完整或与更高优先级规则存在无法安全解析的冲突时明确报告并停止依赖对应治理要求，不假装遵守；其他 Agent_Skills 执行模式的失败边界由对应更高优先级指令与 canonical 规则负责；
-11. managed block 不复制 canonical Source 仓库地址、Source Mode 文件导航、Maintenance、Stable ID 或第二套路由规则；模式覆盖只表达优先级契约，不暴露维护者内部治理面。
+10. 默认 Runtime Mode 下，项目级治理 MCP 不可用、必需约束不完整或与更高优先级规则存在无法安全解析的冲突时明确报告并停止依赖对应治理要求，不假装遵守。
 
-原 managed block 曾直接承担的 Reference 触发、Runtime Task Route → required Context、Figma NOT_READY/READY Handoff、Review、Docs、Skill/Reference 失败停止、CI/Branch Protection/PR/Release/Migration/安全与授权边界、项目事实来源等完整可执行语义，仍由 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md) 与各 Skill canonical 规则作为唯一正文 Owner 保存，并由 Runtime MCP 内部求值和加载。这里的变化只收窄 Runtime 用户可见入口，并增加“默认 Runtime / 高优先级显式模式覆盖”的薄契约；不删除任何治理语义，不改变 Source Mode 的明文导航能力，也不让项目 Overlay 失效。
+原 managed block 曾直接承担的 Reference 触发、Runtime Task Route → required Context、Figma NOT_READY/READY Handoff、Review、Docs、Skill/Reference 失败停止、CI/Branch Protection/PR/Release/Migration/安全与授权边界、项目事实来源等完整可执行语义，仍由 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md) 与各 Skill canonical 规则作为唯一正文 Owner 保存，并由 Runtime MCP 内部求值和加载。这里的变化只收窄 Runtime 用户可见入口，并增加默认 Runtime / 高优先级显式模式覆盖的薄契约；不删除任何治理语义，也不改变 Source Mode 的明文导航能力。
 
 ## 8. `.gitignore` 规则
 
@@ -372,10 +370,10 @@ Greenfield / 空仓库：
 ```text
 安装当前 Release 内部 shared Entry + 正式 Router / 专业 Skill
 → Bootstrap 创建 AGENTS.md
-→ managed block 默认指向项目级治理 MCP，并允许更高优先级显式 Agent_Skills 模式覆盖，而不是暴露内部源码导航
+→ managed block 指向项目级治理 MCP，而不是内部源码导航
 → 只列真实事实入口或明确当前未发现
 → 建立项目 MCP/宿主入口
-→ 默认 Runtime Mode 由 MCP 取得本任务完整约束；已有明确模式覆盖时按该模式取得
+→ MCP 取得本任务完整约束
 → Coding 按 Greenfield 规则确认目标、硬约束和最小工程基线
 ```
 
@@ -388,7 +386,7 @@ Greenfield / 空仓库：
 → 追加/升级 Runtime 薄 managed block
 → 继续安装当前 Release 内部 shared Entry/Router/Core
 → 只更新 Agent_Skills 自管宿主边界
-→ 默认日常任务通过项目级治理 MCP 取得完整约束；更高优先级明确模式覆盖时不强制冲突的 Runtime 取得/披露路径
+→ 日常任务通过项目级治理 MCP 取得完整约束
 → Coding 继续以已有项目规则和真实实现为准
 ```
 
@@ -446,11 +444,9 @@ Claude Code
 - 动态正式 Skill 都安装并包含 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md)，薄 [`.agents/skills/ENTRY.md`](../../ENTRY.md) 不被误识别成 Skill；
 - 目标 Project Payload 不出现 canonical Reference 或 Stub；
 - Project Payload `shared_files` 显式认领 `ENTRY.md`，该文件原样进入目标项目；Router Core 由动态 Skill Catalog 原样分发；
-- Source Mode 的根入口继续显式导航 Entry 与唯一 Router，Runtime 安装后的根 `AGENTS.md` 不出现 `.agents/skills/`、Entry/Router/Reference 文件名、Stable ID、canonical 仓库地址、GitHub App 或 Maintenance 等内部治理导航；
-- Runtime 安装后的根 `AGENTS.md` 明确声明 Runtime 为默认模式；没有更高优先级模式覆盖时仍通过项目级治理 MCP 取得完整约束；
-- 系统、开发者或用户级更高优先级指令已经明确选择其他 Agent_Skills 执行模式时，Runtime managed block 不再强制与该模式冲突的本地 Runtime/MCP 规则取得路径或 Runtime 披露限制；
-- 无论是否存在模式覆盖，目标项目自己的规则、事实、Contract、Schema、CI、部署和验收边界仍继续生效；
+- Source Mode 的根入口继续显式导航 Entry 与唯一 Router，Runtime 安装后的根 `AGENTS.md` 不出现 `.agents/skills/`、Entry/Router/Reference 文件名、Stable ID 等内部治理导航；
 - Runtime 安装后的根 `AGENTS.md` 仍明确允许显示代码修改、测试、文档同步、复核、Git/CI 和交付等真实工程过程；
+- Runtime managed block 默认使用项目级 MCP；更高优先级明确选择其他 Agent_Skills 执行模式时，不强制冲突的 Runtime/MCP 取得路径或 Runtime 披露限制，并继续保留项目自己的规则、事实、Contract、Schema、CI、部署和验收边界；
 - MCP `status/route_contract/submit/load/checkpoint` 公共 envelope 不公开 Skill Catalog、命中 Skill、Reference 身份/文件名/路径/hash/size、内部风险或加载计数；
 - `load_required_context` 返回的 `完整原文` 与 canonical source 逐字一致，不能为了保密删除 routing metadata；
 - install manifest v3 显式认领 `managed_files` 与 `shared_files`；
