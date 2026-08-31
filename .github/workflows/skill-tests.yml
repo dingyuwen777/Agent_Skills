@@ -65,6 +65,7 @@ jobs:
           runtime/agent_skills_runtime/catalog.py
           runtime/agent_skills_runtime/crypto.py
           runtime/agent_skills_runtime/project_payload.py
+          runtime/agent_skills_runtime/install_state.py
           runtime/agent_skills_runtime/project_installer.py
           runtime/agent_skills_runtime/runtime.py
           runtime/agent_skills_runtime/server.py
