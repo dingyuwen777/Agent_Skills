@@ -127,6 +127,7 @@ class RoutingConformanceTest(unittest.TestCase):
                 if case["名称"] == "Unknown facts":
                     expected = all_reference_ids
                 self.assertTrue(expected.issubset(actual_references), expected - actual_references)
+                self.assertIn("router", actual["命中Skill"])
                 self.assertTrue(set(case["预期Skill"]).issubset(actual["命中Skill"]))
                 self.assertEqual(actual["最低风险"], case["最低风险"])
                 self.assertFalse(set(case["禁止Reference"]) & actual_references)

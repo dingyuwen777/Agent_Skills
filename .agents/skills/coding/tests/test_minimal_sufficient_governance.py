@@ -9,7 +9,7 @@ from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_ro
 
 
 ROOT = Path(__file__).resolve().parents[4]
-ROUTER = ROOT / ".agents/skills/ROUTER.md"
+ROUTER = ROOT / ".agents/skills/router/SKILL.md"
 CHANGE = ROOT / ".agents/skills/coding/references/04_轻量变更管理.md"
 COMPLETION = ROOT / ".agents/skills/coding/references/10_完成定义追溯门禁.md"
 GOVERNANCE = ROOT / ".agents/skills/coding/references/18_最小充分治理与升级门禁.md"

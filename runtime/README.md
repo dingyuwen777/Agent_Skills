@@ -1,6 +1,6 @@
 # Runtime 源码维护说明
 
-`runtime/` 实现 Agent_Skills 当前唯一正式对外分发形态：**项目级 onefile Runtime + Native Core Skill + Shared Skill Router + Encrypted Canonical References + local stdio MCP**。
+`runtime/` 实现 Agent_Skills 当前唯一正式对外分发形态：**项目级 onefile Runtime + Shared Entry + Native Router/专业 Skill Core + Encrypted Canonical References + local stdio MCP**。
 
 最终使用者不需要阅读本文件；下载、安装、升级、回滚和排障见根 [`USAGE.md`](../USAGE.md)。
 
@@ -32,9 +32,9 @@ agent_skills_runtime/server.py
 → CLI + stdio MCP Server
 ```
 
-Runtime 不负责重新解释 Coding / Review / Docs / Figma 规则；跨 Skill 发现与 Handoff 由 [`.agents/skills/ROUTER.md`](../.agents/skills/ROUTER.md) 唯一负责，各 Skill 完整专业语义仍由自己的 `SKILL.md` 和 canonical `references/*.md` 定义。
+Runtime 不负责重新解释专业 Skill 规则；跨 Skill 发现与 Handoff 由 [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md) 唯一负责，各 Skill 完整专业语义仍由自己的 `SKILL.md` 和 canonical `references/*.md` 定义。[`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 只做无条件进入 Router 的共享薄 Bootstrap。
 
-这里需要区分**规则事实源**与**用户可见入口**：Source Mode 直接使用源码仓库时，维护者可以显式读取和展示 Router、Skill、Reference、路径和路由过程；Runtime Mode 虽然仍把必要 Core/Router 作为受管运行资产安装以维持宿主兼容和 ownership，但目标项目根入口不再引导模型直接枚举这些内部资产。Runtime 日常任务统一通过项目级 MCP 取得所需完整规则正文。
+这里需要区分**规则事实源**与**用户可见入口**：Source Mode 直接使用源码仓库时，维护者先读 Entry，再显式读取 Router、Skill、Reference、路径和路由过程；Runtime Mode 虽然仍把 Entry、Router Core 和必要专业 Core 作为受管运行资产安装以维持宿主发现和 ownership，但目标项目根入口不引导模型直接枚举这些内部资产。Runtime 日常任务统一通过项目级 MCP 取得所需完整规则正文。
 
 ## 2. 三个独立完整性域
 
@@ -58,7 +58,7 @@ Reference Bundle v2
 Project Payload：
 
 ```text
-shared_files（当前 ROUTER.md）
+shared_files（当前 ENTRY.md）
 + Native Core / assets / scripts / metadata
 → path / sha256 / size / mode
 → payload_digest
@@ -76,7 +76,7 @@ Project Payload 明确排除：
 - tests；
 - Python cache/编译产物。
 
-因此像 [`coding/scripts/tzdata/README.md`](../.agents/skills/coding/scripts/tzdata/README.md) 这种源码维护说明可以留在私有源仓库，但不会安装到目标项目；真正运行需要的 `coding/scripts/tzdata/zoneinfo/Asia/Shanghai` 等资源和 Skills 根级 [`.agents/skills/ROUTER.md`](../.agents/skills/ROUTER.md) 仍会进入 Payload。
+因此像 [`coding/scripts/tzdata/README.md`](../.agents/skills/coding/scripts/tzdata/README.md) 这种源码维护说明可以留在私有源仓库，但不会安装到目标项目；真正运行需要的 `coding/scripts/tzdata/zoneinfo/Asia/Shanghai`、共享 [`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 和动态发现的 [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md) 仍会进入 Payload。
 
 目标项目没有 Agent_Skills `references/`。Source Mode 直接读取源仓库 required References；Runtime Mode 通过中文 Task Route 和当前不透明 route token 取得 required 完整原文。完整原文继续逐字保留 canonical routing metadata；Runtime 的保密边界不能通过删改原文实现，否则会破坏 source/routing 完整性。
 
@@ -88,7 +88,7 @@ onefile binary 无参数运行默认安装/升级当前目录；也支持：
 agent-skills-mcp install --target <project-root>
 ```
 
-当前 Project Payload 使用 v2，install manifest 使用 v3 `managed_files` 逐文件 Contract。安装器只接受当前 v3 manifest；v1、v2、未知或损坏 schema 全部失败关闭，不扫描旧 Stub，也不根据旧目录结构推断 ownership。
+当前 Project Payload 使用 v2，install manifest 使用 v3 `managed_files` 逐文件 Contract。安装器只接受当前 v3 manifest；v1、v2、未知或损坏 schema 全部失败关闭，不扫描旧 Stub，也不根据旧目录结构推断 ownership。本迁移不承诺旧安装版本升级；只验证全新安装、重复安装和当前 v3 ownership 更新。
 
 项目安装需要保持：
 
@@ -105,7 +105,7 @@ agent-skills-mcp install --target <project-root>
 - 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、manifest 与受管文本；
 - 如果回滚本身有任何失败，必须同时报告原始安装异常与未恢复路径/原因，不能静默吞掉 rollback failure。
 
-正式 Skill 仍通过动态 Catalog 分发；Skills 根级共享文件只通过 Project Payload 的显式 `shared_files` Contract 分发，二者职责不混淆。内部 Router/Core 仍存在于目标项目并不意味着它们必须成为用户可见的日常导航；安装 ownership 与用户披露是两个独立边界。
+正式 Router 与其他 Skill Core 仍通过动态 Catalog 分发；Skills 根级 Entry 只通过 Project Payload 的显式 `shared_files` Contract 分发，二者职责不混淆。内部 Entry/Router/Core 存在于目标项目并不意味着它们必须成为用户可见的日常导航；安装 ownership 与用户披露是两个独立边界。
 
 ### 宿主连接级生命周期
 
@@ -178,13 +178,14 @@ scripts/build_runtime.py ... --release-version <SemVer>
 Builder 的维护者 JSON 输出还包含聚合 `context_budget`：
 
 ```text
+entry_bytes
 router_bytes
 skill_core_bytes
 reference_bytes_by_skill
 base_router_plus_core_bytes
 ```
 
-它只量化 Router / Skill Core / canonical Reference 的聚合字节成本，不列出单个 Reference ID、文件名、路径或触发映射，也不改变 Runtime `status/self-test` 的公开披露合同。
+它只量化 Entry / Router / Skill Core / canonical Reference 的聚合字节成本，不列出单个 Reference ID、文件名、路径或触发映射，也不改变 Runtime `status/self-test` 的公开披露合同。为保持现有构建报告消费者兼容，`router_bytes` 与 `base_router_plus_core_bytes` 字段名保留；新增 `entry_bytes` 单独记录薄入口成本。
 
 “最新规则模式”允许网页端 Source Mode 读取当前 `main`、本地 Runtime 使用当前最新 Release，但二者在发布间隙可能短暂不同步；“精确复现模式”应以 Runtime 的 `Release版本` 定位对应正式 Release/tag，再从该 tag 的源码事实复现同一版本，而不是依赖 Runtime 日常状态接口导出源仓库内部 identity。
 
@@ -216,7 +217,7 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
 
 ### Skill Tests
 
-`.github/workflows/skill-tests.yml` 使用 Python `3.12.10`，安装 Runtime 的运行依赖而不是 PyInstaller 构建依赖，并持续验证：
+`.github/workflows/skill-tests.yml` 使用 Python `3.14.7`，安装 Runtime 的运行依赖而不是 PyInstaller 构建依赖，并持续验证：
 
 - self-contained unit/preservation/portability tests；
 - Source Mode 唯一 Skills 根级 Router 与 Maintenance 职责、Runtime 薄 Bootstrap 可见性边界，以及 Project Payload shared-file 分发；

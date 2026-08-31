@@ -25,12 +25,13 @@ class DynamicSkillDistributionTest(unittest.TestCase):
     """验证正式 Skill 由目录动态发现，而不是依赖 coding/review/docs 静态名单。"""
 
     def setUp(self) -> None:
-        """为每个测试建立隔离的最小 Agent_Skills 源目录和共享 Router。"""
+        """为每个测试建立隔离的最小 Agent_Skills 源目录、Entry 与正式 Router。"""
         self.temp_directory = tempfile.TemporaryDirectory()
         self.root = Path(self.temp_directory.name)
         skills_root = self.root / ".agents" / "skills"
         skills_root.mkdir(parents=True)
-        (skills_root / "ROUTER.md").write_text("# Router\n", encoding="utf-8")
+        (skills_root / "ENTRY.md").write_text("# Entry\n", encoding="utf-8")
+        self._write_skill("router", with_reference=False)
 
     def tearDown(self) -> None:
         """清理测试创建的临时源目录。"""
@@ -81,7 +82,7 @@ class DynamicSkillDistributionTest(unittest.TestCase):
             sorted({entry["skill"] for entry in bundle["references"]}),
             ["coding", "docs", "review", "security"],
         )
-        self.assertEqual(contract["Skill"], ["coding", "docs", "review", "security"])
+        self.assertEqual(contract["Skill"], ["coding", "docs", "review", "router", "security"])
 
     def test_formal_skill_without_references_still_appears_in_skill_catalog(self) -> None:
         """没有 references 的正式 Skill 仍必须参与 Release/Project Payload 发现。"""
@@ -105,10 +106,11 @@ class DynamicSkillDistributionTest(unittest.TestCase):
         payload_module = importlib.import_module("runtime.agent_skills_runtime.project_payload")
         payload = payload_module.build_project_payload(self.root, build_bundle(self.root))
 
-        self.assertEqual(payload["skills"], ["coding", "docs", "review", "security"])
-        self.assertEqual(payload["shared_files"], ["ROUTER.md"])
+        self.assertEqual(payload["skills"], ["coding", "docs", "review", "router", "security"])
+        self.assertEqual(payload["shared_files"], ["ENTRY.md"])
         paths = {entry["path"] for entry in payload["files"]}
-        self.assertIn("ROUTER.md", paths)
+        self.assertIn("ENTRY.md", paths)
+        self.assertIn("router/SKILL.md", paths)
         self.assertIn("security/SKILL.md", paths)
         self.assertIn("security/templates/example.txt", paths)
         self.assertFalse(any("/references/" in path for path in paths))
@@ -143,16 +145,16 @@ class DynamicSkillDistributionTest(unittest.TestCase):
         coding_root = self._write_skill("coding")
         security_root = self._write_skill("security")
         first = build_bundle(self.root)
-        self.assertEqual(first["skills"], ["coding", "security"])
+        self.assertEqual(first["skills"], ["coding", "router", "security"])
 
         shutil.rmtree(security_root)
         second = build_bundle(self.root)
-        self.assertEqual(second["skills"], ["coding"])
+        self.assertEqual(second["skills"], ["coding", "router"])
         self.assertEqual([entry["id"] for entry in second["references"]], ["coding.reference.01"])
 
         (coding_root / "references" / "01_规则.md").unlink()
         third = build_bundle(self.root)
-        self.assertEqual(third["skills"], ["coding"])
+        self.assertEqual(third["skills"], ["coding", "router"])
         self.assertEqual(third["references"], [])
 
 

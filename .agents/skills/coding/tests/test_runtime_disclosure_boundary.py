@@ -21,7 +21,7 @@ from runtime.agent_skills_runtime.runtime import RuntimeStore
 ROOT = Path(__file__).resolve().parents[4]
 RUNTIME_BOOTSTRAP = ROOT / ".agents/skills/coding/assets/AGENTS.managed.md"
 SOURCE_BOOTSTRAP = ROOT / "AGENTS.md"
-SOURCE_ROUTER = ROOT / ".agents/skills/ROUTER.md"
+SOURCE_ROUTER = ROOT / ".agents/skills/router/SKILL.md"
 
 
 def _routing_block(payload: dict[str, object]) -> str:
@@ -138,8 +138,9 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
             self.assertIn("文档同步", agents)
             self.assertIn("Git", agents)
             self.assertIn("CI", agents)
-            # 内部 shared runtime asset 仍按既有 Project Payload ownership 安装，只是不再暴露为根用户入口。
-            self.assertTrue((target / ".agents/skills/ROUTER.md").is_file())
+            # 内部 Entry 与 Router Core 仍按 Project Payload ownership 安装，只是不暴露为根用户入口。
+            self.assertTrue((target / ".agents/skills/ENTRY.md").is_file())
+            self.assertTrue((target / ".agents/skills/router/SKILL.md").is_file())
             self.assertFalse((target / ".agents/skills/coding/references").exists())
 
     def test_runtime_mcp_public_results_do_not_expose_internal_identity(self) -> None:
@@ -189,7 +190,8 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
         """Source Mode 仍保留维护者需要的明文导航和内部路径。"""
         source_bootstrap = SOURCE_BOOTSTRAP.read_text(encoding="utf-8")
         source_router = SOURCE_ROUTER.read_text(encoding="utf-8")
-        self.assertIn(".agents/skills/ROUTER.md", source_bootstrap)
+        self.assertIn(".agents/skills/ENTRY.md", source_bootstrap)
+        self.assertIn(".agents/skills/router/SKILL.md", source_bootstrap)
         self.assertIn("references/", source_router)
         self.assertIn("Source Mode", source_router)
         self.assertIn("Runtime Mode", source_router)

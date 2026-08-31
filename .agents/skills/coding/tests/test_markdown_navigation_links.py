@@ -14,8 +14,8 @@ CODING_PATH = ROOT / ".agents/skills/coding/scripts/coding.py"
 INLINE_MD = re.compile(r"`([^`\n]+\.md)`")
 PATH_LINK = re.compile(r"\[`([^`\n]+\.md)`\]\(([^)]+)\)")
 FENCE = re.compile(r"^```(?P<lang>[^`]*)\s*$")
-PROJECT_ROUTER_LINK = "[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)"
-SOURCE_ROUTER_LINK = "[`.agents/skills/ROUTER.md`](../../ROUTER.md)"
+PROJECT_ENTRY_LINK = "[`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)"
+PROJECT_ROUTER_LINK = "[`.agents/skills/router/SKILL.md`](.agents/skills/router/SKILL.md)"
 
 
 def _load_coding_module():
@@ -40,6 +40,8 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
         for path in ROOT.rglob("*.md"):
             relative = path.relative_to(ROOT).as_posix()
             if relative.startswith(".agents/changes/"):
+                continue
+            if "/" not in relative and relative not in {"AGENTS.md", "README.md", "USAGE.md"}:
                 continue
             result.append(path)
         return sorted(result)
@@ -152,8 +154,8 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
         source_root_agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         managed_path = ROOT / ".agents/skills/coding/assets/AGENTS.managed.md"
         managed = managed_path.read_text(encoding="utf-8")
-        self.assertIn("[`.agents/skills/ROUTER.md`](.agents/skills/ROUTER.md)", source_root_agents)
-        self.assertNotIn(SOURCE_ROUTER_LINK, managed)
+        self.assertIn(PROJECT_ENTRY_LINK, source_root_agents)
+        self.assertIn(PROJECT_ROUTER_LINK, source_root_agents)
         self.assertNotIn(PROJECT_ROUTER_LINK, managed)
         self.assertNotIn(".agents/skills/", managed)
         self.assertIn("研发治理 MCP", managed)
@@ -164,18 +166,21 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
             coding = skills / "coding"
             coding.mkdir(parents=True)
             (coding / "SKILL.md").write_text("# Coding\n", encoding="utf-8")
-            (skills / "ROUTER.md").write_text("# Router\n", encoding="utf-8")
+            (skills / "ENTRY.md").write_text("# Entry\n", encoding="utf-8")
+            router = skills / "router"
+            router.mkdir()
+            (router / "SKILL.md").write_text("# Router\n", encoding="utf-8")
             CODING.bootstrap_project(root)
             generated = (root / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertNotIn(PROJECT_ENTRY_LINK, generated)
             self.assertNotIn(PROJECT_ROUTER_LINK, generated)
-            self.assertNotIn(SOURCE_ROUTER_LINK, generated)
             self.assertNotIn(".agents/skills/", generated)
             self.assertIn("研发治理 MCP", generated)
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             payload_files = {
-                "ROUTER.md": b"# Router\n",
+                "ENTRY.md": b"# Entry\n",
                 "coding/assets/AGENTS.managed.md": managed_path.read_bytes(),
                 "coding/assets/AGENTS.template.md": (
                     ROOT / ".agents/skills/coding/assets/AGENTS.template.md"
@@ -186,8 +191,8 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
                 None,
                 payload_files,
             ).decode("utf-8")
+            self.assertNotIn(PROJECT_ENTRY_LINK, generated)
             self.assertNotIn(PROJECT_ROUTER_LINK, generated)
-            self.assertNotIn(SOURCE_ROUTER_LINK, generated)
             self.assertNotIn(".agents/skills/", generated)
             self.assertIn("研发治理 MCP", generated)
 

@@ -2,11 +2,11 @@
 
 本文件只指导 AI **开发、审查、测试、交付和维护 Agent_Skills 源仓库本身**。它由根 `AGENTS.md` 在“当前目标就是 Agent_Skills 源仓库”时加载，不是最终用户说明，也不得复制到目标项目作为项目规则。
 
-跨 Skill Catalog、项目事实边界、Reference 两种加载方式以及 Coding / Review / Docs / Figma Handoff 的唯一入口是：
+跨 Skill Catalog、项目事实边界、Reference 两种加载方式以及专业 Skill Handoff 的唯一入口是薄 Bootstrap：
 
-[`.agents/skills/ROUTER.md`](skills/ROUTER.md)
+[`.agents/skills/ENTRY.md`](skills/ENTRY.md)
 
-本文件不再维护第二份完整 Skill Catalog / Router。
+它无条件进入唯一正式 Router Skill [`.agents/skills/router/SKILL.md`](skills/router/SKILL.md)。本文件不再维护第二份完整 Skill Catalog / Router。
 
 ## 1. 每次维护任务先这样开始
 
@@ -14,8 +14,8 @@
 
 1. 先读根 `AGENTS.md`，确认当前属于 Agent_Skills Maintenance Mode；
 2. 再读本文件；
-3. 读取 [`.agents/skills/ROUTER.md`](skills/ROUTER.md)，按唯一 Router 进入正式 Skill；
-4. 再读 [`.agents/skills/coding/SKILL.md`](skills/coding/SKILL.md)，按四维任务路由选择当前真正命中的 references；
+3. 读取 [`.agents/skills/ENTRY.md`](skills/ENTRY.md)，由它无条件进入 [`.agents/skills/router/SKILL.md`](skills/router/SKILL.md)；
+4. 按 Router 选择当前真正命中的专业 Skill 和 references；涉及源码研发、验证或交付时进入 [`.agents/skills/coding/SKILL.md`](skills/coding/SKILL.md)；
 5. 修改 Review、Docs、Figma 时，再读取对应 `SKILL.md` 与任务直接相关 references；
 6. 规则迁移、拆分、通用化、删文档或调整 Ownership 时，必须读取 [`coding/references/15_规则内容守恒与Skill维护.md`](skills/coding/references/15_规则内容守恒与Skill维护.md)；
 7. Runtime / Project Payload / Bundle / Stub / 项目安装 / MCP / Release 变化时，必须读取 [`coding/references/13_本地MCP_Runtime分发与原文上下文加载.md`](skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md)；
@@ -24,7 +24,7 @@
 
 ## 2. 本仓库长期边界
 
-正式 Skill 集合和 Coding / Review / Docs / Figma 的跨 Skill Ownership 以唯一 Router 和 `.agents/skills/*/SKILL.md` 当前事实为准，不在本维护文件维护第二份固定全量名单。
+正式 Skill 集合和跨 Skill Ownership 以唯一 Router Skill 和 `.agents/skills/*/SKILL.md` 当前事实为准，不在本维护文件维护第二份固定全量名单。
 
 维护 Runtime 时仍保持单一 Owner：
 
@@ -157,7 +157,7 @@ coding-change/v1
 
 Figma 尤其必须保留 Canvas/Section/Spacing/Annotation、Prototype、Owner、状态、`READY / READY_WITH_NOTES / NOT_READY`、失败处理、Fresh Screenshot/Machine Audit 和每次写后 Canvas-level Review。
 
-Router 尤其必须保持项目事实优先、动态 Skill 发现、Coding 锚点、Reference 两种加载模式、Figma/Review/Docs Handoff、失败停止和权限/CI 门禁；根 `AGENTS.md` 与 `AGENTS.managed.md` 只能做 Bootstrap，不能重新生长成第二套完整 Router。
+Router 尤其必须保持项目事实优先、动态 Skill 发现、专业 Skill 选择、Reference 两种加载模式、跨 Skill Handoff、失败停止和权限/CI 门禁；根 `AGENTS.md`、`ENTRY.md` 与 `AGENTS.managed.md` 只能做 Bootstrap，不能重新生长成第二套完整 Router。
 
 ## 8. Runtime 维护不变量
 

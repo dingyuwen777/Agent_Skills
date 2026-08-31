@@ -1,6 +1,6 @@
 ---
 name: coding
-description: 面向不同项目形态、研发阶段和编程语言的可靠软件研发工作流。先恢复仓库当前事实，再按项目形态、研发阶段/任务类型、编程语言/工具链和风险等级 L1-L3 组合路由；依据真实 Contract、Schema、数据、模块边界和项目规则执行需求设计、功能开发、Bug 修复、重构、Review、CI、Git 与交付验证。保留可失效项目导航、Git 可见 Change、Requirement Traceability、Completion Audit、Red-Green-Refactor、根因调试、分层验证、多人协作和新鲜证据门禁。Use for repository onboarding, greenfield bootstrap, planning, implementation, debugging, refactoring, review, verified delivery, release work, and parallel human or agent coding across languages and project types.
+description: 面向不同项目形态、研发阶段和编程语言的可靠软件研发工作流。由 Router 选中后，先恢复仓库当前事实，再按项目形态、研发阶段/任务类型、编程语言/工具链和风险等级 L1-L3 细化研发流程；依据真实 Contract、Schema、数据、模块边界和项目规则执行需求设计、功能开发、Bug 修复、重构、Review、CI、Git 与交付验证。保留可失效项目导航、Git 可见 Change、Requirement Traceability、Completion Audit、Red-Green-Refactor、根因调试、分层验证、多人协作和新鲜证据门禁。Use for repository onboarding, greenfield bootstrap, planning, implementation, debugging, refactoring, review, verified delivery, release work, and parallel human or agent coding across languages and project types after Router selection.
 ---
 
 <!-- agent-routing:v1
@@ -558,9 +558,9 @@ roadmap / release state（项目实际维护时）
 
 文档与代码/Contract 尚未同步时，不得标记 Ready、完成、可合并或可发布。
 
-#### Docs Skill 按需路由（仓库存在时）
+#### Docs Skill 按需协作（仓库存在时）
 
-如果仓库存在 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)，本节的文档同步检查必须先给出 Docs Impact：
+如果 Router 已命中 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)，或 Coding 在实现过程中确认产生文档影响，本节的文档同步检查必须先给出 Docs Impact，并按 Router 的 Handoff 进入 Docs：
 
 - 当前变化不改变人类需要理解、使用、维护、部署或排障的事实：记录 `Docs Impact: not_applicable` 和具体依据，不加载 Docs，不制造无意义文档 diff；
 - 当前变化存在文档影响，或当前任务本身就是技术文档 Review / 编写 / 更新：必须读取 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)，再由 Docs 根据真实影响选择 `targeted`（默认）或 `full`；
@@ -659,7 +659,7 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 10. Review Skill 集成
 
-#### Review Skill 强制路由（仓库存在时）
+#### Review Skill 完成前协作（仓库存在时）
 
 如果仓库存在 [`.agents/skills/review/SKILL.md`](../review/SKILL.md)，Coding 必须把 Review 视为完成前的独立审查层，而不是可选建议：
 
@@ -670,7 +670,7 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 - Review Skill **存在但无法读取**时，必须报告阻塞，**不得宣称 Review 完成**、可合并或可交付；
 - 如果仓库没有 Review Skill，则继续执行 Coding 当前 [11_两阶段复核与完成前验证.md](references/11_两阶段复核与完成前验证.md) 的既有 Review 规则，不能因为可选 Skill 缺失跳过 Review 本身。
 
-这条路由只增加独立审查层，不改变 Coding 原有 L1-L3、Change、TDD、Validation Matrix、Completion Audit、Docs、Git、CI 或交付规则。
+这项协作只增加独立审查层，不改变 Coding 原有 L1-L3、Change、TDD、Validation Matrix、Completion Audit、Docs、Git、CI 或交付规则；跨 Skill 选择和交接条件仍由 Router 负责。
 
 ## 11. 网络下载源与永久 Workflow 治理
 

@@ -14,7 +14,7 @@ from .skill_catalog import discover_skills
 
 
 PROJECT_PAYLOAD_SCHEMA = "agent-skills-project-payload/v2"
-SHARED_RUNTIME_FILES = ("ROUTER.md",)
+SHARED_RUNTIME_FILES = ("ENTRY.md",)
 _EXCLUDED_TOP_LEVEL = {"tests"}
 _EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
 

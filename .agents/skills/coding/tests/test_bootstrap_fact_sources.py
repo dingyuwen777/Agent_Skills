@@ -27,12 +27,15 @@ class BootstrapFactSourcesTest(unittest.TestCase):
     """验证多语言项目 Bootstrap 只列真实事实入口，不把仓库派生文本升级成技术栈或 Markdown 指令。"""
 
     def _install_minimal_coding(self, root: Path) -> None:
-        """建立满足当前 Bootstrap Contract 的最小 Coding Skill 与共享 Router。"""
+        """建立满足当前 Bootstrap Contract 的最小 Entry、Router 与 Coding Skill。"""
         skills = root / ".agents/skills"
         skill = skills / "coding"
         skill.mkdir(parents=True)
         (skill / "SKILL.md").write_text("# Coding\n", encoding="utf-8")
-        (skills / "ROUTER.md").write_text("# Router\n", encoding="utf-8")
+        (skills / "ENTRY.md").write_text("# Entry\n", encoding="utf-8")
+        router = skills / "router"
+        router.mkdir()
+        (router / "SKILL.md").write_text("# Router\n", encoding="utf-8")
 
     def test_polyglot_manifests_are_listed_without_affirmative_framework_inference(self) -> None:
         """Python/Node/Rust/Go 入口可同时进入导航，但不生成 FastAPI/React/PostgreSQL 等项目断言。"""
