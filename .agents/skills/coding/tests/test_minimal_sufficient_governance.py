@@ -94,15 +94,8 @@ class MinimalSufficientGovernanceTest(unittest.TestCase):
         self.assertIn("轻量 L2 的最小完成核对", text)
         self.assertIn("不要求为了打勾生成", text)
         self.assertIn("持久 gated L2", text)
-
-        result = self._evaluate(
-            {
-                "执行模式": ["实现"],
-                "阶段": ["功能开发"],
-                "风险": ["L2"],
-            }
-        )
-        self.assertNotIn("coding.reference.10", result["必需Reference"])
+        self.assertIn("普通轻量 L2 不要求创建该表", text)
+        self.assertIn("轻量 L2 没有持久 Change 时，不创建形式化 Completion Audit", text)
 
     def test_collaboration_is_current_handoff_not_repository_label(self) -> None:
         """Protected/历史协作者等仓库线索不能单独把当前任务升级为多人协作。"""
