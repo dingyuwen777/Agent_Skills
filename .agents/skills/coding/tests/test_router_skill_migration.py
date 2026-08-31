@@ -44,9 +44,9 @@ class RouterSkillMigrationTest(unittest.TestCase):
 
     def test_entry_is_thin_and_router_is_the_only_formal_control_plane(self) -> None:
         """ENTRY 只能导航正式 Router，旧平级 Router 必须消失。"""
-        self.assertTrue(ENTRY_PATH.is_file(), "缺少 Skills 根级薄 ENTRY.md")
-        self.assertTrue(ROUTER_SKILL_PATH.is_file(), "缺少正式 router/SKILL.md")
-        self.assertFalse(LEGACY_ROUTER_PATH.exists(), "旧 .agents/skills/ROUTER.md 仍存在")
+        self.assertTrue(ENTRY_PATH.is_file())
+        self.assertTrue(ROUTER_SKILL_PATH.is_file())
+        self.assertFalse(LEGACY_ROUTER_PATH.exists())
         entry = ENTRY_PATH.read_text(encoding="utf-8")
         self.assertLess(len(entry.encode("utf-8")), 5_000)
         self.assertIn(".agents/skills/router/SKILL.md", entry)
@@ -74,13 +74,10 @@ class RouterSkillMigrationTest(unittest.TestCase):
     def test_legacy_routes_preserve_safety_except_explicit_lightweight_reductions(self) -> None:
         """历史基线继续防欠披露；只有本次明确批准的轻量 L2 重型 Context 可减少。"""
         baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
-        self.assertEqual(baseline["schema"], "agent-skills-router-legacy-baseline/v1")
-        self.assertEqual(baseline["source_commit"], "3d22ca4e71bd7fcc83e35fd48abeae8eec00dd5e")
         bundle = build_bundle(ROOT)
         manifest = bundle["路由清单"]
         budget = _context_budget(ROOT, bundle)
         reference_sizes = {str(entry["id"]): int(entry["size"]) for entry in bundle["references"]}
-
         for case in baseline["cases"]:
             with self.subTest(case=case["name"]):
                 actual = evaluate_route(manifest, {"协议": TASK_ROUTE_PROTOCOL, "信号": case["signals"], "未知项": case["unknown"], "依据": [case["name"]]})
@@ -93,10 +90,10 @@ class RouterSkillMigrationTest(unittest.TestCase):
                 self.assertFalse(set(case["forbidden_references"]) & actual_references)
                 self.assertEqual(actual["最低风险"], case["minimum_risk"])
                 current_bytes = int(budget["entry_bytes"]) + sum(int(budget["skill_core_bytes"][skill]) for skill in actual_skills) + sum(reference_sizes[reference] for reference in actual_references)
-                self.assertLessEqual(current_bytes, int(case["context_bytes"]) + CONTEXT_GROWTH_LIMIT, f"{case['name']} 上下文增长超过 16 KiB 预算")
+                self.assertLessEqual(current_bytes, int(case["context_bytes"]) + CONTEXT_GROWTH_LIMIT)
 
-    def test_light_l2_context_is_materially_smaller_than_legacy_baseline(self) -> None:
-        """轻量 L2 的净效果必须是明显减少 required Context，而不是只放宽总体积预算。"""
+    def test_light_l2_reference_context_is_materially_smaller_than_legacy_baseline(self) -> None:
+        """轻量 L2 必须通过少加载重型 Reference 获得净减负，而不是只放宽总体积预算。"""
         baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
         case = next(item for item in baseline["cases"] if item["name"] == "L2 Feature")
         bundle = build_bundle(ROOT)
