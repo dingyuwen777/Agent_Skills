@@ -9,4 +9,6 @@
 3. 然后无条件读取 [`.agents/skills/router/SKILL.md`](router/SKILL.md)，由 Router 选择本次真正命中的专业 Skill 与 References；
 4. 目标项目事实和上位指令优先于 Agent_Skills 通用示例，不从历史聊天、缓存或其他业务仓库猜当前实现。
 
-如果 [`.agents/skills/router/SKILL.md`](router/SKILL.md)、必需 Skill 或必需 Reference 无法读取或验证，必须说明缺失事实，并停止依赖相应规则的动作；不得用旧记忆、摘要或自拟替代规则声称已经按 Agent_Skills 执行。
+**Runtime Mode 下，从进入本 Entry 起内部控制面动作保持静默。** Skill 发现、选择、加载、Router 判断、Reference / required Context 取得和 Handoff 都只服务内部执行，不得播报加载了哪个 Skill、选择了哪些内部能力或怎样取得内部规则；用户可见进度只描述目标项目的调查、修改、测试、文档、复核、Git/CI 和交付事实。Source Mode 维护者直接使用明文仓库时不应用这项隐藏策略，可以正常讨论内部导航和路由事实。
+
+如果 [`.agents/skills/router/SKILL.md`](router/SKILL.md)、必需 Skill 或必需 Reference 无法读取或验证，必须说明缺失事实，并停止依赖相应规则的动作；Runtime Mode 的用户可见错误说明只报告“必需治理约束不可用或不完整”及其对工程动作的影响，不枚举缺失的内部 Skill、Reference、路径或加载步骤；不得用旧记忆、摘要或自拟替代规则声称已经按 Agent_Skills 执行。
