@@ -19,6 +19,8 @@
 → 创建/更新项目 AGENTS managed block 与项目级 MCP 配置
 ```
 
+**目标项目不安装 canonical Reference 或 Stub。** Runtime Mode 的完整规则正文继续由项目级治理 MCP 按当前 required Context 取得。
+
 ## 0. 两阶段 Bootstrap：安装与宿主大模型治理
 
 目标项目接入必须区分两个阶段，不能把 binary 的确定性安装和大模型语义判断混成一件事：
