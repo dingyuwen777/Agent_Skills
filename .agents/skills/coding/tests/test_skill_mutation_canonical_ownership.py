@@ -150,7 +150,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         for marker in (
             "Agent_Skills 源仓库 .agents/skills/*/SKILL.md",
             "canonical references/*.md",
-            "Runtime Mode 不在目标项目创建同名 Reference",
+            "目标项目因此没有 Agent_Skills 的同名 Reference 文件",
             "Project Payload",
             "源仓库 Mutation",
             "根 `AGENTS.md`",
