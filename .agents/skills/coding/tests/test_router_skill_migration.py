@@ -20,6 +20,10 @@ ROUTER_SKILL_PATH = ROOT / ".agents/skills/router/SKILL.md"
 LEGACY_ROUTER_PATH = ROOT / ".agents/skills/ROUTER.md"
 BASELINE_PATH = Path(__file__).with_name("fixtures") / "router_legacy_baseline.json"
 CONTEXT_GROWTH_LIMIT = 18 * 1024
+# Source Mode 为显式暴露 Repository L1 Fast Path，使 Coding Core 从历史基线 48,012 B
+# 增至当前约 50,105 B。这里给固定 2,300 B 上限，不允许它随着后续维护无限增长；
+# 轻量 L2 还必须通过下面的净上下文断言证明总体仍比历史基线更小。
+SOURCE_MODE_FAST_PATH_CORE_GROWTH = 2_300
 INTENTIONAL_REQUIRED_REMOVALS = {
     "L1 mechanical": {"coding.reference.19"},
     "L2 Feature": {"coding.reference.04", "coding.reference.10", "coding.reference.19"},
@@ -83,7 +87,7 @@ class RouterSkillMigrationTest(unittest.TestCase):
             self.assertEqual(actual["命中Skill"], ["coding", "router"])
 
     def test_legacy_routes_preserve_safety_except_explicit_progressive_disclosure_changes(self) -> None:
-        """历史基线继续防欠披露；只允许当前 Change 明确批准的 L1/L2 少加载与新增紧凑 L1 Context。"""
+        """历史基线继续防欠披露；只允许当前 Change 明确批准的 L1/L2 少加载与有限 Core 增量。"""
         baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
         bundle = build_bundle(ROOT)
         manifest = bundle["路由清单"]
@@ -103,7 +107,7 @@ class RouterSkillMigrationTest(unittest.TestCase):
                 self.assertFalse(set(case["forbidden_references"]) & actual_references)
                 self.assertEqual(actual["最低风险"], case["minimum_risk"])
                 current_bytes = int(budget["entry_bytes"]) + sum(int(budget["skill_core_bytes"][skill]) for skill in actual_skills) + sum(reference_sizes[reference] for reference in actual_references)
-                allowed_growth = CONTEXT_GROWTH_LIMIT + INTENTIONAL_FIXED_CONTEXT_GROWTH.get(case["name"], 0)
+                allowed_growth = CONTEXT_GROWTH_LIMIT + SOURCE_MODE_FAST_PATH_CORE_GROWTH + INTENTIONAL_FIXED_CONTEXT_GROWTH.get(case["name"], 0)
                 if case["name"] == "Unknown facts":
                     # Unknown facts 按 fail-safe 语义加载全部 canonical Context；新增正式 ref21 后，
                     # 只额外允许该 Reference 自身的实际字节数，不扩大其他历史 Context 的预算。
@@ -111,15 +115,18 @@ class RouterSkillMigrationTest(unittest.TestCase):
                 self.assertLessEqual(current_bytes, int(case["context_bytes"]) + allowed_growth)
 
     def test_light_l2_reference_context_is_materially_smaller_than_legacy_baseline(self) -> None:
-        """轻量 L2 必须通过少加载重型 Reference 获得净减负，而不是只放宽总体积预算。"""
+        """轻量 L2 必须在 Reference 和总上下文两层都比历史基线更小。"""
         baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
         case = next(item for item in baseline["cases"] if item["name"] == "L2 Feature")
         bundle = build_bundle(ROOT)
+        budget = _context_budget(ROOT, bundle)
         actual = evaluate_route(bundle["路由清单"], {"协议": TASK_ROUTE_PROTOCOL, "信号": case["signals"], "未知项": [], "依据": ["light L2 context regression"]})
         reference_sizes = {str(entry["id"]): int(entry["size"]) for entry in bundle["references"]}
         current_reference_bytes = sum(reference_sizes[reference] for reference in actual["必需Reference"])
         legacy_reference_bytes = sum(reference_sizes[reference] for reference in case["required_references"] if reference in reference_sizes)
+        current_total_bytes = int(budget["entry_bytes"]) + sum(int(budget["skill_core_bytes"][skill]) for skill in actual["命中Skill"]) + current_reference_bytes
         self.assertLess(current_reference_bytes, legacy_reference_bytes)
+        self.assertLess(current_total_bytes, int(case["context_bytes"]))
         self.assertNotIn("coding.reference.10", actual["必需Reference"])
         self.assertNotIn("coding.reference.19", actual["必需Reference"])
 
