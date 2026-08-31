@@ -134,8 +134,8 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertIn(ROUTER_PATH, maintenance)
         self.assertNotIn("当前正式 Skill：", maintenance)
 
-    def test_project_payload_distributes_entry_and_router_from_their_canonical_owners(self) -> None:
-        """薄 Entry 作为 shared file、Router 作为 Skill Core 原样进入 Project Payload。"""
+    def test_project_payload_distributes_entry_and_projected_router_from_canonical_owner(self) -> None:
+        """Entry 保持原文；Router 只维护一份 canonical Core，并在 Runtime 构建时自动投影。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         self.assertEqual(payload["shared_files"], ["ENTRY.md"])
@@ -150,7 +150,18 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertIsNotNone(entry, "Project Payload 没有分发共享 Entry")
         self.assertIsNotNone(router, "Project Payload 没有分发正式 Router Skill")
         self.assertEqual(decode_payload_file(entry), (ROOT / ENTRY_PATH).read_bytes())
-        self.assertEqual(decode_payload_file(router), (ROOT / ROUTER_PATH).read_bytes())
+
+        source_router = (ROOT / ROUTER_PATH).read_bytes()
+        runtime_router = decode_payload_file(router)
+        self.assertNotEqual(runtime_router, source_router)
+        runtime_text = runtime_router.decode("utf-8")
+        for marker in ("name: router", "agent-routing:v1", "Anti-Agent Boundary", "Runtime Mode", "完整约束"):
+            self.assertIn(marker, runtime_text)
+        self.assertNotIn("references/", runtime_text)
+        for reference in bundle["references"]:
+            self.assertNotIn(str(reference["filename"]), runtime_text)
+            self.assertNotIn(str(reference["source_path"]), runtime_text)
+            self.assertNotIn(str(reference["id"]), runtime_text)
 
     def test_runtime_reference_preserves_web_direct_and_local_stdio_boundary(self) -> None:
         """网页端源码直读不能被误写成本地 stdio MCP 已连接，Remote MCP 仍是另一部署形态。"""

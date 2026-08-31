@@ -150,7 +150,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         for marker in (
             "Agent_Skills 源仓库 .agents/skills/*/SKILL.md",
             "canonical references/*.md",
-            "Runtime Mode 不在目标项目创建同名 Reference",
+            "目标项目因此没有 Agent_Skills 的同名 Reference 文件",
             "Project Payload",
             "源仓库 Mutation",
             "根 `AGENTS.md`",
@@ -214,7 +214,19 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         self.assertIsNotNone(router_entry)
         self.assertEqual(decode_payload_file(entry_asset), (ROOT / ENTRY_PATH).read_bytes())
         self.assertIsNotNone(managed_entry)
-        self.assertEqual(decode_payload_file(router_entry), (ROOT / ROUTER_PATH).read_bytes())
+
+        runtime_router = decode_payload_file(router_entry)
+        self.assertNotEqual(runtime_router, (ROOT / ROUTER_PATH).read_bytes())
+        runtime_router_text = runtime_router.decode("utf-8")
+        self.assertIn("name: router", runtime_router_text)
+        self.assertIn("agent-routing:v1", runtime_router_text)
+        self.assertIn("完整约束", runtime_router_text)
+        self.assertNotIn("references/", runtime_router_text)
+        for reference in bundle["references"]:
+            self.assertNotIn(str(reference["filename"]), runtime_router_text)
+            self.assertNotIn(str(reference["source_path"]), runtime_router_text)
+            self.assertNotIn(str(reference["id"]), runtime_router_text)
+
         self.assertEqual(decode_payload_file(managed_entry), (ROOT / MANAGED_PATH).read_bytes())
         self.assertFalse(any("/references/" in path for path in entries))
 
