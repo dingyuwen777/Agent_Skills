@@ -97,6 +97,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
         """managed block 必须以 Runtime 为默认，同时服从更高优先级的显式 Agent_Skills 模式选择。"""
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
         for marker in (
+            "在默认 Runtime Mode 下，已配置的项目级 Runtime 负责提供",
             "本 managed block 定义 Agent_Skills 的默认 Runtime Mode",
             "系统、开发者或用户级更高优先级指令",
             "明确选择其他 Agent_Skills 执行模式",
