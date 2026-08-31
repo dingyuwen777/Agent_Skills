@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260831-managed-source-mode-override
 title: Runtime managed block 支持高优先级 Source Mode 覆盖
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: change/managed-source-mode-override
 created: 2026-08-31
@@ -107,14 +107,14 @@ data_changes: []
 
 | 验证层 | 是否要求 | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | GitHub Actions run `33379066539`：self-contained suite `Ran 263 tests`，`OK`；覆盖默认 Runtime、higher-priority override、Overlay 保留。 |
-| 接口 / Contract | required | `AGENTS.managed.md` 与 ref12 同步；当前非 Draft PR #116 diff 只新增薄模式契约，不改变 MCP Tool Contract、Stable ID 或 schema。 |
+| 行为 / Unit / Component | required | 最终实现 PR #116 run `33379687921` 完整成功；self-contained suite 包含 263 项行为/守恒测试，覆盖默认 Runtime、higher-priority override、Overlay 保留。 |
+| 接口 / Contract | required | `AGENTS.managed.md` 与 ref12 同步；PR #116 diff 仅包含本 Change 5 个预期文件，不改变 MCP Tool Contract、Stable ID 或 schema。 |
 | 集成 / Persistence / Runtime Dependency | required | `test_canonical_runtime_install_creates_pending_governance_agents` 与 `test_real_project_install_keeps_internal_runtime_assets_out_of_root_guidance` 使用 canonical Bundle/Project Payload/Installer 生成真实临时项目并通过。 |
 | 用户 / Workflow Acceptance | required | 普通 Runtime 路径与维护者 Source Mode 两条入口反向审查通过；首段 Runtime 职责歧义在 Review 中发现后增加回归并修复。 |
 | 跨组件 Golden Path | not_applicable | 未修改 MCP/Runtime 执行链；本次只改变安装到项目的 Bootstrap 规则文本及其 canonical 说明。 |
 | 外部依赖 Probe | not_applicable | 不依赖第三方 Provider 或现时网络事实。 |
 | Build / Package / Runtime | not_applicable | 未修改 `runtime/`、Builder、package/release workflow；按当前 path-scoped 门禁不要求三平台 onefile。Skill Tests 中 Python compile、CLI smoke、Project Payload/Installer integration 均通过。 |
-| Docs / Governance / Other | required | ref12 同步；context footprint migration 继续通过；A1/A2 Deep Review 完成；Change `ready_for_review` 后 Ready Check 已在 run `33379223979` 通过。 |
+| Docs / Governance / Other | required | ref12 同步；context footprint migration 继续通过；A1/A2 Deep Review 完成；Change Ready Check、PR CI 和 merge 后 main fresh CI 均成功。 |
 
 # TDD / 验证证据
 
@@ -123,7 +123,11 @@ data_changes: []
 - Review 回归 Red：run `33379005282`，新加“首段 Runtime 职责必须限定默认模式”断言后 `263` 个测试中仅 `1` 个失败，原因与 Review Finding 一致。
 - Review 修复 Green：run `33379066539`，compile 与 CLI smoke 通过，self-contained suite `Ran 263 tests in 4.310s`，`OK`；workflow 唯一失败为 Change 当时仍是 `in_progress`，Ready Check 明确报告这一项。
 - Change Ready Green：run `33379223979` 完整成功，changed Change Ready Check 通过。
-- 最新 main 同步 Green：分支通过中文 merge commit `8fac06553f6602764da71775fac4a3b3b2bd2da4` 合并 `main` `0fc35ac54d7b1c2f9ed5095303f75f066b4f1965`；run `33379485410` 完整成功，比较结果 `behind_by=0`，diff 仍为预期 5 个文件。
+- 最新 main 同步 Green：中文 merge commit `8fac06553f6602764da71775fac4a3b3b2bd2da4` 合并当时 `main` `0fc35ac54d7b1c2f9ed5095303f75f066b4f1965`；run `33379485410` 完整成功，比较结果 `behind_by=0`。
+- 最终非 Draft PR Green：PR #116 head `63416496c8a82d19b1d5386015a2197976284935` 的 run `33379687921` 完整成功，merge 前 compare `behind_by=0`、mergeable=true、draft=false。
+- 实现 merge：PR #116 以 `expected_head_sha=63416496c8a82d19b1d5386015a2197976284935` 正常合并，merge commit `a8b1a4af2bbd797726c3e36a7389576e873463a3`。
+- main fresh：merge commit `a8b1a4af2bbd797726c3e36a7389576e873463a3` 的 push Skill Tests run `33379747737` 完整成功；compile、CLI smoke、self-contained tests、active Change gate 均 success。
+- main canonical 回读：合并后的 `.agents/skills/coding/assets/AGENTS.managed.md` 与 ref12 已重新读取，确认默认 Runtime、higher-priority mode override、Overlay 保留语义存在。
 
 # 实施任务
 
@@ -133,13 +137,14 @@ data_changes: []
 4. [x] 收敛 required-context 增量，不提高历史预算门禁。
 5. [x] 执行独立 Deep Review；发现并修复首段无条件 Runtime 职责这一 MEDIUM Finding，并以单独 Red → Green 回归证明。
 6. [x] 更新本 Change 到 `ready_for_review`，Ready Check 已通过；因 GitHub 连接器 Draft→Ready GraphQL schema 错误关闭 Draft PR #111，并从同一已验证分支创建非 Draft PR #116，不绕过 Ready 门禁。
-7. [ ] PR #116 取得本次治理状态同步后的新鲜 CI，全绿后合并；merge 后验证 main fresh CI，再独立归档 Change。
+7. [x] PR #116 取得最终新鲜 CI 后以 expected-head guard 合并；merge 后 main fresh CI 通过，canonical 文件已回读确认。
+8. [ ] 独立 archive PR fresh CI / merge / post-archive main fresh CI。
 
 # Migration / 部署 / 回滚
 
 - 迁移：无需数据或 schema migration。新 managed block 只会随未来包含本变更的 Runtime Release 安装/升级到目标项目；现有已安装旧 Release 不会被当前 main 源码自动改写。
 - 部署：本任务只交付 Agent_Skills main，不创建 Release。后续正式 Release 仍按现有三平台 Release 门禁构建。
-- 回滚：回退本次 canonical 变更或安装上一正式 Release，即可恢复旧 managed block；不得手工改目标项目中受 manifest 认领的安装副本冒充 canonical 回滚。
+- 回滚：回退实现 merge commit `a8b1a4af2bbd797726c3e36a7389576e873463a3`，或在正式 Release 后安装上一正式 Release，即可恢复旧 managed block；不得手工改目标项目中受 manifest 认领的安装副本冒充 canonical 回滚。
 
 # 安全与兼容性
 
@@ -151,26 +156,30 @@ data_changes: []
 
 # Completion Audit
 
-- [x] upstream_re_read：在进入 Ready 前重新读取 Issue #113、当前 main 根 `AGENTS.md`、`.agents/MAINTENANCE.md`、分支 managed/ref12、当前 ref13/ref15 与受影响测试/PR diff。
+- [x] upstream_re_read：进入 Ready 前重新读取 Issue #113、当前 main 根 `AGENTS.md`、`.agents/MAINTENANCE.md`、分支 managed/ref12、当前 ref13/ref15 与受影响测试/PR diff；merge 后重新读取 main canonical managed/ref12。
 - [x] change_coverage：逐项比较 Issue #113 与实现，默认 Runtime、Source override、Overlay 保留、内部身份不泄露均有实现和测试；私有仓库访问能力保持在 Source Mode Owner，本次不错误复制到 Runtime managed block。
 - [x] reverse_audit：从普通 Runtime 和维护者 Source Mode 两条入口反向检查最终 managed block；首段 Runtime 职责也已限定默认模式，不再残留无条件 Runtime 强制路径。
 - [x] unresolved_cleared：R1–R5 全部 `satisfied`；无待决策项。三平台 onefile 未运行是按 path-scope 明确判定 `not_applicable`，不是漏测。
 
 # Review
 
-- Review 深度：L3 Deep Review；目标为 Issue #113 + 当前 main + 当前非 Draft PR #116（历史 TDD Red 来自已关闭 Draft PR #111）。
+- Review 深度：L3 Deep Review；目标为 Issue #113 + 当前 main + 最终 PR #116（历史 TDD Red 来自已关闭 Draft PR #111）。
 - A1 Requirement Review：PASS。Issue 中默认 Runtime、显式高优先级模式覆盖、Overlay 保留、不泄露 Source 内部导航、非目标/回滚均已映射到实现和测试。
-- A2 Implementation / Test Review：PASS after fix。首次审查发现 1 个 MEDIUM：managed block 第一段仍无条件声明 Runtime 负责完整约束；已增加回归测试，在 run `33379005282` 正确失败后修正为“在默认 Runtime Mode 下”，run `33379066539` 的 263 个测试全部通过。
+- A2 Implementation / Test Review：PASS after fix。首次审查发现 1 个 MEDIUM：managed block 第一段仍无条件声明 Runtime 负责完整约束；已增加回归测试，在 run `33379005282` 正确失败后修正为“在默认 Runtime Mode 下”，后续 263 个测试全部通过。
 - 内容守恒：PASS。只改变 Runtime Bootstrap 模式优先级契约；Router/Skill/Reference、MCP/Bundle/Runtime Python、Project Payload ownership 与 Source Mode 明文导航均未弱化。
 - 披露边界：PASS。Runtime managed/真实安装根 AGENTS 不出现 canonical 仓库地址、GitHub App、Maintenance、内部 Reference 导航；默认 Runtime 的静默规则仍受原测试覆盖。
-- 当前开放 Findings：无 BLOCKER / HIGH / MEDIUM；无需要阻止 Ready 的 LOW。
+- 当前开放 Findings：无 BLOCKER / HIGH / MEDIUM；无需要阻止归档的 LOW。
 
 # Git / PR / Release 状态
 
-- Branch：`change/managed-source-mode-override`
-- 主分支同步提交：`8fac06553f6602764da71775fac4a3b3b2bd2da4`，合并基线 `main` `0fc35ac54d7b1c2f9ed5095303f75f066b4f1965`，比较结果 `behind_by=0`。
-- Requirement Source：Issue #113 `https://github.com/dingyuwen777/Agent_Skills/issues/113`
-- PR：#116（非 Draft，当前正式交付 PR）。#111 已关闭且未合并，仅保留历史 TDD/CI 证据；关闭原因是 Draft→Ready 连接器 GraphQL schema 错误。
-- Merge：待 PR #116 当前 head 新鲜 CI 全绿后执行。
-- Main fresh CI：待 merge 后执行。
+- requirement: Issue #113，待 archive 完成后关闭为 completed。
+- implementation branch: `change/managed-source-mode-override`
+- requirement source: `https://github.com/dingyuwen777/Agent_Skills/issues/113`
+- historical Draft PR: #111，closed / unmerged，仅保留 TDD/CI 证据；关闭原因是 Draft→Ready 连接器 GraphQL schema 错误。
+- implementation PR: #116，merged
+- implementation head: `63416496c8a82d19b1d5386015a2197976284935`
+- merge commit: `a8b1a4af2bbd797726c3e36a7389576e873463a3`
+- main fresh CI: run `33379747737`，success
+- archive branch: `archive/CHG-20260831-managed-source-mode-override`
+- archive PR / merge / post-archive main CI: pending
 - Release：本任务不创建正式 Release；AIMA_UGC 当前已安装旧 Release 不会自动获得该 managed block。
