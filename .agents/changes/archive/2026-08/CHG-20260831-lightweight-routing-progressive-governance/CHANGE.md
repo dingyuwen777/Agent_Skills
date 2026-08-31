@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260831-lightweight-routing-progressive-governance
 title: 轻量代码任务路由与渐进治理
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: feat/lightweight-routing-progressive-governance
 created: 2026-08-31
@@ -77,10 +77,10 @@ data_changes: []
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
 | R1 | 简单代码不机械走编码、文档、审查全部流程 | user:current-request | satisfied | L1/snippet/轻量 L2 路由回归通过 |
-| R2 | 修改 Agent_Skills canonical，而不是外部提示补丁 | user:current-request | satisfied | Router/Coding/References canonical 已修改 |
+| R2 | 修改 Agent_Skills canonical，而不是外部提示补丁 | user:current-request | satisfied | Router/Coding/References canonical 已修改并合并到 main |
 | R3 | 不删除选择并保证使用效果 | user:current-request | satisfied | gated L2/L3/Docs/Review/Git/Release 正向回归保留；270 个 self-contained tests 已通过 |
 | R4 | Skill Mutation 保持 Stable ID、同源路由与 conformance | .agents/skills/coding/references/15_规则内容守恒与Skill维护.md | satisfied | metadata compiler、Bundle/Runtime parity、routing conformance 已通过 |
-| R5 | 源仓库维护通过正式 Change、PR/CI、Review、main fresh CI 与归档 | .agents/MAINTENANCE.md | satisfied | 当前 Change 已 Ready；PR/CI/Review/main/归档状态继续由交付区记录，不作为 Ready 前业务 Requirement |
+| R5 | 源仓库维护通过正式 Change、PR/CI、Review、main fresh CI 与归档 | .agents/MAINTENANCE.md | satisfied | PR #119 已合并；main fresh Skill Tests run 33385046465 成功；本记录已进入独立归档 PR |
 
 # 验证矩阵
 
@@ -93,14 +93,14 @@ data_changes: []
 | 跨组件关键路径 | required | canonical metadata → compile/evaluate → Bundle/Runtime required Context |
 | 外部依赖 / 供应方探测 | not_applicable | 无第三方 Provider 当前事实 |
 | 构建 / 打包 / 运行 | not_applicable | 不修改 Runtime binary/Builder/Installer；按仓库 CI 分责不触发三平台 package |
-| 文档 / 治理 / 其他 | required | Change Ready、内容守恒、live references、Skill Tests、Review、PR/main CI、归档 |
+| 文档 / 治理 / 其他 | required | Change Ready、内容守恒、live references、Skill Tests、独立 Review、PR/main CI、归档 |
 
 # 完成审计
 
 - [x] upstream_re_read：已重新读取用户要求、根 AGENTS、Maintenance、Entry、Router、Coding、Skill Mutation 与受影响 canonical References。
 - [x] change_coverage：已覆盖轻量路由、能力保留、测试、Review、PR/main CI 和归档要求。
 - [x] reverse_audit：已从 snippet/L1/轻量 L2/gated L2/L3/Docs/Review/Git/Release 反向验证路由并复核 Validation Matrix。
-- [x] unresolved_cleared：Requirement Traceability 无 `not_satisfied`；交付状态单独如实记录。
+- [x] unresolved_cleared：Requirement Traceability 无 `not_satisfied`；无未批准延期。
 
 # 任务
 
@@ -108,24 +108,22 @@ data_changes: []
 - [x] 建立专用分支与正式 L2 Change
 - [x] 补充轻量/升级路由回归
 - [x] 修改 Router、Coding Core 与最小必要 References
-- [x] 运行 PR self-contained Skill Tests；当前最新完整测试阶段为 270 tests / 0 failures
-- [ ] 取得最终 head 的 PR CI 绿色与独立 Review
-- [ ] 合并到 main 并确认 main fresh CI
-- [ ] 独立归档 Change 并确认 active 清理
+- [x] 运行 PR self-contained Skill Tests：270 tests / 0 failures
+- [x] 取得最终 head PR CI 绿色与独立 Review
+- [x] 合并到 main 并确认 main fresh CI
+- [x] 独立归档 Change 并从 active 清理
 
 # 验证
 
-## 计划
-
-- 目标测试：minimal sufficient governance、routing conformance、router migration/context budget。
-- 相关测试：metadata/compiler、dynamic Bundle/Project Payload、Skill mutation preservation、Ready Check。
-- 永久 CI：`.github/workflows/skill-tests.yml`。
-- Runtime Package Tests：not_applicable，本次不修改 Runtime/Builder/MCP 安装/Release 路径。
-
 ## 新鲜证据
 
-- PR run 33384727508：self-contained tests `Ran 270 tests`，`OK`；Ready Check 因本 Change frontmatter 列表写法不符合当前 parser 而失败。
-- 已将 `affected_areas/affected_paths/contracts` 改为当前 schema 接受的 YAML 列表写法；等待新 head PR CI 复验。
+- 功能 head：`182a0d777e71e024dcb96a8710f050a9c9170d00`。
+- PR CI：Skill Tests run `33384815251` attempt 2 成功；self-contained suite 270 tests / 0 failures；changed Coding Change Ready Check 成功。
+- 独立 Review：PR #118 review `5065709573`、PR #119 review `5065715122` 均未发现阻塞 Finding。
+- Draft Ready 宿主 mutation 因 GitHub GraphQL `Repository.fullDatabaseId` 字段兼容错误失败；未绕过门禁。关闭 Draft PR #118 后，以完全相同 head/base 创建普通 PR #119，并重新执行 CI。
+- 功能 PR：#119，merge commit `ecf3bf4c958526f8eca4e2780efdb6fa6834d7d9`。
+- main fresh CI：Skill Tests run `33385046465` 成功；self-contained tests 成功，active Coding Change Ready Check 成功。
+- Runtime Package Tests：not_applicable；本次未修改 Runtime/Builder/MCP 安装/Release 路径。
 
 # 文档影响
 
@@ -133,9 +131,10 @@ data_changes: []
 
 # 交付
 
-- 分支：feat/lightweight-routing-progressive-governance
-- PR：#118
-- PR CI：等待当前 head 新鲜运行
-- Review：待最终 head 独立 Review
-- main merge / main fresh CI / Change archive：待执行
+- 功能分支：feat/lightweight-routing-progressive-governance
+- 功能 PR：#119，已合并
+- main merge SHA：`ecf3bf4c958526f8eca4e2780efdb6fa6834d7d9`
+- main fresh CI：run `33385046465`，成功
+- 归档分支：archive/lightweight-routing-progressive-governance
+- 归档：`.agents/changes/archive/2026-08/CHG-20260831-lightweight-routing-progressive-governance/CHANGE.md`
 - Release：不涉及
