@@ -141,10 +141,13 @@ class IssueFormsContractTest(unittest.TestCase):
         )
         self.assertIn(REFERENCE_ID, result["必需Reference"])
 
-    def test_skill_tests_watch_issue_form_changes(self) -> None:
-        """以后只改 Issue Form 时也必须触发永久 Skill Tests。"""
+    def test_skill_tests_always_cover_issue_form_changes(self) -> None:
+        """永久 Skill Tests 始终触发，因此只改 Issue Form 也不会丢失治理证据。"""
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn('".github/ISSUE_TEMPLATE/**"', workflow)
+        self.assertIn("pull_request:", workflow)
+        self.assertIn("push:", workflow)
+        self.assertNotIn("\n    paths:", workflow)
+        self.assertIn("Agent Skills Gate", workflow)
 
 
 if __name__ == "__main__":
