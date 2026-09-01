@@ -2,36 +2,35 @@ name: Skill Tests
 
 on:
   pull_request:
-    paths:
-      - "AGENTS.md"
-      - "README.md"
-      - "USAGE.md"
-      - ".gitignore"
-      - ".gitattributes"
-      - ".agents/**"
-      - "runtime/**"
-      - "scripts/**"
-      - ".github/ISSUE_TEMPLATE/**"
-      - ".github/workflows/**"
   push:
     branches:
       - main
-    paths:
-      - "AGENTS.md"
-      - "README.md"
-      - "USAGE.md"
-      - ".gitignore"
-      - ".gitattributes"
-      - ".agents/**"
-      - "runtime/**"
-      - "scripts/**"
-      - ".github/ISSUE_TEMPLATE/**"
-      - ".github/workflows/**"
 
 permissions:
   contents: read
+  issues: read
+  pull-requests: read
 
 jobs:
+  requirement-source:
+    name: Requirement Source
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14.7"
+
+      - name: Verify PR Requirement Source
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python .github/scripts/check_pr_requirement_source.py --root .
+
   skill-tests:
     name: Skill Tests
     runs-on: ubuntu-24.04
@@ -58,6 +57,7 @@ jobs:
           python -m py_compile
           .agents/skills/coding/scripts/coding.py
           .agents/skills/coding/scripts/ready_check.py
+          .github/scripts/check_pr_requirement_source.py
           scripts/build_runtime.py
           scripts/runtime_mcp_smoke.py
           runtime/agent_skills_runtime/skill_catalog.py
@@ -73,6 +73,7 @@ jobs:
       - name: Smoke maintained CLI entrypoints
         run: |
           python .agents/skills/coding/scripts/coding.py bootstrap --help
+          python .github/scripts/check_pr_requirement_source.py --help
           python scripts/build_runtime.py --help
           python scripts/runtime_mcp_smoke.py --help
 
@@ -111,3 +112,21 @@ jobs:
           python .agents/skills/coding/scripts/ready_check.py
           --root .
           --changed-since ${{ github.event.pull_request.base.sha }}
+
+  agent-skills-gate:
+    name: Agent Skills Gate
+    if: always()
+    needs:
+      - requirement-source
+      - skill-tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify required core governance evidence
+        shell: bash
+        env:
+          REQUIREMENT_SOURCE_RESULT: ${{ needs.requirement-source.result }}
+          SKILL_TESTS_RESULT: ${{ needs.skill-tests.result }}
+        run: |
+          set -euo pipefail
+          test "${REQUIREMENT_SOURCE_RESULT}" = "success"
+          test "${SKILL_TESTS_RESULT}" = "success"
