@@ -42,7 +42,7 @@ class DevelopmentGuidanceTest(unittest.TestCase):
     def test_systemic_analysis_considers_reuse_abstraction_and_capability_ownership(self) -> None:
         """分析问题时必须先看系统能力边界，再决定局部修复、复用、公共抽象或统一治理链。"""
         skill = self._read(".agents/skills/coding/SKILL.md")
-        design = self._read(".agents/skills/coding/references/05_设计实施与根因调试.md")
+        systemic = self._read(".agents/skills/coding/references/21_系统级分析与代码整洁收口.md")
         self.assertIn("系统级分析先于局部实现", skill)
         for fragment in (
             "调用链、数据流、状态流",
@@ -54,12 +54,12 @@ class DevelopmentGuidanceTest(unittest.TestCase):
             "不要为抽象而抽象",
         ):
             with self.subTest(fragment=fragment):
-                self.assertIn(fragment, design)
+                self.assertIn(fragment, systemic)
 
     def test_affected_code_scope_must_finish_clean_without_unrelated_refactor(self) -> None:
         """开发收口必须清理受影响代码域，同时保护隐式依赖并禁止借机扩大范围。"""
         skill = self._read(".agents/skills/coding/SKILL.md")
-        design = self._read(".agents/skills/coding/references/05_设计实施与根因调试.md")
+        systemic = self._read(".agents/skills/coding/references/21_系统级分析与代码整洁收口.md")
         self.assertIn("受影响代码域必须整洁收口", skill)
         for fragment in (
             "死代码",
@@ -74,7 +74,7 @@ class DevelopmentGuidanceTest(unittest.TestCase):
             "整体清晰、易读、可维护",
         ):
             with self.subTest(fragment=fragment):
-                self.assertIn(fragment, design)
+                self.assertIn(fragment, systemic)
 
     def test_core_tdd_debugging_and_completion_rules_remain(self) -> None:
         """通用化不得删除 TDD、根因调试、Traceability 和 Completion Audit。"""
