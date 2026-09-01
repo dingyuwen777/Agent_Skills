@@ -11,9 +11,9 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
-SCRIPTS = ROOT / "scripts"
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
+GITHUB_SCRIPTS = ROOT / ".github" / "scripts"
+if str(GITHUB_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(GITHUB_SCRIPTS))
 
 import check_pr_requirement_source as subject  # noqa: E402
 
@@ -136,7 +136,7 @@ class RequirementSourceValidationTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    str(ROOT / "scripts" / "check_pr_requirement_source.py"),
+                    str(ROOT / ".github" / "scripts" / "check_pr_requirement_source.py"),
                     "--root",
                     str(ROOT),
                     "--event-path",
