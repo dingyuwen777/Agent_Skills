@@ -90,6 +90,28 @@ class PullRequestRequirementTraceabilityTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
 
+    def test_satisfied_acceptance_requires_direct_evidence_mapping(self) -> None:
+        """satisfied 验收项必须由直接 Evidence 证明，不能由 CI Green 或测试存在机械推定。"""
+        text = self._reference_text()
+        required_fragments = [
+            "直接 Evidence",
+            "可观察结果",
+            "对象、行为、条件",
+            "revision/commit",
+            "测试名称",
+            "测试文件",
+            "Requirement Coverage",
+            "partial",
+            "unverified",
+            "not_applicable",
+            "不等于必须自动化测试",
+            "Workflow/Acceptance",
+            "人工语义审计",
+        ]
+        for fragment in required_fragments:
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, text)
+
     def test_pr_review_route_loads_traceability_reference(self) -> None:
         """用户自然语言审查 PR 时必须自动加载需求追溯规则。"""
         result = self._evaluate(
