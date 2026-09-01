@@ -92,6 +92,20 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         ):
             self.assertIn(marker, handoff)
 
+    def test_capability_gap_inventory_is_complete_deduplicated_and_pre_handoff(self) -> None:
+        """Design-to-Code 必须在 Coding Handoff 前集中披露全部已发现系统能力缺口并按真实 Owner 去重。"""
+        handoff = self._read(FIGMA_ROOT / "references/05_Design-to-Code交付门禁.md")
+        skill = self._read(FIGMA_ROOT / "SKILL.md")
+        for marker in (
+            "Capability Gap Inventory", "Coding Handoff 前必须集中输出",
+            "本次审查范围内全部已发现", "同一真实能力 / Owner",
+            "没有能力缺口时也必须明确输出 `none`", "不得等到 Coding 实施中途才首次披露",
+            "当前任务已经明确批准把范围扩大到真实跨层实现", "永久 mock",
+            "Figma 位置 / 用户能力 / 当前系统证据 / 正式 Owner / 缺失或冲突层（不存在则 not_applicable） / 分类 / 阻塞性 / 最小动作",
+        ):
+            self.assertIn(marker, handoff)
+        self.assertIn("Capability Gap Inventory", skill)
+
     def test_annotation_development_readiness_repairs_and_deduplicates_annotations(self) -> None:
         """正式基线必须审计注释覆盖率，能修时补齐错误/缺失注释，同时合并重复说明。"""
         handoff = self._read(FIGMA_ROOT / "references/05_Design-to-Code交付门禁.md")
