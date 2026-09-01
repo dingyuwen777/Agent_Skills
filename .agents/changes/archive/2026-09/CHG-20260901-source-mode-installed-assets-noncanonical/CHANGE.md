@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260901-source-mode-installed-assets-noncanonical
 title: 明确 Source Mode 目标项目旧安装资产非 canonical
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: chore/source-mode-installed-assets-noncanonical
 created: 2026-09-01
@@ -36,7 +36,7 @@ data_changes: []
 - [x] Project Governance Bootstrap 在 Source Mode 中不会把旧 managed block 的 Runtime/MCP/披露/路由/加载说明复制或改写到项目 Overlay；发现安装版本漂移时只报告正式 Runtime upgrade 需要，不在治理校准中手工覆盖 installer-owned block。
 - [x] Runtime Mode 的当前路由、required Context、披露、失败关闭和完整性语义保持不变；不通过删减 Runtime 内部规则换取表面简洁。
 - [x] 新增回归在旧实现上失败、在新实现上通过；完整 self-contained Skill Tests 绿色。
-- [ ] 独立 Review 无未解决 BLOCKER/HIGH/MEDIUM Finding，PR fresh CI 与合并后 main fresh CI 绿色，随后 Change 独立归档。
+- [x] 独立 Review 无未解决 BLOCKER/HIGH/MEDIUM Finding，PR fresh CI 与合并后 main fresh CI 绿色，Change 已进入独立归档分支。
 
 # 范围
 
@@ -74,8 +74,8 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 网页 Source Mode 治理目标项目时使用 Agent_Skills 当前 canonical 规则，不被目标项目旧 Agent_Skills 安装副本覆盖 | user:current-request | satisfied | 根 `AGENTS.md` 与 Router 明确 Source Mode canonical 来源；新回归 `test_source_mode_keeps_project_rules_but_rejects_installed_governance_as_canonical` 通过 |
-| R2 | 仍必须读取并遵守目标项目自己的规则和真实仓库事实 | user:current-request | satisfied | 根 `AGENTS.md`、Router、ref13 均保留项目自有规则/真实事实优先；对应新回归通过 |
+| R1 | 网页 Source Mode 治理目标项目时使用 Agent_Skills 当前 canonical 规则，不被目标项目旧 Agent_Skills 安装副本覆盖 | user:current-request | satisfied | 根 `AGENTS.md` 与 Router 明确 Source Mode canonical 来源；新回归通过 |
+| R2 | 仍必须读取并遵守目标项目自己的规则和真实仓库事实 | user:current-request | satisfied | 根 `AGENTS.md`、Router、ref13 均保留项目自有规则/真实事实优先；对应回归通过 |
 | R3 | 旧 managed/runtime 资产仅作为安装/ownership/drift 事实，不能成为 Source Mode 通用治理语义来源 | user:current-request | satisfied | Root/Router/ref12/ref13 均明确 non-canonical 安装资产边界；新 Source Mode 回归全绿 |
 | R4 | Project Governance Bootstrap 不手工修改 installer-owned block，版本漂移通过正式 Runtime upgrade 收敛 | user:current-request | satisfied | ref12 明确 `不手工覆盖 installer-owned managed block` 与 `正式 Runtime upgrade`；Bootstrap 回归通过 |
 | R5 | 不能为了表面简洁降低 Runtime Mode 执行效果和内部治理规则强度 | user:current-request | satisfied | 未修改 Runtime/MCP/Bundle/Payload/installer 实现；289 项 self-contained tests 中 Runtime routing/exact-text/disclosure/install/migration 回归全部通过 |
@@ -84,13 +84,13 @@ data_changes: []
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | 新 Source Mode ownership 回归验证规则来源判定，当前通过 |
+| 行为 / 单元 / 组件 | required | 新 Source Mode ownership 回归验证规则来源判定，已通过 |
 | 接口 / 契约 | not_applicable | 不改变 MCP/Runtime/public schema |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 不修改 Runtime/installer 实现 |
-| 用户 / 工作流验收 | required | 模拟“目标项目含旧 managed/runtime 安装资产”的 Source Mode Bootstrap 规则链，当前通过 |
+| 用户 / 工作流验收 | required | 模拟“目标项目含旧 managed/runtime 安装资产”的 Source Mode Bootstrap 规则链，已通过 |
 | 跨组件关键路径 | not_applicable | 不修改跨组件运行接线 |
 | 外部依赖 / 供应方探测 | not_applicable | 不需要外部 Provider |
-| 构建 / 打包 / 运行 | not_applicable | 不修改 binary 构建/Project Payload 实现；完整 Skill Tests 仍覆盖 Bundle/Payload/Runtime 相关回归 |
+| 构建 / 打包 / 运行 | not_applicable | 不修改 binary 构建/Project Payload 实现；完整 Skill Tests 覆盖 Bundle/Payload/Runtime 相关回归 |
 | 文档 / 治理 / 其他 | required | Root/Router/ref12/ref13 内容守恒、live 引用、Context Budget 与 full self-contained tests 已通过 |
 
 # 完成审计
@@ -108,7 +108,7 @@ data_changes: []
 - [x] 最小修改 canonical Bootstrap/Router/References
 - [x] 运行 targeted 与完整 self-contained tests
 - [x] 完成内容守恒与独立 Review
-- [ ] PR、main fresh CI 与 Change 归档
+- [x] PR、main fresh CI 与 Change 归档
 
 # 验证
 
@@ -122,9 +122,12 @@ data_changes: []
 ## 新鲜证据
 
 - Red：PR #128 早期 head `0d90e6e18af94d716ee41d7f15c0d5d904256c5b`，Skill Tests run `33466755067`；289 项中仅新增 Source Mode 防误用断言失败，证明旧规则缺口有效。
-- Green：PR #128 head `d62b7271b8f3db531fcc427ddf4daefb68d302f7`，Skill Tests run `33467552491` 的 `Run self-contained tests` 成功，289 项全部通过；Workflow 总结论失败仅因为本 Change 当时仍为 `in_progress`，changed Change Ready gate 按预期阻断。
-- Context Budget：未提高任何阈值；新增语义经去重后 `test_router_skill_migration.py` 通过。
-- Deep Review：PR #128 review `5073848603`，reviewed base `0106475fa9387079a045a4e9be7e3ed71c2adf4f`、head `d62b7271b8f3db531fcc427ddf4daefb68d302f7`，`NO_FINDINGS_WITHIN_SCOPE`。
+- Green：PR #128 head `d62b7271b8f3db531fcc427ddf4daefb68d302f7`，Skill Tests run `33467552491` 的 self-contained tests 成功，289 项全部通过；当时 Workflow 仅因 Change 仍为 `in_progress` 被 Ready gate 阻断。
+- Final PR：head `9add26f07229a9461ac345473452bebccab24067`，Skill Tests #788 / run `33467681737` 完整成功，self-contained tests 与 changed Change Ready gate 均通过。
+- Context Budget：未提高任何阈值；新增语义经去重后历史预算回归恢复绿色。
+- Deep Review：review `5073848603`；final-head re-review `5073854134`；均为 `NO_FINDINGS_WITHIN_SCOPE`。
+- Merge：PR #128 以 expected-head `9add26f07229a9461ac345473452bebccab24067` 合并，merge commit `e4a015adac9c5f01c076ef3b88be6d192b59a736`。
+- Main fresh CI：`main@e4a015adac9c5f01c076ef3b88be6d192b59a736`，Skill Tests #789 / run `33467757514` 完整成功。
 
 # 文档影响
 
@@ -132,6 +135,8 @@ data_changes: []
 
 # 交付
 
-- 提交：实现与 Ready 收敛已提交到 `chore/source-mode-installed-assets-noncanonical`
-- 拉取请求：#128
-- 发布：不需要；Source Mode 读取 main 即生效，Runtime 产品语义未变化。
+- 功能 PR：#128，已合并
+- merge commit：`e4a015adac9c5f01c076ef3b88be6d192b59a736`
+- main fresh CI：Skill Tests #789 success
+- Release：不需要；Source Mode 读取 main 已生效，Runtime 产品语义未变化。
+- 归档：当前独立归档分支 `chore/archive-source-mode-installed-assets-noncanonical`。
