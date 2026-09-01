@@ -33,6 +33,14 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
         self.assertIn(".github/scripts/runtime_package_scope.py", workflow)
         self.assertNotIn("runtime/*|runtime/**/*", workflow)
 
+    def test_scope_job_pins_python_and_disables_rename_collapsing(self) -> None:
+        """Scope classifier 必须使用固定 Python，并让 rename 同时暴露旧/新路径以避免降级漏判。"""
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        scope_section = workflow.split("  runtime-linux-package:", 1)[0]
+        self.assertIn("Setup Python", scope_section)
+        self.assertIn('python-version: "3.14.7"', scope_section)
+        self.assertIn('git diff --name-only --no-renames "${BASE_SHA}" "${HEAD_SHA}"', scope_section)
+
     def test_governance_paths_skip_three_platform_binary(self) -> None:
         """维护文档、Change 与仓库治理文本只需要治理/Skill 证据。"""
         classify_paths = _load_classifier().classify_paths
