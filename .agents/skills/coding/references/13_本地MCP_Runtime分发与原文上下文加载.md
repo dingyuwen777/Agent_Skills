@@ -798,6 +798,6 @@ Runtime Mode 对用户可以继续说明：检查了哪些**目标项目**代码
 
 当前 Runtime 是项目本地 stdio MCP。纯网页端 ChatGPT 不能直接启动用户电脑上的 `agent-skills-mcp`，也不能因为 GitHub 中存在 Runtime 源码就把本地 MCP 当作已经连接。
 
-网页端如果通过 GitHub 获得 Agent_Skills 源仓库读取权限，使用 Source Mode：先读取目标项目事实与 Agent_Skills 根 AGENTS.md，再按 Router 和 canonical metadata 直接读取 required References。该路径不调用本地六个 MCP Tool；目标项目安装资产只作安装状态事实，不能替代当前 canonical Source。Source Mode 可以正常显示明文 Skill/Reference 和源码导航过程。
+网页端如果通过 GitHub 获得 Agent_Skills 源仓库读取权限，使用 Source Mode：先读取目标项目事实与 Agent_Skills 根 AGENTS.md，再按 Router 和 canonical metadata 直接读取 required References。该路径是源码直接读取模式，不调用本地六个 MCP Tool；目标项目安装资产只作安装状态事实，不能替代当前 canonical Source。Source Mode 可以正常显示明文 Skill/Reference 和源码导航过程。
 
 网页端如需调用目标机器 Runtime，必须使用受支持的 Remote MCP、安全隧道或等价远程部署；这是另一部署形态，不属于当前本地 stdio Runtime，不得为实现它绕过宿主、网络或权限边界。
