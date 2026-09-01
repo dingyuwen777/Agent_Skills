@@ -44,23 +44,20 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertIn("Agent Skills Gate", workflow)
 
     def test_runtime_package_ci_uses_stable_gate_and_keeps_three_platform_evidence(self) -> None:
-        """Runtime package CI 必须稳定产出 Gate，并只在真实 Runtime 风险时执行三平台构建。"""
+        """Runtime package CI 必须稳定产出 Gate，并只在 package scope 执行三平台构建。"""
         workflow_path = ROOT / ".github/workflows/runtime-package-tests.yml"
+        classifier_path = ROOT / ".github/scripts/runtime_package_scope.py"
         self.assertTrue(workflow_path.is_file(), "缺少 Runtime 专项 package workflow")
+        self.assertTrue(classifier_path.is_file(), "缺少 Runtime Package scope classifier")
         workflow = workflow_path.read_text(encoding="utf-8")
         self.assertIn("Runtime Package Scope", workflow)
         self.assertIn("Runtime Package Gate", workflow)
-        for trigger in (
-            "runtime/*|runtime/**/*",
-            "scripts/build_runtime.py",
-            "scripts/runtime_mcp_smoke.py",
-            ".github/workflows/runtime-package-tests.yml",
-            ".github/workflows/release.yml",
-        ):
-            self.assertIn(trigger, workflow)
+        self.assertIn(".github/scripts/runtime_package_scope.py", workflow)
+        self.assertIn("runtime_scope", workflow)
+        self.assertNotIn("runtime/*|runtime/**/*", workflow)
         self.assertNotIn(".agents/*|.agents/**/*", workflow)
         self.assertEqual(
-            workflow.count("if: needs.scope.outputs.runtime_required == 'true'"),
+            workflow.count("if: needs.scope.outputs.runtime_scope == 'package'"),
             3,
         )
         self.assertIn("Runtime Linux Package", workflow)
@@ -72,6 +69,9 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertIn('test "${LINUX_RESULT}" = "skipped"', workflow)
         self.assertIn('test "${WINDOWS_RESULT}" = "skipped"', workflow)
         self.assertIn('test "${MACOS_RESULT}" = "skipped"', workflow)
+        self.assertIn('test "${LINUX_RESULT}" = "success"', workflow)
+        self.assertIn('test "${WINDOWS_RESULT}" = "success"', workflow)
+        self.assertIn('test "${MACOS_RESULT}" = "success"', workflow)
 
     def test_runtime_install_assertion_tracks_current_managed_progress_semantics(self) -> None:
         """常规 Skill CI 必须在 managed 进度语义变化时同步暴露 Runtime 安装断言漂移。"""

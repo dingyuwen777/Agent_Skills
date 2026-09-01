@@ -58,6 +58,7 @@ jobs:
           .agents/skills/coding/scripts/coding.py
           .agents/skills/coding/scripts/ready_check.py
           .github/scripts/check_pr_requirement_source.py
+          .github/scripts/runtime_package_scope.py
           scripts/build_runtime.py
           scripts/runtime_mcp_smoke.py
           runtime/agent_skills_runtime/skill_catalog.py
@@ -75,6 +76,7 @@ jobs:
         run: |
           python .agents/skills/coding/scripts/coding.py bootstrap --help
           python .github/scripts/check_pr_requirement_source.py --help
+          python .github/scripts/runtime_package_scope.py --help
           python scripts/build_runtime.py --help
           python scripts/runtime_mcp_smoke.py --help
 
