@@ -42,6 +42,7 @@ Prototype 点击之后是否仍然正确？
 → Fresh Screenshot / Machine Audit
 → Design Context / 实现视角复核（适用时）
 → Findings
+→ baseline-ready / Design-to-Code 时汇总 Capability Gap Inventory
 → review-and-fix 时修最小 Owner
 → re-review
 → READY / READY_WITH_NOTES / NOT_READY
@@ -656,6 +657,8 @@ Figma MCP/工具返回的参考代码只表达结构意图，不得反向改变�
 → 当前项目实现入口
 ```
 
+`baseline-ready / Design-to-Code` 在进入 Coding Handoff 前必须形成 **Capability Gap Inventory**：把本次审查范围内全部已发现的真实系统能力缺口集中披露、按真实能力/Owner 去重并完成现有事实分类；没有缺口时也要明确为 `none`。详细字段、阻塞性、`implementation_required` Handoff 和去重规则由 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 唯一维护，本 Skill 不复制第二套清单格式。
+
 如果当前项目已经有目标 Page/Screen，必须先执行 Existing Implementation Delta Gate：以现有正确实现为基线，只实现新 Figma 经 Requirement/Contract/Owner 确认的真实差异，**不默认整页重写**。
 
 生产实现由 Coding 工作流完成后，还必须执行 **Implementation ↔ Figma Conformance**，对实际页面、正式 Figma 与真实 Contract/Backend/SDK/Store 的 Visual、Interaction、State、Data/Contract、Responsive、Component/Owner 六个域做 targeted re-review；代码验证通过本身不等于 Design-to-Code 已闭环。
@@ -675,6 +678,7 @@ Figma MCP/工具返回的参考代码只表达结构意图，不得反向改变�
 [ ] 用户输入和动作都有真实系统支持或明确 Future 标识
 [ ] 动态数据都有真实来源
 [ ] DESIGN_EXAMPLE 不冒充线上当前事实
+[ ] Capability Gap Inventory 已集中输出；全部已发现缺口按真实能力 / Owner 去重并分类；无缺口时明确为 none
 [ ] Annotation Development Readiness 已完成，必要机器事实已校验
 [ ] 必要 Annotation 最少充分，无会误导实现的缺失/错误/无意义重复
 [ ] 页面尺寸与目标设备/Viewport 有依据
@@ -804,6 +808,10 @@ P0 → P1 → P2。
 
 重要 UI 字段、动作和动态数据的真实来源。
 
+## Capability Gap Inventory
+
+凡是 `baseline-ready / Design-to-Code`，此项为**强制输出**。集中列出本次审查范围内全部已发现的真实系统能力缺口，按真实能力/Owner 去重并沿用既有分类；没有缺口时明确输出 `none`。详细字段、阻塞规则和 Coding Handoff 行为由 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 唯一维护。
+
 ## Component & Logic Reuse
 
 Shared / Feature Public / Page-private 的视觉与业务 Owner。
@@ -857,4 +865,5 @@ Variables / Reactions / Flow / Overlay / Scroll / Hidden State。
 23. 已有公共组件时 Detach、复制或重画制造第二 Owner；
 24. 代码实现完成后跳过 Implementation ↔ Figma Conformance，让设计与生产实现长期漂移；
 25. 把未批准的实现 Bug、临时 workaround 或偶然像素偏移自动回写成 Figma 长期事实；
-26. 实际修改过 Figma 后只说“已同步”，却不输出 `Figma Sync & Human Review` 供人工复核。
+26. 实际修改过 Figma 后只说“已同步”，却不输出 `Figma Sync & Human Review` 供人工复核；
+27. 把设计所需但系统未实现或冲突的能力只散落在 Findings，或拖到 Coding 实施中途才首次披露，而没有先形成 Capability Gap Inventory。
