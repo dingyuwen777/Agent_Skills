@@ -37,11 +37,18 @@ class RepositoryStructureTest(unittest.TestCase):
             {path.name for path in scripts.iterdir() if path.is_file() and path.suffix == ".py"},
             {"build_runtime.py", "runtime_mcp_smoke.py"},
         )
+        self.assertTrue(
+            (ROOT / ".github/scripts/check_pr_requirement_source.py").is_file(),
+            "GitHub PR 门禁脚本应留在平台专用目录，不扩大根 scripts 维护入口",
+        )
 
-    def test_permanent_ci_tracks_current_documents_only(self) -> None:
-        """永久 CI 应跟踪 USAGE，而不是已删除 docs/CHANGELOG。"""
+    def test_permanent_ci_is_stable_and_avoids_deleted_surfaces(self) -> None:
+        """永久 Skill CI 始终产生稳定 Gate，且不重新依赖已删除文档或旧安装入口。"""
         workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
-        self.assertIn('"USAGE.md"', workflow)
+        self.assertIn("pull_request:", workflow)
+        self.assertIn("push:", workflow)
+        self.assertNotIn("\n    paths:", workflow)
+        self.assertIn("Agent Skills Gate", workflow)
         self.assertNotIn("docs/distribution", workflow)
         self.assertNotIn("docs/maintainers", workflow)
         self.assertNotIn("CHANGELOG.md", workflow)
