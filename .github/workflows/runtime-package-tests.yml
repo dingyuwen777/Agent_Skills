@@ -2,30 +2,64 @@ name: Runtime Package Tests
 
 on:
   pull_request:
-    paths:
-      - ".gitattributes"
-      - "runtime/**"
-      - "scripts/build_runtime.py"
-      - "scripts/runtime_mcp_smoke.py"
-      - ".github/workflows/runtime-package-tests.yml"
-      - ".github/workflows/release.yml"
   push:
     branches:
       - main
-    paths:
-      - ".gitattributes"
-      - "runtime/**"
-      - "scripts/build_runtime.py"
-      - "scripts/runtime_mcp_smoke.py"
-      - ".github/workflows/runtime-package-tests.yml"
-      - ".github/workflows/release.yml"
 
 permissions:
   contents: read
 
 jobs:
+  scope:
+    name: Runtime Package Scope
+    runs-on: ubuntu-24.04
+    outputs:
+      runtime_required: ${{ steps.detect.outputs.runtime_required }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Detect Runtime package risk
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${GITHUB_SHA}"
+          fi
+
+          runtime_required=false
+          if [[ -z "${BASE_SHA}" || "${BASE_SHA}" =~ ^0+$ ]] || ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            runtime_required=true
+          else
+            while IFS= read -r path; do
+              case "${path}" in
+                .gitattributes|runtime/*|runtime/**/*|scripts/build_runtime.py|scripts/runtime_mcp_smoke.py|.github/workflows/runtime-package-tests.yml|.github/workflows/release.yml)
+                  runtime_required=true
+                  break
+                  ;;
+              esac
+            done < <(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}")
+          fi
+
+          echo "runtime_required=${runtime_required}" >> "${GITHUB_OUTPUT}"
+          if [[ "${runtime_required}" == "true" ]]; then
+            echo "Runtime package risk detected; Linux/Windows/macOS package evidence is required."
+          else
+            echo "Runtime package surfaces are unchanged; three-platform package jobs are not applicable."
+          fi
+
   runtime-linux-package:
     name: Runtime Linux Package
+    needs: scope
+    if: needs.scope.outputs.runtime_required == 'true'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -133,6 +167,8 @@ jobs:
 
   runtime-windows-package:
     name: Runtime Windows Package
+    needs: scope
+    if: needs.scope.outputs.runtime_required == 'true'
     runs-on: windows-2025
     steps:
       - name: Checkout
@@ -248,6 +284,8 @@ jobs:
 
   runtime-macos-package:
     name: Runtime macOS Package
+    needs: scope
+    if: needs.scope.outputs.runtime_required == 'true'
     runs-on: macos-15
     steps:
       - name: Checkout
@@ -352,3 +390,41 @@ jobs:
           ! grep -Fq "ENTRY.md" "${no_args_target}/AGENTS.md"
           ! grep -Fq "router/SKILL.md" "${no_args_target}/AGENTS.md"
           grep -Fq "用户可见" "${no_args_target}/AGENTS.md"
+
+  runtime-package-gate:
+    name: Runtime Package Gate
+    if: always()
+    needs:
+      - scope
+      - runtime-linux-package
+      - runtime-windows-package
+      - runtime-macos-package
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify required Runtime package evidence
+        shell: bash
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          RUNTIME_REQUIRED: ${{ needs.scope.outputs.runtime_required }}
+          LINUX_RESULT: ${{ needs.runtime-linux-package.result }}
+          WINDOWS_RESULT: ${{ needs.runtime-windows-package.result }}
+          MACOS_RESULT: ${{ needs.runtime-macos-package.result }}
+        run: |
+          set -euo pipefail
+          test "${SCOPE_RESULT}" = "success"
+          case "${RUNTIME_REQUIRED}" in
+            true)
+              test "${LINUX_RESULT}" = "success"
+              test "${WINDOWS_RESULT}" = "success"
+              test "${MACOS_RESULT}" = "success"
+              ;;
+            false)
+              test "${LINUX_RESULT}" = "skipped"
+              test "${WINDOWS_RESULT}" = "skipped"
+              test "${MACOS_RESULT}" = "skipped"
+              ;;
+            *)
+              echo "Unknown runtime_required value: ${RUNTIME_REQUIRED}" >&2
+              exit 1
+              ;;
+          esac
