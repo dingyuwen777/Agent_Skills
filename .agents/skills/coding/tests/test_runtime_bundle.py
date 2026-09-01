@@ -124,6 +124,15 @@ class RuntimeBundleTest(unittest.TestCase):
         self.assertEqual(len(first_contexts), 1)
         self.assertFalse(second["需要加载约束"])
 
+    def test_single_known_route_cannot_request_entire_canonical_corpus(self) -> None:
+        """即使全部取值都合法，单次宽 route 也不能把 Runtime MCP 变成 full-corpus export API。"""
+        store = RuntimeStore(build_bundle(self._fixture_root()))
+        store.start_task("T-broad-known")
+        broad = _task_route(意图=["功能开发", "代码审查", "文档更新"])
+
+        with self.assertRaisesRegex(ValueError, "单次任务约束过宽"):
+            store.submit_route("T-broad-known", broad)
+
     def test_source_mode_public_route_contract_keeps_catalog_without_reference_mapping(self) -> None:
         """Source Mode 的原始公开词汇契约可保留 Catalog，但不能泄露 Reference mapping。"""
         bundle = build_bundle(self._fixture_root())
