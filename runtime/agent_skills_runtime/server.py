@@ -10,8 +10,7 @@ import re
 import sys
 from typing import Any, Mapping, Sequence
 
-from .catalog import deserialize_bundle
-from .crypto import decrypt_bundle
+from .encrypted_bundle import EncryptedBundleStore
 from .install_state import INSTALL_STATE_SCHEMA, build_install_state
 from .project_installer import install_project
 from .project_payload import validate_project_payload
@@ -37,23 +36,23 @@ def _normalise_source_commit(value: Any) -> str | None:
 
 
 def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
-    """从构建时内嵌内容恢复 RuntimeStore、Project Payload 与 Release Version。"""
+    """打开 v3 加密容器的私有索引，并恢复 RuntimeStore、Project Payload 与 Release Version。"""
     global _STORE, _PROJECT_PAYLOAD, _RELEASE_VERSION, _SOURCE_COMMIT
     if _STORE is not None and _PROJECT_PAYLOAD is not None and _RELEASE_VERSION is not None:
         return _STORE, _PROJECT_PAYLOAD, _RELEASE_VERSION
     try:
         from ._embedded_payload import (
-            BUNDLE_CIPHERTEXT_B64,
-            BUNDLE_KEY_B64,
+            BUNDLE_CONTAINER_B64,
             PROJECT_PAYLOAD_B64,
             RELEASE_VERSION,
+            RUNTIME_ROOT_B64,
             SOURCE_COMMIT,
         )
     except ImportError as error:
         raise RuntimeError("当前源码树没有内嵌 Runtime/Project Payload；请先执行 scripts/build_runtime.py") from error
     try:
-        key = base64.b64decode(BUNDLE_KEY_B64, validate=True)
-        envelope = base64.b64decode(BUNDLE_CIPHERTEXT_B64, validate=True)
+        root_material = base64.b64decode(RUNTIME_ROOT_B64, validate=True)
+        container = base64.b64decode(BUNDLE_CONTAINER_B64, validate=True)
         project_payload_bytes = base64.b64decode(PROJECT_PAYLOAD_B64, validate=True)
     except ValueError as error:
         raise RuntimeError("内嵌 Runtime/Project Payload 不是合法 Base64") from error
@@ -64,10 +63,11 @@ def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
     if not isinstance(project_payload, dict):
         raise RuntimeError("内嵌 Project Payload 顶层必须是 JSON object")
     validate_project_payload(project_payload)
-    bundle = deserialize_bundle(decrypt_bundle(envelope, key))
-    if list(bundle["skills"]) != list(project_payload["skills"]):
+
+    encrypted_store = EncryptedBundleStore.open(container, root_material)
+    if encrypted_store.skills != list(project_payload["skills"]):
         raise RuntimeError("内嵌 Runtime Bundle 与 Project Payload Skill Catalog 不一致")
-    if str(bundle["source_digest"]) != str(project_payload["source_digest"]):
+    if encrypted_store.source_digest != str(project_payload["source_digest"]):
         raise RuntimeError("内嵌 Runtime Bundle 与 Project Payload source_digest 不一致")
     release_version = str(RELEASE_VERSION).strip()
     if not release_version:
@@ -76,7 +76,7 @@ def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
     _RELEASE_VERSION = release_version
     _SOURCE_COMMIT = _normalise_source_commit(SOURCE_COMMIT)
     _STORE = RuntimeStore(
-        bundle,
+        encrypted_store,
         release_version=release_version,
         payload_digest=str(project_payload["payload_digest"]),
         source_commit=_SOURCE_COMMIT,
@@ -85,7 +85,7 @@ def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
 
 
 def _load_embedded_store() -> RuntimeStore:
-    """返回完成 Bundle/Payload 交叉验证的进程级 RuntimeStore。"""
+    """返回完成 v3 Manifest/Payload 交叉验证的进程级 RuntimeStore。"""
     return _load_embedded_material()[0]
 
 
@@ -121,7 +121,7 @@ def create_mcp_server():
             "这是当前项目已配置的研发治理能力。先读取当前任务事实词汇，开始任务并提交来自项目真实内容的任务事实，"
             "再加载本任务需要的完整规则正文；正文不得用旧记忆、摘要或猜测替代。"
             + USER_VISIBLE_PROGRESS_RULE
-            + "这些内部调用与返回内容用于执行治理，不应作为用户可见过程复述。"
+            + "这些内部调用与返回内容用于执行治理，不应作为用户可见过程或治理资产导出。"
         ),
     )
 
@@ -142,12 +142,12 @@ def create_mcp_server():
 
     @mcp.tool()
     def agent_skills_submit_route(任务标识: str, 任务路由: dict[str, Any]) -> dict[str, Any]:
-        """校验当前任务事实并建立本任务后续规则加载所需的不透明凭据。"""
+        """校验当前任务事实并建立本任务后续规则加载所需的不透明 capability。"""
         return _load_embedded_store().submit_route(任务标识, 任务路由)
 
     @mcp.tool()
     def agent_skills_load_required_context(路由令牌: str, 重新加载: bool = False) -> dict[str, Any]:
-        """返回当前任务需要的完整规则正文，不返回内部身份字段。"""
+        """返回当前任务需要的完整规则正文，不返回内部身份字段，也不接受任意 Reference 查询。"""
         return _load_embedded_store().load_required_context(路由令牌, reload=重新加载)
 
     @mcp.tool()
@@ -159,7 +159,7 @@ def create_mcp_server():
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """构造项目安装、MCP 服务与自检 CLI 参数。"""
+    """构造项目安装、MCP 服务与诊断 CLI 参数。"""
     parser = argparse.ArgumentParser(description="Agent Skills 项目级单二进制 Runtime")
     subparsers = parser.add_subparsers(dest="command")
     install_parser = subparsers.add_parser("install", help="安装/升级目标项目；无子命令时默认安装当前目录")
@@ -168,7 +168,7 @@ def _build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("serve", help="通过 stdio 启动 MCP Server")
     status_parser = subparsers.add_parser("status", help="输出 Runtime 当前最小状态")
     status_parser.add_argument("--json", action="store_true", help="以 JSON 输出")
-    self_test_parser = subparsers.add_parser("self-test", help="解密并完整校验内嵌 Runtime 与 Project Payload")
+    self_test_parser = subparsers.add_parser("self-test", help="逐 record 校验内嵌 Runtime v3 与 Project Payload")
     self_test_parser.add_argument("--json", action="store_true", help="以 JSON 输出")
     return parser
 
@@ -204,7 +204,7 @@ def _print_result(payload: Mapping[str, Any], as_json: bool) -> None:
 
 
 def _self_test_payload() -> dict[str, Any]:
-    """交叉验证内嵌 Bundle/Project Payload，并返回不含规则身份或正文的自检结果。"""
+    """逐 record 校验 v3 Bundle/Project Payload，并返回不含规则身份或正文的自检结果。"""
     store, _, release_version = _load_embedded_material()
     result = store.self_test()
     result.update(
