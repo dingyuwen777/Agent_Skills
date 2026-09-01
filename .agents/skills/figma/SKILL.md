@@ -656,8 +656,6 @@ Figma MCP/工具返回的参考代码只表达结构意图，不得反向改变�
 → 当前项目实现入口
 ```
 
-`baseline-ready / Design-to-Code` 在 Coding Handoff 前必须形成 **Capability Gap Inventory**；集中披露全部已发现系统能力缺口、按真实能力/Owner 去重，无缺口时明确 `none`。详细规则由 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 唯一维护。
-
 如果当前项目已经有目标 Page/Screen，必须先执行 Existing Implementation Delta Gate：以现有正确实现为基线，只实现新 Figma 经 Requirement/Contract/Owner 确认的真实差异，**不默认整页重写**。
 
 生产实现由 Coding 工作流完成后，还必须执行 **Implementation ↔ Figma Conformance**，对实际页面、正式 Figma 与真实 Contract/Backend/SDK/Store 的 Visual、Interaction、State、Data/Contract、Responsive、Component/Owner 六个域做 targeted re-review；代码验证通过本身不等于 Design-to-Code 已闭环。
