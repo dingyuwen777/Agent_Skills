@@ -83,11 +83,14 @@ def encrypt_authenticated(payload: bytes, key: bytes, aad: bytes) -> bytes:
 
 
 def decrypt_authenticated(envelope: bytes, key: bytes, aad: bytes) -> bytes:
-    """验证 AES-GCM tag 后恢复 payload；nonce/AAD/ciphertext 任一被篡改都必须失败。"""
+    """验证 AES-GCM tag 后恢复 payload；认证失败统一为不泄露内部材料的完整性错误。"""
     if not aad:
         raise ValueError("Runtime AEAD AAD 不能为空")
     if len(envelope) < _NONCE_BYTES + 16:
         raise ValueError("Runtime AEAD envelope 长度不足")
     nonce = envelope[:_NONCE_BYTES]
     ciphertext = envelope[_NONCE_BYTES:]
-    return _aesgcm(key).decrypt(nonce, ciphertext, aad)
+    try:
+        return _aesgcm(key).decrypt(nonce, ciphertext, aad)
+    except Exception as error:
+        raise ValueError("Runtime 加密材料认证失败") from error
