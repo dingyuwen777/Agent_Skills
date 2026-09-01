@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""把 Agent Skills 构建为包含加密 Reference 与项目安装 Payload 的单文件 Runtime。"""
+"""把 Agent Skills 构建为包含 Runtime v3 加密 Reference 与项目安装 Payload 的单文件 Runtime。"""
 
 from __future__ import annotations
 
@@ -22,8 +22,8 @@ SOURCE_ROOT = Path(__file__).resolve().parents[1]
 if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
-from runtime.agent_skills_runtime.catalog import build_bundle, serialize_bundle
-from runtime.agent_skills_runtime.crypto import encrypt_bundle, generate_bundle_key
+from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.encrypted_bundle import encrypt_runtime_bundle
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime.routing import ROUTING_MANIFEST_PROTOCOL, TASK_ROUTE_PROTOCOL
 from runtime.agent_skills_runtime.runtime import MCP_TOOL_CONTRACT_PROTOCOL, runtime_integrity_fingerprint
@@ -120,18 +120,18 @@ def _serialize_project_payload(payload: Mapping[str, Any]) -> bytes:
 
 def _write_embedded_payload(
     package_root: Path,
-    key: bytes,
-    envelope: bytes,
+    root_material: bytes,
+    container: bytes,
     project_payload: Mapping[str, Any],
     release_version: str,
     source_commit: str | None = None,
 ) -> None:
-    """仅在临时构建副本中写入加密 Reference、Project Payload 与版本，不修改源仓库。"""
+    """只在临时构建副本写入 v3 加密容器、可恢复根材料与 Project Payload，不修改源码仓库。"""
     project_payload_b64 = base64.b64encode(_serialize_project_payload(project_payload)).decode("ascii")
     content = (
-        '"""构建时生成的加密 Reference 与项目安装 Payload；不要手工编辑。"""\n\n'
-        f'BUNDLE_KEY_B64 = "{base64.b64encode(key).decode("ascii")}"\n'
-        f'BUNDLE_CIPHERTEXT_B64 = "{base64.b64encode(envelope).decode("ascii")}"\n'
+        '"""构建时生成的 Runtime v3 加密容器与项目安装 Payload；不要手工编辑。"""\n\n'
+        f'RUNTIME_ROOT_B64 = "{base64.b64encode(root_material).decode("ascii")}"\n'
+        f'BUNDLE_CONTAINER_B64 = "{base64.b64encode(container).decode("ascii")}"\n'
         f'PROJECT_PAYLOAD_B64 = "{project_payload_b64}"\n'
         f'RELEASE_VERSION = {release_version!r}\n'
         f'SOURCE_COMMIT = {source_commit!r}\n'
@@ -196,9 +196,7 @@ def build_runtime(
     bundle = build_bundle(source)
     context_budget = _context_budget(source, bundle)
     project_payload = build_project_payload(source, bundle)
-    serialized = serialize_bundle(bundle)
-    key = generate_bundle_key()
-    envelope = encrypt_bundle(serialized, key)
+    root_material, container = encrypt_runtime_bundle(bundle)
 
     with tempfile.TemporaryDirectory(prefix="agent-skills-runtime-build-") as temp_name:
         temp_root = Path(temp_name)
@@ -209,7 +207,14 @@ def build_runtime(
             package_copy,
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo", "_embedded_payload.py"),
         )
-        _write_embedded_payload(package_copy, key, envelope, project_payload, release_version, source_commit)
+        _write_embedded_payload(
+            package_copy,
+            root_material,
+            container,
+            project_payload,
+            release_version,
+            source_commit,
+        )
         entrypoint = temp_root / "entrypoint.py"
         _write_entrypoint(entrypoint)
         command = [
