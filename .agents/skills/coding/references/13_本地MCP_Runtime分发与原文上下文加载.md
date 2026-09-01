@@ -28,7 +28,7 @@ Runtime 还必须建立**模式感知的信息披露边界**：Source Mode 直�
 ### 2.1 目标
 
 ```text
-canonical .agents/skills/*/SKILL.md
+Agent_Skills 源仓库 .agents/skills/*/SKILL.md
 → 动态发现正式 Skill
 → 唯一人工 Core Owner
 
@@ -466,13 +466,13 @@ agent-skills-v<SemVer>-macos.zip
 
 ## 18. 当前版本安装与未来不兼容迁移
 
-本 Change 只要求当前 Bundle v3 artifact 的首次安装、无参数安装、显式 target 与当前版本重复安装保持。Project Payload v2、sidecarless ownership、Host managed 边界和安装事务规则不因 v3 加密变化而改变。
+本 Change 只验收当前 Bundle v3 的首次/无参数/显式安装与当前版本重复安装；Project Payload v2、sidecarless ownership、Host managed 和安装事务边界保持。
 
-如果未来需要历史 Bundle v2 installed Runtime → v3、其他 Bundle schema、MCP Contract 或 ownership schema 的正式迁移，必须建立独立 Change，明确兼容范围、迁移、回滚与三平台证据；当前 v3 不为了未验收的历史迁移保留无限期双 reader。
+未来如需历史 Bundle v2 installed Runtime → v3 或其他不兼容 Contract/schema 迁移，另建 Change 明确兼容范围、迁移、回滚和三平台证据；当前 v3 不为未验收迁移保留无限期双 reader。
 
 ## 19. 回滚
 
-当前安装事务失败按第 15 节快照回滚。用户手工回退必须使用目标版本完整同平台正式资产和该版本自己的安装流程，不能只替换 Runtime 或局部投影 Core。目标版本不理解当前 Contract 时停止并按对应迁移说明处理；不得手工删除归属不明 `.agents` 内容。
+安装失败按第 15 节快照回滚。手工回退使用目标版本完整同平台资产及其安装流程；目标版本不理解当前 Contract 时停止并按对应迁移说明处理，不手工删除归属不明 `.agents` 内容。
 
 ## 20. 正常任务生命周期
 
