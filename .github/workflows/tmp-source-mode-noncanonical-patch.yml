@@ -22,7 +22,7 @@ jobs:
       - name: Verify patch
         run: |
           git diff --check
-          python -m unittest .agents/skills/coding/tests/test_source_mode_installed_assets_noncanonical.py -v
+          python -m unittest discover -s .agents/skills/coding/tests -p 'test_source_mode_installed_assets_noncanonical.py' -v
       - name: Commit canonical rules
         run: |
           git config user.name "github-actions[bot]"
