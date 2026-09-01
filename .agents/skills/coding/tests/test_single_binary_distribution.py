@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.crypto import recover_root_material
 from runtime.agent_skills_runtime.encrypted_bundle import EncryptedBundleStore, encrypt_runtime_bundle
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime import server
@@ -48,12 +49,19 @@ class SingleBinaryDistributionTest(unittest.TestCase):
                 project_payload,
                 "1.2.3",
             )
+            generated_source = (package_root / "_embedded_payload.py").read_text(encoding="utf-8")
             embedded = _load_module("embedded_payload_fixture", package_root / "_embedded_payload.py")
+
+        self.assertNotIn("RUNTIME_ROOT_B64", generated_source)
+        self.assertIn("RUNTIME_ROOT_SHARES_B64", generated_source)
+        root_shares = base64.b64decode(embedded.RUNTIME_ROOT_SHARES_B64, validate=True)
+        self.assertNotEqual(root_shares, root_material)
+        self.assertEqual(recover_root_material(root_shares), root_material)
 
         restored_payload = json.loads(base64.b64decode(embedded.PROJECT_PAYLOAD_B64).decode("utf-8"))
         restored_store = EncryptedBundleStore.open(
             base64.b64decode(embedded.BUNDLE_CONTAINER_B64, validate=True),
-            base64.b64decode(embedded.RUNTIME_ROOT_B64, validate=True),
+            recover_root_material(root_shares),
         )
         self.assertEqual(restored_payload["skills"], project_payload["skills"])
         self.assertEqual(restored_payload["payload_digest"], project_payload["payload_digest"])
@@ -74,7 +82,7 @@ class SingleBinaryDistributionTest(unittest.TestCase):
             self.assertNotIn(reference["content"].encode("utf-8"), container)
 
     def test_runtime_builder_has_no_external_runtime_kit_install_path(self) -> None:
-        """正式 Runtime Builder 不得继续生成 Python 安装脚本或外部 payload Kit。"""
+        """正式 Runtime Builder 不得继续生成 Python 安装脚本、外部 Kit 或完整 root 单常量。"""
         source = BUILD_RUNTIME_PATH.read_text(encoding="utf-8")
 
         self.assertNotIn("build_distribution_kit", source)
@@ -82,7 +90,8 @@ class SingleBinaryDistributionTest(unittest.TestCase):
         self.assertNotIn("install_runtime_target.py", source)
         self.assertNotIn("runtime-kit", source)
         self.assertIn("BUNDLE_CONTAINER_B64", source)
-        self.assertIn("RUNTIME_ROOT_B64", source)
+        self.assertIn("RUNTIME_ROOT_SHARES_B64", source)
+        self.assertNotIn("RUNTIME_ROOT_B64", source)
         self.assertIn("PROJECT_PAYLOAD_B64", source)
         self.assertIn("build_project_payload", source)
 
