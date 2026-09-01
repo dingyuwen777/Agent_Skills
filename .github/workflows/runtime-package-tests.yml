@@ -14,7 +14,7 @@ jobs:
     name: Runtime Package Scope
     runs-on: ubuntu-24.04
     outputs:
-      runtime_required: ${{ steps.detect.outputs.runtime_required }}
+      runtime_scope: ${{ steps.detect.outputs.runtime_scope }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Detect Runtime package risk
+      - name: Detect Runtime package evidence scope
         id: detect
         shell: bash
         run: |
@@ -35,31 +35,33 @@ jobs:
             HEAD_SHA="${GITHUB_SHA}"
           fi
 
-          runtime_required=false
           if [[ -z "${BASE_SHA}" || "${BASE_SHA}" =~ ^0+$ ]] || ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
-            runtime_required=true
+            runtime_scope=package
           else
-            while IFS= read -r path; do
-              case "${path}" in
-                .gitattributes|runtime/*|runtime/**/*|scripts/build_runtime.py|scripts/runtime_mcp_smoke.py|.github/workflows/runtime-package-tests.yml|.github/workflows/release.yml)
-                  runtime_required=true
-                  break
-                  ;;
-              esac
-            done < <(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}")
+            runtime_scope="$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" | python .github/scripts/runtime_package_scope.py)"
           fi
 
-          echo "runtime_required=${runtime_required}" >> "${GITHUB_OUTPUT}"
-          if [[ "${runtime_required}" == "true" ]]; then
-            echo "Runtime package risk detected; Linux/Windows/macOS package evidence is required."
-          else
-            echo "Runtime package surfaces are unchanged; three-platform package jobs are not applicable."
-          fi
+          echo "runtime_scope=${runtime_scope}" >> "${GITHUB_OUTPUT}"
+          case "${runtime_scope}" in
+            governance)
+              echo "Governance-only changes detected; three-platform Runtime package jobs are not applicable."
+              ;;
+            content)
+              echo "Runtime content changed; Skill Tests provide semantic evidence and three-platform package jobs are not applicable."
+              ;;
+            package)
+              echo "Runtime executable/package/platform risk detected; Linux/Windows/macOS package evidence is required."
+              ;;
+            *)
+              echo "Unknown Runtime package scope: ${runtime_scope}" >&2
+              exit 1
+              ;;
+          esac
 
   runtime-linux-package:
     name: Runtime Linux Package
     needs: scope
-    if: needs.scope.outputs.runtime_required == 'true'
+    if: needs.scope.outputs.runtime_scope == 'package'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -168,7 +170,7 @@ jobs:
   runtime-windows-package:
     name: Runtime Windows Package
     needs: scope
-    if: needs.scope.outputs.runtime_required == 'true'
+    if: needs.scope.outputs.runtime_scope == 'package'
     runs-on: windows-2025
     steps:
       - name: Checkout
@@ -285,7 +287,7 @@ jobs:
   runtime-macos-package:
     name: Runtime macOS Package
     needs: scope
-    if: needs.scope.outputs.runtime_required == 'true'
+    if: needs.scope.outputs.runtime_scope == 'package'
     runs-on: macos-15
     steps:
       - name: Checkout
@@ -405,26 +407,31 @@ jobs:
         shell: bash
         env:
           SCOPE_RESULT: ${{ needs.scope.result }}
-          RUNTIME_REQUIRED: ${{ needs.scope.outputs.runtime_required }}
+          RUNTIME_SCOPE: ${{ needs.scope.outputs.runtime_scope }}
           LINUX_RESULT: ${{ needs.runtime-linux-package.result }}
           WINDOWS_RESULT: ${{ needs.runtime-windows-package.result }}
           MACOS_RESULT: ${{ needs.runtime-macos-package.result }}
         run: |
           set -euo pipefail
           test "${SCOPE_RESULT}" = "success"
-          case "${RUNTIME_REQUIRED}" in
-            true)
-              test "${LINUX_RESULT}" = "success"
-              test "${WINDOWS_RESULT}" = "success"
-              test "${MACOS_RESULT}" = "success"
-              ;;
-            false)
+          case "${RUNTIME_SCOPE}" in
+            governance)
               test "${LINUX_RESULT}" = "skipped"
               test "${WINDOWS_RESULT}" = "skipped"
               test "${MACOS_RESULT}" = "skipped"
               ;;
+            content)
+              test "${LINUX_RESULT}" = "skipped"
+              test "${WINDOWS_RESULT}" = "skipped"
+              test "${MACOS_RESULT}" = "skipped"
+              ;;
+            package)
+              test "${LINUX_RESULT}" = "success"
+              test "${WINDOWS_RESULT}" = "success"
+              test "${MACOS_RESULT}" = "success"
+              ;;
             *)
-              echo "Unknown runtime_required value: ${RUNTIME_REQUIRED}" >&2
+              echo "Unknown runtime_scope value: ${RUNTIME_SCOPE}" >&2
               exit 1
               ;;
           esac
