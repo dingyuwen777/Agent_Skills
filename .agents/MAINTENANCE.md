@@ -200,10 +200,10 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、专业 Skill
 普通 PR/main 的 Runtime 证据责任按 `governance / content / package` 三档判断；**L3 ≠ 必然三平台打包**。风险等级决定治理和证明强度，是否构建 binary 则由本次 diff 是否改变 executable/package/platform boundary 决定：
 
 - `governance`：Change、维护文档和不进入 Runtime 产品语义的仓库治理文本；运行 Skill Tests、Requirement/Ready/Review 等治理门禁，不运行三平台 binary package；
-- `content`：`.agents/skills/**` 下 canonical Skill/Reference/Entry、Project Payload 文本或运行资产，以及 `USAGE.md` 等会影响 Runtime/Release 内容但不改变 executable mechanism 的文件；必须继续运行完整 Skill Tests，用动态 Catalog、Bundle/Project Payload 构建、Routing Conformance、canonical exact-text、加密 round-trip、ownership 与内容守恒等平台无关证据证明，不运行三平台 binary package；
+- `content`：`.agents/skills/**` 下 canonical Skill/Reference/Entry、Project Payload 文本或运行资产，以及 [`USAGE.md`](../USAGE.md) 等会影响 Runtime/Release 内容但不改变 executable mechanism 的文件；必须继续运行完整 Skill Tests，用动态 Catalog、Bundle/Project Payload 构建、Routing Conformance、canonical exact-text、加密 round-trip、ownership 与内容守恒等平台无关证据证明，不运行三平台 binary package；
 - `package`：Runtime Python/source、加密/加载实现、安装器和平台逻辑、Runtime/build requirements、Builder、真实 MCP smoke、Runtime Package/Release workflow、scope classifier 与 `.gitattributes` 等会改变 executable/package/platform boundary 的文件；必须在 Linux、Windows、macOS 对应 Runner 完成 onefile、self-test、真实 stdio MCP 和项目安装验证。
 
-混合修改取最高档；任一 `package` 路径存在时不能被 `content/governance` 文件掩盖。分类依据是文件在产品中的职责，不按 `.md`、`.py` 等扩展名粗暴判断：例如 `runtime/README.md` 属于 `governance`，canonical Reference Markdown 属于 `content`。
+混合修改取最高档；任一 `package` 路径存在时不能被 `content/governance` 文件掩盖。分类依据是文件在产品中的职责，不按 `.md`、`.py` 等扩展名粗暴判断：例如 [`runtime/README.md`](../runtime/README.md) 属于 `governance`，canonical Reference Markdown 属于 `content`。
 
 永久验证仍按独立证据分层：
 
