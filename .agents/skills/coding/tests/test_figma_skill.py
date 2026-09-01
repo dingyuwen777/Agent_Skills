@@ -101,6 +101,7 @@ class UniversalFigmaSkillTest(unittest.TestCase):
             "本次审查范围内全部已发现", "同一真实能力 / Owner",
             "没有能力缺口时也必须明确输出 `none`", "不得等到 Coding 实施中途才首次披露",
             "当前任务已经明确批准把范围扩大到真实跨层实现", "永久 mock",
+            "Figma 位置 / 用户能力 / 当前系统证据 / 正式 Owner / 缺失或冲突层（不存在则 not_applicable） / 分类 / 阻塞性 / 最小动作",
         ):
             self.assertIn(marker, handoff)
         self.assertIn("Capability Gap Inventory", skill)
