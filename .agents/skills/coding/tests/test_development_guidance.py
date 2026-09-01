@@ -3,6 +3,8 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
+
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -55,6 +57,24 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, systemic)
+
+    def test_l2_feature_route_loads_systemic_analysis_reference(self) -> None:
+        """普通 L2 功能开发必须自动加载系统级分析与整洁专项规则。"""
+        manifest = compile_routing(ROOT)
+        result = evaluate_route(
+            manifest,
+            {
+                "协议": TASK_ROUTE_PROTOCOL,
+                "信号": {
+                    "执行模式": ["实现"],
+                    "阶段": ["功能开发"],
+                    "风险": ["L2"],
+                },
+                "未知项": [],
+                "依据": ["systemic analysis routing regression"],
+            },
+        )
+        self.assertIn("coding.reference.22", result["必需Reference"])
 
     def test_affected_code_scope_must_finish_clean_without_unrelated_refactor(self) -> None:
         """开发收口必须清理受影响代码域，同时保护隐式依赖并禁止借机扩大范围。"""
