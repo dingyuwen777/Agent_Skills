@@ -41,27 +41,37 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertNotIn("Runtime macOS Package", workflow)
         self.assertIn("Run self-contained tests", workflow)
         self.assertIn("Verify active Coding Change", workflow)
+        self.assertIn("Agent Skills Gate", workflow)
 
-    def test_runtime_package_ci_is_path_scoped_and_keeps_three_platform_evidence(self) -> None:
-        """只有 Runtime/Builder/Release 相关变化进入三平台 onefile package CI。"""
+    def test_runtime_package_ci_uses_stable_gate_and_keeps_three_platform_evidence(self) -> None:
+        """Runtime package CI 必须稳定产出 Gate，并只在真实 Runtime 风险时执行三平台构建。"""
         workflow_path = ROOT / ".github/workflows/runtime-package-tests.yml"
         self.assertTrue(workflow_path.is_file(), "缺少 Runtime 专项 package workflow")
         workflow = workflow_path.read_text(encoding="utf-8")
+        self.assertIn("Runtime Package Scope", workflow)
+        self.assertIn("Runtime Package Gate", workflow)
         for trigger in (
-            '"runtime/**"',
-            '"scripts/build_runtime.py"',
-            '"scripts/runtime_mcp_smoke.py"',
-            '".github/workflows/runtime-package-tests.yml"',
-            '".github/workflows/release.yml"',
+            "runtime/*|runtime/**/*",
+            "scripts/build_runtime.py",
+            "scripts/runtime_mcp_smoke.py",
+            ".github/workflows/runtime-package-tests.yml",
+            ".github/workflows/release.yml",
         ):
             self.assertIn(trigger, workflow)
-        self.assertNotIn('".agents/**"', workflow)
+        self.assertNotIn(".agents/*|.agents/**/*", workflow)
+        self.assertEqual(
+            workflow.count("if: needs.scope.outputs.runtime_required == 'true'"),
+            3,
+        )
         self.assertIn("Runtime Linux Package", workflow)
         self.assertIn("Runtime Windows Package", workflow)
         self.assertIn("Runtime macOS Package", workflow)
         self.assertIn("Build and self-test", workflow)
         self.assertIn("Verify real stdio MCP contract", workflow)
         self.assertIn("Verify project-only single-binary installation", workflow)
+        self.assertIn('test "${LINUX_RESULT}" = "skipped"', workflow)
+        self.assertIn('test "${WINDOWS_RESULT}" = "skipped"', workflow)
+        self.assertIn('test "${MACOS_RESULT}" = "skipped"', workflow)
 
     def test_project_runtime_is_host_connection_scoped_not_system_daemon(self) -> None:
         """项目 MCP 使用宿主 stdio 子进程；允许会话级存活，但禁止系统服务/独立守护。"""
