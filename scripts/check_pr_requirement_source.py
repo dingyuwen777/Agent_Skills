@@ -209,11 +209,22 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _resolve_repository(event: dict[str, Any]) -> str:
+    """从 GitHub event 或环境变量恢复当前仓库 `owner/name` 身份。"""
+    repository_payload = event.get("repository")
+    if isinstance(repository_payload, dict):
+        full_name = repository_payload.get("full_name")
+        if full_name:
+            return str(full_name)
+    return os.environ.get("GITHUB_REPOSITORY", "")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """执行 PR Requirement Source 门禁；非 PR push 事件显式走可审计 fast path。"""
     args = _build_parser().parse_args(argv)
-    event_path = args.event_path or Path(os.environ.get("GITHUB_EVENT_PATH", ""))
-    if not str(event_path):
+    event_path_text = os.environ.get("GITHUB_EVENT_PATH", "").strip()
+    event_path = args.event_path or (Path(event_path_text) if event_path_text else None)
+    if event_path is None:
         print("PR_REQUIREMENT_SOURCE_ERROR: 缺少 GITHUB_EVENT_PATH。", file=sys.stderr)
         return 1
 
@@ -225,10 +236,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
 
         body = str(pull_request.get("body") or "")
-        repository = str(
-            (event.get("repository") or {}).get("full_name")
-            or os.environ.get("GITHUB_REPOSITORY", "")
-        )
+        repository = _resolve_repository(event)
         token = os.environ.get("GITHUB_TOKEN", "")
         sources = validate_requirement_sources(
             body,
