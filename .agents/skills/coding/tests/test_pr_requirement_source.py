@@ -22,10 +22,11 @@ class RequirementSourceValidationTests(unittest.TestCase):
     """覆盖 Requirement Source 的合法来源、拒绝路径和 CLI fast path。"""
 
     def _issue(self, *, body: str | None = None) -> dict[str, object]:
-        """返回满足当前最小机器结构的 GitHub Issue 假响应。"""
+        """返回满足当前最小机器可审查边界的 GitHub Issue 假响应。"""
+        resolved_body = body if body is not None else "## 目标\n完成治理改造\n\n## 验收标准\n- Gate 可验证"
         return {
             "title": "治理变更",
-            "body": body or "## 目标\n完成治理改造\n\n## 验收标准\n- Gate 可验证",
+            "body": resolved_body,
         }
 
     def test_extracts_multiple_requirement_sources_without_duplicates(self) -> None:
@@ -61,7 +62,7 @@ class RequirementSourceValidationTests(unittest.TestCase):
                 )
 
     def test_existing_repository_path_is_accepted(self) -> None:
-        """当前 checkout 中真实存在的仓库相对正式路径可以作为来源。"""
+        """当前 checkout 中真实存在的仓库相对正式文件可以作为来源。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "specs").mkdir()
@@ -72,6 +73,18 @@ class RequirementSourceValidationTests(unittest.TestCase):
                 lambda _: self._issue(),
             )
             self.assertEqual(sources, ("specs/design.md",))
+
+    def test_repository_directory_is_rejected(self) -> None:
+        """目录不能冒充可审查的 Requirement Source 文件。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "specs").mkdir()
+            with self.assertRaisesRegex(subject.RequirementSourceError, "仓库文件"):
+                subject.validate_requirement_sources(
+                    "Requirement-Source: specs",
+                    root,
+                    lambda _: self._issue(),
+                )
 
     def test_coding_change_path_cannot_be_requirement_source(self) -> None:
         """Coding Change 是施工契约，不能通过仓库路径绕过上游 Requirement Source 规则。"""
@@ -101,7 +114,7 @@ class RequirementSourceValidationTests(unittest.TestCase):
                 )
 
     def test_valid_issue_source_is_accepted(self) -> None:
-        """真实 GitHub Issue 且包含目标与验收结构时通过。"""
+        """真实 GitHub Issue 且标题正文可审查时通过机器来源门禁。"""
         seen: list[int] = []
 
         def loader(issue_number: int) -> dict[str, object]:
@@ -130,16 +143,30 @@ class RequirementSourceValidationTests(unittest.TestCase):
                     lambda _: payload,
                 )
 
-    def test_issue_without_acceptance_structure_is_rejected(self) -> None:
-        """只有标题和背景、没有验收语义的 Issue 不足以通过机器结构门禁。"""
-        payload = self._issue(body="## 目标\n只描述目标，不写完成判断")
+    def test_empty_issue_body_is_rejected(self) -> None:
+        """真实 Issue 仍必须有非空正文，空载体不能满足机器追溯。"""
+        payload = self._issue(body="")
         with tempfile.TemporaryDirectory() as directory:
-            with self.assertRaisesRegex(subject.RequirementSourceError, "验收"):
+            with self.assertRaisesRegex(subject.RequirementSourceError, "标题或正文"):
                 subject.validate_requirement_sources(
                     "Requirement-Source: #131",
                     Path(directory),
                     lambda _: payload,
                 )
+
+    def test_issue_content_is_language_agnostic(self) -> None:
+        """机器门禁不能依赖中文标题关键词替代自然语言 Requirement Review。"""
+        payload = {
+            "title": "Stabilize CI gates",
+            "body": "Make pull-request checks stable and preserve existing evidence responsibilities.",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            sources = subject.validate_requirement_sources(
+                "Requirement-Source: #131",
+                Path(directory),
+                lambda _: payload,
+            )
+        self.assertEqual(sources, ("#131",))
 
     def test_non_pr_event_uses_explicit_fast_path(self) -> None:
         """main push 不应伪造 PR 需求来源，而应明确 not_applicable 并成功。"""
