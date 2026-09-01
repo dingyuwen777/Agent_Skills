@@ -22,6 +22,11 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14.7"
+
       - name: Detect Runtime package evidence scope
         id: detect
         shell: bash
@@ -38,7 +43,7 @@ jobs:
           if [[ -z "${BASE_SHA}" || "${BASE_SHA}" =~ ^0+$ ]] || ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
             runtime_scope=package
           else
-            runtime_scope="$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" | python .github/scripts/runtime_package_scope.py)"
+            runtime_scope="$(git diff --name-only --no-renames "${BASE_SHA}" "${HEAD_SHA}" | python .github/scripts/runtime_package_scope.py)"
           fi
 
           echo "runtime_scope=${runtime_scope}" >> "${GITHUB_OUTPUT}"
