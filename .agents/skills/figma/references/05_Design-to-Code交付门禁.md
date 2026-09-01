@@ -195,69 +195,23 @@ SDK / client 名称
 
 ## 6.4 Capability Gap Inventory / 系统能力缺口清单
 
-`baseline-ready / Design-to-Code` 不能只在逐条 Finding 中零散记录系统缺口。完成 UI → Real-System Preflight 和真实 Owner 判断后，**Coding Handoff 前必须集中输出**一份 `Capability Gap Inventory`，覆盖**本次审查范围内全部已发现**、会影响真实实施或用户行为的系统能力缺口；**不得等到 Coding 实施中途才首次披露**。
+`baseline-ready / Design-to-Code` 完成上述真实系统预检后，**Coding Handoff 前必须集中输出** `Capability Gap Inventory`，覆盖**本次审查范围内全部已发现**的未实现、未批准、Future、过期、实现错误或待决策能力；**不得等到 Coding 实施中途才首次披露**。分类只复用现有 `implementation_required / future_design / design_outdated / implementation_issue_detected / decision_required / 未批准设计假设→NOT_READY`，不建立第二套状态。
 
-这份清单是 6.1–6.3 与真实系统映射规则的集中决策视图，不建立第二套事实分类。只复用当前已确认的语义，例如：
+每项最少包含：`Figma 位置｜用户能力｜当前系统证据｜正式 Owner｜缺失/冲突层（不存在则 not_applicable）｜分类｜阻塞性｜最小动作`。
 
-```text
-implementation_required
-future_design / Future
-未批准设计假设 → NOT_READY
-design_outdated
-implementation_issue_detected
-decision_required
-```
+“全部”按能力而不是 Node 数量计数：Normal/Loading/Empty/Error 或多个实例若只是**同一真实能力 / Owner**，合并一项并保留必要状态差异；用户语义、Owner、触发/权限/时间/错误语义或修复动作不同才拆分。
 
-已经由当前系统真实支持且没有冲突的能力不是“缺口”，通常不进入清单；它们继续由 System/Data Mapping 与 Coding Handoff 的真实来源说明承载。
-
-每个缺口至少记录：
-
-```text
-Figma 位置：File / Page / Section / Frame / Node（按可定位能力）
-UI / 用户能力：用户认为这个字段、动作或状态做什么
-当前系统证据：当前 Contract / SDK / Backend / Store / Runtime / 测试等实际证据
-正式事实 Owner：Requirement / Contract / Domain / Platform / 其它当前真实 Owner
-缺失或冲突层：只列项目真实存在或本次正式要建立的层；不存在的层写 not_applicable
-分类：复用现有 implementation_required / Future / design_outdated / implementation_issue_detected / decision_required 等语义
-阻塞性：是否阻止当前 READY、当前 Coding Handoff 或当前生产启用
-建议动作：修设计 / 取得决策 / 扩大 Coding 范围 / 修真实实现 Owner / 同步 Annotation / 其它最小动作
-```
-
-### 6.4.1 完整不等于重复
-
-“全部已发现”按**真实能力缺口**而不是按画布节点数量计数。Normal / Loading / Empty / Error、多个状态稿或多个组件实例如果只是重复表达**同一真实能力 / Owner**，主清单只保留一条能力记录，并在同一记录里注明必要的状态差异、受影响 Frame/Flow 或消费者。
-
-只有以下事实之一不同，才拆成独立缺口：
-
-- 用户语义不同；
-- 正式 Owner 不同；
-- 触发条件、权限、时间、错误或异步状态差异会导致不同实现决定；
-- 缺失层或修复动作不同。
-
-不得为了“完整”把同一 API/Capability 在每张状态稿重复列一遍，也不得因为去重把真正不同的状态约束合并丢失。
-
-### 6.4.2 implementation_required 的 Handoff 边界
-
-`implementation_required` 表示能力已经由正式 Requirement / Owner 批准，但当前真实系统尚未完成，不表示前端可以先造假。
+`implementation_required` 的边界：
 
 ```text
 当前任务已经明确批准把范围扩大到真实跨层实现
-→ Inventory 中明确缺失层和真实 Owner
-→ 作为 Coding Handoff 输入
-→ Coding 按目标项目真实架构完成 Contract / Backend / SDK / Client / Frontend 中适用的层
-→ 完成对应验证后再闭环
+→ Inventory 作为 Coding Handoff 输入，由 Coding 按项目真实架构实现适用层并验证；不要求用户逐项手工编码
 
-当前任务没有授权或没有范围依据去实现缺失层
-→ 先在 Inventory 集中披露
-→ 按实际影响阻止相关生产能力启用或当前 Handoff
-→ 不逐项猜接口、不留下永久 mock、不用本地假状态伪造服务器成功
+未批准扩大实现范围
+→ 先集中披露并按实际影响阻止相关生产能力/Handoff；不得猜 API、保留永久 mock 或伪造系统成功
 ```
 
-用户不需要因为 Inventory 中有多项 `implementation_required` 就逐项手工编码或被连续追问。已经有明确上游范围时，Coding 可以把批准项作为一个真实跨层工作单元实施；只有会改变业务语义、公共 Contract、数据、安全、兼容或验收且仓库事实无法确认的上游决定，才按 Coding 决策门禁提请用户/Owner。
-
-### 6.4.3 空清单也必须显式
-
-没有能力缺口时也必须明确输出 `none`，证明本次已经执行了集中审计，而不是因为没有输出而无法区分“确实没有缺口”和“忘了检查”。
+没有能力缺口时也必须明确输出 `none`，用来区分“已审计且无缺口”和“未检查”。
 
 ---
 
@@ -447,7 +401,7 @@ Figma Frame 是设计基准，不自动等于生产固定像素。
 [ ] 用户输入/动作都有真实系统映射或 Future 标识
 [ ] 动态数据来源明确
 [ ] 示例数据不冒充生产事实
-[ ] Capability Gap Inventory 已集中输出；全部已发现缺口按真实能力 / Owner 去重并分类；无缺口时明确为 none
+[ ] Capability Gap Inventory 已集中输出；缺口按真实能力 / Owner 去重并分类；无缺口时为 none
 [ ] Annotation Development Readiness / Coverage Audit 已完成
 [ ] 必要 Annotation 的机器事实与当前真实 Contract / SDK / 实现边界一致
 [ ] 重复 / 无意义 Annotation 已在不丢语义前提下收敛
@@ -504,12 +458,11 @@ Figma Skill 的 `READY` 只证明设计可以实施，不证明代码已经实�
 → 恢复当前项目规则和实现事实
 → 确定正式 Figma Node / Starting Point
 → baseline-ready
-→ UI → Real-System Preflight + Capability Gap Inventory
 → NOT_READY：
-   - 已明确授权修改 Figma → review-and-fix 后重新 baseline-ready
-   - 未授权修改 Figma → 停止生产实现并报告阻塞
+   - 用户已授权修改 Figma → review-and-fix → re-review
+   - 用户未授权修改 Figma → 停止生产实现并报告阻塞
 → READY / 可实施的 READY_WITH_NOTES
-→ 形成 Coding Handoff（携带 Inventory 与已批准 implementation_required 范围）
+→ 形成 Coding Handoff
 → 立即切入目标项目 Coding 工作流
 → Coding 按项目规则实施、验证、Review、CI、Git/交付
 → 实现完成后执行 Implementation ↔ Figma Conformance Gate
