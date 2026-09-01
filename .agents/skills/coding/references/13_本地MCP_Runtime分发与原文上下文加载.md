@@ -767,7 +767,7 @@ legacy v1/v2/未知 schema、Bundle v1、旧 MCP Contract 或损坏状态不静�
 → 真实验证与交付门禁
 ```
 
-Source Mode 是明文维护/直读模式；在用户已经有源码访问权时，可以正常显示正在读取哪个 Skill/Reference、具体路径、路由判断和维护过程，不应用 Runtime Mode 的用户可见隐藏策略伪装源码事实。
+Source Mode 是明文维护/直读模式；在用户已经有源码访问权时，可以正常显示正在读取哪个 Skill/Reference、具体路径、路由判断和维护过程，不应用 Runtime Mode 的用户可见隐藏策略伪装源码事实。**目标项目旧版本 Agent_Skills 安装资产**（包括 managed block、Runtime / Project Payload / Runtime Skill Projection 与 legacy install-state）只提供 marker、ownership、安装版本和 drift 事实，**不能作为 Source Mode 当前通用治理规则来源**；**项目自己的规则和真实事实仍必须读取**。发现**安装版本漂移**时，Source Mode 只报告后续通过**正式 Runtime upgrade**收敛，不手工覆盖 installer-owned managed block，也不把旧安装语义复制到项目 Overlay。
 
 ### Runtime Mode
 
@@ -798,6 +798,6 @@ Runtime Mode 对用户可以继续说明：检查了哪些**目标项目**代码
 
 当前 Runtime 是项目本地 stdio MCP。纯网页端 ChatGPT 不能直接启动用户电脑上的 `agent-skills-mcp`，也不能因为 GitHub 中存在 Runtime 源码就把本地 MCP 当作已经连接。
 
-网页端如果通过 GitHub 获得 Agent_Skills 源仓库读取权限，使用 Source Mode：先读取目标项目事实与 Agent_Skills 根 AGENTS.md，再按 Router 和 canonical metadata 直接读取 required References。该路径是源码直接读取模式，不调用本地六个 MCP Tool，也不读取/修改目标项目的 Runtime 安装副本；因为这是 Source Mode，可以正常显示明文 Skill/Reference 和源码导航过程。
+网页端如果通过 GitHub 获得 Agent_Skills 源仓库读取权限，使用 Source Mode：先读取目标项目**项目自有规则和真实事实**与 Agent_Skills 根 AGENTS.md，再按 Router 和 canonical metadata 直接读取 required References。该路径是源码直接读取模式，不调用本地六个 MCP Tool，也不读取/修改目标项目的 Runtime 安装副本来取得通用治理规则；目标项目旧版本 Agent_Skills 安装资产即使可见，也**不能作为 Source Mode 当前通用治理规则来源**，仅可用于确认 marker、ownership、安装版本漂移以及是否需要后续正式 Runtime upgrade。因为这是 Source Mode，可以正常显示明文 Skill/Reference 和源码导航过程。
 
 网页端如需调用目标机器 Runtime，必须使用受支持的 Remote MCP、安全隧道或等价远程部署；这是另一部署形态，不属于当前本地 stdio Runtime，不得为实现它绕过宿主、网络或权限边界。

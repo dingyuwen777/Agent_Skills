@@ -99,7 +99,7 @@ Source Mode 与 Runtime Mode 共享同一套 canonical `SKILL.md + references/*.
 → 直接读取源仓库中每个 required Reference 的当前完整原文
 ```
 
-不得使用历史聊天、摘要、旧缓存或目标项目中的安装副本替代当前 canonical 文件。Source Mode 不启动用户电脑上的本地 Runtime，也不调用 Runtime MCP。
+不得使用历史聊天、摘要、旧缓存或目标项目中的安装副本替代当前 canonical 文件。**目标项目中的安装副本**包括 `agent-skills:managed` block、Runtime / Project Payload / Runtime Skill Projection、legacy install-state 和其他 installer-owned 运行资产；Source Mode 可以读取它们的 marker、ownership、安装版本或 drift 作为安装状态事实，但 **managed block 不作为当前通用治理语义来源**，其中旧版本 Runtime/MCP/披露/路由/加载说明不得覆盖当前 canonical Source。目标项目 marker 外的**项目自有规则**、Contract、Schema/Migration、CI、代码、测试、正式设计和其他真实项目事实仍必须正常读取和遵守。Source Mode 不启动用户电脑上的本地 Runtime，也不调用 Runtime MCP。
 
 ### 4.3 Runtime Mode：Task Route → required Context
 

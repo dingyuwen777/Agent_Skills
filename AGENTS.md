@@ -8,12 +8,14 @@
 
 如果当前任务的真实目标是另一个业务/技术项目，而这里只作为通用 Skill Library：
 
-1. 首先读取**目标项目**当前目录及上级适用的 `AGENTS.md`、`CONTRIBUTING` 或同等项目规则；
+1. 首先读取**目标项目**当前目录及上级适用的 `AGENTS.md`、`CONTRIBUTING` 或同等项目规则；如果根 `AGENTS.md` 含 `agent-skills:managed` marker，**marker 外的项目自有规则与事实仍必须正常读取和遵守**；
 2. 再按任务需要从目标项目真实代码、Manifest/lock、Contract、Schema/Migration、配置、测试、CI、正式文档和设计事实恢复项目上下文；
-3. 然后读取本仓库唯一薄入口 [`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)；
-4. 由 ENTRY 无条件进入 [`.agents/skills/router/SKILL.md`](.agents/skills/router/SKILL.md)，再按 Router 进入对应专业 `SKILL.md` 和本次真正命中的 References；
-5. 目标项目事实优先于 Agent_Skills 通用示例，不从历史聊天或其他业务仓库猜当前实现；
-6. 只读取当前任务直接相关的最少充分事实源，不机械读取全部 Skills、References 或 Markdown。
+3. Source Mode 下，目标项目中的 `agent-skills:managed` block、`.agents` 内 Runtime / Project Payload / Runtime Skill Projection、legacy install-state 或同类 Agent_Skills **安装资产**只用于识别 marker、ownership、安装版本与 drift；这些内容应保留其安装归属，但**不作为 Source Mode 的通用治理规则来源**，也不能覆盖当前 canonical Source；
+4. 当前通用治理语义只从本仓库当前目标分支的 canonical Owner 取得；不得把目标项目旧安装资产中的 Runtime/MCP/披露/路由/加载说明复制、转述或改写到 marker 外项目 Overlay；
+5. 然后读取本仓库唯一薄入口 [`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)；
+6. 由 ENTRY 无条件进入 [`.agents/skills/router/SKILL.md`](.agents/skills/router/SKILL.md)，再按 Router 进入对应专业 `SKILL.md` 和本次真正命中的 References；
+7. 目标项目事实优先于 Agent_Skills 通用示例，不从历史聊天或其他业务仓库猜当前实现；
+8. 只读取当前任务直接相关的最少充分事实源，不机械读取全部 Skills、References 或 Markdown。
 
 这种模式**通常不读取 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md)**，因为当前不是在维护 Agent_Skills 源仓库；但命中第 4 节 Skill Mutation 时，必须按该节切换到 Agent_Skills Maintenance Mode。
 
