@@ -27,6 +27,8 @@ USER_VISIBLE_PROGRESS_RULE = (
 )
 _RISK_ORDER = {"L1": 1, "L2": 2, "L3": 3}
 _CAPABILITY_DOMAIN = "agent-skills/runtime-v3/route-capability"
+_MIN_SATURATION_DIMENSIONS = 3
+_MIN_SATURATION_VALUES = 8
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -57,7 +59,7 @@ def _route_saturates_public_vocabulary(
     normalized_route: Mapping[str, Any],
     contract: Mapping[str, Any],
 ) -> bool:
-    """识别把每个有公开词汇的维度都填满的合成宽路由，只拦截方便批量探测而不按结果集误伤真实复杂任务。"""
+    """识别高基数公共词汇被整体填满的合成宽路由；小型合法 Contract 不因恰好填满而被误伤。"""
     dimensions = contract.get("维度")
     signals = normalized_route.get("信号")
     if not isinstance(dimensions, Mapping) or not isinstance(signals, Mapping):
@@ -67,7 +69,11 @@ def _route_saturates_public_vocabulary(
         for dimension, values in dimensions.items()
         if isinstance(values, list) and values
     }
-    if not populated_dimensions:
+    total_public_values = sum(len(values) for values in populated_dimensions.values())
+    if (
+        len(populated_dimensions) < _MIN_SATURATION_DIMENSIONS
+        or total_public_values < _MIN_SATURATION_VALUES
+    ):
         return False
     return all(
         {str(item) for item in signals.get(dimension, [])} == allowed
