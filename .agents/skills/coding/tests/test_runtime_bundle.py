@@ -133,6 +133,22 @@ class RuntimeBundleTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "单次任务约束过宽"):
             store.submit_route("T-broad-known", broad)
 
+    def test_progressive_specific_routes_can_accumulate_all_required_context(self) -> None:
+        """合法复杂任务可通过事实逐步出现单调扩展 required Context，不被单次 full-corpus 防导出门禁误伤。"""
+        store = RuntimeStore(build_bundle(self._fixture_root()))
+        store.start_task("T-progressive")
+
+        for intent in ("功能开发", "代码审查", "文档更新"):
+            submitted = store.submit_route("T-progressive", _task_route(意图=[intent]))
+            self.assertTrue(submitted["需要加载约束"])
+            loaded = store.load_required_context(submitted["路由令牌"])
+            self.assertEqual(len(loaded["上下文"]), 1)
+            self.assertTrue(loaded["加载完成"])
+
+        final = store.submit_route("T-progressive", _task_route(意图=["文档更新"]))
+        self.assertFalse(final["需要加载约束"])
+        self.assertTrue(store.checkpoint(final["路由令牌"])["通过"])
+
     def test_source_mode_public_route_contract_keeps_catalog_without_reference_mapping(self) -> None:
         """Source Mode 的原始公开词汇契约可保留 Catalog，但不能泄露 Reference mapping。"""
         bundle = build_bundle(self._fixture_root())
