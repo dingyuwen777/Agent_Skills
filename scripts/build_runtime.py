@@ -23,6 +23,7 @@ if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
 from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.crypto import split_root_material
 from runtime.agent_skills_runtime.encrypted_bundle import encrypt_runtime_bundle
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime.routing import ROUTING_MANIFEST_PROTOCOL, TASK_ROUTE_PROTOCOL
@@ -126,11 +127,12 @@ def _write_embedded_payload(
     release_version: str,
     source_commit: str | None = None,
 ) -> None:
-    """只在临时构建副本写入 v3 加密容器、可恢复根材料与 Project Payload，不修改源码仓库。"""
+    """只在临时构建副本写入 v3 加密容器、可恢复根材料分片与 Project Payload，不修改源码仓库。"""
+    root_shares = split_root_material(root_material)
     project_payload_b64 = base64.b64encode(_serialize_project_payload(project_payload)).decode("ascii")
     content = (
         '"""构建时生成的 Runtime v3 加密容器与项目安装 Payload；不要手工编辑。"""\n\n'
-        f'RUNTIME_ROOT_B64 = "{base64.b64encode(root_material).decode("ascii")}"\n'
+        f'RUNTIME_ROOT_SHARES_B64 = "{base64.b64encode(root_shares).decode("ascii")}"\n'
         f'BUNDLE_CONTAINER_B64 = "{base64.b64encode(container).decode("ascii")}"\n'
         f'PROJECT_PAYLOAD_B64 = "{project_payload_b64}"\n'
         f'RELEASE_VERSION = {release_version!r}\n'
