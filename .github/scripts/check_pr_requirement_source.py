@@ -64,7 +64,7 @@ def _is_coding_change_path(relative: Path) -> bool:
 
 
 def _validate_repository_path(root: Path, source: str) -> None:
-    """验证仓库相对事实源存在、未越界，且不是 Coding Change 施工契约。"""
+    """验证仓库相对事实源是仓库内真实文件，且不是 Coding Change 施工契约。"""
     if SCHEME_PATTERN.match(source):
         raise RequirementSourceError(
             f"Requirement Source `{source}` 不是本仓库支持的相对路径；外部系统必须使用项目已定义的稳定标识。"
@@ -88,14 +88,14 @@ def _validate_repository_path(root: Path, source: str) -> None:
             f"Requirement Source `{source}` 指向 Coding Change 施工契约；Change 不能把自己或同类施工记录当作上游需求来源。"
         )
 
-    if not candidate.exists():
+    if not candidate.is_file():
         raise RequirementSourceError(
-            f"Requirement Source `{source}` 在当前 PR checkout 中不存在。"
+            f"Requirement Source `{source}` 必须指向当前 PR checkout 中存在的仓库文件。"
         )
 
 
 def _validate_issue_payload(issue_number: int, payload: dict[str, Any]) -> None:
-    """验证 GitHub Issue 是需求事项而不是 PR，并保留最小目标/验收结构。"""
+    """验证 GitHub Requirement Source 是可审查的真实 Issue，而不是 PR。"""
     if payload.get("pull_request") is not None:
         raise RequirementSourceError(
             f"Requirement Source `#{issue_number}` 指向 Pull Request，不能把 PR 自身当作上游需求来源。"
@@ -106,13 +106,6 @@ def _validate_issue_payload(issue_number: int, payload: dict[str, Any]) -> None:
     if not title or not body:
         raise RequirementSourceError(
             f"Requirement Source `#{issue_number}` 缺少可审查的标题或正文。"
-        )
-
-    has_objective = "目标" in body or "期望" in body
-    has_acceptance = "验收" in body or "成功标准" in body
-    if not has_objective or not has_acceptance:
-        raise RequirementSourceError(
-            f"Requirement Source `#{issue_number}` 缺少最小目标/期望与验收/成功标准结构。"
         )
 
 
