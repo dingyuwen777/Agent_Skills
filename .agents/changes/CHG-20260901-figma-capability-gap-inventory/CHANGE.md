@@ -64,23 +64,23 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Figma 中系统尚未实现或存在冲突的能力必须在前端实施前完整列出给用户 | user:current-request | satisfied | `ref05` 在 Coding Handoff 前强制集中 Inventory；`test_capability_gap_inventory_is_complete_deduplicated_and_pre_handoff`；Skill Tests #809 |
-| R2 | 缺口必须集中输出，不能只散落在 Findings 或开发中途才暴露 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“Coding Handoff 前必须集中输出”且“不得等到 Coding 实施中途才首次披露”；Skill Tests #809 |
-| R3 | Inventory 必须复用现有真实事实分类，不建立第二套冲突语义 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“分类复用现有语义，不新建第二套”；`test_inventory_preserves_state_differences_and_reuses_existing_classification`；Skill Tests #809 |
-| R4 | 不允许 Figma MCP/前端为缺失能力猜 API、永久 Mock 或伪造系统成功 | user:current-request | satisfied | 既有 6.2 禁止发明生产 Contract，Inventory 未授权分支继续禁止伪实现/永久 mock；相关既有回归 + Skill Tests #809 |
-| R5 | 清单完整但按真实能力/Owner 去重，并保留必要状态差异 | user:approved-capability-gap-inventory | satisfied | `ref05` 显式 8 字段 + “去重但保留必要状态差异”；两组 Capability Gap 回归；Skill Tests #809 |
-| R6 | 已授权跨层实现时由 Coding 整体承接，不要求用户逐项手工编码 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“整体交给 Coding 实施，不逐项要求用户编码”；Review 回归；Skill Tests #809 |
-| R7 | 允许提交、推送、PR；验证通过后允许合并和归档 | user:git-delivery-authorization | satisfied | 本轮用户已明确授权 Git/PR/merge/archive；PR #130 已存在 |
+| R1 | Figma 中系统尚未实现或存在冲突的能力必须在前端实施前完整列出给用户 | user:current-request | satisfied | `ref05` 在 Coding Handoff 前强制集中 Inventory；`test_capability_gap_inventory_is_complete_deduplicated_and_pre_handoff`；Skill Tests #809/#813 |
+| R2 | 缺口必须集中输出，不能只散落在 Findings 或开发中途才暴露 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“Coding Handoff 前必须集中输出”且“不得等到 Coding 实施中途才首次披露”；Skill Tests #809/#813 |
+| R3 | Inventory 必须复用现有真实事实分类，不建立第二套冲突语义 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“分类复用现有语义，不新建第二套”；`test_inventory_preserves_state_differences_and_reuses_existing_classification`；Skill Tests #809/#813 |
+| R4 | 不允许 Figma MCP/前端为缺失能力猜 API、永久 Mock 或伪造系统成功 | user:current-request | satisfied | 既有 6.2 禁止发明生产 Contract，Inventory 未授权分支继续禁止伪实现/永久 mock；相关既有回归 + Skill Tests #809/#813 |
+| R5 | 清单完整但按真实能力/Owner 去重，并保留必要状态差异 | user:approved-capability-gap-inventory | satisfied | `ref05` 显式 8 字段 + “去重但保留必要状态差异”；两组 Capability Gap 回归；Skill Tests #809/#813 |
+| R6 | 已授权跨层实现时由 Coding 整体承接，不要求用户逐项手工编码 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“整体交给 Coding 实施，不逐项要求用户编码”；Review 回归；Skill Tests #809/#813 |
+| R7 | 允许提交、推送、PR；验证通过后允许合并和归档 | user:git-delivery-authorization | satisfied | 本轮用户已明确授权 Git/PR/merge/archive；Draft #130 因连接器 Ready mutation 兼容错误关闭，按仓库 fallback 以同一 head/base 重建非 Draft PR #136 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | 两组 Capability Gap targeted regressions；Skill Tests #809 291/291 通过 |
+| 行为 / 单元 / 组件 | required | 两组 Capability Gap targeted regressions；Skill Tests #809/#813 均 291/291 通过 |
 | 接口 / 契约 | not_applicable | 不修改 public Runtime、Task Route、Reference Stable ID 或 metadata schema |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 无数据库、文件系统运行语义或外部 runtime dependency 变化 |
 | 用户 / 工作流验收 | required | `baseline-ready → Capability Gap Inventory → Coding Handoff` 的集中输出、8 字段、授权/未授权分支与 `none` 均有规则 + 回归证据 |
-| 跨组件关键路径 | required | 全量 self-contained Skill Tests 覆盖 Figma、Router、Bundle/Project Payload、Runtime 内容守恒；#809 291/291 通过 |
+| 跨组件关键路径 | required | 全量 self-contained Skill Tests 覆盖 Figma、Router、Bundle/Project Payload、Runtime 内容守恒；#809/#813 均 291/291 通过 |
 | 外部依赖 / 供应方探测 | not_applicable | 不涉及外部 Provider 当前事实 |
 | 构建 / 打包 / 运行 | not_applicable | 未修改 Runtime/Builder/MCP/Installer/Release；按永久 CI 分责不触发三平台 Runtime Package Tests |
 | 文档 / 治理 / 其他 | required | Source Mode 规则重读、内容守恒 TDD、Standard Review A1/A2、Ready Check、PR Skill Tests；main fresh CI/归档在合并后执行 |
@@ -101,7 +101,8 @@ data_changes: []
 - [x] 取得 targeted / full self-contained Green 证据并保持 Router 上下文预算
 - [x] 完成 Requirement/内容守恒/Standard Review A1/A2；修复 Review Findings 后重新 Green
 - [x] 更新 Change 到 `ready_for_review`
-- [ ] 当前 `ready_for_review` head 的 PR Skill Tests 全绿并将 PR 转为 Ready
+- [x] Draft Ready 自动调用失败后按仓库 fallback 重建非 Draft PR #136，并取得 #813 fresh PR CI Green
+- [ ] 本次交付事实修正后的最终 branch head PR Skill Tests 全绿
 - [ ] 合并并验证 main fresh Skill Tests
 - [ ] 独立归档 Change 并完成归档 PR/main 验证
 
@@ -115,7 +116,10 @@ data_changes: []
 - Skill Tests #799：字段显式化修复后 290/290 通过；字段回归与 Router 上下文预算通过。
 - Skill Tests #804：新增内容守恒 Review 回归后 291 个测试仅该回归失败，明确暴露“去重保留状态差异/分类单一事实源/Coding 整体承接”缺失。
 - Skill Tests #809（commit `ce30cc15791add6eded206756907ae7ed67bf78a`）：291/291 通过；两组 Capability Gap 回归、Router 历史上下文预算、Bundle/Project Payload/Runtime 内容守恒均通过；`ready_check.py --changed-since e5a147f08fb4d501e1e28a71c35bf7a100bc7057` 通过。
-- Standard Review A1/A2：基于未漂移的 main `e5a147f08fb4d501e1e28a71c35bf7a100bc7057` 与 PR #130 head `ce30cc15791add6eded206756907ae7ed67bf78a` 重新检查需求→实现、实现→测试/证据/文档；Review Findings 已通过 TDD 修复，当前无剩余 BLOCKER/HIGH/MEDIUM。
+- Standard Review A1/A2：基于未漂移的 main `e5a147f08fb4d501e1e28a71c35bf7a100bc7057` 与实现 head `ce30cc15791add6eded206756907ae7ed67bf78a` 重新检查需求→实现、实现→测试/证据/文档；Review Findings 已通过 TDD 修复，无剩余 BLOCKER/HIGH/MEDIUM。
+- Skill Tests #812（commit `3be3fc46ab5e8cddf769dfdacc9c0efebd90d010`）：291/291 通过，Ready Check 通过；验证 `ready_for_review` Change head。
+- Draft #130 的 Ready mutation 因连接器 GraphQL `Repository.fullDatabaseId` 字段兼容错误失败；复核确认 PR 仍为 Draft 后按 `.agents/MAINTENANCE.md` fallback 关闭 #130，并用完全相同 head `3be3fc46...` / base `main` 重建非 Draft PR #136。
+- Skill Tests #813（PR #136，同 head `3be3fc46ab5e8cddf769dfdacc9c0efebd90d010`）：291/291 通过，changed-since Ready Check 通过；GitHub 重新计算 PR #136 `mergeable=true`。
 
 # 文档影响
 
@@ -133,8 +137,9 @@ data_changes: []
 # 交付
 
 - 分支：`feat/figma-capability-gap-inventory`
-- 拉取请求：#130 `增强：Figma Design-to-Code 集中披露系统能力缺口`
-- 当前 Review head：`ce30cc15791add6eded206756907ae7ed67bf78a`
-- 合并：待当前 `ready_for_review` head 的 PR Skill Tests 与 Ready 门禁通过后执行
+- 拉取请求：#136 `增强：Figma Design-to-Code 集中披露系统能力缺口`（替代已关闭 Draft #130）
+- 实现 Review head：`ce30cc15791add6eded206756907ae7ed67bf78a`
+- `ready_for_review` 验证 head：`3be3fc46ab5e8cddf769dfdacc9c0efebd90d010`
+- 合并：待本次交付事实修正后的最终 branch head PR Skill Tests 通过后，以 expected head SHA 执行
 - 归档：功能合并 + main fresh CI 后独立 PR 执行
 - 发布：不适用
