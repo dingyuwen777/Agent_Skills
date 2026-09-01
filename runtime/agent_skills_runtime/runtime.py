@@ -53,6 +53,28 @@ def _bundle_identity(bundle: Mapping[str, Any] | EncryptedBundleStore) -> dict[s
     }
 
 
+def _route_saturates_public_vocabulary(
+    normalized_route: Mapping[str, Any],
+    contract: Mapping[str, Any],
+) -> bool:
+    """识别把每个有公开词汇的维度都填满的合成宽路由，只拦截方便批量探测而不按结果集误伤真实复杂任务。"""
+    dimensions = contract.get("维度")
+    signals = normalized_route.get("信号")
+    if not isinstance(dimensions, Mapping) or not isinstance(signals, Mapping):
+        return False
+    populated_dimensions = {
+        str(dimension): {str(item) for item in values}
+        for dimension, values in dimensions.items()
+        if isinstance(values, list) and values
+    }
+    if not populated_dimensions:
+        return False
+    return all(
+        {str(item) for item in signals.get(dimension, [])} == allowed
+        for dimension, allowed in populated_dimensions.items()
+    )
+
+
 def runtime_integrity_fingerprint(
     bundle: Mapping[str, Any] | EncryptedBundleStore,
     *,
@@ -207,27 +229,23 @@ class RuntimeStore:
             }
 
     def submit_route(self, task_id: str, task_route: Mapping[str, Any]) -> dict[str, Any]:
-        """求值 Task Route、阻止单次 full-corpus 导出，再单调扩展 required 集合并发行最新 capability。"""
+        """求值 Task Route、阻止明显合成的全词汇探测，再单调扩展 required 集合并发行最新 capability。"""
         normalized_task = str(task_id).strip()
         with self._lock:
             self._require_task()
             if normalized_task != self._task_id:
                 raise ValueError("任务标识与当前任务不一致；切换任务必须显式开始新任务")
-            normalized_route = validate_task_route(
-                task_route,
-                public_route_contract(self._routing_manifest),
-            )
-            evaluated = evaluate_route(self._routing_manifest, normalized_route)
-            evaluated_ids = {str(item) for item in evaluated["必需Reference"]}
-            all_reference_ids = {
-                str(entry["标识"])
-                for entry in self._routing_manifest["引用"]
-            }
-            if len(all_reference_ids) > 1 and evaluated_ids == all_reference_ids:
+            route_contract = public_route_contract(self._routing_manifest)
+            normalized_route = validate_task_route(task_route, route_contract)
+            if not normalized_route["未知项"] and _route_saturates_public_vocabulary(
+                normalized_route,
+                route_contract,
+            ):
                 raise ValueError(
                     "当前单次任务约束过宽，无法作为最小充分治理上下文加载；请拆分任务事实或先恢复更具体的项目事实"
                 )
-            self._required_ids.update(evaluated_ids)
+            evaluated = evaluate_route(self._routing_manifest, normalized_route)
+            self._required_ids.update(str(item) for item in evaluated["必需Reference"])
             self._matched_skills.update(str(item) for item in evaluated["命中Skill"])
             evaluated_risk = str(evaluated["最低风险"])
             if _RISK_ORDER[evaluated_risk] > _RISK_ORDER[self._minimum_risk]:
