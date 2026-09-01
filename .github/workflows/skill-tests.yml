@@ -29,7 +29,7 @@ jobs:
       - name: Verify PR Requirement Source
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python scripts/check_pr_requirement_source.py --root .
+        run: python .github/scripts/check_pr_requirement_source.py --root .
 
   skill-tests:
     name: Skill Tests
@@ -57,7 +57,7 @@ jobs:
           python -m py_compile
           .agents/skills/coding/scripts/coding.py
           .agents/skills/coding/scripts/ready_check.py
-          scripts/check_pr_requirement_source.py
+          .github/scripts/check_pr_requirement_source.py
           scripts/build_runtime.py
           scripts/runtime_mcp_smoke.py
           runtime/agent_skills_runtime/skill_catalog.py
@@ -73,7 +73,7 @@ jobs:
       - name: Smoke maintained CLI entrypoints
         run: |
           python .agents/skills/coding/scripts/coding.py bootstrap --help
-          python scripts/check_pr_requirement_source.py --help
+          python .github/scripts/check_pr_requirement_source.py --help
           python scripts/build_runtime.py --help
           python scripts/runtime_mcp_smoke.py --help
 
