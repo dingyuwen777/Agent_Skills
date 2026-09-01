@@ -66,6 +66,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -109,6 +110,40 @@ jobs:
           python scripts/runtime_mcp_smoke.py
           --artifact .runtime-dist/agent-skills-mcp
           --json
+
+      - name: Verify previous-main Runtime to current Runtime upgrade
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+          fi
+          if [[ -z "${base_sha}" || "${base_sha}" =~ ^0+$ ]] || ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+            echo "Previous-main Runtime upgrade: no usable previous commit; explicitly not applicable."
+            exit 0
+          fi
+
+          current_artifact="${GITHUB_WORKSPACE}/.runtime-dist/agent-skills-mcp"
+          old_root="${RUNNER_TEMP}/agent-skills-previous-main"
+          old_dist="${RUNNER_TEMP}/agent-skills-previous-runtime-dist"
+          upgrade_target="${RUNNER_TEMP}/agent-skills-upgrade-target"
+          git worktree add --detach "${old_root}" "${base_sha}"
+          old_build_json="$(env -u GITHUB_SHA python "${old_root}/scripts/build_runtime.py" --source-root "${old_root}" --output-dir "${old_dist}" --json)"
+          printf '%s\n' "${old_build_json}"
+          old_artifact="${old_dist}/agent-skills-mcp"
+          test -x "${old_artifact}"
+          mkdir -p "${upgrade_target}"
+
+          "${old_artifact}" install --target "${upgrade_target}" --json
+          "${upgrade_target}/.agents/runtime/agent-skills-mcp" __install-state --json
+          "${current_artifact}" install --target "${upgrade_target}" --json
+          cmp "${current_artifact}" "${upgrade_target}/.agents/runtime/agent-skills-mcp"
+          test ! -e "${upgrade_target}/.agents/agent-skills-install.json"
+          test ! -e "${upgrade_target}/.agents/skills/coding/references"
+          "${upgrade_target}/.agents/runtime/agent-skills-mcp" status --json
+          "${upgrade_target}/.agents/runtime/agent-skills-mcp" self-test --json
+          python scripts/runtime_mcp_smoke.py --artifact "${upgrade_target}/.agents/runtime/agent-skills-mcp" --json
 
       - name: Verify project-only single-binary installation
         run: |
@@ -175,6 +210,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -209,6 +245,64 @@ jobs:
         run: |
           python scripts/runtime_mcp_smoke.py --artifact .\.runtime-dist\agent-skills-mcp.exe --json
           if ($LASTEXITCODE -ne 0) { throw "Windows Runtime MCP smoke 失败" }
+
+      - name: Verify previous-main Runtime to current Runtime upgrade
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq "pull_request") {
+            $baseSha = "${{ github.event.pull_request.base.sha }}"
+          } else {
+            $baseSha = "${{ github.event.before }}"
+          }
+          if ([string]::IsNullOrWhiteSpace($baseSha) -or $baseSha -match '^0+$') {
+            Write-Output "Previous-main Runtime upgrade: no usable previous commit; explicitly not applicable."
+            exit 0
+          }
+          git cat-file -e "$baseSha^{commit}" 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Output "Previous-main Runtime upgrade: previous commit unavailable; explicitly not applicable."
+            exit 0
+          }
+
+          $currentArtifact = (Resolve-Path .\.runtime-dist\agent-skills-mcp.exe).Path
+          $oldRoot = Join-Path $env:RUNNER_TEMP "agent-skills-previous-main"
+          $oldDist = Join-Path $env:RUNNER_TEMP "agent-skills-previous-runtime-dist"
+          $upgradeTarget = Join-Path $env:RUNNER_TEMP "agent-skills-upgrade-target"
+          git worktree add --detach $oldRoot $baseSha
+          if ($LASTEXITCODE -ne 0) { throw "Windows previous-main worktree 创建失败" }
+
+          $savedGithubSha = $env:GITHUB_SHA
+          Remove-Item Env:GITHUB_SHA -ErrorAction SilentlyContinue
+          try {
+            $oldBuildJson = (& python (Join-Path $oldRoot "scripts\build_runtime.py") --source-root $oldRoot --output-dir $oldDist --json | Out-String)
+            if ($LASTEXITCODE -ne 0) { throw "Windows previous-main Runtime build 失败" }
+          } finally {
+            $env:GITHUB_SHA = $savedGithubSha
+          }
+          Write-Output $oldBuildJson
+          $oldArtifact = Join-Path $oldDist "agent-skills-mcp.exe"
+          if (-not (Test-Path $oldArtifact)) { throw "Windows previous-main Runtime artifact 不存在" }
+          New-Item -ItemType Directory -Force -Path $upgradeTarget | Out-Null
+
+          & $oldArtifact install --target $upgradeTarget --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows previous-main Runtime 首次安装失败" }
+          $oldInstalled = Join-Path $upgradeTarget ".agents\runtime\agent-skills-mcp.exe"
+          & $oldInstalled __install-state --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows previous-main Runtime install-state 失败" }
+          & $currentArtifact install --target $upgradeTarget --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows current Runtime 从 previous-main 升级失败" }
+          $upgradedRuntime = Join-Path $upgradeTarget ".agents\runtime\agent-skills-mcp.exe"
+          $currentHash = (Get-FileHash -Algorithm SHA256 $currentArtifact).Hash.ToLowerInvariant()
+          $upgradedHash = (Get-FileHash -Algorithm SHA256 $upgradedRuntime).Hash.ToLowerInvariant()
+          if ($currentHash -ne $upgradedHash) { throw "Windows 升级后 Runtime binary 与当前 artifact 不一致" }
+          if (Test-Path (Join-Path $upgradeTarget ".agents\agent-skills-install.json")) { throw "Windows previous-main→current 升级不应生成 install manifest" }
+          if (Test-Path (Join-Path $upgradeTarget ".agents\skills\coding\references")) { throw "Windows previous-main→current 升级不应安装 Reference" }
+          & $upgradedRuntime status --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows 升级后 Runtime status 失败" }
+          & $upgradedRuntime self-test --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows 升级后 Runtime self-test 失败" }
+          python scripts/runtime_mcp_smoke.py --artifact $upgradedRuntime --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows 升级后 Runtime MCP smoke 失败" }
 
       - name: Verify project-only single-binary installation
         shell: pwsh
@@ -292,6 +386,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -335,6 +430,40 @@ jobs:
           python scripts/runtime_mcp_smoke.py
           --artifact .runtime-dist/agent-skills-mcp
           --json
+
+      - name: Verify previous-main Runtime to current Runtime upgrade
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+          fi
+          if [[ -z "${base_sha}" || "${base_sha}" =~ ^0+$ ]] || ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+            echo "Previous-main Runtime upgrade: no usable previous commit; explicitly not applicable."
+            exit 0
+          fi
+
+          current_artifact="${GITHUB_WORKSPACE}/.runtime-dist/agent-skills-mcp"
+          old_root="${RUNNER_TEMP}/agent-skills-previous-main"
+          old_dist="${RUNNER_TEMP}/agent-skills-previous-runtime-dist"
+          upgrade_target="${RUNNER_TEMP}/agent-skills-upgrade-target"
+          git worktree add --detach "${old_root}" "${base_sha}"
+          old_build_json="$(env -u GITHUB_SHA python "${old_root}/scripts/build_runtime.py" --source-root "${old_root}" --output-dir "${old_dist}" --json)"
+          printf '%s\n' "${old_build_json}"
+          old_artifact="${old_dist}/agent-skills-mcp"
+          test -x "${old_artifact}"
+          mkdir -p "${upgrade_target}"
+
+          "${old_artifact}" install --target "${upgrade_target}" --json
+          "${upgrade_target}/.agents/runtime/agent-skills-mcp" __install-state --json
+          "${current_artifact}" install --target "${upgrade_target}" --json
+          cmp "${current_artifact}" "${upgrade_target}/.agents/runtime/agent-skills-mcp"
+          test ! -e "${upgrade_target}/.agents/agent-skills-install.json"
+          test ! -e "${upgrade_target}/.agents/skills/coding/references"
+          "${upgrade_target}/.agents/runtime/agent-skills-mcp" status --json
+          "${upgrade_target}/.agents/runtime/agent-skills-mcp" self-test --json
+          python scripts/runtime_mcp_smoke.py --artifact "${upgrade_target}/.agents/runtime/agent-skills-mcp" --json
 
       - name: Verify project-only single-binary installation
         run: |
