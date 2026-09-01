@@ -121,27 +121,27 @@ Project Payload v2、sidecarless ownership、AGENTS/Host managed 边界、当前
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Bundle v3 per-reference authenticated encryption + encrypted private manifest | Issue #139 | satisfied | `catalog.py` 使用 Bundle v3；`crypto.py`/`encrypted_bundle.py` 实现 HKDF-SHA256、private Manifest、per-reference AES-GCM、opaque locator、AAD；319-test suite 覆盖 tamper/record-swap/错误根材料。 |
-| R2 | Runtime 不预解密/缓存全库 plaintext，只按 required Context lazy decrypt | Issue #139 | satisfied | `EncryptedBundleStore.open()` 只恢复 private Manifest；`RuntimeStore` 不再有全库 plaintext `_entries`；lazy-decrypt、未命中坏 record、显式 self-test 回归 Green。 |
-| R3 | 正常确定 Task Route 与 canonical exact-text 使用效果不回归 | Issue #139 | satisfied | facts-complete Routing Conformance、legacy context budget、small-contract compatibility、progressive specific route、exact-text 全部 Green；Context 膨胀通过压缩规则解决，没有放宽预算。 |
-| R4 | unknown route 不再无条件 full corpus；unknown-induced full corpus fail closed | Issue #139 | satisfied | TRUE/FALSE/UNKNOWN evaluator 的 ANY/ALL/NOT、相关候选、无关未知维度、unknown-induced full-corpus 用例全部 Green。 |
-| R5 | MCP 无任意 corpus 导出；合成宽 route 被拦；capability 拒绝 stale/cross-task/伪造 token | Issue #139 | satisfied | `runtime_mcp_smoke.py` 用真实 MCP SDK 验证六 Tool、exact-text、伪造/stale/cross-task token、known saturation 与 unknown full-corpus；Runtime Package run `33519964827` 三平台 real stdio MCP 全部 success。 |
-| R6 | Runtime Mode 不输出/高保真重建治理原文，正常工程解释保持 | Issue #139 | satisfied | Shared Entry、MCP instructions、`USER_VISIBLE_PROGRESS_RULE`、canonical Runtime Owner 均定义该边界；静态/Runtime contract tests Green。真实 Codex/Cursor/Claude 模型的最终遵循度未在当前工具环境直接执行，且该策略明确不是密码学隔离。 |
-| R7 | Project Payload v2、无 Reference/Stub/Private Manifest/key sidecar、Host/当前安装保持 | Issue #139 | satisfied | Project Payload/Projection/install 回归 Green；Runtime Package run `33519964827` 在 Linux/Windows/macOS 完成 onefile build/self-test、真实 MCP、首次安装、当前版本重复安装；历史 v2 Runtime 升级按用户要求 not_applicable。 |
-| R8 | 准确保留 Local Runtime 安全边界，不宣称抵御本机 Owner | Issue #139 | satisfied | Runtime Owner、Entry、README 明确本机 root 可恢复、Python plaintext 不保证 zeroize、Owner/Debugger/Hook/Memory dump/MCP traffic/pro reverse engineering 不在保证范围；root share 方案也明确只是 reverse-engineering hardening。 |
+| R1 | Bundle v3 per-reference authenticated encryption + encrypted private manifest | https://github.com/dingyuwen777/Agent_Skills/issues/139 | satisfied | `catalog.py` 使用 Bundle v3；`crypto.py`/`encrypted_bundle.py` 实现 HKDF-SHA256、private Manifest、per-reference AES-GCM、opaque locator、AAD；319-test suite 覆盖 tamper/record-swap/错误根材料。 |
+| R2 | Runtime 不预解密/缓存全库 plaintext，只按 required Context lazy decrypt | https://github.com/dingyuwen777/Agent_Skills/issues/139 | satisfied | `EncryptedBundleStore.open()` 只恢复 private Manifest；`RuntimeStore` 不再有全库 plaintext `_entries`；lazy-decrypt、未命中坏 record、显式 self-test 回归 Green。 |
+| R3 | 正常确定 Task Route 与 canonical exact-text 使用效果不回归 | https://github.com/dingyuwen777/Agent_Skills/issues/139 | satisfied | facts-complete Routing Conformance、legacy context budget、small-contract compatibility、progressive specific route、exact-text 全部 Green；Context 膨胀通过压缩规则解决，没有放宽预算。 |
+| R4 | unknown route 不再无条件 full corpus；unknown-induced full corpus fail closed | https://github.com/dingyuwen777/Agent_Skills/issues/139 | satisfied | TRUE/FALSE/UNKNOWN evaluator 的 ANY/ALL/NOT、相关候选、无关未知维度、unknown-induced full-corpus 用例全部 Green。 |
+| R5 | MCP 无任意 corpus 导出；合成宽 route 被拦；capability 拒绝 stale/cross-task/伪造 token | https://github.com/dingyuwen777/Agent_Skills/issues/139 | satisfied | `runtime_mcp_smoke.py` 用真实 MCP SDK 验证六 Tool、exact-text、伪造/stale/cross-task token、known saturation 与 unknown full-corpus；Runtime Package run `33520084918` 三平台 real stdio MCP 全部 success。 |
+| R6 | Runtime Mode 不输出/高保真重建治理原文，正常工程解释保持 | https://github.com/dingyuwen777/Agent_Skills/issues/139 | satisfied | Shared Entry、MCP instructions、`USER_VISIBLE_PROGRESS_RULE`、canonical Runtime Owner 均定义该边界；静态/Runtime contract tests Green。真实 Codex/Cursor/Claude 模型的最终遵循度未在当前工具环境直接执行，且该策略明确不是密码学隔离。 |
+| R7 | Project Payload v2、无 Reference/Stub/Private Manifest/key sidecar、Host/当前安装保持 | https://github.com/dingyuwen777/Agent_Skills/issues/139 | satisfied | Project Payload/Projection/install 回归 Green；Runtime Package run `33520084918` 在 Linux/Windows/macOS 完成 onefile build/self-test、真实 MCP、首次安装、当前版本重复安装；历史 v2 Runtime 升级按用户要求 not_applicable。 |
+| R8 | 准确保留 Local Runtime 安全边界，不宣称抵御本机 Owner | https://github.com/dingyuwen777/Agent_Skills/issues/139 | satisfied | Runtime Owner、Entry、README 明确本机 root 可恢复、Python plaintext 不保证 zeroize、Owner/Debugger/Hook/Memory dump/MCP traffic/pro reverse engineering 不在保证范围；root share 方案也明确只是 reverse-engineering hardening。 |
 
 # Validation Matrix
 
 | 验证层 | Required | Scope / Evidence |
 | --- | --- | --- |
 | Red / TDD | required | 已复现旧实现 unknown→full corpus、全库 plaintext store、v3 新安全用例失败基线。 |
-| 行为 / Unit / Component | required | Skill run `33519964836`：`Ran 319 tests ... OK`，覆盖 AEAD/HKDF/manifest/record/tri-state/capability/lazy loader/saturation/root shares。 |
+| 行为 / Unit / Component | required | Skill run `33520084821`：319 个 self-contained tests Green，覆盖 AEAD/HKDF/manifest/record/tri-state/capability/lazy loader/saturation/root shares；changed Change Ready Check 与 Agent Skills Gate 也 success。 |
 | 接口 / Contract | required | MCP v3 六 Tool、Task Route schema、Context envelope、Project Payload v2、facts-complete route parity Green。 |
 | 集成 / Runtime Dependency | required | embedded v3 material、root share recovery、RuntimeStore、stdio process、当前版本 install/reinstall Green。 |
 | 用户 / Workflow Acceptance | required | 三平台真实 artifact CLI/MCP/安装 Green；真实宿主模型的治理原文防披露遵循度无法由当前 GitHub 工具直接执行，保留为已知非密码学限制。 |
 | 跨组件 Golden Path | required | 三平台 real stdio MCP → route → exact required text → checkpoint + project install Green。 |
 | 外部依赖 Probe | not_applicable | 本次无第三方在线 Provider。 |
-| Build / Package / Runtime | required | Runtime Package run `33519964827`：Linux、Windows、macOS build/self-test/MCP/install/current-version reinstall + Runtime Package Gate 全部 success。 |
+| Build / Package / Runtime | required | Runtime Package run `33520084918`：Linux、Windows、macOS build/self-test/MCP/install/current-version reinstall + Runtime Package Gate 全部 success。 |
 | Docs / Governance / Other | required | Entry、canonical Runtime Reference、runtime README、Skill CI 编译入口、Change 与 Deep Review 已同步。 |
 
 # TDD 与 Deep Review 修复记录
@@ -179,9 +179,9 @@ Deep Review 结论：`NO_FINDINGS_WITHIN_SCOPE`。当前无未解决 BLOCKER/HIG
 # 新鲜证据
 
 - Implementation HEAD：`1ebefc5b7cf259c8e2710ef1c435601624b907e5`。
-- Skill Tests run `33519964836`：Requirement Source success；compile/CLI smoke success；`Run self-contained tests` success，日志为 `Ran 319 tests in 5.105s` / `OK`。该 run 的唯一失败发生在当时的 Ready Check 状态门禁，不是测试失败。
-- Runtime Package run `33519964827`：Linux、Windows、macOS 的 onefile build/self-test、真实 stdio MCP、项目首次安装、当前版本重复安装全部 success；`Runtime Package Gate` success。
-- 本次只更新 Change 追溯/Review 证据；最终治理 HEAD 仍需由 Ready Check 重新确认 Change 格式与状态。
+- Skill Tests run `33520084821`：Requirement Source、compile/CLI smoke、319 个 self-contained tests、changed Change Ready Check、`Agent Skills Gate` 全部 success。
+- Runtime Package run `33520084918`：Linux、Windows、macOS 的 onefile build/self-test、真实 stdio MCP、项目首次安装、当前版本重复安装全部 success；`Runtime Package Gate` success。
+- `76a8f52e80675169a6252f5f5101fdd45f862fdf` 及本次提交只更新 Change 追溯/Review 证据与机器可解析 Source 格式，不改变 Runtime 实现；最终治理 HEAD 仍由正常 PR CI 重新确认 Ready 状态。
 
 # Git / PR / Release
 
