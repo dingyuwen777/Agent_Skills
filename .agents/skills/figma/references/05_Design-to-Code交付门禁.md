@@ -193,7 +193,7 @@ SDK / client 名称
 
 如果当前代码违反正式 Contract 或已批准设计，应作为 Coding Finding 修实现；不能要求 Figma 迁就已知 Bug。
 
-**Coding Handoff 前必须集中输出**`Capability Gap Inventory`，覆盖**本次审查范围内全部已发现**缺口；**不得等到 Coding 实施中途才首次披露**。按6.3分类，**同一真实能力 / Owner**去重；记录位置/能力/证据/Owner/缺失层/分类/阻塞/动作。**当前任务已经明确批准把范围扩大到真实跨层实现**→Coding，否则禁伪实现/**永久 mock**；**没有能力缺口时也必须明确输出 `none`**。
+Coding Handoff 前必须集中输出 `Capability Gap Inventory`：本次审查范围内全部已发现缺口按同一真实能力 / Owner去重并引用6.1–6.3；不得等到 Coding 实施中途才首次披露。当前任务已经明确批准把范围扩大到真实跨层实现→Coding，否则禁伪实现/永久 mock。没有能力缺口时也必须明确输出 `none`。
 
 ---
 
