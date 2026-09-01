@@ -374,7 +374,7 @@ class RoutingEvaluatorTest(unittest.TestCase):
             evaluate_route(self.manifest, route)
 
     def test_tristate_any_all_and_not_keep_unknown_without_false_positive(self) -> None:
-        """ANY/ALL/NOT 的 UNKNOWN 传播必须保守但不能把已有 FALSE/TRUE 条件抹掉。"""
+        """ANY/ALL/NOT 的 UNKNOWN 传播必须保守，但未命中的无关第四条规则不能被带入。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             _write_skill(
@@ -394,6 +394,10 @@ class RoutingEvaluatorTest(unittest.TestCase):
                         "coding.reference.03",
                         {"非": _contains("范围", "公共契约")},
                     ),
+                    _reference(
+                        "coding.reference.04",
+                        _contains("能力", "Git"),
+                    ),
                 ],
             )
             manifest = compile_routing(root)
@@ -405,6 +409,7 @@ class RoutingEvaluatorTest(unittest.TestCase):
                 actual["必需Reference"],
                 ["coding.reference.01", "coding.reference.02", "coding.reference.03"],
             )
+            self.assertNotIn("coding.reference.04", actual["必需Reference"])
 
     def test_public_contract_is_dynamic_without_private_mapping(self) -> None:
         """公共契约应汇总中文词汇和 Skill，但不泄露 Reference mapping。"""
