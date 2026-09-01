@@ -55,8 +55,16 @@ def _is_placeholder(source: str) -> bool:
     return "<" in source or ">" in source
 
 
+def _is_coding_change_path(relative: Path) -> bool:
+    """判断仓库相对路径是否指向 Coding Change carrier，防止施工契约自证需求。"""
+    parts = relative.parts
+    if relative.name != "CHANGE.md":
+        return False
+    return parts[:2] == (".agents", "changes") or parts[:1] == ("changes",)
+
+
 def _validate_repository_path(root: Path, source: str) -> None:
-    """验证仓库相对事实源存在且不能通过绝对路径或路径逃逸越界。"""
+    """验证仓库相对事实源存在、未越界，且不是 Coding Change 施工契约。"""
     if SCHEME_PATTERN.match(source):
         raise RequirementSourceError(
             f"Requirement Source `{source}` 不是本仓库支持的相对路径；外部系统必须使用项目已定义的稳定标识。"
@@ -69,11 +77,16 @@ def _validate_repository_path(root: Path, source: str) -> None:
     root_resolved = root.resolve()
     candidate = (root_resolved / relative).resolve()
     try:
-        candidate.relative_to(root_resolved)
+        resolved_relative = candidate.relative_to(root_resolved)
     except ValueError as exc:
         raise RequirementSourceError(
             f"Requirement Source `{source}` 发生路径逃逸。"
         ) from exc
+
+    if _is_coding_change_path(resolved_relative):
+        raise RequirementSourceError(
+            f"Requirement Source `{source}` 指向 Coding Change 施工契约；Change 不能把自己或同类施工记录当作上游需求来源。"
+        )
 
     if not candidate.exists():
         raise RequirementSourceError(
