@@ -8,6 +8,7 @@ import os
 _NONCE_BYTES = 12
 _KEY_BYTES = 32
 _SALT_BYTES = 32
+_ROOT_SHARE_COUNT = 3
 _MANIFEST_INFO = b"agent-skills/runtime-v3/manifest"
 _REFERENCE_INFO_PREFIX = b"agent-skills/runtime-v3/reference\x00"
 
@@ -15,6 +16,30 @@ _REFERENCE_INFO_PREFIX = b"agent-skills/runtime-v3/reference\x00"
 def generate_root_material() -> bytes:
     """生成当前构建唯一的 32-byte 根密钥材料；本地 Runtime 不把它描述为本机 Owner 不可恢复秘密。"""
     return os.urandom(_KEY_BYTES)
+
+
+def split_root_material(root_material: bytes) -> bytes:
+    """把根材料拆为三个 XOR shares，避免 onefile 内出现一个完整 root key 常量；这只是逆向加固，不是密钥隔离。"""
+    root = bytes(root_material)
+    if len(root) != _KEY_BYTES:
+        raise ValueError("Runtime 根密钥材料必须是 32 bytes")
+    first = os.urandom(_KEY_BYTES)
+    second = os.urandom(_KEY_BYTES)
+    third = bytes(root_byte ^ first_byte ^ second_byte for root_byte, first_byte, second_byte in zip(root, first, second))
+    return first + second + third
+
+
+def recover_root_material(shares: bytes) -> bytes:
+    """从三个固定长度 XOR shares 恢复 Runtime 根材料；错误 framing 必须失败关闭。"""
+    payload = bytes(shares)
+    expected_size = _KEY_BYTES * _ROOT_SHARE_COUNT
+    if len(payload) != expected_size:
+        raise ValueError(f"Runtime 根材料 shares 必须是 {expected_size} bytes")
+    parts = [
+        payload[index * _KEY_BYTES : (index + 1) * _KEY_BYTES]
+        for index in range(_ROOT_SHARE_COUNT)
+    ]
+    return bytes(first ^ second ^ third for first, second, third in zip(*parts))
 
 
 def generate_bundle_salt() -> bytes:
