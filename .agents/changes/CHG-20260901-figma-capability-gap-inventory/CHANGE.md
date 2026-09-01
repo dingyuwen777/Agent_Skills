@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260901-figma-capability-gap-inventory
 title: Figma Design-to-Code 集中系统能力缺口清单
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: feat/figma-capability-gap-inventory
 created: 2026-09-01
@@ -11,7 +11,7 @@ updated: 2026-09-01
 completion_gate: required
 depends_on: []
 affected_areas: [figma, governance, tests]
-affected_paths: [.agents/skills/figma/SKILL.md, .agents/skills/figma/references/05_Design-to-Code交付门禁.md, .agents/skills/coding/tests/test_figma_skill.py]
+affected_paths: [.agents/skills/figma/SKILL.md, .agents/skills/figma/references/05_Design-to-Code交付门禁.md, .agents/skills/coding/tests/test_figma_skill.py, .agents/skills/coding/tests/test_figma_capability_gap_review.py]
 contracts: []
 data_changes: []
 ---
@@ -22,19 +22,20 @@ data_changes: []
 
 # 成功标准
 
-- [ ] `baseline-ready / Design-to-Code` 在 Coding Handoff 前强制形成 Capability Gap Inventory；没有缺口时也明确输出 `none`。
-- [ ] 清单按真实能力/Owner 去重，不因 Normal/Loading/Empty/Error 等状态稿重复同一能力而制造噪声，同时保留状态差异。
-- [ ] 每个缺口至少包含 Figma 位置、用户能力、当前系统证据、正式事实 Owner、缺失/冲突层、分类、阻塞性和建议动作；项目不存在的层标记 `not_applicable`，不得为填表发明架构。
-- [ ] 已批准但尚未实现的能力标记 `implementation_required`；只有当前任务已经批准扩大为真实跨层实现时才能进入 Coding 实施，否则先集中披露，不得由前端/Figma MCP 猜 API、永久 Mock 或伪造成功。
-- [ ] 未批准设计假设、Future、design_outdated、implementation_issue_detected、decision_required 等沿用现有事实分类，不建立第二套冲突语义。
-- [ ] Figma 主 Skill 正式输出显式暴露 Capability Gap Inventory，详细格式仍由 Design-to-Code Reference 唯一维护。
-- [ ] 自包含回归测试验证上述规则，并保持现有 Figma/Router/Runtime 动态发现与内容守恒回归通过。
+- [x] `baseline-ready / Design-to-Code` 在 Coding Handoff 前强制形成 Capability Gap Inventory；没有缺口时也明确输出 `none`。
+- [x] 清单按真实能力/Owner 去重，不因 Normal/Loading/Empty/Error 等状态稿重复同一能力而制造噪声，同时保留必要状态差异。
+- [x] 每个缺口至少包含 Figma 位置、用户能力、当前系统证据、正式事实 Owner、缺失/冲突层、分类、阻塞性和最小动作；项目不存在的层标记 `not_applicable`，不得为填表发明架构。
+- [x] 已批准但尚未实现的能力继续使用现有 `implementation_required` 语义；当前任务已经批准真实跨层实现时由 Coding 整体承接，不把逐项编码责任推回用户；未批准扩大范围时先集中披露并按实际阻塞性处理，不得猜 API、永久 Mock 或伪造成功。
+- [x] 未批准设计假设、Future、实现/设计漂移与待决策等继续复用 Figma 现有事实分类和 Owner 规则，不建立第二套固定 taxonomy。
+- [x] Figma 主 Skill 正式输出显式暴露 Capability Gap Inventory，详细格式由 Design-to-Code Reference 唯一维护。
+- [x] 自包含回归测试验证上述规则，并保持现有 Figma、Router、Bundle/Project Payload、Runtime 内容守恒回归通过。
 
 # 范围
 
 - 修改 Figma 主 Skill 的 Baseline Ready / 正式输出薄入口。
-- 修改 `05_Design-to-Code交付门禁.md`，建立 Capability Gap Inventory 的详细 Owner、格式、去重、阻塞与 Handoff 规则。
-- 修改现有 `test_figma_skill.py` 增加行为守恒回归。
+- 修改 `05_Design-to-Code交付门禁.md`，建立 Capability Gap Inventory 的详细 Owner、字段、去重、阻塞与 Handoff 规则。
+- 修改现有 `test_figma_skill.py` 增加基础行为守恒回归。
+- 新增 `test_figma_capability_gap_review.py` 固化独立 Review 发现的状态差异、分类单一事实源和 Coding Handoff 内容守恒要求。
 - 完成本仓库 L2 Change、Skill Tests、独立 Review、PR、main fresh CI 和独立归档。
 
 # 非目标
@@ -53,76 +54,87 @@ data_changes: []
 
 # 关键决策
 
-- Capability Gap Inventory 作为现有 UI → Real-System Preflight 的**集中输出层**，不建立新的能力判定体系。
-- 去重键优先使用真实能力/正式 Owner + 用户语义；同一能力跨状态稿只保留一条主记录，并在记录内保留状态差异。
-- `implementation_required` 只表示已批准但当前未实现；若本次没有批准扩大实现范围，清单必须先向用户集中披露并阻止伪实现。若本次任务已经明确包含真实全栈实现，则作为 Coding Handoff 输入继续实施，不要求再次逐项询问。
-- 主 Skill 只保留硬触发与正式输出入口，详细字段、分类和失败处理留在 `05_Design-to-Code交付门禁.md`，避免重复漂移。
+- Capability Gap Inventory 是现有 UI → Real-System Preflight 与系统能力判断的**集中输出层**，不是新的能力判定体系。
+- 去重键优先使用真实能力/正式 Owner + 用户语义；同一能力跨状态稿只保留一条主记录，但必须保留会改变实现决定的状态差异。
+- Inventory 的“分类”复用当前 Figma 事实语义，不新增一组与现有规则并行的标签体系。
+- `implementation_required` 只表示已批准但当前未实现；本次已批准真实跨层实现时作为一个 Coding Handoff 工作单元继续实施，不再次要求用户逐项手工编码；未批准扩大范围时先集中披露并阻止伪实现。
+- 主 Skill 只保留硬门禁与正式输出入口；字段、去重和 Handoff 细节由 `05_Design-to-Code交付门禁.md` 唯一维护，避免重复漂移。
 
 # 需求追溯
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Figma 中后端/系统尚未实现的能力必须在前端实施前完整列出给用户 | user:current-request | not_satisfied | 尚未验证 |
-| R2 | 缺口必须集中输出，不能只散落在 Findings 或开发中途才暴露 | user:approved-capability-gap-inventory | not_satisfied | 尚未验证 |
-| R3 | 已批准未实现、未批准设计假设、未来/过期/实现错误/待决策必须沿用真实事实分类 | user:approved-capability-gap-inventory | not_satisfied | 尚未验证 |
-| R4 | 不允许 Figma MCP/前端为缺失能力猜 API、永久 Mock 或伪造系统成功 | user:current-request | not_satisfied | 尚未验证 |
-| R5 | 清单要完整但去重，避免同一能力因多个状态稿或重复节点造成噪声 | user:approved-capability-gap-inventory | not_satisfied | 尚未验证 |
-| R6 | 允许提交、推送、PR；验证通过后允许合并和归档 | user:git-delivery-authorization | satisfied | 本轮用户已明确授权 Git/PR/merge/archive |
+| R1 | Figma 中系统尚未实现或存在冲突的能力必须在前端实施前完整列出给用户 | user:current-request | satisfied | `ref05` 在 Coding Handoff 前强制集中 Inventory；`test_capability_gap_inventory_is_complete_deduplicated_and_pre_handoff`；Skill Tests #809 |
+| R2 | 缺口必须集中输出，不能只散落在 Findings 或开发中途才暴露 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“Coding Handoff 前必须集中输出”且“不得等到 Coding 实施中途才首次披露”；Skill Tests #809 |
+| R3 | Inventory 必须复用现有真实事实分类，不建立第二套冲突语义 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“分类复用现有语义，不新建第二套”；`test_inventory_preserves_state_differences_and_reuses_existing_classification`；Skill Tests #809 |
+| R4 | 不允许 Figma MCP/前端为缺失能力猜 API、永久 Mock 或伪造系统成功 | user:current-request | satisfied | 既有 6.2 禁止发明生产 Contract，Inventory 未授权分支继续禁止伪实现/永久 mock；相关既有回归 + Skill Tests #809 |
+| R5 | 清单完整但按真实能力/Owner 去重，并保留必要状态差异 | user:approved-capability-gap-inventory | satisfied | `ref05` 显式 8 字段 + “去重但保留必要状态差异”；两组 Capability Gap 回归；Skill Tests #809 |
+| R6 | 已授权跨层实现时由 Coding 整体承接，不要求用户逐项手工编码 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“整体交给 Coding 实施，不逐项要求用户编码”；Review 回归；Skill Tests #809 |
+| R7 | 允许提交、推送、PR；验证通过后允许合并和归档 | user:git-delivery-authorization | satisfied | 本轮用户已明确授权 Git/PR/merge/archive；PR #130 已存在 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | `test_figma_skill.py` 新增 targeted regression，证明集中缺口清单、去重、阻塞/继续 Handoff 和 `none` 输出语义 |
-| 接口 / 契约 | not_applicable | 不修改 public Runtime/Task Route/Reference Stable ID/metadata schema |
+| 行为 / 单元 / 组件 | required | 两组 Capability Gap targeted regressions；Skill Tests #809 291/291 通过 |
+| 接口 / 契约 | not_applicable | 不修改 public Runtime、Task Route、Reference Stable ID 或 metadata schema |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 无数据库、文件系统运行语义或外部 runtime dependency 变化 |
-| 用户 / 工作流验收 | required | 从“Figma baseline-ready → Gap Inventory → Coding Handoff”规则文本与回归断言证明实现方/用户可见决策输出闭环 |
-| 跨组件关键路径 | required | 全量 self-contained Skill Tests 证明 Figma Core/Reference、Router、Bundle/Project Payload 现有联动未破坏 |
+| 用户 / 工作流验收 | required | `baseline-ready → Capability Gap Inventory → Coding Handoff` 的集中输出、8 字段、授权/未授权分支与 `none` 均有规则 + 回归证据 |
+| 跨组件关键路径 | required | 全量 self-contained Skill Tests 覆盖 Figma、Router、Bundle/Project Payload、Runtime 内容守恒；#809 291/291 通过 |
 | 外部依赖 / 供应方探测 | not_applicable | 不涉及外部 Provider 当前事实 |
-| 构建 / 打包 / 运行 | not_applicable | 不修改 Runtime/Builder/MCP/Installer/Release；按仓库 CI 分责不触发三平台 package tests |
-| 文档 / 治理 / 其他 | required | Ready Check、内容守恒 Review、PR Skill Tests、main fresh Skill Tests、Change 归档 |
+| 构建 / 打包 / 运行 | not_applicable | 未修改 Runtime/Builder/MCP/Installer/Release；按永久 CI 分责不触发三平台 Runtime Package Tests |
+| 文档 / 治理 / 其他 | required | Source Mode 规则重读、内容守恒 TDD、Standard Review A1/A2、Ready Check、PR Skill Tests；main fresh CI/归档在合并后执行 |
 
 # 完成审计
 
-- [ ] upstream_re_read：已重新读取用户要求、Agent_Skills 根规则、Maintenance、Router、Coding/Figma canonical Owner 与 required References。
-- [ ] change_coverage：已确认 Change 覆盖全部本轮要求，没有把 Change 自身当作需求全集。
-- [ ] reverse_audit：已反查 `baseline-ready → Capability Gap Inventory → Coding Handoff` 与 `已支持/未实现/未批准/冲突` 分支，并复核验证矩阵。
-- [ ] unresolved_cleared：所有 `not_satisfied` 已清零，未验证项和不适用项均有依据。
+- [x] upstream_re_read：已重新读取本轮用户要求、Agent_Skills 根 `AGENTS.md`、`MAINTENANCE.md`、ENTRY、Router、Coding/Figma canonical Owner、内容守恒与 Review required References。
+- [x] change_coverage：已从用户目标反查 Change 与最终 diff，覆盖集中披露、字段、去重、状态差异、分类、Handoff、禁止伪实现和 `none`，没有把 Change 自身当需求全集。
+- [x] reverse_audit：已从最终实现反查 `baseline-ready → Inventory → Coding Handoff`、已批准/未批准/冲突分支和测试映射；Review 发现的字段隐式与状态差异问题均先 Red 后修复。
+- [x] unresolved_cleared：R1–R7 均为 satisfied；Runtime Package Tests、外部依赖与说明文档同步均有明确 not_applicable 依据；最终 Standard Review 无剩余 BLOCKER/HIGH/MEDIUM Finding。
 
 # 任务
 
 - [x] 读取 canonical Source Mode 入口、Maintenance、Router、Coding、Figma 与 required References
 - [x] 确认当前 main HEAD、Active Change 与本次 L2/PR/CI 门禁
-- [ ] 先新增会因缺少 Capability Gap Inventory 而失败的回归测试并取得 Red 证据
-- [ ] 修改 Figma Design-to-Code canonical 规则
-- [ ] 取得 targeted / full self-contained Green 证据
-- [ ] 完成 Requirement/内容守恒/独立 Review
-- [ ] 更新 Change 到 ready_for_review 并通过 PR Skill Tests
+- [x] 先新增会因缺少 Capability Gap Inventory 而失败的回归并取得 Red 证据
+- [x] 修改 Figma Design-to-Code canonical 规则
+- [x] 取得 targeted / full self-contained Green 证据并保持 Router 上下文预算
+- [x] 完成 Requirement/内容守恒/Standard Review A1/A2；修复 Review Findings 后重新 Green
+- [x] 更新 Change 到 `ready_for_review`
+- [ ] 当前 `ready_for_review` head 的 PR Skill Tests 全绿并将 PR 转为 Ready
 - [ ] 合并并验证 main fresh Skill Tests
 - [ ] 独立归档 Change 并完成归档 PR/main 验证
 
 # 验证
 
-## 计划
-
-- Red：PR 上新增 targeted regression 后读取 `Skill Tests` 失败日志，确认失败原因是 Capability Gap Inventory 规则尚不存在。
-- Green 1：规则实现后同一 PR 的 self-contained tests 中 `test_figma_skill.py` 与全量测试通过；此时 Change 仍可保持 in_progress，让 Ready Check 继续阻塞集成。
-- Review：读取 PR diff，按 Review A1/A2、内容守恒、通用性、重复 Owner、测试充分性做独立复核。
-- Green 2：把 Change 更新为 `ready_for_review` 并填入新鲜证据后，PR `Skill Tests` 全绿。
-- Merge：REST merge + `expected_head_sha`；随后读取 main HEAD 并确认 main fresh `Skill Tests`。
-- Archive：独立归档 PR 将 Change 更新为 `done` 并移动到 `archive/2026-09/...`，再验证归档 PR/main changed-scope CI。
-
 ## 新鲜证据
 
-- 尚未执行。
+- 初始 TDD Red：新增 Capability Gap 基础回归后，self-contained tests 为 289 通过 / 1 失败；失败原因是 canonical Figma 规则尚无 Capability Gap Inventory。
+- Skill Tests #797：290/290 通过；基础 Capability Gap 回归、Router 历史上下文预算和 Ready Check 通过。
+- Skill Tests #798：新增“8 个 Inventory 字段显式存在”回归后仅该回归失败，形成 Review Finding 1 的 Red 证据。
+- Skill Tests #799：字段显式化修复后 290/290 通过；字段回归与 Router 上下文预算通过。
+- Skill Tests #804：新增内容守恒 Review 回归后 291 个测试仅该回归失败，明确暴露“去重保留状态差异/分类单一事实源/Coding 整体承接”缺失。
+- Skill Tests #809（commit `ce30cc15791add6eded206756907ae7ed67bf78a`）：291/291 通过；两组 Capability Gap 回归、Router 历史上下文预算、Bundle/Project Payload/Runtime 内容守恒均通过；`ready_check.py --changed-since e5a147f08fb4d501e1e28a71c35bf7a100bc7057` 通过。
+- Standard Review A1/A2：基于未漂移的 main `e5a147f08fb4d501e1e28a71c35bf7a100bc7057` 与 PR #130 head `ce30cc15791add6eded206756907ae7ed67bf78a` 重新检查需求→实现、实现→测试/证据/文档；Review Findings 已通过 TDD 修复，当前无剩余 BLOCKER/HIGH/MEDIUM。
 
 # 文档影响
 
-- `README.md` / `USAGE.md` / `runtime/README.md`：预计 `not_applicable`，本次是专业 Figma canonical 行为规则增强，不改变最终用户安装方法、Runtime 产品面或仓库人类入口；完成前复核。
-- Figma Skill / Reference 属机器/Agent 消费治理正文，本身是本次正式事实 Owner，不按“纯说明文档”处理。
+- `README.md` / `USAGE.md` / `runtime/README.md`：`not_applicable`。本次仅增强专业 Figma canonical 行为规则，不改变仓库维护入口、最终用户安装/使用方式或 Runtime 产品面。
+- Figma Skill / Reference 是本次机器/Agent 消费的正式事实 Owner，本次修改本身即规则同步；不额外创建重复说明文档。
+
+# 兼容、安全与交付影响
+
+- 兼容性：不改变 Router 词汇、Reference Stable ID、metadata、Task Route schema、Runtime API 或安装格式。
+- 依赖：无新增或升级。
+- 数据 / Migration：无。
+- 部署 / Release：无；正式 Release 不在本次范围。
+- 回滚：可通过回滚本 PR 的 Figma Skill/Reference 与两组回归测试恢复；无数据迁移或外部状态需要回滚。
 
 # 交付
 
-- 提交：进行中
-- 拉取请求：未创建
+- 分支：`feat/figma-capability-gap-inventory`
+- 拉取请求：#130 `增强：Figma Design-to-Code 集中披露系统能力缺口`
+- 当前 Review head：`ce30cc15791add6eded206756907ae7ed67bf78a`
+- 合并：待当前 `ready_for_review` head 的 PR Skill Tests 与 Ready 门禁通过后执行
+- 归档：功能合并 + main fresh CI 后独立 PR 执行
 - 发布：不适用
