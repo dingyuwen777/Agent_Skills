@@ -64,6 +64,7 @@ jobs:
           runtime/agent_skills_runtime/routing.py
           runtime/agent_skills_runtime/catalog.py
           runtime/agent_skills_runtime/crypto.py
+          runtime/agent_skills_runtime/encrypted_bundle.py
           runtime/agent_skills_runtime/project_payload.py
           runtime/agent_skills_runtime/install_state.py
           runtime/agent_skills_runtime/project_installer.py
