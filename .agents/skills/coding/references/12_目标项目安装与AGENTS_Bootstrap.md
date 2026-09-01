@@ -238,13 +238,13 @@ Greenfield / 空仓库：
 
 固定顺序：
 
-1. 重新读取安装/接入后的项目 `AGENTS.md` 以及适用的 `CONTRIBUTING` / 子目录规则；
+1. 重新读取安装/接入后的项目 `AGENTS.md` 以及适用的 `CONTRIBUTING` / 子目录规则。**Source Mode** 下按 ownership 区分：marker 外项目规则照常生效；managed block 与 installer-owned Runtime 是**保留但非 canonical**的安装资产，只检查 marker、ownership、**安装版本与 drift**，**不得把其中的 Runtime/MCP/披露/路由/加载说明作为当前通用治理语义**；
 2. 做有界事实调查，只读取长期研发导航直接相关的最少充分代码、Manifest/lock、Contract/Schema/Migration、测试、CI、部署和正式文档；
-3. 把现有 AGENTS 内容与新证据分成**规范性规则、描述性事实、未确认事项**；
+3. 把现有 marker 外项目 AGENTS 内容与新证据分成**规范性规则、描述性事实、未确认事项**；
 4. 规范性规则若与当前实现冲突，先视为实现/配置偏离；**不能通过修改 `AGENTS.md` 让错误实现合法化**，也不能因为代码没遵守就自动弱化规则；
 5. **描述性事实**只有在当前机器事实/代码/CI/运行证据足以证明过时时才最小修正；不能仅凭文件名发明框架、数据库、架构、Owner、Contract、CI 或部署结论；
 6. 高权威事实源冲突或证据不足时保留为**未确认事项**；重要 Contract/Schema/数据/安全/部署冲突继续核实或请求 Owner 决策；
-7. 可确认长期事实只在 **managed block 外**增量补充，并使用当前项目自己的模块、Contract、Schema、测试、CI、部署、业务和设计术语表达；**项目 Overlay 只描述项目自己的规则、事实和长期工程边界，不解释通用治理能力自身如何运行，也不把治理能力自身的执行、分发或实现说明写入项目规范**；
+7. 可确认长期事实只在 **managed block 外**增量补充，并使用当前项目自己的模块、Contract、Schema、测试、CI、部署、业务和设计术语表达；**项目 Overlay 只描述项目自己的规则、事实和长期工程边界，不解释通用治理能力自身如何运行，也不把治理能力自身的执行、分发或实现说明写入项目规范**。Source Mode **不得复制或改写到项目 Overlay**；发现 drift 只报告**正式 Runtime upgrade**，**不手工覆盖 installer-owned managed block**；
 8. 已有仍有效文本尽量保持原位置和语义，只做必要 targeted 修正；新模板没有真实事实的章节保持为空或明确未确认；
 9. 首次治理成功后把项目自有状态更新为“状态：已校准”；
 10. **重新读取最终 `AGENTS.md`**，确认项目规则、事实、未确认事项和 managed block 边界没有互相覆盖；
