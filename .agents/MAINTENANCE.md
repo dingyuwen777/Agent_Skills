@@ -197,7 +197,15 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、专业 Skill
 
 测试必须自包含，**不能依赖另一个业务仓库**、外部 Blueprint、业务源码或私有测试 fixture 才成立。
 
-永久验证按独立证据分两层，不再让每个纯 Skill/Reference/治理提交重复承担 PyInstaller 三平台打包成本：
+普通 PR/main 的 Runtime 证据责任按 `governance / content / package` 三档判断；**L3 ≠ 必然三平台打包**。风险等级决定治理和证明强度，是否构建 binary 则由本次 diff 是否改变 executable/package/platform boundary 决定：
+
+- `governance`：Change、维护文档和不进入 Runtime 产品语义的仓库治理文本；运行 Skill Tests、Requirement/Ready/Review 等治理门禁，不运行三平台 binary package；
+- `content`：`.agents/skills/**` 下 canonical Skill/Reference/Entry、Project Payload 文本或运行资产，以及 `USAGE.md` 等会影响 Runtime/Release 内容但不改变 executable mechanism 的文件；必须继续运行完整 Skill Tests，用动态 Catalog、Bundle/Project Payload 构建、Routing Conformance、canonical exact-text、加密 round-trip、ownership 与内容守恒等平台无关证据证明，不运行三平台 binary package；
+- `package`：Runtime Python/source、加密/加载实现、安装器和平台逻辑、Runtime/build requirements、Builder、真实 MCP smoke、Runtime Package/Release workflow、scope classifier 与 `.gitattributes` 等会改变 executable/package/platform boundary 的文件；必须在 Linux、Windows、macOS 对应 Runner 完成 onefile、self-test、真实 stdio MCP 和项目安装验证。
+
+混合修改取最高档；任一 `package` 路径存在时不能被 `content/governance` 文件掩盖。分类依据是文件在产品中的职责，不按 `.md`、`.py` 等扩展名粗暴判断：例如 `runtime/README.md` 属于 `governance`，canonical Reference Markdown 属于 `content`。
+
+永久验证仍按独立证据分层：
 
 ```text
 Skill Tests
@@ -207,7 +215,7 @@ Skill Tests
 → metadata / routing / encryption / ownership / governance invariants
 → Ready Check
 
-Runtime Package Tests（仅 Runtime/Builder/MCP 安装/Release 路径变化时）
+Runtime Package Tests（仅 scope=package）
 → Linux onefile build/status/self-test
 → real stdio MCP
 → project-only install/upgrade/no-args install
@@ -225,9 +233,9 @@ Release
 
 `.github/workflows/skill-tests.yml` 对 Skill/Reference/Router/Change/治理及相关源码变化运行，不安装 PyInstaller，也不因为纯规则正文变化构建 onefile；但必须继续执行会真实构建 Bundle/Project Payload、校验 canonical exact-text、Routing Conformance、sidecarless ownership、内容守恒和 Ready 的自包含测试。
 
-`.github/workflows/runtime-package-tests.yml` 只在 `runtime/**`、`scripts/build_runtime.py`、`scripts/runtime_mcp_smoke.py`、Runtime package workflow 自身或 Release workflow 等实际影响二进制构建/安装边界的路径变化时触发，并在 Linux、Windows、macOS 对应 Runner 真实构建和安装。不能用 Skill Tests 的绿色替代这一层，也不能把一个平台 artifact 当成其他平台证据。
+`.github/workflows/runtime-package-tests.yml` 使用唯一 classifier 输出上述三档 scope；`governance/content` 只保留稳定 Scope/Gate 且三平台 jobs 必须 skipped，只有 `package` 才在 Linux、Windows、macOS 对应 Runner 真实构建和安装。不能用 Skill Tests 的绿色替代 `package` 层，也不能把一个平台 artifact 当成其他平台证据。
 
-正式 Release 仍必须重新验证当前目标 main，并完整构建三平台 artifact；常规 CI 的分责优化不能降低 Release 候选的构建、安装、MCP、identity、artifact SHA 或 ZIP 精确成员责任。
+**正式 Release 不使用普通 PR/main 的 scope 快速路径；每次仍验证 Linux、Windows、macOS 最终 artifact。** Release workflow 必须重新验证当前目标 main，并完整承担构建、安装、MCP、identity、artifact SHA 和 ZIP 精确成员责任。
 
 删除旧产品能力时，应删除只为该能力保活的测试；但不能借 CI 拆分删除现行 Runtime、内容守恒、安全或交付责任。修改 Workflow 时必须保持 Evidence Preservation Mapping：每个原独立证明责任都能指出新的唯一或等价承担位置。
 
