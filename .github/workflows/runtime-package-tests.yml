@@ -135,7 +135,7 @@ jobs:
           grep -Fq "代码修改" "${target}/AGENTS.md"
           grep -Fq "测试" "${target}/AGENTS.md"
           grep -Fq "文档同步" "${target}/AGENTS.md"
-          grep -Fq "用户可见" "${target}/AGENTS.md"
+          grep -Fq "对用户正常说明" "${target}/AGENTS.md"
           grep -Fq ".agents/skills/router/SKILL.md" "${target}/.agents/skills/ENTRY.md"
           grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/router/SKILL.md"
           grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/router/SKILL.md"
@@ -163,7 +163,7 @@ jobs:
           ! grep -Fq ".agents/skills/" "${no_args_target}/AGENTS.md"
           ! grep -Fq "ENTRY.md" "${no_args_target}/AGENTS.md"
           ! grep -Fq "router/SKILL.md" "${no_args_target}/AGENTS.md"
-          grep -Fq "用户可见" "${no_args_target}/AGENTS.md"
+          grep -Fq "对用户正常说明" "${no_args_target}/AGENTS.md"
 
   runtime-windows-package:
     name: Runtime Windows Package
@@ -246,7 +246,7 @@ jobs:
               throw "Windows 目标 AGENTS 泄露 Runtime 内部治理结构: $forbidden"
             }
           }
-          foreach ($required in @("代码修改", "测试", "文档同步", "用户可见")) {
+          foreach ($required in @("代码修改", "测试", "文档同步", "对用户正常说明")) {
             if (-not (Select-String -Path $agents -Pattern $required -SimpleMatch -Quiet)) {
               throw "Windows 目标 AGENTS 缺少工程过程语义: $required"
             }
@@ -280,7 +280,7 @@ jobs:
           foreach ($forbidden in @(".agents/skills/", "ENTRY.md", "router/SKILL.md")) {
             if (Select-String -Path $noArgsAgents -Pattern $forbidden -SimpleMatch -Quiet) { throw "Windows binary 无参数运行的 AGENTS 泄露内部治理结构: $forbidden" }
           }
-          if (-not (Select-String -Path $noArgsAgents -Pattern "用户可见" -SimpleMatch -Quiet)) { throw "Windows binary 无参数运行的 AGENTS 缺少用户可见进度边界" }
+          if (-not (Select-String -Path $noArgsAgents -Pattern "对用户正常说明" -SimpleMatch -Quiet)) { throw "Windows binary 无参数运行的 AGENTS 缺少用户进度说明边界" }
 
   runtime-macos-package:
     name: Runtime macOS Package
@@ -361,7 +361,7 @@ jobs:
           grep -Fq "代码修改" "${target}/AGENTS.md"
           grep -Fq "测试" "${target}/AGENTS.md"
           grep -Fq "文档同步" "${target}/AGENTS.md"
-          grep -Fq "用户可见" "${target}/AGENTS.md"
+          grep -Fq "对用户正常说明" "${target}/AGENTS.md"
           grep -Fq ".agents/skills/router/SKILL.md" "${target}/.agents/skills/ENTRY.md"
           grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/router/SKILL.md"
           grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/router/SKILL.md"
@@ -389,7 +389,7 @@ jobs:
           ! grep -Fq ".agents/skills/" "${no_args_target}/AGENTS.md"
           ! grep -Fq "ENTRY.md" "${no_args_target}/AGENTS.md"
           ! grep -Fq "router/SKILL.md" "${no_args_target}/AGENTS.md"
-          grep -Fq "用户可见" "${no_args_target}/AGENTS.md"
+          grep -Fq "对用户正常说明" "${no_args_target}/AGENTS.md"
 
   runtime-package-gate:
     name: Runtime Package Gate
