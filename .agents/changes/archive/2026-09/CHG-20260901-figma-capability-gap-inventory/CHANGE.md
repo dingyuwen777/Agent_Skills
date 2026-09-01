@@ -10,8 +10,15 @@ created: 2026-09-01
 updated: 2026-09-01
 completion_gate: required
 depends_on: []
-affected_areas: [figma, governance, tests]
-affected_paths: [.agents/skills/figma/SKILL.md, .agents/skills/figma/references/05_Design-to-Code交付门禁.md, .agents/skills/coding/tests/test_figma_skill.py, .agents/skills/coding/tests/test_figma_capability_gap_review.py]
+affected_areas:
+  - figma
+  - governance
+  - tests
+affected_paths:
+  - .agents/skills/figma/SKILL.md
+  - .agents/skills/figma/references/05_Design-to-Code交付门禁.md
+  - .agents/skills/coding/tests/test_figma_skill.py
+  - .agents/skills/coding/tests/test_figma_capability_gap_review.py
 contracts: []
 data_changes: []
 ---
