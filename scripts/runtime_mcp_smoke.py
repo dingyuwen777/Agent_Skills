@@ -74,17 +74,43 @@ def _json_keys(value: Any) -> set[str]:
 
 
 def _assert_progress_rule(payload: dict[str, Any], label: str) -> None:
-    """确认 Runtime 明确允许真实工程过程，并禁止向用户复述治理实现细节。"""
+    """确认 Runtime 允许正常工程解释，并明确禁止把治理原文或高保真重建作为用户交付内容。"""
     rule = payload.get("用户可见进度规则")
     if not isinstance(rule, str) or not rule:
         raise RuntimeError(f"{label} 缺少用户可见进度规则")
-    for required in ("代码修改", "测试", "文档同步", "复核", "Git/CI", "不得主动复述"):
+    for required in (
+        "代码修改",
+        "测试",
+        "文档同步",
+        "复核",
+        "Git/CI",
+        "不得主动复述",
+        "查看、复制",
+        "翻译",
+        "编码",
+        "高保真重建",
+        "工程要求",
+    ):
         if required not in rule:
             raise RuntimeError(f"{label} 用户可见进度规则缺少语义：{required}")
 
 
+async def _expect_tool_failure(client: Any, name: str, arguments: dict[str, Any], label: str) -> None:
+    """要求真实 MCP Tool 调用失败，并兼容 SDK 以异常或 is_error result 表达失败。"""
+    try:
+        result = await client.call_tool(name, arguments)
+    except Exception:
+        return
+    is_error = getattr(result, "is_error", None)
+    if is_error is None:
+        is_error = getattr(result, "isError", None)
+    if is_error is True:
+        return
+    raise RuntimeError(f"{label} 本应失败关闭，但 MCP Tool 返回成功")
+
+
 async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
-    """启动真实 stdio MCP 子进程，验证工具契约、去标识化 envelope 与 canonical 原文读取链。"""
+    """启动真实 stdio MCP 子进程，验证稳定 Tool Contract、exact-text、capability 与 anti-export。"""
     try:
         from mcp import Client, StdioServerParameters
         from mcp.client.stdio import stdio_client
@@ -221,10 +247,33 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
         if repeated.get("上下文") != [] or repeated.get("加载完成") is not True:
             raise RuntimeError("MCP load_required_context 默认没有跳过已加载 Context")
 
+        await _expect_tool_failure(
+            client,
+            "agent_skills_load_required_context",
+            {"路由令牌": route_token + "x"},
+            "伪造 capability",
+        )
+
+        resubmitted = _structured_result(
+            await client.call_tool(
+                "agent_skills_submit_route",
+                {"任务标识": "runtime-smoke", "任务路由": task_route},
+            )
+        )
+        new_token = resubmitted.get("路由令牌")
+        if not isinstance(new_token, str) or not new_token or new_token == route_token:
+            raise RuntimeError("MCP submit_route 未发行新的 task generation capability")
+        await _expect_tool_failure(
+            client,
+            "agent_skills_checkpoint",
+            {"路由令牌": route_token},
+            "stale capability",
+        )
+
         checkpoint = _structured_result(
             await client.call_tool(
                 "agent_skills_checkpoint",
-                {"路由令牌": route_token, "阶段": "完成前检查"},
+                {"路由令牌": new_token, "阶段": "完成前检查"},
             )
         )
         _assert_progress_rule(checkpoint, "MCP checkpoint")
@@ -233,6 +282,53 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
         for forbidden in ("最低风险", "缺失上下文数量", "已加载上下文数量"):
             if forbidden in checkpoint:
                 raise RuntimeError(f"MCP checkpoint 泄露内部状态：{forbidden}")
+
+        _structured_result(
+            await client.call_tool(
+                "agent_skills_start_task",
+                {"任务标识": "runtime-smoke-next", "阶段": "验证"},
+            )
+        )
+        await _expect_tool_failure(
+            client,
+            "agent_skills_load_required_context",
+            {"路由令牌": new_token},
+            "跨 task capability",
+        )
+
+        dimensions = contract.get("维度")
+        if not isinstance(dimensions, dict):
+            raise RuntimeError("MCP route contract 缺少公开维度")
+
+        broad_known_route = {
+            "协议": TASK_ROUTE_PROTOCOL,
+            "信号": {
+                str(dimension): list(values)
+                for dimension, values in dimensions.items()
+                if isinstance(values, list) and values
+            },
+            "未知项": [],
+            "依据": ["攻击型 all-public-values full-corpus smoke"],
+        }
+        await _expect_tool_failure(
+            client,
+            "agent_skills_submit_route",
+            {"任务标识": "runtime-smoke-next", "任务路由": broad_known_route},
+            "known broad full-corpus route",
+        )
+
+        broad_unknown_route = {
+            "协议": TASK_ROUTE_PROTOCOL,
+            "信号": {},
+            "未知项": list(dimensions),
+            "依据": ["攻击型 full-corpus unknown smoke"],
+        }
+        await _expect_tool_failure(
+            client,
+            "agent_skills_submit_route",
+            {"任务标识": "runtime-smoke-next", "任务路由": broad_unknown_route},
+            "unknown full-corpus route",
+        )
 
     return {
         "ok": True,

@@ -6,15 +6,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from runtime.agent_skills_runtime.catalog import build_bundle, deserialize_bundle, serialize_bundle
-from runtime.agent_skills_runtime.crypto import decrypt_bundle, encrypt_bundle, generate_bundle_key
+from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.encrypted_bundle import EncryptedBundleStore, encrypt_runtime_bundle
 from runtime.agent_skills_runtime.routing import (
     REFERENCE_ROUTE_PROTOCOL,
     SKILL_ROUTE_PROTOCOL,
     TASK_ROUTE_PROTOCOL,
     public_route_contract,
 )
-from runtime.agent_skills_runtime.runtime import RuntimeStore
+from runtime.agent_skills_runtime.runtime import RuntimeStore, _route_saturates_public_vocabulary
 
 
 def _routing_block(payload: dict[str, object]) -> str:
@@ -28,7 +28,7 @@ def _task_route(**signals: list[str]) -> dict[str, object]:
 
 
 class RuntimeBundleTest(unittest.TestCase):
-    """验证 canonical Reference Bundle、加密和 RuntimeStore 的原文守恒。"""
+    """验证 canonical Reference Bundle v3、按需解密和 RuntimeStore 原文守恒。"""
 
     def _fixture_root(self) -> Path:
         """创建一个包含三个正式 Skill 与 Reference 的临时源仓库并返回根目录。"""
@@ -75,7 +75,7 @@ class RuntimeBundleTest(unittest.TestCase):
         self.temp_directory.cleanup()
 
     def test_bundle_and_runtime_store_preserve_exact_reference_text(self) -> None:
-        """Bundle 序列化、加密和 Runtime load_context 必须保持 canonical 文本与 hash。"""
+        """v3 Manifest/record 加密和 Runtime load_context 必须保持 canonical exact-text 与 hash。"""
         root = self._fixture_root()
         bundle = build_bundle(root)
         source = root / ".agents/skills/coding/references/01_规则.md"
@@ -83,10 +83,10 @@ class RuntimeBundleTest(unittest.TestCase):
         source_text = source_bytes.decode("utf-8")
         expected_entry = next(entry for entry in bundle["references"] if entry["id"] == "coding.reference.01")
 
-        serialized = serialize_bundle(bundle)
-        key = generate_bundle_key()
-        restored = deserialize_bundle(decrypt_bundle(encrypt_bundle(serialized, key), key))
-        store = RuntimeStore(restored)
+        root_material, envelope = encrypt_runtime_bundle(bundle)
+        encrypted_store = EncryptedBundleStore.open(envelope, root_material)
+        self.assertEqual(encrypted_store.decryption_count, 0)
+        store = RuntimeStore(encrypted_store)
         store.start_task("T-1")
         route = store.submit_route("T-1", _task_route(意图=["功能开发"]))
         context = store.load_required_context(route["路由令牌"])["上下文"][0]
@@ -94,6 +94,7 @@ class RuntimeBundleTest(unittest.TestCase):
         self.assertEqual(context, {"完整原文": source_text})
         self.assertEqual(expected_entry["sha256"], hashlib.sha256(source_bytes).hexdigest())
         self.assertEqual(expected_entry["size"], len(source_bytes))
+        self.assertEqual(encrypted_store.decryption_count, 1)
         self.assertTrue(store.checkpoint(route["路由令牌"])["通过"])
 
         expanded = store.submit_route("T-1", _task_route(意图=["文档更新"]))
@@ -102,9 +103,14 @@ class RuntimeBundleTest(unittest.TestCase):
         new_context = store.load_required_context(expanded["路由令牌"])["上下文"]
         docs_text = (root / ".agents/skills/docs/references/01_规则.md").read_text(encoding="utf-8")
         self.assertEqual(new_context, [{"完整原文": docs_text}])
+        self.assertEqual(encrypted_store.decryption_count, 2)
 
-    def test_unknown_route_state_remains_monotonic_for_same_task(self) -> None:
-        """同一任务一旦按未知项 fail-safe 扩大，后续提交不得把未知状态伪装成已消失。"""
+        reloaded = store.load_required_context(expanded["路由令牌"], reload=True)["上下文"]
+        self.assertEqual(len(reloaded), 2)
+        self.assertEqual(encrypted_store.decryption_count, 4)
+
+    def test_unknown_route_state_remains_monotonic_without_full_corpus_expansion(self) -> None:
+        """未知状态保持单调，但与 trigger 无关的未知维度不得导致全库 Context。"""
         store = RuntimeStore(build_bundle(self._fixture_root()))
         store.start_task("T-unknown")
         unknown = _task_route(意图=["功能开发"])
@@ -115,8 +121,52 @@ class RuntimeBundleTest(unittest.TestCase):
 
         self.assertTrue(first["存在未确认任务事实"])
         self.assertTrue(second["存在未确认任务事实"])
-        self.assertEqual(len(first_contexts), 3)
+        self.assertEqual(len(first_contexts), 1)
         self.assertFalse(second["需要加载约束"])
+
+    def test_high_cardinality_public_vocabulary_saturation_is_detected(self) -> None:
+        """高基数公共词汇全部填满时应识别为合成宽路由，供 Runtime MCP 阻止方便的批量探测。"""
+        dimensions = {
+            "意图": ["功能开发", "代码审查", "文档更新"],
+            "阶段": ["功能开发", "完成前检查"],
+            "能力": ["测试", "Git"],
+            "风险": ["L3"],
+        }
+        route = {
+            "信号": {dimension: list(values) for dimension, values in dimensions.items()},
+            "未知项": [],
+        }
+        contract = {"维度": dimensions}
+
+        self.assertTrue(_route_saturates_public_vocabulary(route, contract))
+
+    def test_small_complete_contract_is_not_treated_as_synthetic_saturation(self) -> None:
+        """小型真实 Contract 即使每个合法值都出现，也不能因集合恰好相等而被 anti-export 误伤。"""
+        route = {
+            "信号": {"执行模式": ["实现"], "阶段": ["功能开发"]},
+            "未知项": [],
+        }
+        contract = {
+            "维度": {"执行模式": ["实现"], "阶段": ["功能开发"]},
+        }
+
+        self.assertFalse(_route_saturates_public_vocabulary(route, contract))
+
+    def test_progressive_specific_routes_can_accumulate_all_required_context(self) -> None:
+        """合法复杂任务可通过事实逐步出现单调扩展 required Context，不被单次 full-corpus 防导出门禁误伤。"""
+        store = RuntimeStore(build_bundle(self._fixture_root()))
+        store.start_task("T-progressive")
+
+        for intent in ("功能开发", "代码审查", "文档更新"):
+            submitted = store.submit_route("T-progressive", _task_route(意图=[intent]))
+            self.assertTrue(submitted["需要加载约束"])
+            loaded = store.load_required_context(submitted["路由令牌"])
+            self.assertEqual(len(loaded["上下文"]), 1)
+            self.assertTrue(loaded["加载完成"])
+
+        final = store.submit_route("T-progressive", _task_route(意图=["文档更新"]))
+        self.assertFalse(final["需要加载约束"])
+        self.assertTrue(store.checkpoint(final["路由令牌"])["通过"])
 
     def test_source_mode_public_route_contract_keeps_catalog_without_reference_mapping(self) -> None:
         """Source Mode 的原始公开词汇契约可保留 Catalog，但不能泄露 Reference mapping。"""
@@ -161,15 +211,25 @@ class RuntimeBundleTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Stable ID 全局重复"):
             build_bundle(root)
 
-    def test_ciphertext_tamper_is_rejected(self) -> None:
-        """AES-GCM envelope 被篡改时必须认证失败而不是返回损坏原文。"""
-        payload = b"canonical reference"
-        key = generate_bundle_key()
-        envelope = bytearray(encrypt_bundle(payload, key))
-        envelope[-1] ^= 1
+    def test_private_manifest_authentication_rejects_wrong_root_material(self) -> None:
+        """错误根材料必须在私有 Manifest AEAD 边界失败，不能恢复任何 Reference Catalog。"""
+        root_material, envelope = encrypt_runtime_bundle(build_bundle(self._fixture_root()))
+        wrong_root = bytes([root_material[0] ^ 1]) + root_material[1:]
 
-        with self.assertRaises(Exception):
-            decrypt_bundle(bytes(envelope), key)
+        with self.assertRaisesRegex(ValueError, "认证失败"):
+            EncryptedBundleStore.open(envelope, wrong_root)
+
+    def test_explicit_self_test_validates_all_records_without_plaintext_cache(self) -> None:
+        """显式 self-test 可以逐 record 验证全库，但 RuntimeStore 仍不建立 plaintext corpus。"""
+        encrypted_store = EncryptedBundleStore.from_bundle(build_bundle(self._fixture_root()))
+        store = RuntimeStore(encrypted_store)
+        self.assertEqual(encrypted_store.decryption_count, 0)
+
+        result = store.self_test()
+
+        self.assertTrue(result["通过"])
+        self.assertEqual(encrypted_store.decryption_count, 3)
+        self.assertFalse(hasattr(store, "_entries"))
 
 
 if __name__ == "__main__":

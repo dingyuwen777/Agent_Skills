@@ -287,10 +287,10 @@ class RoutingMetadataTest(unittest.TestCase):
 
 
 class RoutingEvaluatorTest(unittest.TestCase):
-    """覆盖并集、依赖、风险、未知项与公共词汇边界。"""
+    """覆盖并集、依赖、风险、三值未知项与公共词汇边界。"""
 
     def setUp(self) -> None:
-        """建立两个动态 Skill 和三个 References 的规范化测试路由。"""
+        """建立两个动态 Skill 和四个 References 的规范化测试路由。"""
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
         _write_skill(
@@ -352,22 +352,64 @@ class RoutingEvaluatorTest(unittest.TestCase):
         )
         self.assertEqual(actual["最低风险"], "L3")
 
-    def test_unknown_facts_expand_instead_of_selecting_narrow_route(self) -> None:
-        """存在未知项时应 fail-safe 扩大到全部当前 canonical Context。"""
+    def test_unknown_facts_expand_only_related_candidate_context(self) -> None:
+        """未知阶段只保守加入阶段相关候选，不得再无条件扩大到全部 canonical Context。"""
         route = _task_route(执行模式=["实现"], 风险=["L1"])
         route["未知项"] = ["阶段"]
         actual = evaluate_route(self.manifest, route)
-        self.assertEqual(actual["命中Skill"], ["coding", "review"])
+        self.assertEqual(actual["命中Skill"], ["coding"])
         self.assertEqual(
             actual["必需Reference"],
-            [
-                "coding.reference.01",
-                "coding.reference.02",
-                "coding.reference.03",
-                "review.reference.01",
-            ],
+            ["coding.reference.01", "coding.reference.02"],
         )
-        self.assertEqual(actual["最低风险"], "L3")
+        self.assertEqual(actual["最低风险"], "L1")
+        self.assertTrue(actual["存在未知项"])
+
+    def test_unknown_induced_full_corpus_fails_closed(self) -> None:
+        """只有未知事实才把 candidate 扩张到全库时，必须要求恢复更多事实而不是导出全库。"""
+        route = _task_route(执行模式=["实现"], 风险=["L1"])
+        route["未知项"] = ["阶段", "范围", "意图"]
+
+        with self.assertRaisesRegex(ValueError, "事实不足"):
+            evaluate_route(self.manifest, route)
+
+    def test_tristate_any_all_and_not_keep_unknown_without_false_positive(self) -> None:
+        """ANY/ALL/NOT 的 UNKNOWN 传播必须保守，但未命中的无关第四条规则不能被带入。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_skill(
+                root,
+                "coding",
+                _contains("执行模式", "实现"),
+                [
+                    _reference(
+                        "coding.reference.01",
+                        {"全部": [_contains("阶段", "功能开发"), _contains("范围", "API")]},
+                    ),
+                    _reference(
+                        "coding.reference.02",
+                        {"任一": [_contains("阶段", "事实恢复"), _contains("意图", "诊断")]},
+                    ),
+                    _reference(
+                        "coding.reference.03",
+                        {"非": _contains("范围", "公共契约")},
+                    ),
+                    _reference(
+                        "coding.reference.04",
+                        _contains("能力", "Git"),
+                    ),
+                ],
+            )
+            manifest = compile_routing(root)
+            route = _task_route(执行模式=["实现"], 范围=["API"])
+            route["未知项"] = ["阶段"]
+            actual = evaluate_route(manifest, route)
+
+            self.assertEqual(
+                actual["必需Reference"],
+                ["coding.reference.01", "coding.reference.02", "coding.reference.03"],
+            )
+            self.assertNotIn("coding.reference.04", actual["必需Reference"])
 
     def test_public_contract_is_dynamic_without_private_mapping(self) -> None:
         """公共契约应汇总中文词汇和 Skill，但不泄露 Reference mapping。"""

@@ -40,19 +40,9 @@ def _case(
     }
 
 
-L1_CORE = [
-    "coding.reference.02",
-    "coding.reference.21",
-]
-LIGHT_L2_CORE = [
-    "coding.reference.02",
-    "coding.reference.07",
-]
-GATED_L2_CORE = LIGHT_L2_CORE + [
-    "coding.reference.04",
-    "coding.reference.10",
-    "coding.reference.19",
-]
+L1_CORE = ["coding.reference.02", "coding.reference.21"]
+LIGHT_L2_CORE = ["coding.reference.02", "coding.reference.07"]
+GATED_L2_CORE = LIGHT_L2_CORE + ["coding.reference.04", "coding.reference.10", "coding.reference.19"]
 REVIEW_CORE = GATED_L2_CORE + ["coding.reference.11", "review.reference.01"]
 RUNTIME_CORE = [
     "coding.reference.02",
@@ -64,6 +54,14 @@ RUNTIME_CORE = [
     "coding.reference.13",
     "coding.reference.14",
     "coding.reference.19",
+]
+RUNTIME_V3_UNKNOWN_PROJECT_SHAPE = [
+    "coding.reference.01",
+    "coding.reference.02",
+    "coding.reference.05",
+    "coding.reference.07",
+    "coding.reference.08",
+    "coding.reference.17",
 ]
 
 
@@ -110,7 +108,7 @@ CASES = [
     _case("CLI package manifest 不推断 Browser/PostgreSQL", {"执行模式": ["只读分析"], "项目形态": ["CLI"], "风险": ["L1"], "工具链": ["JavaScript"]}, ["coding.reference.02", "coding.reference.03"], ["coding"], "L1", forbidden_references=["coding.reference.08", "coding.reference.17", "coding.reference.19", "coding.reference.21", "figma.reference.00"]),
     _case("Backend Python 不推断 FastAPI/PostgreSQL", {"执行模式": ["只读分析"], "项目形态": ["后端服务"], "风险": ["L1"], "工具链": ["Python"]}, ["coding.reference.02", "coding.reference.03", "coding.reference.07", "coding.reference.08"], ["coding"], "L1", forbidden_references=["coding.reference.17", "coding.reference.19", "coding.reference.21", "figma.reference.00"]),
     _case("Design-only Figma 不伪造 API/代码事实", {"风险": ["L1"], "意图": ["Figma review-only"], "能力": ["Figma"], "授权": ["允许只读"]}, ["figma.reference.00", "figma.reference.01", "figma.reference.06", "figma.reference.07"], ["coding", "figma"], "L1", forbidden_references=["coding.reference.06", "coding.reference.08", "coding.reference.17", "coding.reference.21"]),
-    _case("Unknown facts", {"执行模式": ["方案"], "风险": ["L2"]}, [], ["coding", "docs", "figma", "review"], "L3", unknown=["项目形态"]),
+    _case("Unknown facts", {"执行模式": ["方案"], "风险": ["L2"]}, RUNTIME_V3_UNKNOWN_PROJECT_SHAPE, ["coding"], "L2", unknown=["项目形态"], forbidden_references=["coding.reference.14", "docs.reference.01", "figma.reference.00", "review.reference.01"]),
     _case("复杂多条件叠加", {"执行模式": ["实现", "审查", "验证", "Git"], "项目形态": ["前端Web", "全栈应用"], "阶段": ["功能开发", "交付"], "风险": ["L3"], "工具链": ["TypeScript"], "范围": ["前端", "API", "公共契约", "Runtime Bundle"], "意图": ["设计转代码", "Docs full", "Review-and-fix", "Git 交付"], "治理": ["多个活动变更", "要求完成门禁"], "能力": ["Figma", "Git", "测试", "多 Agent"], "授权": ["允许修改项目"]}, RUNTIME_CORE + ["coding.reference.05", "coding.reference.08", "coding.reference.09", "coding.reference.11", "coding.reference.15", "coding.reference.17", "docs.reference.01", "docs.reference.02", "docs.reference.03", "figma.reference.00", "figma.reference.01", "figma.reference.02", "figma.reference.03", "figma.reference.05", "review.reference.01", "review.reference.02", "review.reference.03"], ["coding", "docs", "figma", "review"], "L3"),
 ]
 
@@ -124,7 +122,7 @@ class RoutingConformanceTest(unittest.TestCase):
         cls.manifest = build_bundle(ROOT)["路由清单"]
 
     def test_required_context_is_never_under_disclosed(self) -> None:
-        """每个 case 至少满足 Expected Required ⊆ Actual Required，并验证风险与 Skill。"""
+        """每个 case 至少满足 Expected Required ⊆ Actual Required，并验证风险、Skill 与 unknown anti-export。"""
         all_reference_ids = {str(entry["标识"]) for entry in self.manifest["引用"]}
         for case in CASES:
             with self.subTest(case=case["名称"]):
@@ -137,13 +135,13 @@ class RoutingConformanceTest(unittest.TestCase):
                 actual = evaluate_route(self.manifest, route)
                 actual_references = set(actual["必需Reference"])
                 expected = set(case["最低必需Reference"])
-                if case["名称"] == "Unknown facts":
-                    expected = all_reference_ids
                 self.assertTrue(expected.issubset(actual_references), expected - actual_references)
                 self.assertIn("router", actual["命中Skill"])
                 self.assertTrue(set(case["预期Skill"]).issubset(actual["命中Skill"]))
                 self.assertEqual(actual["最低风险"], case["最低风险"])
                 self.assertFalse(set(case["禁止Reference"]) & actual_references)
+                if case["未知项"]:
+                    self.assertNotEqual(actual_references, all_reference_ids)
 
     def test_benchmark_covers_mandatory_task_families(self) -> None:
         """防止后续维护静默删掉任务书要求的 benchmark 家族。"""

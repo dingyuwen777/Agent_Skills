@@ -36,6 +36,9 @@ _SKILL_NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _REFERENCE_ID = re.compile(
     r"^[a-z0-9]+(?:-[a-z0-9]+)*\.reference\.[a-z0-9]+(?:[.-][a-z0-9]+)*$"
 )
+_TRUE = 1
+_UNKNOWN = 0
+_FALSE = -1
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -419,7 +422,7 @@ def validate_task_route(route: Mapping[str, Any], contract: Mapping[str, Any]) -
 
 
 def _matches(expression: Mapping[str, Any], signals: Mapping[str, set[str]]) -> bool:
-    """使用唯一有限求值语义判断规范化触发表达式。"""
+    """使用原有二值求值语义判断事实充分的规范化触发表达式。"""
     operator = next(iter(expression))
     value = expression[operator]
     if operator == "包含":
@@ -429,6 +432,41 @@ def _matches(expression: Mapping[str, Any], signals: Mapping[str, set[str]]) -> 
     if operator == "任一":
         return any(_matches(item, signals) for item in value)
     return not _matches(value, signals)
+
+
+def _matches_tristate(
+    expression: Mapping[str, Any],
+    signals: Mapping[str, set[str]],
+    unknown_dimensions: set[str],
+) -> int:
+    """对未知事实使用 TRUE/FALSE/UNKNOWN 三值逻辑，只扩大与未知维度真实相关的候选 Context。"""
+    operator = next(iter(expression))
+    value = expression[operator]
+    if operator == "包含":
+        dimension = str(value["维度"])
+        if signals[dimension] & {str(item) for item in value["取值"]}:
+            return _TRUE
+        return _UNKNOWN if dimension in unknown_dimensions else _FALSE
+    if operator == "全部":
+        results = [_matches_tristate(item, signals, unknown_dimensions) for item in value]
+        if any(result == _FALSE for result in results):
+            return _FALSE
+        if all(result == _TRUE for result in results):
+            return _TRUE
+        return _UNKNOWN
+    if operator == "任一":
+        results = [_matches_tristate(item, signals, unknown_dimensions) for item in value]
+        if any(result == _TRUE for result in results):
+            return _TRUE
+        if all(result == _FALSE for result in results):
+            return _FALSE
+        return _UNKNOWN
+    result = _matches_tristate(value, signals, unknown_dimensions)
+    if result == _TRUE:
+        return _FALSE
+    if result == _FALSE:
+        return _TRUE
+    return _UNKNOWN
 
 
 def _dependency_closure(required: set[str], references: Mapping[str, Mapping[str, Any]]) -> set[str]:
@@ -452,47 +490,82 @@ def _minimum_risk(signals: Mapping[str, set[str]], required: Iterable[Mapping[st
     return max(risks or ["L1"], key=lambda item: _RISK_ORDER[item])
 
 
+def _evaluate_fixed_point(
+    manifest: Mapping[str, Any],
+    signals: dict[str, set[str]],
+    *,
+    unknown_dimensions: set[str] | None = None,
+) -> tuple[set[str], set[str], str]:
+    """执行二值或三值 fixed-point；三值 UNKNOWN 按候选 required 处理而不自动扩大到无关规则。"""
+    references = {str(entry["标识"]): entry for entry in manifest["引用"]}
+    skill_names = {str(entry["Skill"]) for entry in manifest["技能"]}
+    required_ids: set[str] = set()
+    matched_skills: set[str] = (
+        {CONTROL_PLANE_SKILL} if CONTROL_PLANE_SKILL in skill_names else set()
+    )
+    while True:
+        before = (set(required_ids), set(matched_skills), set(signals["风险"]))
+        for skill in manifest["技能"]:
+            matched = (
+                _matches(skill["触发"], signals)
+                if unknown_dimensions is None
+                else _matches_tristate(skill["触发"], signals, unknown_dimensions) != _FALSE
+            )
+            if matched:
+                matched_skills.add(str(skill["Skill"]))
+        for reference_id, reference in references.items():
+            matched = (
+                _matches(reference["触发"], signals)
+                if unknown_dimensions is None
+                else _matches_tristate(reference["触发"], signals, unknown_dimensions) != _FALSE
+            )
+            if matched:
+                required_ids.add(reference_id)
+        required_ids = _dependency_closure(required_ids, references)
+        for reference_id in required_ids:
+            matched_skills.add(str(references[reference_id]["Skill"]))
+        minimum_risk = _minimum_risk(signals, (references[item] for item in required_ids))
+        signals["风险"].add(minimum_risk)
+        after = (set(required_ids), set(matched_skills), set(signals["风险"]))
+        if after == before:
+            break
+    required_entries = [references[item] for item in sorted(required_ids)]
+    return required_ids, matched_skills, _minimum_risk(signals, required_entries)
+
+
 def evaluate_route(manifest: Mapping[str, Any], route: Mapping[str, Any]) -> dict[str, Any]:
-    """用单一确定性求值器计算 Skill、required Reference、依赖闭包和最低风险。"""
+    """求值 required Context；确定任务保持原二值语义，未知事实只保守扩大相关候选并阻止未知诱导全库导出。"""
     validate_routing_manifest(manifest)
     normalized = validate_task_route(route, public_route_contract(manifest))
-    signals = {
+    base_signals = {
         dimension: set(normalized["信号"][dimension])
         for dimension in ROUTE_DIMENSIONS
     }
-    references = {str(entry["标识"]): entry for entry in manifest["引用"]}
-    skill_names = {str(entry["Skill"]) for entry in manifest["技能"]}
-    if normalized["未知项"]:
-        required_ids = set(references)
-        matched_skills = set(skill_names)
-    else:
-        required_ids: set[str] = set()
-        # Router 是保留控制面，不依赖普通业务 trigger；其他 Skill 仍完全按动态 metadata 求值。
-        matched_skills: set[str] = (
-            {CONTROL_PLANE_SKILL} if CONTROL_PLANE_SKILL in skill_names else set()
+    unknown_dimensions = set(normalized["未知项"])
+    if not unknown_dimensions:
+        required_ids, matched_skills, minimum_risk = _evaluate_fixed_point(
+            manifest,
+            {dimension: set(values) for dimension, values in base_signals.items()},
         )
-        while True:
-            before = (set(required_ids), set(matched_skills), set(signals["风险"]))
-            for skill in manifest["技能"]:
-                if _matches(skill["触发"], signals):
-                    matched_skills.add(str(skill["Skill"]))
-            for reference_id, reference in references.items():
-                if _matches(reference["触发"], signals):
-                    required_ids.add(reference_id)
-            required_ids = _dependency_closure(required_ids, references)
-            for reference_id in required_ids:
-                matched_skills.add(str(references[reference_id]["Skill"]))
-            minimum_risk = _minimum_risk(signals, (references[item] for item in required_ids))
-            signals["风险"].add(minimum_risk)
-            after = (set(required_ids), set(matched_skills), set(signals["风险"]))
-            if after == before:
-                break
-    required_entries = [references[item] for item in sorted(required_ids)]
-    minimum_risk = _minimum_risk(signals, required_entries)
+    else:
+        known_required, _, _ = _evaluate_fixed_point(
+            manifest,
+            {dimension: set(values) for dimension, values in base_signals.items()},
+        )
+        required_ids, matched_skills, minimum_risk = _evaluate_fixed_point(
+            manifest,
+            {dimension: set(values) for dimension, values in base_signals.items()},
+            unknown_dimensions=unknown_dimensions,
+        )
+        all_reference_ids = {str(entry["标识"]) for entry in manifest["引用"]}
+        if required_ids == all_reference_ids and known_required != all_reference_ids:
+            raise ValueError(
+                "当前任务事实不足以建立最小充分治理约束；请先恢复更多当前项目事实后重新建立任务约束"
+            )
     return {
         "路由摘要": manifest["路由摘要"],
         "命中Skill": sorted(matched_skills),
         "必需Reference": sorted(required_ids),
         "最低风险": minimum_risk,
-        "存在未知项": bool(normalized["未知项"]),
+        "存在未知项": bool(unknown_dimensions),
     }

@@ -1,4 +1,4 @@
-"""验证薄 ENTRY、正式 Router Skill、旧路由效果和非 Agent 化边界。"""
+"""验证薄 ENTRY、正式 Router Skill、历史路由效果和非 Agent 化边界。"""
 
 from __future__ import annotations
 
@@ -39,6 +39,17 @@ INTENTIONAL_FIXED_CONTEXT_GROWTH = {
     # 只给已经在既有 18 KiB 历史预算边缘的 Runtime Bundle 增加 1 KiB 定点余量。
     "Runtime Bundle": 1024,
 }
+# Local Hardened Runtime v3 明确废除“任一 unknown → full corpus”。
+# 历史 fixture 保留旧行为作为回归来源，这里只允许本次 L3 Requirement Source 批准的 unknown 语义变化。
+RUNTIME_V3_UNKNOWN_REQUIRED = {
+    "coding.reference.01",
+    "coding.reference.02",
+    "coding.reference.05",
+    "coding.reference.07",
+    "coding.reference.08",
+    "coding.reference.17",
+}
+RUNTIME_V3_UNKNOWN_SKILLS = {"coding", "router"}
 
 
 def _routing_block(skill: str, intent: str) -> str:
@@ -87,7 +98,7 @@ class RouterSkillMigrationTest(unittest.TestCase):
             self.assertEqual(actual["命中Skill"], ["coding", "router"])
 
     def test_legacy_routes_preserve_safety_except_explicit_progressive_disclosure_changes(self) -> None:
-        """历史基线继续防欠披露；只允许当前 Change 明确批准的 L1/L2 少加载与有限 Core 增量。"""
+        """历史基线继续防欠披露；只允许已批准的 L1/L2 渐进披露与 Runtime v3 unknown 收窄。"""
         baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
         bundle = build_bundle(ROOT)
         manifest = bundle["路由清单"]
@@ -98,6 +109,13 @@ class RouterSkillMigrationTest(unittest.TestCase):
                 actual = evaluate_route(manifest, {"协议": TASK_ROUTE_PROTOCOL, "信号": case["signals"], "未知项": case["unknown"], "依据": [case["name"]]})
                 actual_skills = set(actual["命中Skill"])
                 actual_references = set(actual["必需Reference"])
+                if case["name"] == "Unknown facts":
+                    self.assertEqual(actual_skills, RUNTIME_V3_UNKNOWN_SKILLS)
+                    self.assertEqual(actual_references, RUNTIME_V3_UNKNOWN_REQUIRED)
+                    self.assertEqual(actual["最低风险"], "L2")
+                    current_bytes = int(budget["entry_bytes"]) + sum(int(budget["skill_core_bytes"][skill]) for skill in actual_skills) + sum(reference_sizes[reference] for reference in actual_references)
+                    self.assertLess(current_bytes, int(case["context_bytes"]))
+                    continue
                 self.assertTrue(set(case["matched_skills"]).issubset(actual_skills))
                 self.assertIn("router", actual_skills)
                 expected = set(case["required_references"]) - INTENTIONAL_REQUIRED_REMOVALS.get(case["name"], set())
@@ -108,10 +126,6 @@ class RouterSkillMigrationTest(unittest.TestCase):
                 self.assertEqual(actual["最低风险"], case["minimum_risk"])
                 current_bytes = int(budget["entry_bytes"]) + sum(int(budget["skill_core_bytes"][skill]) for skill in actual_skills) + sum(reference_sizes[reference] for reference in actual_references)
                 allowed_growth = CONTEXT_GROWTH_LIMIT + SOURCE_MODE_FAST_PATH_CORE_GROWTH + INTENTIONAL_FIXED_CONTEXT_GROWTH.get(case["name"], 0)
-                if case["name"] == "Unknown facts":
-                    # Unknown facts 按 fail-safe 语义加载全部 canonical Context；新增正式 ref21 后，
-                    # 只额外允许该 Reference 自身的实际字节数，不扩大其他历史 Context 的预算。
-                    allowed_growth += reference_sizes["coding.reference.21"]
                 self.assertLessEqual(current_bytes, int(case["context_bytes"]) + allowed_growth)
 
     def test_light_l2_reference_context_is_materially_smaller_than_legacy_baseline(self) -> None:
