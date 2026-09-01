@@ -10,6 +10,7 @@ import re
 import sys
 from typing import Any, Mapping, Sequence
 
+from .crypto import recover_root_material
 from .encrypted_bundle import EncryptedBundleStore
 from .install_state import INSTALL_STATE_SCHEMA, build_install_state
 from .project_installer import install_project
@@ -45,17 +46,18 @@ def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
             BUNDLE_CONTAINER_B64,
             PROJECT_PAYLOAD_B64,
             RELEASE_VERSION,
-            RUNTIME_ROOT_B64,
+            RUNTIME_ROOT_SHARES_B64,
             SOURCE_COMMIT,
         )
     except ImportError as error:
         raise RuntimeError("当前源码树没有内嵌 Runtime/Project Payload；请先执行 scripts/build_runtime.py") from error
     try:
-        root_material = base64.b64decode(RUNTIME_ROOT_B64, validate=True)
+        root_shares = base64.b64decode(RUNTIME_ROOT_SHARES_B64, validate=True)
+        root_material = recover_root_material(root_shares)
         container = base64.b64decode(BUNDLE_CONTAINER_B64, validate=True)
         project_payload_bytes = base64.b64decode(PROJECT_PAYLOAD_B64, validate=True)
     except ValueError as error:
-        raise RuntimeError("内嵌 Runtime/Project Payload 不是合法 Base64") from error
+        raise RuntimeError("内嵌 Runtime/Project Payload 加密材料格式非法") from error
     try:
         project_payload = json.loads(project_payload_bytes.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
