@@ -207,7 +207,7 @@ class RuntimeStore:
             }
 
     def submit_route(self, task_id: str, task_route: Mapping[str, Any]) -> dict[str, Any]:
-        """先完整求值 Task Route，再单调扩展当前 task required 集合并发行最新 capability。"""
+        """求值 Task Route、阻止单次 full-corpus 导出，再单调扩展 required 集合并发行最新 capability。"""
         normalized_task = str(task_id).strip()
         with self._lock:
             self._require_task()
@@ -218,7 +218,16 @@ class RuntimeStore:
                 public_route_contract(self._routing_manifest),
             )
             evaluated = evaluate_route(self._routing_manifest, normalized_route)
-            self._required_ids.update(str(item) for item in evaluated["必需Reference"])
+            evaluated_ids = {str(item) for item in evaluated["必需Reference"]}
+            all_reference_ids = {
+                str(entry["标识"])
+                for entry in self._routing_manifest["引用"]
+            }
+            if len(all_reference_ids) > 1 and evaluated_ids == all_reference_ids:
+                raise ValueError(
+                    "当前单次任务约束过宽，无法作为最小充分治理上下文加载；请拆分任务事实或先恢复更具体的项目事实"
+                )
+            self._required_ids.update(evaluated_ids)
             self._matched_skills.update(str(item) for item in evaluated["命中Skill"])
             evaluated_risk = str(evaluated["最低风险"])
             if _RISK_ORDER[evaluated_risk] > _RISK_ORDER[self._minimum_risk]:
