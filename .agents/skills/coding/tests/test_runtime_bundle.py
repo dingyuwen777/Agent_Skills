@@ -14,7 +14,7 @@ from runtime.agent_skills_runtime.routing import (
     TASK_ROUTE_PROTOCOL,
     public_route_contract,
 )
-from runtime.agent_skills_runtime.runtime import RuntimeStore
+from runtime.agent_skills_runtime.runtime import RuntimeStore, _route_saturates_public_vocabulary
 
 
 def _routing_block(payload: dict[str, object]) -> str:
@@ -124,14 +124,33 @@ class RuntimeBundleTest(unittest.TestCase):
         self.assertEqual(len(first_contexts), 1)
         self.assertFalse(second["需要加载约束"])
 
-    def test_single_known_route_cannot_request_entire_canonical_corpus(self) -> None:
-        """即使全部取值都合法，单次宽 route 也不能把 Runtime MCP 变成 full-corpus export API。"""
-        store = RuntimeStore(build_bundle(self._fixture_root()))
-        store.start_task("T-broad-known")
-        broad = _task_route(意图=["功能开发", "代码审查", "文档更新"])
+    def test_high_cardinality_public_vocabulary_saturation_is_detected(self) -> None:
+        """高基数公共词汇全部填满时应识别为合成宽路由，供 Runtime MCP 阻止方便的批量探测。"""
+        dimensions = {
+            "意图": ["功能开发", "代码审查", "文档更新"],
+            "阶段": ["功能开发", "完成前检查"],
+            "能力": ["测试", "Git"],
+            "风险": ["L3"],
+        }
+        route = {
+            "信号": {dimension: list(values) for dimension, values in dimensions.items()},
+            "未知项": [],
+        }
+        contract = {"维度": dimensions}
 
-        with self.assertRaisesRegex(ValueError, "单次任务约束过宽"):
-            store.submit_route("T-broad-known", broad)
+        self.assertTrue(_route_saturates_public_vocabulary(route, contract))
+
+    def test_small_complete_contract_is_not_treated_as_synthetic_saturation(self) -> None:
+        """小型真实 Contract 即使每个合法值都出现，也不能因集合恰好相等而被 anti-export 误伤。"""
+        route = {
+            "信号": {"执行模式": ["实现"], "阶段": ["功能开发"]},
+            "未知项": [],
+        }
+        contract = {
+            "维度": {"执行模式": ["实现"], "阶段": ["功能开发"]},
+        }
+
+        self.assertFalse(_route_saturates_public_vocabulary(route, contract))
 
     def test_progressive_specific_routes_can_accumulate_all_required_context(self) -> None:
         """合法复杂任务可通过事实逐步出现单调扩展 required Context，不被单次 full-corpus 防导出门禁误伤。"""
