@@ -71,6 +71,25 @@ class PullRequestRequirementTraceabilityTest(unittest.TestCase):
         self.assertIn("GitHub Issue", text)
         self.assertIn("不为了建立追溯关系再创建重复 Issue", text)
 
+    def test_requirement_source_closure_requires_evidence_backed_audit(self) -> None:
+        """关闭 Requirement Source 前必须逐项审计并同步真实完成状态。"""
+        text = self._reference_text()
+        required_fragments = [
+            "Closure Audit",
+            "重新读取当前 Requirement Source",
+            "逐条核对",
+            "只有实际证据支持",
+            "CI 全绿",
+            "不得以 completed / resolved 关闭",
+            "先回写",
+            "无写权限",
+            "关闭关键字不得绕过",
+            "非 GitHub 平台",
+        ]
+        for fragment in required_fragments:
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, text)
+
     def test_pr_review_route_loads_traceability_reference(self) -> None:
         """用户自然语言审查 PR 时必须自动加载需求追溯规则。"""
         result = self._evaluate(
