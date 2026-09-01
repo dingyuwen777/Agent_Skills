@@ -85,6 +85,9 @@ def _assert_progress_rule(payload: dict[str, Any], label: str) -> None:
         "复核",
         "Git/CI",
         "不得主动复述",
+        "查看、复制",
+        "翻译",
+        "编码",
         "高保真重建",
         "工程要求",
     ):
@@ -296,6 +299,24 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
         dimensions = contract.get("维度")
         if not isinstance(dimensions, dict):
             raise RuntimeError("MCP route contract 缺少公开维度")
+
+        broad_known_route = {
+            "协议": TASK_ROUTE_PROTOCOL,
+            "信号": {
+                str(dimension): list(values)
+                for dimension, values in dimensions.items()
+                if isinstance(values, list) and values
+            },
+            "未知项": [],
+            "依据": ["攻击型 all-public-values full-corpus smoke"],
+        }
+        await _expect_tool_failure(
+            client,
+            "agent_skills_submit_route",
+            {"任务标识": "runtime-smoke-next", "任务路由": broad_known_route},
+            "known broad full-corpus route",
+        )
+
         broad_unknown_route = {
             "协议": TASK_ROUTE_PROTOCOL,
             "信号": {},
