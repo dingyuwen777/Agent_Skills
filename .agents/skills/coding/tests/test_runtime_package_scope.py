@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import unittest
 from pathlib import Path
 
@@ -9,6 +10,16 @@ WORKFLOW = ROOT / ".github/workflows/runtime-package-tests.yml"
 CLASSIFIER = ROOT / ".github/scripts/runtime_package_scope.py"
 MAINTENANCE = ROOT / ".agents/MAINTENANCE.md"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
+
+
+def _load_classifier():
+    """从真实维护脚本加载 classifier，避免在测试中复制第二份路径规则。"""
+    spec = importlib.util.spec_from_file_location("runtime_package_scope", CLASSIFIER)
+    if spec is None or spec.loader is None:
+        raise AssertionError("无法加载 Runtime Package scope classifier")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class RuntimePackageScopePolicyTest(unittest.TestCase):
@@ -22,13 +33,85 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
         self.assertIn(".github/scripts/runtime_package_scope.py", workflow)
         self.assertNotIn("runtime/*|runtime/**/*", workflow)
 
+    def test_governance_paths_skip_three_platform_binary(self) -> None:
+        """维护文档、Change 与仓库治理文本只需要治理/Skill 证据。"""
+        classify_paths = _load_classifier().classify_paths
+        paths = (
+            "README.md",
+            "runtime/README.md",
+            ".agents/MAINTENANCE.md",
+            ".agents/changes/active/CHG-example/CHANGE.md",
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertEqual(classify_paths([path]), "governance")
+
+    def test_runtime_content_paths_use_semantic_tests_without_binary_build(self) -> None:
+        """canonical Skill/Reference/Entry 与 Project Payload 内容变化归 content。"""
+        classify_paths = _load_classifier().classify_paths
+        paths = (
+            ".agents/skills/ENTRY.md",
+            ".agents/skills/coding/SKILL.md",
+            ".agents/skills/coding/references/13_example.md",
+            ".agents/skills/coding/assets/AGENTS.managed.md",
+            ".agents/skills/coding/scripts/coding.py",
+            "USAGE.md",
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertEqual(classify_paths([path]), "content")
+
+    def test_package_paths_require_three_platform_binary(self) -> None:
+        """可执行、构建、安装、平台与 package gate 边界变化必须归 package。"""
+        classify_paths = _load_classifier().classify_paths
+        paths = (
+            ".gitattributes",
+            "runtime/requirements.txt",
+            "runtime/requirements-build.txt",
+            "runtime/agent_skills_runtime/runtime.py",
+            "runtime/agent_skills_runtime/crypto.py",
+            "scripts/build_runtime.py",
+            "scripts/runtime_mcp_smoke.py",
+            ".github/scripts/runtime_package_scope.py",
+            ".github/workflows/runtime-package-tests.yml",
+            ".github/workflows/release.yml",
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertEqual(classify_paths([path]), "package")
+
+    def test_mixed_paths_take_highest_evidence_scope(self) -> None:
+        """混合修改必须取最高风险，不能被低风险文本掩盖 package 变化。"""
+        classify_paths = _load_classifier().classify_paths
+        self.assertEqual(
+            classify_paths(
+                [
+                    "README.md",
+                    ".agents/skills/coding/SKILL.md",
+                    "runtime/agent_skills_runtime/server.py",
+                ]
+            ),
+            "package",
+        )
+        self.assertEqual(
+            classify_paths(["README.md", ".agents/skills/coding/SKILL.md"]),
+            "content",
+        )
+        self.assertEqual(classify_paths([]), "governance")
+
     def test_runtime_package_jobs_only_run_for_package_scope(self) -> None:
         """三平台 binary jobs 必须只由 package 档触发，governance/content 都应跳过。"""
         workflow = WORKFLOW.read_text(encoding="utf-8")
         self.assertGreaterEqual(workflow.count("needs.scope.outputs.runtime_scope == 'package'"), 3)
         self.assertIn('RUNTIME_SCOPE: ${{ needs.scope.outputs.runtime_scope }}', workflow)
-        for marker in ('governance)', 'content)', 'package)'):
+        for marker in ("governance)", "content)", "package)"):
             self.assertIn(marker, workflow)
+
+    def test_skill_ci_compiles_and_smokes_classifier(self) -> None:
+        """classifier 必须进入永久 Skill CI，避免 Workflow 使用未编译的维护脚本。"""
+        workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
+        self.assertIn(".github/scripts/runtime_package_scope.py", workflow)
+        self.assertIn("runtime_package_scope.py --help", workflow)
 
     def test_maintenance_owns_evidence_boundary_rule(self) -> None:
         """维护规则必须明确 L3 与三平台打包解耦，并保留 Release 全平台责任。"""
