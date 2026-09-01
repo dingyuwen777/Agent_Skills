@@ -3,15 +3,22 @@ schema: coding-change/v1
 id: CHG-20260901-figma-capability-gap-inventory
 title: Figma Design-to-Code 集中系统能力缺口清单
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: feat/figma-capability-gap-inventory
 created: 2026-09-01
 updated: 2026-09-01
 completion_gate: required
 depends_on: []
-affected_areas: [figma, governance, tests]
-affected_paths: [.agents/skills/figma/SKILL.md, .agents/skills/figma/references/05_Design-to-Code交付门禁.md, .agents/skills/coding/tests/test_figma_skill.py, .agents/skills/coding/tests/test_figma_capability_gap_review.py]
+affected_areas:
+  - figma
+  - governance
+  - tests
+affected_paths:
+  - .agents/skills/figma/SKILL.md
+  - .agents/skills/figma/references/05_Design-to-Code交付门禁.md
+  - .agents/skills/coding/tests/test_figma_skill.py
+  - .agents/skills/coding/tests/test_figma_capability_gap_review.py
 contracts: []
 data_changes: []
 ---
@@ -29,6 +36,7 @@ data_changes: []
 - [x] 未批准设计假设、Future、实现/设计漂移与待决策等继续复用 Figma 现有事实分类和 Owner 规则，不建立第二套固定 taxonomy。
 - [x] Figma 主 Skill 正式输出显式暴露 Capability Gap Inventory，详细格式由 Design-to-Code Reference 唯一维护。
 - [x] 自包含回归测试验证上述规则，并保持现有 Figma、Router、Bundle/Project Payload、Runtime 内容守恒回归通过。
+- [x] 功能 PR 已合并，合并后 `main` fresh Skill Tests 绿色，Change 已进入独立归档分支并封存为 `done`。
 
 # 范围
 
@@ -64,33 +72,33 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Figma 中系统尚未实现或存在冲突的能力必须在前端实施前完整列出给用户 | user:current-request | satisfied | `ref05` 在 Coding Handoff 前强制集中 Inventory；`test_capability_gap_inventory_is_complete_deduplicated_and_pre_handoff`；Skill Tests #809/#813 |
-| R2 | 缺口必须集中输出，不能只散落在 Findings 或开发中途才暴露 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“Coding Handoff 前必须集中输出”且“不得等到 Coding 实施中途才首次披露”；Skill Tests #809/#813 |
-| R3 | Inventory 必须复用现有真实事实分类，不建立第二套冲突语义 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“分类复用现有语义，不新建第二套”；`test_inventory_preserves_state_differences_and_reuses_existing_classification`；Skill Tests #809/#813 |
-| R4 | 不允许 Figma MCP/前端为缺失能力猜 API、永久 Mock 或伪造系统成功 | user:current-request | satisfied | 既有 6.2 禁止发明生产 Contract，Inventory 未授权分支继续禁止伪实现/永久 mock；相关既有回归 + Skill Tests #809/#813 |
-| R5 | 清单完整但按真实能力/Owner 去重，并保留必要状态差异 | user:approved-capability-gap-inventory | satisfied | `ref05` 显式 8 字段 + “去重但保留必要状态差异”；两组 Capability Gap 回归；Skill Tests #809/#813 |
-| R6 | 已授权跨层实现时由 Coding 整体承接，不要求用户逐项手工编码 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“整体交给 Coding 实施，不逐项要求用户编码”；Review 回归；Skill Tests #809/#813 |
-| R7 | 允许提交、推送、PR；验证通过后允许合并和归档 | user:git-delivery-authorization | satisfied | 本轮用户已明确授权 Git/PR/merge/archive；Draft #130 因连接器 Ready mutation 兼容错误关闭，按仓库 fallback 以同一 head/base 重建非 Draft PR #136 |
+| R1 | Figma 中系统尚未实现或存在冲突的能力必须在前端实施前完整列出给用户 | user:current-request | satisfied | `ref05` 在 Coding Handoff 前强制集中 Inventory；`test_capability_gap_inventory_is_complete_deduplicated_and_pre_handoff`；Skill Tests #809/#814/#815 |
+| R2 | 缺口必须集中输出，不能只散落在 Findings 或开发中途才暴露 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“Coding Handoff 前必须集中输出”且“不得等到 Coding 实施中途才首次披露”；Skill Tests #809/#814/#815 |
+| R3 | Inventory 必须复用现有真实事实分类，不建立第二套冲突语义 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“分类复用现有语义，不新建第二套”；`test_inventory_preserves_state_differences_and_reuses_existing_classification`；Skill Tests #809/#814/#815 |
+| R4 | 不允许 Figma MCP/前端为缺失能力猜 API、永久 Mock 或伪造系统成功 | user:current-request | satisfied | 既有 6.2 禁止发明生产 Contract，Inventory 未授权分支继续禁止伪实现/永久 mock；相关既有回归 + Skill Tests #809/#814/#815 |
+| R5 | 清单完整但按真实能力/Owner 去重，并保留必要状态差异 | user:approved-capability-gap-inventory | satisfied | `ref05` 显式 8 字段 + “去重但保留必要状态差异”；两组 Capability Gap 回归；Skill Tests #809/#814/#815 |
+| R6 | 已授权跨层实现时由 Coding 整体承接，不要求用户逐项手工编码 | user:approved-capability-gap-inventory | satisfied | `ref05` 明确“整体交给 Coding 实施，不逐项要求用户编码”；Review 回归；Skill Tests #809/#814/#815 |
+| R7 | 允许提交、推送、PR；验证通过后允许合并和归档 | user:git-delivery-authorization | satisfied | 用户明确授权；Draft #130 因连接器 Ready mutation 兼容错误关闭并按仓库 fallback 重建 #136；#136 已 guarded merge，`main` fresh #815 绿色，当前独立归档分支承载最终归档 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | 两组 Capability Gap targeted regressions；Skill Tests #809/#813 均 291/291 通过 |
+| 行为 / 单元 / 组件 | required | 两组 Capability Gap targeted regressions；Skill Tests #809/#814/#815 均 291/291 通过 |
 | 接口 / 契约 | not_applicable | 不修改 public Runtime、Task Route、Reference Stable ID 或 metadata schema |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 无数据库、文件系统运行语义或外部 runtime dependency 变化 |
 | 用户 / 工作流验收 | required | `baseline-ready → Capability Gap Inventory → Coding Handoff` 的集中输出、8 字段、授权/未授权分支与 `none` 均有规则 + 回归证据 |
-| 跨组件关键路径 | required | 全量 self-contained Skill Tests 覆盖 Figma、Router、Bundle/Project Payload、Runtime 内容守恒；#809/#813 均 291/291 通过 |
+| 跨组件关键路径 | required | 全量 self-contained Skill Tests 覆盖 Figma、Router、Bundle/Project Payload、Runtime 内容守恒；#809/#814/#815 均 291/291 通过 |
 | 外部依赖 / 供应方探测 | not_applicable | 不涉及外部 Provider 当前事实 |
 | 构建 / 打包 / 运行 | not_applicable | 未修改 Runtime/Builder/MCP/Installer/Release；按永久 CI 分责不触发三平台 Runtime Package Tests |
-| 文档 / 治理 / 其他 | required | Source Mode 规则重读、内容守恒 TDD、Standard Review A1/A2、Ready Check、PR Skill Tests；main fresh CI/归档在合并后执行 |
+| 文档 / 治理 / 其他 | required | Source Mode 规则重读、内容守恒 TDD、Standard Review A1/A2、Ready Check、PR Skill Tests、功能 merge 与 main fresh #815；归档移动由独立归档 PR 验证 |
 
 # 完成审计
 
-- [x] upstream_re_read：已重新读取本轮用户要求、Agent_Skills 根 `AGENTS.md`、`MAINTENANCE.md`、ENTRY、Router、Coding/Figma canonical Owner、内容守恒与 Review required References。
+- [x] upstream_re_read：已重新读取本轮用户要求、Agent_Skills 根 `AGENTS.md`、`MAINTENANCE.md`、ENTRY、Router、Coding/Figma canonical Owner、内容守恒与 Review required References；归档写入前再次从 `main@8417ae324bce8c1bcf2c7e87974f960fd2df8a2f` 重读根治理入口。
 - [x] change_coverage：已从用户目标反查 Change 与最终 diff，覆盖集中披露、字段、去重、状态差异、分类、Handoff、禁止伪实现和 `none`，没有把 Change 自身当需求全集。
 - [x] reverse_audit：已从最终实现反查 `baseline-ready → Inventory → Coding Handoff`、已批准/未批准/冲突分支和测试映射；Review 发现的字段隐式与状态差异问题均先 Red 后修复。
-- [x] unresolved_cleared：R1–R7 均为 satisfied；Runtime Package Tests、外部依赖与说明文档同步均有明确 not_applicable 依据；最终 Standard Review 无剩余 BLOCKER/HIGH/MEDIUM Finding。
+- [x] unresolved_cleared：R1–R7 均为 satisfied；Runtime Package Tests、外部依赖与说明文档同步均有明确 not_applicable 依据；最终 Standard Review 无剩余 BLOCKER/HIGH/MEDIUM Finding；功能合并后的 main fresh CI 已确认。
 
 # 任务
 
@@ -101,10 +109,11 @@ data_changes: []
 - [x] 取得 targeted / full self-contained Green 证据并保持 Router 上下文预算
 - [x] 完成 Requirement/内容守恒/Standard Review A1/A2；修复 Review Findings 后重新 Green
 - [x] 更新 Change 到 `ready_for_review`
-- [x] Draft Ready 自动调用失败后按仓库 fallback 重建非 Draft PR #136，并取得 #813 fresh PR CI Green
-- [ ] 本次交付事实修正后的最终 branch head PR Skill Tests 全绿
-- [ ] 合并并验证 main fresh Skill Tests
-- [ ] 独立归档 Change 并完成归档 PR/main 验证
+- [x] Draft Ready 自动调用失败后按仓库 fallback 重建非 Draft PR #136
+- [x] 最终 feature head Skill Tests #814 全绿，并完成 current-head Standard Review
+- [x] guarded merge PR #136，功能 merge commit `8417ae324bce8c1bcf2c7e87974f960fd2df8a2f`
+- [x] 合并后 main fresh Skill Tests #815：291/291 通过，Ready Check 通过
+- [x] 从已验证 main 创建独立归档分支，并将 Change 更新为 `done` 后移动到 `archive/2026-09/`
 
 # 验证
 
@@ -118,8 +127,12 @@ data_changes: []
 - Skill Tests #809（commit `ce30cc15791add6eded206756907ae7ed67bf78a`）：291/291 通过；两组 Capability Gap 回归、Router 历史上下文预算、Bundle/Project Payload/Runtime 内容守恒均通过；`ready_check.py --changed-since e5a147f08fb4d501e1e28a71c35bf7a100bc7057` 通过。
 - Standard Review A1/A2：基于未漂移的 main `e5a147f08fb4d501e1e28a71c35bf7a100bc7057` 与实现 head `ce30cc15791add6eded206756907ae7ed67bf78a` 重新检查需求→实现、实现→测试/证据/文档；Review Findings 已通过 TDD 修复，无剩余 BLOCKER/HIGH/MEDIUM。
 - Skill Tests #812（commit `3be3fc46ab5e8cddf769dfdacc9c0efebd90d010`）：291/291 通过，Ready Check 通过；验证 `ready_for_review` Change head。
-- Draft #130 的 Ready mutation 因连接器 GraphQL `Repository.fullDatabaseId` 字段兼容错误失败；复核确认 PR 仍为 Draft 后按 `.agents/MAINTENANCE.md` fallback 关闭 #130，并用完全相同 head `3be3fc46...` / base `main` 重建非 Draft PR #136。
-- Skill Tests #813（PR #136，同 head `3be3fc46ab5e8cddf769dfdacc9c0efebd90d010`）：291/291 通过，changed-since Ready Check 通过；GitHub 重新计算 PR #136 `mergeable=true`。
+- Draft #130 的 Ready mutation 因连接器 GraphQL `Repository.fullDatabaseId` 字段兼容错误失败；复核确认 PR 仍为 Draft 后按 `.agents/MAINTENANCE.md` fallback 关闭 #130，并用完全相同 head/base 重建非 Draft PR #136。
+- Skill Tests #813（PR #136，head `3be3fc46ab5e8cddf769dfdacc9c0efebd90d010`）：291/291 通过，changed-since Ready Check 通过；PR mergeable=true。
+- Skill Tests #814（最终 feature head `725b12f41f41a489d1610209581bbe009e38c443`）：291/291 通过；两组 Capability Gap 回归、Router 历史上下文预算、Ready Check 全绿。
+- Final current-head Standard Review：PR #136 review `5076551765` 锚定 `725b12f41f41a489d1610209581bbe009e38c443`；实现 Review head 后仅 Change 治理证据更新，无剩余 BLOCKER/HIGH/MEDIUM Finding。
+- Merge：PR #136 以 expected-head `725b12f41f41a489d1610209581bbe009e38c443` guarded merge，merge commit `8417ae324bce8c1bcf2c7e87974f960fd2df8a2f`。
+- Main fresh CI：`main@8417ae324bce8c1bcf2c7e87974f960fd2df8a2f`，Skill Tests #815 / run `33494139304` 完整成功；`Ran 291 tests in 4.710s`、`OK`；`ready_check.py --require-active-ready` 输出 `Ready Check 通过：carrier=.agents/changes，gated=23，strict=23。`
 
 # 文档影响
 
@@ -132,14 +145,15 @@ data_changes: []
 - 依赖：无新增或升级。
 - 数据 / Migration：无。
 - 部署 / Release：无；正式 Release 不在本次范围。
-- 回滚：可通过回滚本 PR 的 Figma Skill/Reference 与两组回归测试恢复；无数据迁移或外部状态需要回滚。
+- 回滚：可回滚功能 merge commit `8417ae324bce8c1bcf2c7e87974f960fd2df8a2f` 以恢复本次 Figma Skill/Reference 与回归测试变化；无数据迁移或外部状态需要回滚。
 
 # 交付
 
-- 分支：`feat/figma-capability-gap-inventory`
-- 拉取请求：#136 `增强：Figma Design-to-Code 集中披露系统能力缺口`（替代已关闭 Draft #130）
-- 实现 Review head：`ce30cc15791add6eded206756907ae7ed67bf78a`
-- `ready_for_review` 验证 head：`3be3fc46ab5e8cddf769dfdacc9c0efebd90d010`
-- 合并：待本次交付事实修正后的最终 branch head PR Skill Tests 通过后，以 expected head SHA 执行
-- 归档：功能合并 + main fresh CI 后独立 PR 执行
-- 发布：不适用
+- 功能分支：`feat/figma-capability-gap-inventory`
+- 原 Draft PR：#130，因连接器 Ready mutation 兼容错误按仓库 fallback 关闭
+- 功能 PR：#136 `增强：Figma Design-to-Code 集中披露系统能力缺口`，已合并
+- 最终 feature head：`725b12f41f41a489d1610209581bbe009e38c443`
+- 功能 merge commit：`8417ae324bce8c1bcf2c7e87974f960fd2df8a2f`
+- main fresh CI：Skill Tests #815 success，291/291 + Ready Check 通过
+- 归档：独立归档分支 `chore/archive-figma-capability-gap-inventory`，本文件已更新为 `done` 并移动到 `archive/2026-09/`；归档 PR/merge 由该分支继续承载
+- Release：不适用
