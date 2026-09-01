@@ -73,6 +73,20 @@ class RequirementSourceValidationTests(unittest.TestCase):
             )
             self.assertEqual(sources, ("specs/design.md",))
 
+    def test_coding_change_path_cannot_be_requirement_source(self) -> None:
+        """Coding Change 是施工契约，不能通过仓库路径绕过上游 Requirement Source 规则。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            change = root / ".agents" / "changes" / "active" / "CHG-test" / "CHANGE.md"
+            change.parent.mkdir(parents=True)
+            change.write_text("# Change\n", encoding="utf-8")
+            with self.assertRaisesRegex(subject.RequirementSourceError, "施工契约"):
+                subject.validate_requirement_sources(
+                    "Requirement-Source: .agents/changes/active/CHG-test/CHANGE.md",
+                    root,
+                    lambda _: self._issue(),
+                )
+
     def test_repository_path_escape_is_rejected(self) -> None:
         """相对路径不能通过 `..` 越过仓库根目录。"""
         with tempfile.TemporaryDirectory() as directory:
