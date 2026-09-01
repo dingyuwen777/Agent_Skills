@@ -44,7 +44,7 @@ data_changes: []
 - [x] Runtime Package Workflow 对所有 PR/main push 产生稳定 `Runtime Package Gate`；Runtime 风险未命中时三个平台 job 明确 skipped/fast-path，命中时三个平台必须全部成功。
 - [x] 本次 Workflow 自身变更命中 Runtime 风险，并已取得 Linux、Windows、macOS 三平台 package 新鲜证据。
 - [x] self-contained tests 与独立 Deep Review 当前无实现级阻塞问题。
-- [ ] 本次 `ready_for_review` 状态提交后的 PR 最新 HEAD CI 全部通过；该证据只能在本状态提交产生后取得，不用旧 HEAD 结果冒充。
+- [ ] 本次 `ready_for_review` 状态及追溯格式修正后的 PR 最新 HEAD CI 全部通过；该证据只能在本提交产生后取得，不用旧 HEAD 结果冒充。
 - [x] 代码合并后可把 `Agent Skills Gate` 与 `Runtime Package Gate` 配置为 main Ruleset required checks，不需要 AIMA 专用 check；当前平台 Ruleset 尚未启用，见“平台剩余动作”。
 
 # 范围
@@ -91,11 +91,11 @@ data_changes: []
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | 按成熟治理实践补齐 Agent_Skills 稳定主分支机器门禁，同时保持 Agent_Skills 为 canonical 通用标准 | #131 | satisfied | `skill-tests.yml` 始终触发并聚合 `Agent Skills Gate`；preservation tests 已升级到稳定 Gate Contract；Run `33495770978` 的 Requirement Source 与 305 个 self-contained tests 通过。 |
-| R2 | Runtime 非相关变更不跑三平台昂贵构建；Runtime 相关变更仍必须三平台真实验证 | #131 | satisfied | `Runtime Package Scope` + 三个条件 platform jobs + `Runtime Package Gate`；self-contained tests 验证非命中 skipped Contract；当前 Runtime-risk PR Run `33495770977` 的 Linux/Windows/macOS 与 Gate 全部成功。 |
-| R3 | PR 必须有真实 Requirement Source，不能只检查模板 | #131 | satisfied | `.github/scripts/check_pr_requirement_source.py` 读取真实 PR event/body；PR #135 使用 `Requirement-Source: #131` 并通过真实 `Requirement Source` job；测试覆盖缺失、占位、Issue、PR-as-Issue、语言中立、路径逃逸、目录与 Coding Change 自证。 |
-| R4 | 不复制 AIMA 项目专用 CI/技术栈，不改变 Runtime 产品协议或依赖版本 | #131 | satisfied | 当前 PR 仅 9 个治理/Workflow/测试文件；未修改 Runtime 产品源码、依赖 Manifest、版本或 Release 资产 Contract；三平台原 package 证明责任保留。 |
-| R5 | 代码落地后给出 main Ruleset 的精确剩余操作；宿主不能写 Ruleset 时明确未完成，不口头冒充 | #131 | satisfied | 2026-09-01 新鲜读取：branch protection `protected=false`；Ruleset `main-quality-gate`(21999314) 与 `main-merge-permission`(21999343) 均 disabled；当前连接能力只提供 Ruleset 读取，没有 Ruleset 写入。已明确 `main-quality-gate` 现有 AIMA 风格 checks 不能直接启用，必须在 merge 后改为本仓库稳定 Gate 后再启用。 |
+| R1 | 按成熟治理实践补齐 Agent_Skills 稳定主分支机器门禁，同时保持 Agent_Skills 为 canonical 通用标准 | https://github.com/dingyuwen777/Agent_Skills/issues/131 | satisfied | `skill-tests.yml` 始终触发并聚合 `Agent Skills Gate`；preservation tests 已升级到稳定 Gate Contract；Run `33495770978` 的 Requirement Source 与 305 个 self-contained tests 通过。 |
+| R2 | Runtime 非相关变更不跑三平台昂贵构建；Runtime 相关变更仍必须三平台真实验证 | https://github.com/dingyuwen777/Agent_Skills/issues/131 | satisfied | `Runtime Package Scope` + 三个条件 platform jobs + `Runtime Package Gate`；self-contained tests 验证非命中 skipped Contract；当前 Runtime-risk PR Run `33495770977` 的 Linux/Windows/macOS 与 Gate 全部成功。 |
+| R3 | PR 必须有真实 Requirement Source，不能只检查模板 | https://github.com/dingyuwen777/Agent_Skills/issues/131 | satisfied | `.github/scripts/check_pr_requirement_source.py` 读取真实 PR event/body；PR #135 使用 `Requirement-Source: #131` 并通过真实 `Requirement Source` job；测试覆盖缺失、占位、Issue、PR-as-Issue、语言中立、路径逃逸、目录与 Coding Change 自证。 |
+| R4 | 不复制 AIMA 项目专用 CI/技术栈，不改变 Runtime 产品协议或依赖版本 | https://github.com/dingyuwen777/Agent_Skills/issues/131 | satisfied | 当前 PR 仅 9 个治理/Workflow/测试文件；未修改 Runtime 产品源码、依赖 Manifest、版本或 Release 资产 Contract；三平台原 package 证明责任保留。 |
+| R5 | 代码落地后给出 main Ruleset 的精确剩余操作；宿主不能写 Ruleset 时明确未完成，不口头冒充 | https://github.com/dingyuwen777/Agent_Skills/issues/131 | satisfied | 2026-09-01 新鲜读取：branch protection `protected=false`；Ruleset `main-quality-gate`(21999314) 与 `main-merge-permission`(21999343) 均 disabled；当前连接能力只提供 Ruleset 读取，没有 Ruleset 写入。已明确 `main-quality-gate` 现有 AIMA 风格 checks 不能直接启用，必须在 merge 后改为本仓库稳定 Gate 后再启用。 |
 
 # Validation Matrix
 
@@ -141,6 +141,7 @@ data_changes: []
 - 修复：commit `2201a8787a171b1d4bea9e2c0604b08ef9ac7ce7` 收敛机器边界；commit `06a506e9833ede38c10b0d047357b7ada5be243c` 补语言中立、空正文、目录拒绝回归。
 - Re-review：机器门禁现在只验证来源载体真实、可访问、可审查；Requirement 语义充分性仍由 Review 承担。未发现剩余 BLOCKER/HIGH。
 - 早期 CI 还暴露 Runtime Workflow 中旧字面断言 `用户可见` 已与 canonical managed block 漂移；已同步为当前 `对用户正常说明` 语义，并增加 preservation test，未降低真实安装/MCP 证明责任。
+- 第一次 `ready_for_review` HEAD `7ed1dc45e6f3ead03db08378c14e8607e7102631` 的 Run `33496248305`：Requirement Source 与 305 个 self-contained tests 均通过，但 changed Ready Check 正确拒绝 Change 表格里的裸 `#131` 来源；本提交把 R1–R5 的 Source 改为可机器识别的完整 GitHub Issue URL，不修改 Ready Check。
 
 # 任务
 
@@ -153,7 +154,7 @@ data_changes: []
 - [x] 创建 Draft PR #135 并读取新鲜 CI。
 - [x] 完成 Deep Review、修复 HIGH 并 re-review。
 - [x] 更新本 Change 为 `ready_for_review`。
-- [ ] 取得本状态提交后的最终 PR fresh CI；只有最终 HEAD 两个 Gate 全绿才可继续交付。
+- [ ] 取得本追溯格式修正提交后的最终 PR fresh CI；只有最终 HEAD 两个 Gate 全绿才可继续交付。
 - [ ] Draft→Ready 后保持未合并，等待用户明确 merge 授权。
 - [ ] merge 后读取 main fresh CI；随后按仓库规则用独立最小归档 PR 把本 Change 标记 `done` 并移入 `archive/2026-09/`。
 - [ ] main fresh CI 确认两个稳定 Gate 已存在后，Owner 修改并启用 GitHub Ruleset；当前会话不能写 Ruleset。
@@ -174,12 +175,17 @@ data_changes: []
   - `Runtime Windows Package`：success；
   - `Runtime macOS Package`：success；
   - `Runtime Package Gate`：success。
-- 当前 PR merge ref 在上述 Skill Tests checkout 中为 `f27e62063fbd1d646fa5d182a1878ec5ac4f1bae`，真实合并 `06a506e...` 到当时最新 main `d4d9c787...` 后执行测试。
+- 第一次 `ready_for_review` HEAD `7ed1dc45e6f3ead03db08378c14e8607e7102631` 的 `Skill Tests` Run `33496248305`：
+  - `Requirement Source`：success；
+  - `Run self-contained tests`：305 tests / 0 failures / `OK`；
+  - `Verify changed Coding Change`：failure，明确报 R1–R5 的 `#131` 不是 Ready Check 支持的仓库相对路径或显式 user/external 来源；
+  - 结论：实现测试已绿，但 Change 自身追溯 Source 格式不合机器 Contract，因此没有把该 HEAD 冒充完成证据。
+- 上一轮 Actions checkout 的 PR merge ref 为 `fe2f47aeffa6084ec000805bb78bb694bcd0790c`，真实合并 `7ed1dc45...` 到当时最新 main `d4d9c787...` 后执行测试。
 - Deep Review：见上节；修复后无剩余 BLOCKER/HIGH。
 
 ## 下一步必须取得
 
-- 本次 `ready_for_review` 提交产生的新 HEAD 上：`Requirement Source`、305+ self-contained tests/Ready Check、`Agent Skills Gate`、Runtime 三平台与 `Runtime Package Gate` 全绿。
+- 本次追溯 Source 修正后的新 HEAD 上：`Requirement Source`、305+ self-contained tests/Ready Check、`Agent Skills Gate`、Runtime 三平台与 `Runtime Package Gate` 全绿。
 - Draft→Ready 后若 GitHub 因事件重新运行检查，以最新 PR head 的最终状态为准。
 - merge 后 main push 的两个稳定 Gate 新鲜结果。
 
