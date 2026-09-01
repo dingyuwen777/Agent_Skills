@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260902-requirement-direct-evidence
 title: Requirement Closure 直接 Evidence 映射
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: change/requirement-direct-evidence
 created: 2026-09-02
@@ -27,7 +27,7 @@ data_changes: []
 
 Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/148
 
-# 成功标准
+# 最终结果
 
 - [x] 每个标记为 `satisfied` 的适用验收项至少关联一项能够直接证明其可观察结果的 Evidence，并说明该 Evidence 实际证明什么。
 - [x] Closure Audit 明确检查 Evidence 是否对应同一对象、行为、条件、revision/commit 与必要环境。
@@ -36,8 +36,8 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/148
 - [x] 直接 Evidence 不等于必须自动化测试，可以使用 Unit、Integration、Workflow/Acceptance、真实运行、Contract、截图/视觉审查或人工语义审计等与验收对象匹配的证据。
 - [x] 仍适用的 `partial / unverified` 项在没有正式延期、拆分或范围调整时，不得关闭整个 Requirement Source 为 completed/resolved。
 - [x] 永久 regression 锁定上述关键语义。
-- [x] 本次普通 CI 将 canonical Reference 变化识别为 `content`，三平台 Runtime Package jobs skipped，Gate success。
-- [ ] merge、main fresh、Change archive 与 Issue #148 Closure Audit 按交付时序完成。
+- [x] 实现 PR 与实现合并后的 main fresh 均真实命中 `content` fast path，三平台 Runtime Package jobs skipped、Gate success。
+- [x] Deep Review、Requirement Traceability、Validation Matrix 与 Completion Audit 已完成，无未解决 finding。
 
 # Requirement Traceability
 
@@ -47,20 +47,20 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/148
 | R2 | Evidence 必须说明证明范围并与 AC 语义对应 | https://github.com/dingyuwen777/Agent_Skills/issues/148 | satisfied | canonical rule 明确核对对象、行为、条件、revision/commit、必要环境，并禁止测试名/测试文件/CI Green 机械充当 Requirement Coverage。 |
 | R3 | partial/unverified/not_applicable 语义与 close 阻断 | https://github.com/dingyuwen777/Agent_Skills/issues/148 | satisfied | canonical rule 明确三种状态及仍适用 partial/unverified 的 completed/resolved 阻断条件。 |
 | R4 | 不强制每个 AC 都新增自动化测试 | https://github.com/dingyuwen777/Agent_Skills/issues/148 | satisfied | canonical rule 明确直接 Evidence 不等于必须自动化测试，并列出与验收对象匹配的多种证据层。 |
-| R5 | content fast path 且不触发三平台 binary | https://github.com/dingyuwen777/Agent_Skills/issues/148 | satisfied | PR Runtime Package run `33531588904` Scope 日志明确输出 `Runtime content changed`；Linux/Windows/macOS jobs skipped，Gate success。 |
-| R6 | Review 与后续 main/archive/closure 交付责任保持 | https://github.com/dingyuwen777/Agent_Skills/issues/148 | satisfied | 当前 PR changed files 仅 Change、canonical ref17 与 preservation test；Deep Review 无未解决 finding；post-merge main fresh、archive、Closure Audit 作为后续强制交付时序保留，不在 Ready 前伪造执行结果。 |
+| R5 | content fast path 且不触发三平台 binary | https://github.com/dingyuwen777/Agent_Skills/issues/148 | satisfied | 最终 PR Runtime Package `33531787985` 与 implementation-main fresh `33531901877` 均跳过 Linux/Windows/macOS binary jobs，Gate success；PR Green 阶段 Scope 日志已明确为 `content`。 |
+| R6 | Review、正常 merge 与 implementation-main fresh 完成 | https://github.com/dingyuwen777/Agent_Skills/issues/148 | satisfied | 最终 Ready Skill Tests `33531788002` success；PR #149 以 expected head `90c46bf821fef81d6db00a130f6223dfecbe4033` 合并为 `184f11cd1680d81df0510b3ad505ca396d45821f`；main fresh Skill Tests `33531900160` success、Runtime Package `33531901877` success。 |
 
 # Validation Matrix
 
 | 验证层 | 状态 | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | Red run `33531262747` 中新增直接 Evidence preservation 断言按预期失败；Green run `33531588888` 的 `Run self-contained tests` success。 |
+| 行为 / Unit / Component | required | Red run `33531262747` 的新增直接 Evidence 断言按预期失败；最终 Ready Skill Tests `33531788002` 与 main fresh `33531900160` 全部 self-contained tests success。 |
 | 接口 / Contract | not_applicable | 不改 Runtime/public protocol。 |
 | 集成 / Runtime Dependency | not_applicable | 不改 Runtime 实现。 |
-| 用户 / Workflow Acceptance | required | PR Runtime Package `33531588904` 明确 Scope=`content`，Linux/Windows/macOS skipped，Gate success。 |
+| 用户 / Workflow Acceptance | required | PR Scope=`content` 且三平台 skipped；implementation-main Runtime Package `33531901877` 同样三平台 skipped、Gate success。 |
 | 跨组件 Golden Path | not_applicable | 不改产品接线。 |
-| Build / Package / Runtime | not_applicable / semantic regression | 由完整 Skill Tests 与 content fast path 提供证据；按当前 CI 责任不构建三平台 binary。 |
-| Docs / Governance / Other | required | Requirement Source job success；Change、canonical Owner、preservation test 与 Deep Review 已同步。 |
+| Build / Package / Runtime | not_applicable / semantic regression | 由完整 Skill Tests 与 content fast path 提供证据；未执行无关三平台 binary build。 |
+| Docs / Governance / Other | required | Requirement Source、Change、canonical Owner、preservation regression、Deep Review 与 main fresh 均完成。 |
 
 # TDD / Review
 
@@ -70,11 +70,14 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/148
 - Skill Tests run `33531262747`：331 项中仅新增直接 Evidence 规则的子断言失败；既有规则和其他测试未出现新失败。
 - 同一 Red head 的 Runtime Package `33531262952` 已走非 package 快速路径，三平台 binary jobs skipped、Gate success。
 
-## Green
+## Green / Ready / Main
 
 - canonical ref17 的 Closure Audit 只新增三条直接 Evidence 规则，没有修改其他 Section 的行为语义。
-- Green head `b6a68a8fce5ae4339d5cda6a92a2db48251a4d74`：Skill Tests run `33531588888` 的 compile/CLI smoke 与全部 self-contained tests success；workflow 总失败仅因为本 Change 当时仍为 `in_progress`。
-- Runtime Package run `33531588904`：Scope 日志明确输出 `Runtime content changed; Skill Tests provide semantic evidence and three-platform package jobs are not applicable.`；Linux/Windows/macOS jobs 全部 skipped，Runtime Package Gate success。
+- Green head `b6a68a8fce5ae4339d5cda6a92a2db48251a4d74`：Skill Tests `33531588888` 的 compile/CLI smoke 与全部 self-contained tests success；workflow 总失败仅因为 Change 当时仍为 `in_progress`。
+- Runtime Package `33531588904`：Scope 日志明确输出 `Runtime content changed; Skill Tests provide semantic evidence and three-platform package jobs are not applicable.`；Linux/Windows/macOS 全部 skipped，Gate success。
+- 最终 Ready head `90c46bf821fef81d6db00a130f6223dfecbe4033`：Skill Tests `33531788002` success；Runtime Package `33531787985` success，三平台 skipped。
+- PR #149 通过 REST merge + `expected_head_sha` 合并，merge commit `184f11cd1680d81df0510b3ad505ca396d45821f`。
+- implementation-main fresh：Skill Tests `33531900160` success；Runtime Package `33531901877` success，三平台 skipped、Gate success。
 
 ## Deep Review
 
@@ -91,15 +94,14 @@ Deep Review 结论：`NO_FINDINGS_WITHIN_SCOPE`。
 - [x] upstream_re_read：重新读取 Issue #148 与现有 Closure Audit，确认目标是提高验收证据有效性，不是增加自动化测试配额。
 - [x] change_coverage：直接 Evidence、可观察结果、语义对应、partial/unverified/not_applicable、非自动化证据与 close 阻断均有 canonical Owner 和 preservation regression。
 - [x] reverse_audit：从错误完成路径反查，明确阻断“CI Green/存在测试 → AC satisfied”的机械推理，同时没有扩大到 PR merge 或远程 SHA 并发规则。
-- [x] unresolved_cleared：Green self-contained tests success、content fast path success、Deep Review 无未解决 finding；剩余动作仅为按时序执行 merge/main fresh/archive/Issue Closure Audit。
+- [x] unresolved_cleared：最终 PR/main fresh 均无失败；Review 无未解决 finding；Requirement Traceability 无 not_satisfied。
 
 # Git / 交付
 
 - Requirement Source：Issue #148。
 - 实现 PR：#149。
-- 当前 Ready head：`b6a68a8fce5ae4339d5cda6a92a2db48251a4d74`。
-- Ready head 必须重新运行 fresh Skill Tests 与 Runtime Package Tests；按 changed scope 应继续命中 `content` 并跳过三平台 binary。
-- merge 前重新确认 current head、CI、mergeable 并使用 REST merge + `expected_head_sha`。
-- merge 后等待 main fresh Skill Tests 与 Runtime Package Tests；应实际验证 content fast path。
-- main fresh Green 后创建独立最小 archive PR；该 PR 仅移动 Change 为 `done`，应命中 `governance` 并跳过三平台 binary。
-- archive merge 后 main fresh 再验证 governance fast path，最后对 Issue #148 执行 Closure Audit、回写实际证据并关闭 completed。
+- 最终实现 head：`90c46bf821fef81d6db00a130f6223dfecbe4033`。
+- 实现 merge commit：`184f11cd1680d81df0510b3ad505ca396d45821f`。
+- implementation-main fresh：Skill Tests `33531900160` success；Runtime Package Tests `33531901877` success。
+- 本文件在上述实现交付事实成立后移入 `archive/2026-09/` 并标记 `done`。
+- 归档 PR 只承担 Change 历史收口，应命中 `governance` fast path；归档 merge 后 main fresh 与 Issue #148 Closure Audit 由 Issue lifecycle 承接，避免为记录归档结果递归修改已归档 Change。
