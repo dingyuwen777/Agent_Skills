@@ -10,6 +10,7 @@ from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_ro
 
 ROOT = Path(__file__).resolve().parents[4]
 REFERENCE = ROOT / ".agents/skills/coding/references/17_需求来源与PR追溯治理.md"
+FINALIZATION = ROOT / ".agents/skills/coding/references/23_端到端交付与合并后收尾.md"
 REFERENCE_ID = "coding.reference.18"
 
 
@@ -19,6 +20,10 @@ class PullRequestRequirementTraceabilityTest(unittest.TestCase):
     def _reference_text(self) -> str:
         """读取需求来源与 PR 追溯 canonical Reference。"""
         return REFERENCE.read_text(encoding="utf-8")
+
+    def _finalization_text(self) -> str:
+        """读取端到端交付与合并后收尾 canonical Reference。"""
+        return FINALIZATION.read_text(encoding="utf-8")
 
     def _evaluate(self, signals: dict[str, list[str]]) -> dict[str, object]:
         """按正式 Runtime evaluator 计算一条任务路由。"""
@@ -114,7 +119,7 @@ class PullRequestRequirementTraceabilityTest(unittest.TestCase):
 
     def test_review_and_deliver_hands_off_only_after_pass_without_auto_fixing_author_code(self) -> None:
         """第三方 PR 必须先独立 Review；PASS 才能交付，BLOCK 停止且默认不替作者修代码。"""
-        text = self._reference_text()
+        text = self._finalization_text()
         required_fragments = [
             "review-and-deliver",
             "Review PASS",
@@ -125,7 +130,7 @@ class PullRequestRequirementTraceabilityTest(unittest.TestCase):
             "默认不自动修改",
             "Post-Merge Finalization",
             "关闭 Requirement Source",
-            "清理已合并任务分支",
+            "分支清理",
         ]
         for fragment in required_fragments:
             with self.subTest(fragment=fragment):
