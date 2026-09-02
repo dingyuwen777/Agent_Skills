@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+from contextlib import redirect_stdout
+from datetime import datetime
 import importlib.util
+from io import StringIO
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
+from zoneinfo import ZoneInfo
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -106,6 +111,69 @@ class ChangeTemplateChineseYamlTest(unittest.TestCase):
             self.assertEqual(metadata["affected_paths"], ["README.md"])
             self.assertEqual(metadata["contracts"], ["coding-change/v1"])
             self.assertEqual(metadata["data_changes"], [])
+
+    def test_slug_cli_generates_beijing_second_precision_id(self) -> None:
+        """`--slug` 应使用北京时间生成秒级 Change ID 并写入真实 carrier。"""
+        fixed_now = datetime(2026, 9, 2, 14, 35, 27, tzinfo=ZoneInfo("Asia/Shanghai"))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stdout = StringIO()
+            with mock.patch.object(CODING, "_beijing_now", return_value=fixed_now):
+                with redirect_stdout(stdout):
+                    exit_code = CODING.main(
+                        [
+                            "new-change",
+                            "--root",
+                            str(root),
+                            "--slug",
+                            "analysis-scheme",
+                            "--title",
+                            "分析方案",
+                            "--owner",
+                            "test",
+                            "--branch",
+                            "test/analysis-scheme",
+                            "--level",
+                            "L2",
+                        ]
+                    )
+
+            change_id = "CHG-20260902-143527-analysis-scheme"
+            expected = root / ".agents/changes/active" / change_id / "CHANGE.md"
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(stdout.getvalue().strip(), expected.relative_to(root).as_posix())
+            self.assertEqual(CODING.read_change_metadata(expected)["id"], change_id)
+
+    def test_current_schema_accepts_legacy_and_second_precision_dependencies(self) -> None:
+        """同一 schema 应兼容旧日期 ID 与新秒级 ID 的依赖引用。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = CODING.create_change(
+                root,
+                change_id="CHG-20260902-143527-analysis-scheme",
+                title="依赖兼容",
+                owner="test",
+                branch="test/dependency-compatibility",
+                level="L2",
+                depends_on=[
+                    "CHG-20260901-legacy-parent",
+                    "CHG-20260902-140000-current-parent",
+                ],
+            )
+
+            self.assertEqual(
+                CODING.read_change_metadata(path)["depends_on"],
+                [
+                    "CHG-20260901-legacy-parent",
+                    "CHG-20260902-140000-current-parent",
+                ],
+            )
+
+    def test_generated_change_id_rejects_non_kebab_slug(self) -> None:
+        """自动生成入口必须拒绝会产生歧义目录名的非 kebab-case slug。"""
+        fixed_now = datetime(2026, 9, 2, 14, 35, 27, tzinfo=ZoneInfo("Asia/Shanghai"))
+        with self.assertRaisesRegex(ValueError, "slug"):
+            CODING.generate_change_id("Analysis_Scheme", now=fixed_now)
 
 
 if __name__ == "__main__":
