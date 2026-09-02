@@ -7,9 +7,13 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, evaluate_route
+
 
 ROOT = Path(__file__).resolve().parents[4]
 CHANGE_REFERENCE = ROOT / ".agents/skills/coding/references/04_轻量变更管理.md"
+OWNERSHIP_REFERENCE = ROOT / ".agents/skills/coding/references/24_Change仓库归属与Carrier.md"
 MUTATION_REFERENCE = ROOT / ".agents/skills/coding/references/15_规则内容守恒与Skill维护.md"
 CODING_SCRIPT = ROOT / ".agents/skills/coding/scripts/coding.py"
 
@@ -31,9 +35,29 @@ class ChangeRepositoryOwnershipTest(unittest.TestCase):
         """读取当前 canonical Markdown 或脚本文本。"""
         return path.read_text(encoding="utf-8")
 
-    def test_change_reference_owns_repository_scoped_change_semantics(self) -> None:
-        """Change Owner 必须明确由被治理仓库决定，而不是由 Skill 来源决定。"""
-        text = self._read(CHANGE_REFERENCE)
+    def _required_references(self, signals: dict[str, list[str]]) -> set[str]:
+        """使用真实 canonical metadata 计算给定任务事实的 required References。"""
+        result = evaluate_route(
+            build_bundle(ROOT)["路由清单"],
+            {
+                "协议": TASK_ROUTE_PROTOCOL,
+                "信号": signals,
+                "未知项": [],
+                "依据": ["Change Repository Ownership 渐进披露回归"],
+            },
+        )
+        return set(result["必需Reference"])
+
+    def test_change_reference_routes_to_detailed_repository_owner(self) -> None:
+        """ref04 保留 Change 入口，但详细仓库/Carrier 规则必须下沉到窄 Owner。"""
+        change = self._read(CHANGE_REFERENCE)
+        self.assertIn("24_Change仓库归属与Carrier.md", change)
+        self.assertIn("唯一详细 Owner", change)
+        self.assertNotIn("## Change Repository Ownership", change)
+
+    def test_detailed_reference_owns_repository_scoped_change_semantics(self) -> None:
+        """详细 Owner 必须明确由被治理仓库决定，而不是由 Skill 来源决定。"""
+        text = self._read(OWNERSHIP_REFERENCE)
         for marker in (
             "Change Repository Ownership",
             "唯一被治理仓库",
@@ -49,7 +73,7 @@ class ChangeRepositoryOwnershipTest(unittest.TestCase):
 
     def test_multi_repository_task_uses_separate_governance_units(self) -> None:
         """实际修改多个仓库时，各仓库分别治理，单个 Change 不跨仓承载实现。"""
-        change = self._read(CHANGE_REFERENCE)
+        ownership = self._read(OWNERSHIP_REFERENCE)
         mutation = self._read(MUTATION_REFERENCE)
         for marker in (
             "一次任务实际修改多个仓库",
@@ -58,7 +82,7 @@ class ChangeRepositoryOwnershipTest(unittest.TestCase):
             "Issue / PR / Change ID",
         ):
             with self.subTest(marker=marker):
-                self.assertIn(marker, change)
+                self.assertIn(marker, ownership)
         for marker in (
             "外部项目 Change 不承担 Agent_Skills canonical Skill Mutation",
             "Agent_Skills Change 也不承担外部项目业务实现",
@@ -66,6 +90,28 @@ class ChangeRepositoryOwnershipTest(unittest.TestCase):
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, mutation)
+
+    def test_detailed_owner_loads_only_for_persistent_change_facts(self) -> None:
+        """详细 carrier 规则只由 L3/持久治理事实加载，不重新膨胀普通 Review/Git 路由。"""
+        for signals in (
+            {"执行模式": ["实现"], "风险": ["L3"]},
+            {"执行模式": ["实现"], "风险": ["L2"], "治理": ["要求变更记录"]},
+        ):
+            with self.subTest(signals=signals):
+                self.assertIn("coding.reference.25", self._required_references(signals))
+
+        for signals in (
+            {"执行模式": ["审查"], "意图": ["Review-only"], "风险": ["L2"]},
+            {
+                "执行模式": ["Git"],
+                "意图": ["Git 交付"],
+                "能力": ["Git"],
+                "阶段": ["交付"],
+                "风险": ["L2"],
+            },
+        ):
+            with self.subTest(signals=signals):
+                self.assertNotIn("coding.reference.25", self._required_references(signals))
 
     def test_change_root_is_scoped_to_explicit_repository_root(self) -> None:
         """现有 Coding CLI 必须始终把默认 carrier 解析到显式传入的 repository root。"""
