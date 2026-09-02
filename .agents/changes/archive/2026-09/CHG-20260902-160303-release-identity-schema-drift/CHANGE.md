@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260902-160303-release-identity-schema-drift
 title: 修复 Release identity 协议事实源漂移
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: fix/release-identity-schema-drift
 created: 2026-09-02
@@ -35,7 +35,7 @@ Requirement Source：GitHub Issue #170。
 - source commit、固定 Python 3.14.7、digest/fingerprint 形状、每个平台 artifact SHA、三平台 ZIP 成员与 Draft/Publish 资产集合校验保持。
 - 新增回归测试，能阻止 Release workflow 再次维护协议版本字面量。
 - `Skill Tests`、`Runtime Package Tests`、`Release` 三个 workflow 的独立证明责任不删除、不合并。
-- PR 当前 head 的 required CI 取得新鲜结果后再给出可合并结论；本 Change 不自动触发正式 `v3.2.0` Release。
+- PR 当前 head 与合并后的 `main` required CI 均取得新鲜成功证据；本 Change 不自动触发正式 `v3.2.0` Release。
 
 # 范围
 
@@ -88,24 +88,34 @@ Requirement Source：GitHub Issue #170。
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 修复 Release #17 的 Bundle schema 漂移失败 | https://github.com/dingyuwen777/Agent_Skills/issues/170 | satisfied | `release.yml` 已删除 5 个协议/schema 具体版本断言；三平台完整 identity 比较、source/Python/digest/SHA/ZIP 校验保持 |
-| R2 | 不删除有独立证明责任的现有 CI workflow | https://github.com/dingyuwen777/Agent_Skills/issues/170 | satisfied | 当前 main 仅 3 个 workflow；ruleset 21999314 要求 Agent Skills Gate + Runtime Package Gate；Maintenance 明确 Release 另负最终 artifact 责任，分支未删除任何 workflow |
-| R3 | 消除协议版本第二事实源并保留 Release identity 证据 | https://github.com/dingyuwen777/Agent_Skills/issues/170 | satisfied | 新回归测试禁止 `release.yml` 出现五类带版本协议字面量，并要求 Builder / Release identity 字段及三平台逐字段比较仍存在 |
-| R4 | 不自动发布 v3.2.0 | https://github.com/dingyuwen777/Agent_Skills/issues/170 | satisfied | 本 Change 只修改修复分支并准备 PR，未执行 Release workflow |
+| R1 | 修复 Release #17 的 Bundle schema 漂移失败 | https://github.com/dingyuwen777/Agent_Skills/issues/170 | satisfied | `release.yml` 已删除 5 个协议/schema 具体版本断言；三平台完整 identity 比较、source/Python/digest/SHA/ZIP 校验保持；PR 与 main fresh CI 均通过 |
+| R2 | 不删除有独立证明责任的现有 CI workflow | https://github.com/dingyuwen777/Agent_Skills/issues/170 | satisfied | `main/.github/workflows/` 仍只有 3 个正式 workflow；ruleset 仍要求 Agent Skills Gate + Runtime Package Gate；Release 最终 artifact 责任保持 |
+| R3 | 消除协议版本第二事实源并保留 Release identity 证据 | https://github.com/dingyuwen777/Agent_Skills/issues/170 | satisfied | 回归测试 `test_release_protocol_identity_is_builder_owned_not_workflow_hardcoded` 在 PR Skill Tests 中通过；release publish 仍比较完整 Builder identity |
+| R4 | 不自动发布 v3.2.0 | https://github.com/dingyuwen777/Agent_Skills/issues/170 | satisfied | 本 Change 未执行 Release workflow；`v3.2.0` 正式发布仍需独立发布授权 |
 
 # Validation Matrix
 
 | 验证层 | Required | Scope / Evidence |
 | --- | --- | --- |
-| Red / TDD | required | Release #17 run `33594361245` 在三平台 build 成功后稳定失败于 `Runtime Bundle schema 不一致`；新增回归断言针对旧 `release.yml` 中存在的版本字面量。 |
-| 行为 / Unit / Component | required | 新增 `test_release_protocol_identity_is_builder_owned_not_workflow_hardcoded`；PR `Agent Skills Gate` 必须取得当前 head 新鲜 success。 |
-| 接口 / Contract | required | 分支静态复核确认 Release 仍传递并逐字段比较完整 Builder identity，且不再硬编码五类协议版本。 |
-| 集成 / Runtime Dependency | required | workflow changed-scope 由 `Runtime Package Gate` 按当前 classifier 判定并提供本 PR 新鲜证据。 |
-| 用户 / Workflow Acceptance | required | PR CI 验证 workflow 与治理门禁；正式 `v3.2.0` 发布不在本 Change 授权范围。 |
-| 跨组件 Golden Path | not_applicable | 本次不改变 Runtime 组件接线；Release #17 已证明三平台 binary/MCP/install 本身成功，修复只在 publish identity owner。 |
+| Red / TDD | required | Release #17 run `33594361245` 在三平台 build 成功后稳定失败于 `Runtime Bundle schema 不一致`；失败 job `100135245385` 定位到 stale v2 assertion。 |
+| 行为 / Unit / Component | required | PR Skill Tests run `33607185389`：363 tests 全部通过；新增 Release identity 回归测试明确通过；Ready Check 通过。 |
+| 接口 / Contract | required | PR diff 与修复后源码复核：Release 仍传递并逐字段比较完整 Builder identity，且不再硬编码五类协议版本。 |
+| 集成 / Runtime Dependency | required | PR Runtime Package run `33607185379`：Linux/Windows/macOS build/self-test/MCP/install 全部 success，Runtime Package Gate success。 |
+| 用户 / Workflow Acceptance | required | 合并后 main `d9c4355804497b49d1cf9ed916e48ad26cdce7e8` 的 Skill Tests run `33610460755`：Agent Skills Gate success；Runtime Package run `33610460862`：三平台与 Runtime Package Gate 全部 success。正式 `v3.2.0` 发布未执行。 |
+| 跨组件 Golden Path | not_applicable | 本次不改变 Runtime 组件接线；三平台真实 package/MCP/install 已在 PR 与 main 两轮验证。 |
 | 外部依赖 Probe | not_applicable | 不修改第三方在线 Provider。 |
-| Build / Package / Runtime | required | `Runtime Package Gate` 当前 PR 新鲜结果；Release 正式候选只在后续获授权的手工 Release 中验证。 |
-| Docs / Governance / Other | required | Change、Workflow Responsibility Audit、Evidence Preservation Mapping、Ready Check、独立 Review 与 PR fresh CI；canonical Maintenance/Runtime Reference 当前已正确声明 Bundle v3 与 Release 责任，本次无需改正文。 |
+| Build / Package / Runtime | required | PR run `33607185379` 与 main run `33610460862` 均完成 Linux/Windows/macOS onefile package、MCP smoke、project install，Gate success。 |
+| Docs / Governance / Other | required | Issue #170、Change、Workflow Responsibility Audit、Evidence Preservation Mapping、独立 Review、PR fresh CI、main fresh CI、Issue closure 均完成。 |
+
+# Review 与最终交付证据
+
+- Independent Review Target：PR #171，base `651698a0a5ee9a874f280401510ab31f5112f533`，head `07a689f9ffb54e2b907dab9b80cc71832e9dd6f7`。
+- Review 结论：`NO_FINDINGS_WITHIN_SCOPE`；未发现需要扩大修复范围的 BLOCKER/HIGH/MEDIUM Finding。
+- PR #171 以 squash 方式合入 `main`，merge commit `d9c4355804497b49d1cf9ed916e48ad26cdce7e8`。
+- Issue #170 因 `Fixes #170` 在 merge 后自动关闭，状态 `completed`。
+- main fresh Skill Tests run `33610460755`：Requirement Source / Skill Tests / Agent Skills Gate 全部 success。
+- main fresh Runtime Package run `33610460862`：Scope、Linux、Windows、macOS、Runtime Package Gate 全部 success。
+- 正式 `v3.2.0` Release 未执行，因此这里只证明发布 workflow 根因修复及其 PR/main 构建边界；不声称正式 Release #18 已成功。
 
 # 任务
 
@@ -114,11 +124,11 @@ Requirement Source：GitHub Issue #170。
 - [x] 比较修复方案并选择单一事实源方案。
 - [x] 新增防协议版本硬编码漂移回归测试。
 - [x] 修改 `release.yml`，删除重复协议版本字面量但保留 identity 比较。
-- [ ] 运行/读取新鲜 CI 与独立 Review。
+- [x] 完成独立 Review、PR fresh CI、merge、main fresh CI 和 Issue #170 关闭。
 
 # 完成审计
 
-- [x] upstream_re_read: 已重新读取 Issue #170、Maintenance、Runtime Release canonical 事实、Builder Owner 和修复后的 `release.yml`；目标与当前实现一致。
-- [x] change_coverage: main→修复分支 diff 仅包含本 Change、回归测试和 `release.yml` 10 行删除；失败根因、CI 审计与 Evidence Preservation Mapping 均在覆盖范围内。
-- [x] reverse_audit: 已从 Builder identity → 三平台 job outputs → publish 完整 identity 比较 → source/Python/digest → artifact SHA → ZIP/Release assets 反向核对；被删除的只有重复协议版本字面量。
-- [x] unresolved_cleared: 实现范围内的 R1-R4 均已满足；PR required CI 与独立 Review 属于后续交付门禁，未被冒充为已完成。
+- [x] upstream_re_read: 已重新读取 Issue #170、Maintenance、Runtime Release canonical 事实、Builder Owner、修复后的 `release.yml`、PR #171 与合并后 main 运行证据；目标与最终实现一致。
+- [x] change_coverage: 功能 diff 仅包含本 Change、回归测试和 `release.yml` 10 行删除；没有无关 Runtime/协议/依赖改动。
+- [x] reverse_audit: 已从 Builder identity → 三平台 outputs → publish 完整 identity 比较 → source/Python/digest → artifact SHA → ZIP/Release assets → PR/main fresh CI 反向核对；被删除的只有重复协议版本字面量。
+- [x] unresolved_cleared: R1-R4、Review、PR/main CI、merge 与 Issue closure 均已完成；正式 Release 本来即为非目标且未被冒充为已验证。
