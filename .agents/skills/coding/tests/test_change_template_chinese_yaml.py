@@ -217,6 +217,54 @@ class ChangeTemplateChineseYamlTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "slug"):
             CODING.generate_change_id("Analysis_Scheme", now=fixed_now)
 
+    def test_generated_change_id_rejects_naive_time(self) -> None:
+        """自动生成入口不得把没有时区的宿主时间冒充北京时间。"""
+        naive_now = datetime(2026, 9, 2, 14, 35, 27)
+        with self.assertRaisesRegex(ValueError, "时区"):
+            CODING.generate_change_id("analysis-scheme", now=naive_now)
+
+    def test_explicit_invalid_change_id_remains_rejected(self) -> None:
+        """兼容显式 ID 不得放宽非法目录名的失败边界。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with self.assertRaisesRegex(ValueError, "change id"):
+                CODING.create_change(
+                    root,
+                    change_id="CHG-20260902_Invalid",
+                    title="非法 ID",
+                    owner="test",
+                    branch="test/invalid-id",
+                    level="L2",
+                )
+            self.assertFalse((root / ".agents").exists())
+
+    def test_duplicate_second_precision_id_fails_without_overwrite(self) -> None:
+        """同秒同 slug 必须原子失败，不能覆盖已经建立的 Change。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            change_id = "CHG-20260902-143527-analysis-scheme"
+            path = CODING.create_change(
+                root,
+                change_id=change_id,
+                title="第一份",
+                owner="test",
+                branch="test/first",
+                level="L2",
+            )
+            original = path.read_text(encoding="utf-8")
+
+            with self.assertRaises(FileExistsError):
+                CODING.create_change(
+                    root,
+                    change_id=change_id,
+                    title="第二份",
+                    owner="test",
+                    branch="test/second",
+                    level="L2",
+                )
+
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+
 
 if __name__ == "__main__":
     unittest.main()
