@@ -63,6 +63,23 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
         ):
             self.assertIn(marker, ref16)
 
+    def test_skill_mutation_rejects_over_summary_that_loses_constraints(self) -> None:
+        """Skill 精简、摘要和上下文优化不得以丢失约束换取更短文本。"""
+        ref16 = self._read("references/15_规则内容守恒与Skill维护.md")
+        for marker in (
+            "过度总结",
+            "摘要",
+            "上下文预算",
+            "文件变短",
+            "适用范围",
+            "失败 / 停止处理",
+            "Owner / Contract",
+            "回程路径",
+            "不能以删减约束或提高阈值制造 Green",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, ref16)
+
     def test_github_pr_delivery_avoids_manual_ready_and_uses_rest_merge_guard(self) -> None:
         """GitHub PR 交付必须在 Ready 返回异常时先复核真实状态，并用 REST merge 防止 head 漂移。"""
         skill = self._read("SKILL.md")
