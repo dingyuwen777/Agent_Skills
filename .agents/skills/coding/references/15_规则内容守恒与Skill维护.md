@@ -162,6 +162,10 @@ Figma READY / READY_WITH_NOTES
 
 这些内容只能提供背景或证据；不得创建或修改替代 Skill。canonical 源不可读/写或门禁不可执行时必须**失败关闭**并报告未同步/未交付。
 
+### 7.1.1 Skill Mutation 与外部项目 Change Ownership
+
+Mutation Target 只回答通用 Skill 的 canonical 写入仓库；Change 的 Repository Ownership、carrier 与跨仓路径边界由 [24_Change仓库归属与Carrier.md](24_Change仓库归属与Carrier.md) 负责。一次任务同时修改外部项目与 Agent_Skills 时，需要持久施工契约的两边**分别进入各自仓库的治理闭环**，可以通过 Issue / PR / Change ID 建立关联；**外部项目 Change 不承担 Agent_Skills canonical Skill Mutation**，**Agent_Skills Change 也不承担外部项目业务实现**。只读、调查或仅作为事实来源的仓库不因参与会话自动创建 Change。
+
 ### 7.2 Mutation 固定入口与条件路由
 
 进入 Agent_Skills Mutation 后，在任何 canonical 写入前至少执行：
