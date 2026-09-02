@@ -248,7 +248,6 @@ Release
 - 不绕过 Branch Protection、Ruleset、CI 或现有门禁；仓库当前未配置这些机制时也不能用“没有平台强制”替代本仓库自身 PR/CI 流程；
 - 合并后确认 main 指向预期 merge commit，并重新运行本次 changed scope 应触发的 main 新鲜 CI；纯 Skill/治理变化不人为触发无关三平台 Runtime package workflow；
 - L2/L3 Change 在功能/治理变更合并且 main 新鲜验证成功后，通过独立最小归档提交/PR 把该 Change 更新为 `done` 并移动到 `archive/YYYY-MM/...`；归档提交本身只运行其真实 changed scope 所需门禁；
-- 本仓库端到端交付同样受 canonical **Post-Merge Finalization Gate**：implementation main fresh 与 Change archive（适用时）完成后，继续按需求追溯 Owner 对当前 Requirement Source 执行 **Closure Audit**，证据满足且有权限时关闭 completed/resolved，并在完整收尾后清理本仓当前任务已合并分支；任一 required 收尾项未完成时不得报告整个交付任务完成。详细授权、fork/分支删除和失败边界只由 [`coding/references/14_Git交付依赖安全与宿主能力边界.md`](skills/coding/references/14_Git交付依赖安全与宿主能力边界.md) 与 [`coding/references/17_需求来源与PR追溯治理.md`](skills/coding/references/17_需求来源与PR追溯治理.md) 承担，本文件不复制第二套状态机；
 - Release 只从 main 手工运行 `.github/workflows/release.yml`，输入唯一正式版本来源 `v<SemVer>`；仓库不维护第二份根版本文件；
 - Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并拒绝覆盖已有 tag/Release；
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
@@ -281,8 +280,7 @@ Release
 - 真正合并前必须重新确认 `draft=false`、mergeable、required CI、当前 head SHA 与 reviewed head 一致；
 - GitHub merge 一律走 REST merge；宿主支持时必须传入 `expected_head_sha`，不使用无 head guard 的替代合并路径；
 - merge 后必须执行 main fresh CI；
-- main 新鲜验证成功后再执行 Change archive；归档 PR 同样不能依赖人工 Ready；
-- 对“开发并交付”或“审查通过后交付”的完整授权，merge 后不得在上述两步结束；继续执行 canonical Post-Merge Finalization Gate，直到适用的 Closure Audit、Requirement Source 状态和本任务分支清理闭环。
+- main 新鲜验证成功后再执行 Change archive；归档 PR 同样不能依赖人工 Ready。
 
 ## 11. 完成报告
 
@@ -295,7 +293,7 @@ Release
 - Contract/API/Schema/Migration/依赖变化；
 - Docs Impact；
 - 实际测试/CI/Review 证据；
-- Git 分支、提交、PR、merge、main CI、当前 Change 归档状态、Requirement Source 关闭状态与分支清理结果；
+- Git 分支、提交、PR、merge、main CI 与当前 Change 归档状态；
 - 未验证项和剩余风险。
 
 禁止只回复“已完成”或“测试通过”。
