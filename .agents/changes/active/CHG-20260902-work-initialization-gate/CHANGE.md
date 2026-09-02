@@ -33,12 +33,12 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/156
 
 # 成功标准
 
-- [ ] Skill Mutation 明确唯一通用目标为 `dingyuwen777/Agent_Skills` 当前 canonical 源码仓库。
-- [ ] 本地 clone/worktree 只被定义为 canonical 仓库 checkout，不得被误认为第二个 Skill 或替代 Owner。
-- [ ] `$CODEX_HOME/skills`、目标项目 `.agents/skills`、插件缓存、Runtime/Project Payload、Release、缓存和 Stub 被明确禁止作为通用 Mutation 写入目标。
-- [ ] canonical 仓库不可读、不可写或无法执行 Change/PR/CI 门禁时失败关闭，只报告未同步/未交付。
-- [ ] 需要分支/PR 的研发工作按“最新目标分支 → 本地任务分支 → 本地首个治理/测试提交 → 首次 push 创建远程分支 → 早期 PR”执行。
-- [ ] 永久回归测试锁定 canonical target、禁止替代目标与本地优先顺序。
+- [x] Skill Mutation 明确唯一通用目标为 `dingyuwen777/Agent_Skills` 当前 canonical 源码仓库。
+- [x] 本地 clone/worktree 只被定义为 canonical 仓库 checkout，不得被误认为第二个 Skill 或替代 Owner。
+- [x] `$CODEX_HOME/skills`、目标项目 `.agents/skills`、插件缓存、Runtime/Project Payload、Release、缓存和 Stub 被明确禁止作为通用 Mutation 写入目标。
+- [x] canonical 仓库不可读、不可写或无法执行 Change/PR/CI 门禁时失败关闭，只报告未同步/未交付。
+- [x] 需要分支/PR 的研发工作按“最新目标分支 → 本地任务分支 → 本地首个治理/测试提交 → 首次 push 创建远程分支 → 早期 PR”执行。
+- [x] 永久回归测试锁定 canonical target、禁止替代目标与本地优先顺序。
 
 # 范围
 
@@ -71,10 +71,10 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/156
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Skill 规则必须直接修改 canonical Agent_Skills，不得另建本地 Skill | https://github.com/dingyuwen777/Agent_Skills/issues/156 | not_satisfied | 尚未实现 |
-| R2 | 上述目标限制必须写进现有 Skill 并有永久回归 | user:current-request | not_satisfied | 尚未实现 |
-| R3 | 本地开发必须先创建本地分支，远程分支只在首次 push 时产生 | user:local-branch-first | not_satisfied | 尚未实现 |
-| R4 | 不绕过现有内容守恒、Change、Review、CI、PR 和 main fresh 门禁 | AGENTS.md；.agents/MAINTENANCE.md | not_satisfied | 尚未完成交付 |
+| R1 | Skill 规则必须直接修改 canonical Agent_Skills，不得另建本地 Skill | https://github.com/dingyuwen777/Agent_Skills/issues/156 | satisfied | 只修改 canonical checkout 的 Root/Coding/ref14/ref15；未在 `$CODEX_HOME`、AIMA 或插件缓存创建 Skill |
+| R2 | 上述目标限制必须写进现有 Skill 并有永久回归 | user:current-request | satisfied | Coding Core #19、ref15 Mutation Target Resolution 与 `test_skill_mutation_canonical_ownership.py` 已覆盖 |
+| R3 | 本地开发必须先创建本地分支，远程分支只在首次 push 时产生 | user:local-branch-first | satisfied | ref14 固化完整顺序并禁止远程空分支先行；`test_network_and_workflow_governance.py` 锁定语义；当前分支按该顺序创建 |
+| R4 | 不绕过现有内容守恒、Change、Review、CI、PR 和 main fresh 门禁 | AGENTS.md；.agents/MAINTENANCE.md | satisfied | 保留既有 Maintenance/Review/CI/PR 流程；336 项全量 Skill Tests 通过；merge/main fresh 仍受后续授权与托管门禁控制 |
 
 # 验证矩阵
 
@@ -101,23 +101,28 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/156
 - [x] 读取 canonical Root、Maintenance、Entry、Router、Coding 与所需 References
 - [x] 创建并关联 Issue #156
 - [x] 从当前 main 创建本地分支 `chore/156-work-initialization-gate`
-- [ ] 提交本 Change，首次 push 创建远程分支并创建早期 PR
-- [ ] 先扩展失败回归并取得 Red
-- [ ] 强化现有 Coding/Reference Owner
-- [ ] 运行目标测试、完整 Skill Tests 与 Ready Check
+- [x] 提交本 Change，首次 push 创建远程分支并创建早期 PR #157
+- [x] 先扩展失败回归并取得 Red
+- [x] 强化现有 Coding/Reference Owner
+- [x] 运行目标测试与完整 Skill Tests
+- [ ] 运行 Ready Check
 - [ ] 执行独立 Review、PR CI、merge 授权检查和 main fresh 验证
 
 # 验证
 
 ## 计划
 
-- 目标测试：`python -m unittest .agents.skills.coding.tests.test_skill_mutation_canonical_ownership .agents.skills.coding.tests.test_network_and_workflow_governance`
+- 目标测试：分别使用 `python -m unittest discover -s .agents\skills\coding\tests -p <test_file>.py` 运行 Mutation、Workflow 与上下文预算测试
 - 相关测试：仓库 Skill Tests 现有正式入口
 - 就绪检查：`python .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready`
 
 ## 新鲜证据
 
-- 尚未执行。
+- Red：新增 Mutation 回归因缺少 `Mutation Target Resolution` 失败；新增 Workflow 回归因缺少本地分支优先标记失败。
+- Green：Mutation `9 tests`、Workflow `3 tests`、Coding progressive disclosure `5 tests`、Router migration `7 tests` 均通过。
+- 全量：`PYTHONUTF8=1 python -m unittest discover -s .agents\skills\coding\tests -p test_*.py` → exit 0，`Ran 336 tests in 13.633s`，`OK (skipped=1)`。
+- 内容预算测试使用现有阈值；未删除断言、未提高 context budget。
+- 真实工作流：本地分支与首个本地提交 `185ae12` 先于首次 push；随后创建远程跟踪分支和早期 PR #157。
 
 # 文档影响
 
@@ -125,6 +130,6 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/156
 
 # 交付
 
-- 提交：待创建
-- 拉取请求：首次 push 后创建，Requirement-Source: #156
+- 提交：`185ae12`（Change）、`19790e0`（回归测试）、`c4528b3`（canonical 规则）；本文件证据提交待生成
+- 拉取请求：https://github.com/dingyuwen777/Agent_Skills/pull/157（Requirement-Source: #156）
 - 发布：不适用
