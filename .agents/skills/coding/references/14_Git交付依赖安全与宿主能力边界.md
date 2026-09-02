@@ -18,41 +18,6 @@
 - Git 提交信息必须中文；项目可增格式、前缀或工单号，不得覆盖中文要求；
 - 开工顺序：`最新目标分支 → 本地任务分支 → 本地 Change / 失败测试 / 最小治理提交 → 首个本地提交 → 首次 push 创建远程跟踪分支 → 早期 PR`；不得先创建远程空分支。
 
-### 端到端交付授权
-
-用户明确要求完成一个仓库任务的**开发并交付**或**审查通过后交付**时，应按自然语言整体意图解析授权，而不是在同一已确认交付范围内机械要求用户为每个常规生命周期动作重复授权。端到端交付授权只覆盖**当前任务本身**，仍受上位规则、目标项目 Overlay、Branch Protection/Ruleset、当前宿主真实能力和本文件其他门禁约束。
-
-#### `develop-and-deliver`
-
-当用户明确要求“开发并合并到主分支”“完成开发并交付”“实现后合并 main”或语义等价的端到端结果，且没有明确排除其中某一步时，可以把该授权解释为当前任务的 `develop-and-deliver`：
-
-```text
-创建或复用本任务 Requirement Source / Issue（确有需要且项目允许时）
-→ 建立本地任务分支与 Change（适用时）
-→ commit / push 当前任务分支
-→ 创建或更新当前任务 PR
-→ 运行 required 测试 / Review / CI
-→ 通过 guarded merge 合入目标分支
-→ 执行 Post-Merge Finalization Gate
-```
-
-这不是无限 GitHub 或运维授权。`develop-and-deliver` **不自动授权**：
-
-- `Release`、发布正式版本或创建/修改 Release asset；
-- `Deploy`、生产部署、生产环境变更；
-- 生产 Migration、生产数据写入/删除或其他真实不可逆数据动作；
-- `force push`、共享历史重写、绕过 Branch Protection/Ruleset/required checks；
-- 删除无关/保护分支、其他任务分支或不属于当前仓库 Owner 的资源；
-- 任何用户已经明确排除的动作。
-
-上述更高风险或独立产品生命周期动作仍需要用户、项目规则或既有长期授权明确允许。
-
-#### `review-and-deliver`
-
-当用户明确要求“审查通过后合并”“Review 通过后合并到主分支并完成收尾”或语义等价的结果，可以把该授权解释为 `review-and-deliver`：先按 Review Skill / 当前项目正式 Review 门禁进行独立审查；只有 `Review PASS` 且 merge 前所有 current-head/current-base/required checks 门禁满足后，才 Handoff 到 Git Delivery 执行 merge 与 Post-Merge Finalization。
-
-`review-and-deliver` **不等于修改作者代码的授权**。出现阻塞 Finding 时停止交付；只有用户另行明确授权 `review-and-fix` 或等价修改权限时，才返回 Coding 修复、取得新鲜 Green 并 re-review。Requirement Source、Review PASS/BLOCK 与 Handoff 语义由 [17_需求来源与PR追溯治理.md](17_需求来源与PR追溯治理.md) 负责。
-
 ### GitHub PR 零人工交付兼容策略
 
 GitHub 的 Draft 状态只是托管平台工作流状态，不能成为必须由用户手工点击才能继续的质量门禁。真正的门禁仍然是当前项目的 Change/需求追溯、Red / Green / Review / CI、真实 PR 状态、head SHA、Branch Protection/Ruleset 和 merge 前复核。
@@ -99,39 +64,17 @@ GitHub 的 Draft 状态只是托管平台工作流状态，不能成为必须由
    └─ 仍为 Draft → 自动关闭 Draft，并以相同 head/base 创建普通 PR后重新跑 fresh CI
 → 重新确认 draft=false / CI / head SHA / mergeable
 → REST merge + expected_head_sha
-→ Post-Merge Finalization Gate
+→ main fresh CI
+→ Change archive
 
 宿主 Ready 能力已确认不可用
 → 创建普通 PR（逻辑未就绪）
 → Red / Green / Review / CI
 → 重新确认 draft=false / CI / head SHA / mergeable
 → REST merge + expected_head_sha
-→ Post-Merge Finalization Gate
-```
-
-### Post-Merge Finalization Gate
-
-当当前授权是端到端交付，或项目规则明确要求完成合并后的收尾时，PR/MR merge 不是整个任务的终点。真实 merge 成功后必须继续执行适用的最终状态机：
-
-```text
-确认真实 merge commit / 目标分支 HEAD
 → main fresh CI
-→ Change archive（适用时）
-→ 重新读取 Requirement Source 并执行 Closure Audit
-→ 关闭 Requirement Source 为 completed / resolved（适用、证据满足且有写权限时）
-→ 分支清理：清理本仓当前任务已合并且确认不再需要的任务分支 / worktree
-→ 最终交付报告
+→ Change archive
 ```
-
-硬规则：
-
-- 任一 required 的 `main fresh CI`、`Change archive`、`Closure Audit`、关闭 Requirement Source 或分支清理仍未完成时，**不得报告整个任务完成**；只能报告已经完成的阶段、缺失证据和阻塞原因；
-- Requirement Source 的关闭由 [17_需求来源与PR追溯治理.md](17_需求来源与PR追溯治理.md) 的 Closure Audit 负责。需要 post-merge evidence 时不得通过 `Closes` / `Fixes` / `Resolves` 提前绕过；
-- 没有持久 Change、没有可关闭 Requirement Source、或项目明确证明某一步 `not_applicable` 时，不为了形式制造对象；但必须记录不适用依据；
-- **分支清理**只针对当前仓库内、属于本任务、已经确认 merge、不是默认/保护分支、没有被其他 active worktree/任务继续使用、且当前有删除权限的分支/worktree；
-- contributor `fork`、其他仓库来源分支、无删除权限资源、未合并分支、其他任务分支和保护分支不得因为 `develop-and-deliver` / `review-and-deliver` 被越权删除；宿主不支持安全删除时明确报告 cleanup gap，不伪造已清理；
-- 分支清理发生在 required post-merge 验证与 Requirement/Change 收尾之后，不能为了“整洁”先删掉仍需诊断或回滚证据的分支；
-- `Release`、`Deploy`、生产 Migration、生产数据写入、`force push`、删除无关/保护分支等动作仍不属于 Post-Merge Finalization Gate 的隐式授权。
 
 ### 依赖
 
