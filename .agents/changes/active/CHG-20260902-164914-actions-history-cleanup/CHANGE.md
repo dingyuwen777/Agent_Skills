@@ -41,7 +41,7 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/172 。
 - GitHub Actions 历史 workflow run 清理。
 - 使用现有 `Skill Tests` 的 PR run 临时执行一次 cleanup，不新增第四个 workflow。
 - 清理完成后恢复 `Skill Tests` 原权限和原 jobs。
-- 同一收尾 PR 同步归档已完成的 Release identity 修复 Change。
+- 同一收尾 PR同步归档已完成的 Release identity 修复 Change。
 
 # 非目标
 
@@ -88,7 +88,7 @@ Workflow run 删除不可恢复，因此采用 fail-closed allowlist：只有 `s
 | 用户 / Workflow Acceptance | required | 22 条 stale run 已删除；剩余 run 均通过 cleanup 全量复扫的正式 path allowlist。GitHub Actions Web 侧栏可能需要页面刷新/平台缓存更新后反映 API 状态。 |
 | 跨组件 Golden Path | not_applicable | 不涉及 Runtime/业务组件接线。 |
 | 外部依赖 Probe | required | GitHub Actions REST 是本次真实外部依赖；delete + post-delete rescan 均成功。 |
-| Build / Package / Runtime | required | 临时 workflow revision 的 Runtime Package Tests 已完成 success；最终恢复 canonical workflow 后还需以最终 PR head 的 required Gate 作为交付证据。 |
+| Build / Package / Runtime | required | 临时 workflow revision Runtime Package Tests run `33610981382` success；最终恢复 canonical workflow 后以最终 PR head 的 required Gate 作为交付证据。 |
 | Docs / Governance / Other | required | Issue #172、本 Change、cleanup job 日志、Release identity Change done archive、最终 diff 与最终 PR fresh CI。 |
 
 # 任务
