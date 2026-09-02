@@ -1,7 +1,7 @@
 ---
 schema: coding-change/v1
 id: CHG-20260902-planning-contract-review-gate
-title: Coding Planning Contract 与 Plan Review Gate
+title: Coding Planning Contract、Plan Review Gate 与 Skill 内容守恒
 level: L2
 status: in_progress
 owner: dingyuwen777
@@ -14,10 +14,13 @@ affected_areas:
   - coding-planning
   - implementation-design
   - requirement-traceability
+  - skill-content-preservation
 affected_paths:
   - .agents/skills/coding/SKILL.md
   - .agents/skills/coding/references/05_设计实施与根因调试.md
+  - .agents/skills/coding/references/15_规则内容守恒与Skill维护.md
   - .agents/skills/coding/tests/test_planning_contract.py
+  - .agents/skills/coding/tests/test_coding_progressive_disclosure.py
 contracts: []
 data_changes: []
 ---
@@ -25,6 +28,8 @@ data_changes: []
 # 目标
 
 不新增 Planner Skill/Agent，把 Planning 明确为 Coding 内部能力：复杂任务形成系统事实驱动、可执行、可验证、可追溯的工程计划；重要且高成本/难逆的工程决策进入 Plan Review Gate 由用户审核，普通可逆实现细节不机械卡确认。
+
+同时强化 Skill Mutation 内容守恒：精简、摘要、上下文预算优化或重组只能压缩可证明等价的重复表达，不能通过过度总结丢失原有条件、例外、失败/停止处理、验证责任、Owner/Contract、安全/兼容边界、触发或回程路径。
 
 Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/154
 
@@ -38,6 +43,7 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/154
 - [ ] Current Facts 与 Planned State 明确分离，拟新增对象不得冒充当前事实。
 - [ ] 重要步骤形成 Requirement → Plan Step → Observable Result → Evidence 追溯。
 - [ ] Plan Review Gate 覆盖公共 Contract/Schema/数据语义、Migration、长期架构/公共抽象/统一能力 Owner、核心技术路线、范围明显扩大、多真实方案的业务取舍及其他高成本/难逆决策；用户审核的是决策边界，不是逐文件签字。
+- [ ] Skill Mutation 明确禁止为了摘要、精简、上下文预算或文件变短而过度总结并丢失约束；预算超限不能通过删减约束或提高阈值制造 Green。
 - [ ] Router Anti-Agent Boundary、L1 Fast Path、既有最小/精准/兼容和 context budget 保持。
 - [ ] content fast path 跳过三平台 Runtime binary；Skill Tests 全绿。
 - [ ] Review、PR merge、main fresh、Change archive 与 Issue #154 Closure Audit 完成；不创建 Release。
@@ -46,22 +52,23 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/154
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Planning ownership 与 Anti-Orchestrator 边界 | Issue #154 | not_satisfied | 待 Red/Green |
-| R2 | Planning Contract 与行为边界任务分解 | Issue #154 | not_satisfied | 待 canonical rule |
-| R3 | Plan→Execution / Re-plan / Facts-vs-Planned State | Issue #154 | not_satisfied | 待 canonical rule |
-| R4 | Requirement→Plan→Observable Result→Evidence | Issue #154 | not_satisfied | 待 canonical rule |
-| R5 | Plan Review Gate 只阻塞重大决策 | Issue #154 | not_satisfied | 待 canonical rule |
-| R6 | 既有路由、预算与 content fast path 保持 | Issue #154 | not_satisfied | 待 CI |
-| R7 | 完成交付与 Closure Audit | Issue #154 | not_satisfied | 待交付 |
+| R1 | Planning ownership 与 Anti-Orchestrator 边界 | Issue #154 | not_satisfied | 待 Green/Review |
+| R2 | Planning Contract 与行为边界任务分解 | Issue #154 | not_satisfied | 待 Green/Review |
+| R3 | Plan→Execution / Re-plan / Facts-vs-Planned State | Issue #154 | not_satisfied | 待 Green/Review |
+| R4 | Requirement→Plan→Observable Result→Evidence | Issue #154 | not_satisfied | 待 Green/Review |
+| R5 | Plan Review Gate 只阻塞重大决策 | Issue #154 | not_satisfied | 待 Green/Review |
+| R6 | Skill Mutation 摘要/精简不得丢失高价值约束 | Issue #154 | not_satisfied | Red test 已加入，待 canonical rule |
+| R7 | 既有路由、预算与 content fast path 保持 | Issue #154 | not_satisfied | 待最终 CI |
+| R8 | 完成交付与 Closure Audit | Issue #154 | not_satisfied | 待交付 |
 
 # Validation Matrix
 
 | 验证层 | 状态 | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | preservation regression Red→Green |
+| 行为 / Unit / Component | required | Planning + 内容守恒 preservation regression Red→Green |
 | 接口 / Contract | not_applicable | 不改 Runtime/public protocol |
 | 集成 / Runtime Dependency | not_applicable | 不改 Runtime 实现 |
-| 用户 / Workflow Acceptance | required | Plan Review Gate 语义与 content fast path |
+| 用户 / Workflow Acceptance | required | Plan Review Gate、内容守恒语义与 content fast path |
 | 跨组件 Golden Path | not_applicable | 不改产品接线 |
 | Build / Package / Runtime | not_applicable / semantic regression | Skill/Routing/context budget 回归；不构建三平台 binary |
 | Docs / Governance / Other | required | Issue、Change、Review、Closure Audit |
@@ -75,4 +82,7 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/154
 
 # TDD / 交付记录
 
-待补 Red、Green、Review、fresh CI、merge/main、archive 与 Closure Audit 证据。
+- Planning Red：先加入 `test_planning_contract.py`，canonical Planning 规则尚未实现时失败。
+- Planning Green 迭代中永久测试已证明主要语义断言通过；当前仅剩历史 context budget 门禁，需要在不放宽阈值、不删减约束的前提下收敛文本。
+- 内容守恒 Red：新增 `test_skill_mutation_rejects_over_summary_that_loses_constraints`，要求 canonical Mutation Owner 明确禁止过度总结/摘要造成约束丢失。
+- 后续补最终 Green、Review、fresh CI、merge/main、archive 与 Closure Audit 证据。
