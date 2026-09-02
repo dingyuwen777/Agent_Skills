@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260902-work-initialization-gate
 title: Skill Mutation canonical 目标与本地开工门禁
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: chore/156-work-initialization-gate
 created: 2026-09-02
@@ -74,7 +74,7 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/156
 | R1 | Skill 规则必须直接修改 canonical Agent_Skills，不得另建本地 Skill | https://github.com/dingyuwen777/Agent_Skills/issues/156 | satisfied | 只修改 canonical checkout 的 Root/Coding/ref14/ref15；未在 `$CODEX_HOME`、AIMA 或插件缓存创建 Skill |
 | R2 | 上述目标限制必须写进现有 Skill 并有永久回归 | user:current-request | satisfied | Coding Core #19、ref15 Mutation Target Resolution 与 `test_skill_mutation_canonical_ownership.py` 已覆盖 |
 | R3 | 本地开发必须先创建本地分支，远程分支只在首次 push 时产生 | user:local-branch-first | satisfied | ref14 固化完整顺序并禁止远程空分支先行；`test_network_and_workflow_governance.py` 锁定语义；当前分支按该顺序创建 |
-| R4 | 不绕过现有内容守恒、Change、Review、CI、PR 和 main fresh 门禁 | AGENTS.md；.agents/MAINTENANCE.md | satisfied | 保留既有 Maintenance/Review/CI/PR 流程；336 项全量 Skill Tests 通过；merge/main fresh 仍受后续授权与托管门禁控制 |
+| R4 | 不绕过现有内容守恒、Change、Review、CI、PR 和 main fresh 门禁 | AGENTS.md | satisfied | 保留 `.agents/MAINTENANCE.md` 既有 Review/CI/PR 流程；336 项全量 Skill Tests 通过；merge/main fresh 仍受后续授权与托管门禁控制 |
 
 # 验证矩阵
 
@@ -91,10 +91,10 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/156
 
 # 完成审计
 
-- [ ] upstream_re_read：重新读取 Issue #156、用户决定和 canonical Root/Maintenance/Coding/References。
-- [ ] change_coverage：确认现有 Owner 与测试覆盖全部目标，没有创建平行 Skill。
-- [ ] reverse_audit：从错误路径反查本地 Skill、项目安装副本、Runtime/缓存替代和远程分支先行均被拒绝。
-- [ ] unresolved_cleared：所有 `not_satisfied` 清零，Required Evidence 新鲜且完整。
+- [x] upstream_re_read：已重新读取 Issue #156、用户决定和 canonical Root/Maintenance/Entry/Router/Coding/References。
+- [x] change_coverage：现有 Root/Coding/ref14/ref15 Owner 与永久回归覆盖全部目标，没有创建平行 Skill。
+- [x] reverse_audit：已从错误路径反查本地 Skill、项目安装副本、Runtime/缓存替代和远程分支先行均被拒绝。
+- [x] unresolved_cleared：所有 `not_satisfied` 已清零，Required 本地证据与独立 Review 新鲜完整；PR CI 将对 Ready HEAD 重跑。
 
 # 任务
 
@@ -105,8 +105,10 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/156
 - [x] 先扩展失败回归并取得 Red
 - [x] 强化现有 Coding/Reference Owner
 - [x] 运行目标测试与完整 Skill Tests
-- [ ] 运行 Ready Check
-- [ ] 执行独立 Review、PR CI、merge 授权检查和 main fresh 验证
+- [x] 运行 Ready Check
+- [x] 执行独立 Standard Review、修复两处低风险问题并完成 re-review
+- [x] 确认当前没有 merge 授权，不执行 merge、分支删除或 main fresh 验证
+- [ ] 推送 Ready 证据并取得当前 PR HEAD CI
 
 # 验证
 
@@ -123,6 +125,9 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/156
 - 全量：`PYTHONUTF8=1 python -m unittest discover -s .agents\skills\coding\tests -p test_*.py` → exit 0，`Ran 336 tests in 13.633s`，`OK (skipped=1)`。
 - 内容预算测试使用现有阈值；未删除断言、未提高 context budget。
 - 真实工作流：本地分支与首个本地提交 `185ae12` 先于首次 push；随后创建远程跟踪分支和早期 PR #157。
+- Standard Review：base `af158d9`、reviewed head `e48e242`；发现 ref14 新顺序行可能成为上一列表项的 Markdown 懒续行，已由 `512f376` 独立成规则项；re-review head `512f376` 无剩余 Finding。
+- Review 修复后复验：Workflow `3 tests`、Router migration `7 tests`、全量 `336 tests` 均通过；当前未验证边界只剩托管 PR CI。
+- Ready：`PYTHONUTF8=1 python .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready` → exit 0，`carrier=.agents/changes，gated=31，strict=31`。
 
 # 文档影响
 
