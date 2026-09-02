@@ -38,11 +38,12 @@
 当正在帮助另一个目标项目，但用户提出针对 **Skill 本身** 的维护意图，例如“更新 Skill”“修改 Skill”“新增 Skill”“删除 Skill”“重命名 Skill”、修改 Reference、迁移/拆分/合并/通用化规则，或明确要求“把这条规则同步到 Skill”时：
 
 1. 不把当前业务项目中的 Runtime 安装副本、Reference Stub、缓存或历史聊天当作 canonical Skill 写入目标；
-2. 默认把 `dingyuwen777/Agent_Skills` 视为通用 Agent Skill 的 canonical repository，并把当前动作目标切换为 Agent_Skills Maintenance Mode；
-3. 在任何写入前重新读取 Agent_Skills **当前目标分支**的本 `AGENTS.md`、[`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md) 和 [`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)，再由 Router 进入 Coding 的规则内容守恒与受影响 Skill；
-4. 当前目标项目只继续提供本次变更的事实背景、失败证据和项目约束；项目特定技术栈、业务字段、Provider、Schema、部署、品牌或设计业务事实不得直接升级成通用 Skill 默认事实；
-5. 如果用户明确说“只改当前项目规则”或明确指向项目自有 Skill，则保持当前项目 Ownership，不跨仓库同步；
-6. 如果无法从当前仓库事实安全判断 Skill Ownership，或当前宿主没有 Agent_Skills 所需读取/写入权限，必须明确报告并停止对应写入，不得通过修改本地安装副本或口头声称“已同步”来绕过；
-7. Custom Instructions、Project instructions 或其他宿主提示可以作为进入本入口的薄触发器，但不是 canonical Skill 正文，也不会自动授予 GitHub 写入、PR、merge 或 Release 权限。
+2. 先执行 **Mutation Target Resolution**：默认把 `dingyuwen777/Agent_Skills` 当前目标分支视为通用 Agent Skill 的唯一 canonical repository，并把当前动作目标切换为 Agent_Skills Maintenance Mode；
+3. 本地 clone / worktree 只能是该 canonical repository 的工作 checkout。不得把 `$CODEX_HOME/skills`、目标项目 `.agents/skills`、插件缓存、Runtime / Project Payload、Release / 缓存 / Stub 作为替代写入目标，也不得创建或修改替代 Skill 后声称 canonical 已更新；
+4. 在任何写入前重新读取 Agent_Skills **当前目标分支**的本 `AGENTS.md`、[`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md) 和 [`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)，再由 Router 进入 Coding 的规则内容守恒与受影响 Skill；
+5. 当前目标项目只继续提供本次变更的事实背景、失败证据和项目约束；项目特定技术栈、业务字段、Provider、Schema、部署、品牌或设计业务事实不得直接升级成通用 Skill 默认事实；
+6. 如果用户明确说“只改当前项目规则”或明确指向项目自有 Skill，则保持当前项目 Ownership，不跨仓库同步；
+7. 如果无法从当前仓库事实安全判断 Skill Ownership，或当前宿主没有 Agent_Skills 所需读取/写入权限、无法执行仓库要求的 Change/PR/CI 门禁，必须失败关闭并明确报告未同步/未交付；不得通过修改本地安装副本或口头声称“已同步”来绕过；
+8. Custom Instructions、Project instructions 或其他宿主提示可以作为进入本入口的薄触发器，但不是 canonical Skill 正文，也不会自动授予 GitHub 写入、PR、merge 或 Release 权限。
 
 本节是 **Skill Mutation 意图与 canonical Ownership 的源仓库唯一 Bootstrap Owner**。Mutation 的详细内容守恒、Skill/Reference 新增删除重命名与跨仓库同步细则由 [`coding/references/15_规则内容守恒与Skill维护.md`](.agents/skills/coding/references/15_规则内容守恒与Skill维护.md) 负责；进入 Agent_Skills 后的 Change、Review、CI、PR、main 验证与当前 Change 清理继续由 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md) / Coding 现有交付规则负责。普通 Runtime 安装给目标项目的 Router 和 managed block 不复制这套源仓库维护治理；Custom Instructions 只需要把相应意图引导回当前根 `AGENTS.md`，再以当前源码事实继续执行。
