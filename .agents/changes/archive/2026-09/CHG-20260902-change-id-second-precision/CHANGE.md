@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: "CHG-20260902-change-id-second-precision"
 title: "Change ID 秒级生成与历史兼容"
 level: L2
-status: ready_for_review
+status: done
 owner: "Codex"
 branch: "feat/change-id-second-precision"
 created: 2026-09-02
@@ -81,7 +81,7 @@ data_changes: []
 | R1 | Change 文件夹名称精确到小时、分钟、秒 | user:change-id-second-precision | satisfied | `generate_change_id` 与 `test_slug_cli_generates_beijing_second_precision_id` 证明 `CHG-YYYYMMDD-HHMMSS-slug` |
 | R2 | 按推荐方案修改 Agent_Skills，而不是 AIMA_UGC 或安装副本 | user:apply-recommended-owner | satisfied | `origin/main...004e561` 只修改 canonical Agent_Skills 的 Coding Owner、脚本、测试和本仓 Change |
 | R3 | 历史日期级 ID 保持兼容且不得重命名 | external:https://github.com/dingyuwen777/Agent_Skills/issues/167 | satisfied | 双格式正则、显式 `--id`、混合 `depends_on` 测试通过；历史目录零改名 |
-| R4 | 不直接在 main 开发，使用 Issue、Change、本地任务分支、早期 PR 和 CI 交付 | user:push-to-main | satisfied | Issue #167、分支 `feat/change-id-second-precision`、Change 和 PR #168 已建立；最终 merge/main CI 继续记录在交付区 |
+| R4 | 不直接在 main 开发，使用 Issue、Change、本地任务分支、早期 PR 和 CI 交付 | user:push-to-main | satisfied | Issue #167、分支 `feat/change-id-second-precision`、Change 与 PR #168 完成追溯；PR CI 和合并提交 `4fc289d` 的 main 新鲜 CI 均通过 |
 
 # 验证矩阵
 
@@ -183,5 +183,7 @@ data_changes: []
 
 - Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/167
 - 提交：`272c9ce` 建立 Red/治理基线；`72351a8` 完成秒级生成、兼容规则和测试；`004e561` 补强失败边界测试。
-- 拉取请求：https://github.com/dingyuwen777/Agent_Skills/pull/168；当前实现与 Review 已就绪，待最终 Change 提交、PR CI 和 merge。
-- 发布：本次不创建 Release；合并后按 content scope 验证 main。
+- 功能拉取请求：https://github.com/dingyuwen777/Agent_Skills/pull/168；PR CI 的 Requirement Source、Skill Tests、Agent Skills Gate、Runtime Package Scope/Gate 均通过，以 squash merge `4fc289dca90d669518ec893b4a81fc07c9c31cba` 合并到 `main`。
+- main 新鲜验证：提交 `4fc289dca90d669518ec893b4a81fc07c9c31cba` 的 Runtime Package Tests 运行 `33603709658` 与 Skill Tests 运行 `33603709662` 均成功；三平台 binary package 因 scope 为 `content` 按规则跳过。
+- 归档：功能合并与 main 新鲜验证成功后，由独立最小归档分支和 PR 将本 Change 更新为 `done` 并移动到 `archive/2026-09/`。
+- 发布：本次不创建 Release。
