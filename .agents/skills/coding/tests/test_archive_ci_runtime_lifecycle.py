@@ -73,6 +73,32 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertIn('test "${WINDOWS_RESULT}" = "success"', workflow)
         self.assertIn('test "${MACOS_RESULT}" = "success"', workflow)
 
+    def test_release_protocol_identity_is_builder_owned_not_workflow_hardcoded(self) -> None:
+        """Release 必须比较 Builder identity，但不能复制 Runtime 协议版本成为第二事实源。"""
+        workflow = self._read(".github/workflows/release.yml")
+        builder = self._read("scripts/build_runtime.py")
+
+        protocol_fields = (
+            "BUNDLE_SCHEMA",
+            "TASK_ROUTE_PROTOCOL",
+            "ROUTING_MANIFEST_PROTOCOL",
+            "MCP_TOOL_CONTRACT_PROTOCOL",
+            "PROJECT_PAYLOAD_SCHEMA",
+        )
+        for field in protocol_fields:
+            self.assertIn(f'"{field}"', workflow, f"Release identity 缺少字段：{field}")
+            self.assertIn(f'"{field.lower()}"', builder, f"Builder identity 缺少字段：{field}")
+
+        self.assertIn("if identity != reference", workflow)
+        for pattern in (
+            r"agent-skills-runtime-bundle/v[0-9]+",
+            r"Agent Skills 任务路由/v[0-9]+",
+            r"Agent Skills 路由清单/v[0-9]+",
+            r"Agent Skills MCP工具契约/v[0-9]+",
+            r"agent-skills-project-payload/v[0-9]+",
+        ):
+            self.assertNotRegex(workflow, pattern, f"Release workflow 不应硬编码协议版本：{pattern}")
+
     def test_runtime_install_assertion_tracks_current_managed_progress_semantics(self) -> None:
         """常规 Skill CI 必须在 managed 进度语义变化时同步暴露 Runtime 安装断言漂移。"""
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
