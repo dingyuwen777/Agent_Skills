@@ -140,13 +140,9 @@ Figma READY / READY_WITH_NOTES
 
 本节处理由 Agent_Skills 源仓库**根 `AGENTS.md`** 命中并升级的 **Skill Mutation**：新增、修改、删除、重命名 Skill / Reference，规则迁移、拆分、合并、通用化，以及跨仓库把可复用规则同步到 canonical Skill。
 
-通用 Skill 的 canonical 源仓库是：
+### 7.1 Mutation Target Resolution 与 canonical 明文事实源
 
-```text
-dingyuwen777/Agent_Skills
-```
-
-### 7.1 canonical 明文事实源
+通用 Mutation 只写 `dingyuwen777/Agent_Skills`；本地 clone / worktree 只是 canonical checkout。
 
 通用 Agent Skill 的 canonical 明文只来自 Agent_Skills 当前源码仓库中的正式 Owner：
 
@@ -160,13 +156,11 @@ dingyuwen777/Agent_Skills
 
 以下都**不是 canonical Skill 写入目标**：
 
-- 目标项目中的 Runtime / Project Payload 本地安装副本；
-- Reference Stub；
-- MCP 返回结果的旧缓存；
-- 历史聊天、摘要或旧版本复制件；
-- Custom Instructions / Project instructions 中的转述。
+- `$CODEX_HOME/skills`、目标项目 `.agents/skills`、插件缓存；
+- Runtime / Project Payload 本地安装副本、Reference Stub、Release / 缓存或历史构建产物；
+- MCP 返回结果的旧缓存、历史聊天、摘要、Custom Instructions / Project instructions。
 
-这些目标项目资产、缓存或宿主提示可以提供需求背景与验证证据，但不能取代 Agent_Skills 当前源码作为 canonical 写入事实源。不得直接编辑本地安装副本后声称“Skill 已更新”。
+这些内容只能提供背景或证据；不得创建或修改替代 Skill。canonical 源不可读/写或门禁不可执行时必须**失败关闭**并报告未同步/未交付。
 
 ### 7.2 Mutation 固定入口与条件路由
 
@@ -326,5 +320,3 @@ Skill Mutation 完成前至少形成：
 → 独立 Review
 → CI / PR / main 新鲜 CI / 当前 Change 清理
 ```
-
-Custom Instructions、Project instructions 或目标项目中的安装副本只可以帮助触发/提供上下文，不能替代上述 canonical 源码与交付证据。没有 Agent_Skills 所需读写权限或无法执行仓库门禁时，明确标记未同步/未交付，不得把本地修改或自然语言答复冒充 canonical Skill 已更新。
