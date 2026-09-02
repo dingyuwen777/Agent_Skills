@@ -3,16 +3,31 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
+
 
 ROOT = Path(__file__).resolve().parents[4]
+FINALIZATION_ID = "coding.reference.24"
 
 
 class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
-    """验证网络下载源和永久 Workflow 证据守恒规则仍可从 Coding 主入口到达。"""
+    """验证网络下载源、永久 Workflow 与端到端交付治理规则可达且按需加载。"""
 
     def _read(self, path: str) -> str:
         """读取规则文本。"""
         return (ROOT / path).read_text(encoding="utf-8")
+
+    def _evaluate(self, signals: dict[str, list[str]]) -> dict[str, object]:
+        """使用正式 Runtime evaluator 计算任务路由。"""
+        return evaluate_route(
+            compile_routing(ROOT),
+            {
+                "协议": TASK_ROUTE_PROTOCOL,
+                "信号": signals,
+                "未知项": [],
+                "依据": ["end-to-end delivery governance regression"],
+            },
+        )
 
     def test_network_source_selection_is_environment_aware(self) -> None:
         """主 Skill 必须硬路由 ref03，且中国大陆/海外与供应链完整性细节仍完整保留。"""
@@ -62,8 +77,8 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
     def test_end_to_end_delivery_authorization_and_post_merge_finalization_are_explicit(self) -> None:
         """端到端交付授权必须覆盖必要收尾，同时保持高风险动作和 fork 分支权限边界。"""
         skill = self._read(".agents/skills/coding/SKILL.md")
-        reference = self._read(
-            ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
+        finalization = self._read(
+            ".agents/skills/coding/references/23_端到端交付与合并后收尾.md"
         )
         maintenance = self._read(".agents/MAINTENANCE.md")
 
@@ -71,6 +86,7 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             "端到端交付授权",
             "开发并合并到主分支",
             "审查通过后合并",
+            "23_端到端交付与合并后收尾.md",
         ):
             self.assertIn(marker, skill, f"Coding Core 缺少端到端授权入口：{marker}")
 
@@ -88,13 +104,42 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             "Deploy",
             "生产 Migration",
             "force push",
-            "删除无关/保护分支",
+            "删除无关分支",
             "不得报告整个任务完成",
         ):
-            self.assertIn(marker, reference, f"Git Delivery 缺少端到端收尾边界：{marker}")
+            self.assertIn(marker, finalization, f"端到端交付 Owner 缺少边界：{marker}")
 
         self.assertIn("Post-Merge Finalization Gate", maintenance)
         self.assertIn("Closure Audit", maintenance)
+
+    def test_end_to_end_reference_loads_only_with_explicit_authorization(self) -> None:
+        """普通 Git Delivery 不预付收尾全文；明确端到端授权后才加载并展开依赖。"""
+        generic = self._evaluate(
+            {
+                "执行模式": ["Git"],
+                "阶段": ["交付"],
+                "风险": ["L2"],
+                "意图": ["Git 交付"],
+                "能力": ["Git"],
+            }
+        )
+        self.assertNotIn(FINALIZATION_ID, generic["必需Reference"])
+
+        for authorization in ("允许端到端交付", "允许审查后交付"):
+            with self.subTest(authorization=authorization):
+                routed = self._evaluate(
+                    {
+                        "执行模式": ["Git"],
+                        "阶段": ["交付"],
+                        "风险": ["L2"],
+                        "意图": ["Git 交付"],
+                        "能力": ["Git"],
+                        "授权": [authorization],
+                    }
+                )
+                self.assertIn(FINALIZATION_ID, routed["必需Reference"])
+                self.assertIn("coding.reference.15", routed["必需Reference"])
+                self.assertIn("coding.reference.18", routed["必需Reference"])
 
 
 if __name__ == "__main__":
