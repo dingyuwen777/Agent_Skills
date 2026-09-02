@@ -59,6 +59,43 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
         )
         self.assertIn(expected_order, reference)
 
+    def test_end_to_end_delivery_authorization_and_post_merge_finalization_are_explicit(self) -> None:
+        """端到端交付授权必须覆盖必要收尾，同时保持高风险动作和 fork 分支权限边界。"""
+        skill = self._read(".agents/skills/coding/SKILL.md")
+        reference = self._read(
+            ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
+        )
+        maintenance = self._read(".agents/MAINTENANCE.md")
+
+        for marker in (
+            "端到端交付授权",
+            "开发并合并到主分支",
+            "审查通过后合并",
+        ):
+            self.assertIn(marker, skill, f"Coding Core 缺少端到端授权入口：{marker}")
+
+        for marker in (
+            "develop-and-deliver",
+            "review-and-deliver",
+            "Post-Merge Finalization Gate",
+            "main fresh CI",
+            "Change archive",
+            "Closure Audit",
+            "关闭 Requirement Source",
+            "分支清理",
+            "fork",
+            "Release",
+            "Deploy",
+            "生产 Migration",
+            "force push",
+            "删除无关/保护分支",
+            "不得报告整个任务完成",
+        ):
+            self.assertIn(marker, reference, f"Git Delivery 缺少端到端收尾边界：{marker}")
+
+        self.assertIn("Post-Merge Finalization Gate", maintenance)
+        self.assertIn("Closure Audit", maintenance)
+
 
 if __name__ == "__main__":
     unittest.main()
