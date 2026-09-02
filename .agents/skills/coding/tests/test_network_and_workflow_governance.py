@@ -110,6 +110,8 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             "force push",
             "删除无关分支",
             "不得报告整个任务完成",
+            "blocked/incomplete",
+            "不自动改变任务原本依据影响面判定的 L1/L2/L3",
         ):
             self.assertIn(marker, finalization, f"端到端交付 Owner 缺少边界：{marker}")
 
@@ -141,6 +143,27 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
                 self.assertIn(FINALIZATION_ID, routed["必需Reference"])
                 self.assertIn("coding.reference.15", routed["必需Reference"])
                 self.assertIn("coding.reference.18", routed["必需Reference"])
+
+        generic_l1 = self._evaluate(
+            {
+                "执行模式": ["Git"],
+                "阶段": ["交付"],
+                "风险": ["L1"],
+                "意图": ["Git 交付"],
+                "能力": ["Git"],
+            }
+        )
+        end_to_end_l1 = self._evaluate(
+            {
+                "执行模式": ["Git"],
+                "阶段": ["交付"],
+                "风险": ["L1"],
+                "意图": ["Git 交付"],
+                "能力": ["Git"],
+                "授权": ["允许端到端交付"],
+            }
+        )
+        self.assertEqual(generic_l1["最低风险"], end_to_end_l1["最低风险"])
 
 
 if __name__ == "__main__":
