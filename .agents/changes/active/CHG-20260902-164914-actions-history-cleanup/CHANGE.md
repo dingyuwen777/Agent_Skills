@@ -41,7 +41,7 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/172 。
 - GitHub Actions 历史 workflow run 清理。
 - 使用现有 `Skill Tests` 的 PR run 临时执行一次 cleanup，不新增第四个 workflow。
 - 清理完成后恢复 `Skill Tests` 原权限和原 jobs。
-- 同一收尾 PR同步归档已完成的 Release identity 修复 Change。
+- 同一收尾 PR 同步归档已完成的 Release identity 修复 Change。
 
 # 非目标
 
