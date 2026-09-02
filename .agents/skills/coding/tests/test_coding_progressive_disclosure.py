@@ -67,15 +67,16 @@ class CodingProgressiveDisclosureTest(unittest.TestCase):
         """Skill 精简、摘要和上下文优化不得以丢失约束换取更短文本。"""
         ref16 = self._read("references/15_规则内容守恒与Skill维护.md")
         for marker in (
-            "过度总结",
-            "摘要",
-            "上下文预算",
-            "文件变短",
-            "适用范围",
+            "摘要 / 精简 / 压缩不是删除约束的授权",
+            "触发条件 / 适用范围 / 前置条件",
             "失败 / 停止处理",
-            "Owner / Contract",
-            "回程路径",
-            "不能以删减约束或提高阈值制造 Green",
+            "Owner / Contract / 数据与 Migration 边界",
+            "验证责任 / Evidence / 完成判据",
+            "跨 Skill / Reference 的触发与回程路径",
+            "context budget 超限时",
+            "不得删除约束、抬高预算阈值或放宽测试来制造 Green",
+            "逐项语义对照",
+            "无法证明语义等价时，保留原文细节",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, ref16)
