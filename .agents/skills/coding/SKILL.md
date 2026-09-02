@@ -117,7 +117,6 @@ CMakeLists.txt ≠ Linux-only
 17. **系统级分析先于局部实现。** 先恢复任务相关能力边界，再决定局部修复、复用、公共抽象或能力归一；系统级不等于全仓扫描。详见 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)。
 18. **受影响代码域必须整洁收口。** 清理本次受影响域内确认失效、重复或无用实现，同时保护兼容、隐式引用和用户工作，禁止扩大无关重构。详见 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)。
 19. **Skill Mutation 先做 Mutation 目标解析。** 只改 canonical Owner；本地安装副本不得成为替代 Skill。无法读取或交付时失败关闭。详见 [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md)。
-20. **端到端交付授权按完整结果解释，但不扩张独立高风险权限。** 用户明确要求“开发并合并到主分支”“完成并交付”时，按当前任务建立 `develop-and-deliver`；明确要求“审查通过后合并并完成收尾”时建立 `review-and-deliver`。两者都必须遵守 Review/CI/head guard 和 Post-Merge Finalization，详细允许/禁止动作见 [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md)，第三方 PR 的 PASS/BLOCK 与 Handoff 见 [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md)。Release、Deploy、生产数据/迁移、force push 或删除无关资源等独立高风险动作不能由端到端交付授权隐式获得。
 
 ## 2. 四维任务路由
 
