@@ -164,11 +164,7 @@ Figma READY / READY_WITH_NOTES
 
 ### 7.1.1 Skill Mutation 与外部项目 Change Ownership
 
-Skill Mutation 的 canonical 写入目标与 Change Repository Ownership 是两个相邻但不同的问题。前一节只回答“通用 Skill 写到哪个 canonical repository”；Change carrier、仓库相对影响边界和多仓施工单元的唯一详细 Owner 仍是 [04_轻量变更管理.md](04_轻量变更管理.md) 的 `Change Repository Ownership`。
-
-当一次任务同时包含外部项目实现与 Agent_Skills canonical Skill Mutation 时，两个仓库都是实际写入目标，因此必须按 ref04 的规则分别判断各自是否需要持久施工契约；需要时**分别进入各自仓库的治理闭环**，并通过 Issue / PR / Change ID 建立关联。**外部项目 Change 不承担 Agent_Skills canonical Skill Mutation** 的施工契约、affected paths、测试或交付证据；**Agent_Skills Change 也不承担外部项目业务实现**的施工契约、affected paths、Contract、数据变化或交付状态。
-
-如果当前动作只从外部项目读取失败证据/项目事实、但实际只写 Agent_Skills canonical，则外部项目不因“作为事实来源”自动创建 Change；反之，只改项目自有规则且用户明确排除 Skill Mutation 时，也不为 Agent_Skills 建 Change。Ownership 始终跟随实际被修改仓库，不跟随规则加载来源或当前会话最先打开的仓库。
+Mutation Target 只回答通用 Skill 的 canonical 写入仓库；Change 的 Repository Ownership、carrier 与跨仓路径边界由 [24_Change仓库归属与Carrier.md](24_Change仓库归属与Carrier.md) 负责。一次任务同时修改外部项目与 Agent_Skills 时，需要持久施工契约的两边**分别进入各自仓库的治理闭环**，可以通过 Issue / PR / Change ID 建立关联；**外部项目 Change 不承担 Agent_Skills canonical Skill Mutation**，**Agent_Skills Change 也不承担外部项目业务实现**。只读、调查或仅作为事实来源的仓库不因参与会话自动创建 Change。
 
 ### 7.2 Mutation 固定入口与条件路由
 
