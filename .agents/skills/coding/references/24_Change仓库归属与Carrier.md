@@ -4,21 +4,17 @@
 
 # Change 仓库归属与 Carrier
 
-本 Reference 只负责**已经确定需要持久施工契约之后**的 Repository Ownership、Carrier、ID 与元数据机械规则。是否需要创建/认领 Change、Requirement Traceability、Validation Matrix、Completion Audit、状态与归档语义仍由 [04_轻量变更管理.md](04_轻量变更管理.md) 负责。
-
-把这些细节放在独立 Owner 中，是为了避免只做 Review、Git 交付或普通轻量 L2 的任务在没有真实 Change 操作时预付目录/schema 上下文；一旦命中 L3 或真实持久治理事实，本 Reference 必须与 ref04 一起加载，不能因为渐进披露而省略 Ownership 门禁。
+本 Reference 只负责已经需要持久施工契约后的 Repository Ownership、Carrier、ID 与元数据；“是否需要 Change”以及 Traceability、Validation、Completion、状态和归档仍由 [04_轻量变更管理.md](04_轻量变更管理.md) 负责。L3 或真实持久治理事实命中时必须加载本 Reference；普通 Review/Git/轻量 L2 不预付这些目录与 schema 细节。
 
 ## Change Repository Ownership
 
-Change 的 Repository Ownership 由“谁被修改 / 谁被治理”决定，不由“规则从哪里加载”决定。每个 Coding Change 或项目等价持久施工契约必须只属于一个**唯一被治理仓库**。所有 carrier 路径、`affected_paths`、`contracts`、`data_changes` 以及仓库相对 Evidence 都**相对于该仓库根**解释；不得借另一个仓库的 Change carrier 承载当前仓库的施工范围。
+Change 归属由“**谁被修改 / 谁被治理**”决定，而不是“**规则从哪里加载**”。每个 Change 只属于一个**唯一被治理仓库**；carrier、`affected_paths`、`contracts`、`data_changes` 和仓库相对 Evidence 均**相对于该仓库根**解释，不得跨仓承载施工范围。
 
-使用 Agent_Skills 开发外部项目时，**Agent_Skills 只是治理规则来源**，不因此成为外部项目 Change 的 Owner。外部项目若确实需要持久施工契约，先复用该外部项目自己的正式治理载体；只有它没有可复用机制时，才在该外部项目自己的 Coding carrier 下建立 Change。**不得把外部项目 Change 写入 Agent_Skills** 的 `.agents/changes/`，也不得因为 Source Mode 正在读取 Agent_Skills canonical 规则就改变外部项目的 Change Ownership。
+使用 Agent_Skills 开发外部项目时，**Agent_Skills 只是治理规则来源**；外部项目需要持久 Change 时复用其正式治理载体，缺少可复用机制时也只在外部项目自己的 Coding carrier 建立，**不得把外部项目 Change 写入 Agent_Skills**。维护 Agent_Skills 本身时则由 Agent_Skills 自己的 carrier 承载，因为此时“**谁被修改**”就是 Agent_Skills。
 
-维护 Agent_Skills 源仓库本身时，被治理仓库才是 `dingyuwen777/Agent_Skills`；只有 Agent_Skills 自身实现、规则、Runtime、测试、CI 或发布治理的 Change 才进入 Agent_Skills 自己的 Change carrier。Skill 来源仓库与 Change Owner 在这个场景恰好相同，是因为“**谁被修改**”就是 Agent_Skills，而不是因为 Agent_Skills 提供了规则。
+**一次任务实际修改多个仓库**时，对每个仓库独立判断是否需要持久契约；只读、调查或事实来源仓库不自动建 Change。对**每个需要持久施工契约的仓库**分别治理，可用 **Issue / PR / Change ID** 关联，但**不得用一个 Change 跨仓**拥有另一仓库的路径、Contract、数据变化、证据或交付状态。
 
-**一次任务实际修改多个仓库**时，先对每个仓库独立判断是否真的达到持久施工契约条件；只调查、只读取或仅作为事实来源的仓库不因此自动创建 Change。对**每个需要持久施工契约的仓库**，分别在该仓库自己的正式治理载体中创建或认领施工单元。可以通过 **Issue / PR / Change ID** 建立跨仓关联和顺序依赖，但**不得用一个 Change 跨仓**拥有另一个仓库的 `affected_paths`、Contract、数据变化、测试证据或交付状态，也不得把两个仓库的独立完成门禁折叠成一个“总 Change”。
-
-这是 Ownership 与路径解析语义，**不新增 `change_repository`** frontmatter 字段，也不改变 `coding-change/v1` schema。当前被治理仓库由实际 repository root + 该仓库 carrier 确定；`coding.py --root <repo>` 继续以显式传入的 repository root 解析 Change carrier。若无法确认当前动作实际修改哪个仓库，先恢复仓库事实和 Mutation Target，而不是猜一个 carrier 后写入。
+本规则**不新增 `change_repository`** frontmatter，也不改变 `coding-change/v1`。Ownership 由实际 repository root + carrier 确定；`coding.py --root <repo>` 按显式 repository root 解析。无法确认被修改仓库时先恢复事实/Mutation Target，不猜 carrier。
 
 ## Coding Change carrier、目录和 ID
 
