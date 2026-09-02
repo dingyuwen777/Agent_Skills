@@ -19,6 +19,7 @@ affected_paths:
   - .agents/skills/coding/SKILL.md
   - .agents/skills/coding/references/05_设计实施与根因调试.md
   - .agents/skills/coding/references/15_规则内容守恒与Skill维护.md
+  - .agents/skills/coding/references/22_根因调试.md
   - .agents/skills/coding/tests/test_planning_contract.py
   - .agents/skills/coding/tests/test_coding_progressive_disclosure.py
 contracts: []
