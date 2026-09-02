@@ -3,6 +3,8 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
+
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -13,6 +15,19 @@ class PlanningContractTest(unittest.TestCase):
     def _read(self, path: str) -> str:
         """读取仓库内 UTF-8 文本用于规则回归断言。"""
         return (ROOT / path).read_text(encoding="utf-8")
+
+    def _route(self, mode: str, stage: str, risk: str) -> dict:
+        """使用正式 Routing Evaluator 验证 Planning/诊断渐进披露边界。"""
+        manifest = compile_routing(ROOT)
+        return evaluate_route(
+            manifest,
+            {
+                "协议": TASK_ROUTE_PROTOCOL,
+                "信号": {"执行模式": [mode], "阶段": [stage], "风险": [risk]},
+                "未知项": [],
+                "依据": ["planning progressive disclosure regression"],
+            },
+        )
 
     def test_planning_stays_inside_coding_without_new_planner_skill(self) -> None:
         """Planning 是 Coding 能力，不创建第二控制面或 Planner Agent。"""
@@ -110,6 +125,28 @@ class PlanningContractTest(unittest.TestCase):
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, design)
+
+    def test_debugging_rules_move_without_loss_and_load_only_when_needed(self) -> None:
+        """根因调试只能移动到专项 Owner，不能被摘要丢失或常驻普通 L3 Planning。"""
+        design = self._read(".agents/skills/coding/references/05_设计实施与根因调试.md")
+        debugging = self._read(".agents/skills/coding/references/22_根因调试.md")
+        self.assertIn("[22_根因调试.md](22_根因调试.md)", design)
+        for fragment in (
+            "读取完整错误、警告和调用栈",
+            "稳定复现并记录精确条件",
+            "提出一个可证伪假设",
+            "用最小实验一次改变一个变量",
+            "连续三次修复假设失败后停止",
+        ):
+            self.assertIn(fragment, debugging)
+
+        diagnostic = self._route("诊断", "故障处置", "L2")
+        self.assertIn("coding.reference.23", diagnostic["必需Reference"])
+        self.assertIn("coding.reference.05", diagnostic["必需Reference"])
+
+        ordinary_l3 = self._route("实现", "功能开发", "L3")
+        self.assertIn("coding.reference.05", ordinary_l3["必需Reference"])
+        self.assertNotIn("coding.reference.23", ordinary_l3["必需Reference"])
 
 
 if __name__ == "__main__":
