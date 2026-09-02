@@ -4,24 +4,24 @@
 
 # 规则内容守恒与 Skill 维护
 
-这份规则只处理 Coding Skill、references、模板和项目 Overlay 自身的重组、精简、拆分、合并、改名、迁移和通用化；**内容守恒优先于篇幅精简**，组织变化后原有可执行规则必须仍完整、可达、可验证，相关 Mutation 实施前必须读取本文件。
+本规则处理 Skill/reference/模板/项目 Overlay 的重组、精简、拆分、合并、改名、迁移和通用化；**内容守恒优先于篇幅精简**。Mutation 前必须读取本文件，并保证原有可执行规则完整、可达、可验证。
 
 ## 1. 规则完整性维护
 
 后续如果要再次“精简”“拆分”“合并”本 Skill：
 
 1. 先检查当前 `SKILL.md`、命中 references、agent metadata、Change/CI/README 对规则和路径的实时引用；
-2. 在当前 Change 或 Review 记录本次准备移动、删除、条件化或改名的高价值规则集合，不要求再维护独立“规则保留映射”文档；
+2. 在 Change/Review 记录将移动、删除、条件化或改名的高价值规则，不另建“规则保留映射”；
 3. 建立会因规则丢失而失败的 portability / preservation 回归；
 4. **摘要 / 精简 / 压缩不是删除约束的授权。** 保留 `触发条件 / 适用范围 / 前置条件`、强度/例外、`失败 / 停止处理`、`Owner / Contract / 数据与 Migration 边界`、`验证责任 / Evidence / 完成判据`、安全/兼容/回滚和`跨 Skill / Reference 的触发与回程路径`；**不能用一条抽象原则替代多条带条件、例外或失败处理的可执行规则**；
 5. `context budget 超限时`只消除等价重复、复用 canonical Owner 或调整渐进披露/路由；**不得删除约束、抬高预算阈值或放宽测试来制造 Green**；
-6. 替换 canonical 前做 old → new **逐项语义对照**；仅完全等价才删重复，**无法证明语义等价时，保留原文细节**；
+6. 替换 canonical 前做 old → new **逐项语义对照**；**只有逐项证明完全等价时才允许删除重复**，**无法证明语义等价时，保留原文细节**；
 7. 项目特定规则迁回项目 Overlay 前，先证明已有新的正式承载；
 8. 完成后从旧入口反向检查每条高价值规则是否仍可达，并执行 portability / preservation 回归与人工内容守恒 Review。
 
 ## 2. 允许移动，不允许语义降级
 
-规则从主 `SKILL.md` 移到 reference 时，还必须满足：
+主 `SKILL.md` 迁入 reference 时还必须：
 
 - 主文件保留让 Agent 在正确场景命中该 reference 的明确触发条件；
 - 不因 reference 已存在而隐藏主文件的不可延迟全局不变量、关键停止条件或 Review/Docs 硬路由；
