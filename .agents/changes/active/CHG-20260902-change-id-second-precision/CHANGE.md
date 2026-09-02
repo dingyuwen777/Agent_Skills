@@ -3,21 +3,21 @@ schema: coding-change/v1
 id: "CHG-20260902-change-id-second-precision"
 title: "Change ID 秒级生成与历史兼容"
 level: L2
-status: in_progress
+status: ready_for_review
 owner: "Codex"
 branch: "feat/change-id-second-precision"
 created: 2026-09-02
 updated: 2026-09-02
 completion_gate: required
 depends_on: []
-affected_areas: 
+affected_areas:
   - "coding-governance"
-affected_paths: 
+affected_paths:
   - ".agents/skills/coding/SKILL.md"
   - ".agents/skills/coding/references/24_Change仓库归属与Carrier.md"
   - ".agents/skills/coding/scripts/coding.py"
   - ".agents/skills/coding/tests"
-contracts: 
+contracts:
   - "coding-change/v1"
 data_changes: []
 ---
@@ -28,11 +28,11 @@ data_changes: []
 
 # 成功标准
 
-- [ ] `new-change --slug <kebab-case>` 自动生成 `CHG-YYYYMMDD-HHMMSS-<slug>`，目录名与 frontmatter `id` 一致。
-- [ ] 自动生成时间固定使用 `Asia/Shanghai`，不依赖宿主本地时区。
-- [ ] 旧 `CHG-YYYYMMDD-<slug>` 与新秒级 ID 均可被当前 schema、`depends_on` 和 Ready/状态流程读取。
-- [ ] 显式 `--id` 入口保持兼容；无效 slug、无效 ID 和重复目录继续失败关闭。
-- [ ] canonical 规则、示例、实现和自包含测试一致；不在外部项目或安装副本复制通用规则。
+- [x] `new-change --slug <kebab-case>` 自动生成 `CHG-YYYYMMDD-HHMMSS-<slug>`，目录名与 frontmatter `id` 一致。
+- [x] 自动生成时间固定使用 `Asia/Shanghai`，不依赖宿主本地时区。
+- [x] 旧 `CHG-YYYYMMDD-<slug>` 与新秒级 ID 均可被当前 schema、`depends_on` 和 Ready/状态流程读取。
+- [x] 显式 `--id` 入口保持兼容；无效 slug、无效 ID 和重复目录继续失败关闭。
+- [x] canonical 规则、示例、实现和自包含测试一致；不在外部项目或安装副本复制通用规则。
 
 # 范围
 
@@ -78,10 +78,10 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Change 文件夹名称精确到小时、分钟、秒 | user:change-id-second-precision | not_satisfied | 待实现 `--slug` 秒级生成与自动创建测试 |
-| R2 | 按推荐方案修改 Agent_Skills，而不是 AIMA_UGC 或安装副本 | user:apply-recommended-owner | not_satisfied | 待核对 diff 只属于 canonical Agent_Skills |
-| R3 | 历史日期级 ID 保持兼容且不得重命名 | external:https://github.com/dingyuwen777/Agent_Skills/issues/167 | not_satisfied | 待补旧 ID、depends_on 与 archive/ready 兼容回归 |
-| R4 | 修改经 PR 进入 main 并取得 main 新鲜验证 | user:push-to-main | not_satisfied | 待完成 PR、CI、受保护合并与 main 验证 |
+| R1 | Change 文件夹名称精确到小时、分钟、秒 | user:change-id-second-precision | satisfied | `generate_change_id` 与 `test_slug_cli_generates_beijing_second_precision_id` 证明 `CHG-YYYYMMDD-HHMMSS-slug` |
+| R2 | 按推荐方案修改 Agent_Skills，而不是 AIMA_UGC 或安装副本 | user:apply-recommended-owner | satisfied | `origin/main...004e561` 只修改 canonical Agent_Skills 的 Coding Owner、脚本、测试和本仓 Change |
+| R3 | 历史日期级 ID 保持兼容且不得重命名 | external:https://github.com/dingyuwen777/Agent_Skills/issues/167 | satisfied | 双格式正则、显式 `--id`、混合 `depends_on` 测试通过；历史目录零改名 |
+| R4 | 不直接在 main 开发，使用 Issue、Change、本地任务分支、早期 PR 和 CI 交付 | user:push-to-main | satisfied | Issue #167、分支 `feat/change-id-second-precision`、Change 和 PR #168 已建立；最终 merge/main CI 继续记录在交付区 |
 
 # 验证矩阵
 
@@ -91,14 +91,14 @@ data_changes: []
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | 固定北京时间生成秒级 ID；旧/新格式、slug、重复目录和依赖边界由单元测试证明 |
-| 接口 / 契约 | required | CLI `new-change` 新增 `--slug` 且保留 `--id`；`coding-change/v1` 旧/新 ID 均可读 |
-| 集成 / 持久化 / 运行依赖 | required | 在临时仓库真实创建目录和 CHANGE.md，验证原子文件系统行为，不依赖外部服务 |
-| 用户 / 工作流验收 | required | 调用正式 CLI 以 `--slug` 创建 Change，核对输出路径、目录与 frontmatter |
-| 跨组件关键路径 | not_applicable | 存在多个真实组件的关键接线时，用少量高价值路径证明组装后的真实链路 |
-| 外部依赖 / 供应方探测 | not_applicable | 只有需要确认第三方服务、硬件或远端环境当前真实事实时才有界执行 |
+| 行为 / 单元 / 组件 | required | 18 项 Change 目标测试通过，覆盖北京时间、旧/新格式、slug、显式 ID、混合依赖、无时区时间、非法 ID 和同秒同 slug 冲突 |
+| 接口 / 契约 | required | CLI help 显示互斥 `--slug/--id`；362 项自包含测试证明当前 schema、路由和 Bundle 一致 |
+| 集成 / 持久化 / 运行依赖 | required | 临时仓库通过正式 CLI 创建真实目录和 CHANGE.md；原子 `mkdir(exist_ok=False)` 保持，外部服务不适用 |
+| 用户 / 工作流验收 | required | `test_slug_cli_generates_beijing_second_precision_id` 核对正式入口、输出路径、目录和 frontmatter |
+| 跨组件关键路径 | not_applicable | 本次只改变同一 Coding Owner 内的内容规则、CLI 和测试；CLI 到文件系统的组装行为已由用户工作流验收覆盖，无独立应用组件链路 |
+| 外部依赖 / 供应方探测 | not_applicable | ID 生成与校验不调用第三方服务、硬件或远端环境 |
 | 构建 / 打包 / 运行 | not_applicable | 不改变 Runtime/package/platform boundary；按仓库 scope 规则不运行三平台 binary package |
-| 文档 / 治理 / 其他 | required | 检查 canonical Skill/Reference/示例、Routing/Bundle/内容守恒和 Ready 门禁 |
+| 文档 / 治理 / 其他 | required | Core 50,913 bytes 未超 51,000 上限；路由预算测试、规则 Owner 测试及完整自包含套件通过 |
 
 通用规则见 [`.agents/skills/coding/references/07_通用验证与证据策略.md`](../../../skills/coding/references/07_通用验证与证据策略.md)。
 
@@ -140,10 +140,10 @@ data_changes: []
 
 同时复核验证矩阵：每个 `required` 都有足够的新鲜证据，每个 `not_applicable` 都有真实依据。
 
-- [ ] upstream_re_read：已重新读取所有上游正式事实源，并从它们独立重建完成定义。
-- [ ] change_coverage：已确认当前变更覆盖全部上游要求，没有把变更自身当作需求全集。
-- [ ] reverse_audit：已执行适用的反向能力或边界审计，并复核验证矩阵；不适用项已有明确依据。
-- [ ] unresolved_cleared：所有 `not_satisfied` 已清零；延期或不适用项均有正式依据。
+- [x] upstream_re_read：已重读本轮用户要求、Issue #167、Maintenance、Coding Core、Reference 04/15/24 和真实脚本/测试。
+- [x] change_coverage：用户要求的秒级目录名、canonical Owner、历史兼容和 main 交付路径均已进入当前 Change 或交付区。
+- [x] reverse_audit：已从规则到 CLI/生成器/目录/frontmatter、从旧 ID 到 metadata/depends_on、从 canonical 内容到 Bundle/路由测试反向核对。
+- [x] unresolved_cleared：需求追溯已无 `not_satisfied`；无延期项。
 
 # 任务
 
@@ -151,10 +151,10 @@ data_changes: []
 - [x] 建立四维任务路由：CLI / Developer Tool + Skill Content，行为实现，Python 3.14，L2
 - [x] 建立失败测试并确认因缺少秒级生成/新格式兼容而失败
 - [x] 建立并维护验证矩阵
-- [ ] 完成最小实现
-- [ ] 同步受影响文档
-- [ ] 取得新鲜验证证据
-- [ ] 完成需求追溯与完成审计
+- [x] 完成最小实现
+- [x] 同步受影响文档
+- [x] 取得新鲜验证证据
+- [x] 完成需求追溯与完成审计
 
 # 验证
 
@@ -169,6 +169,11 @@ data_changes: []
 ## 新鲜证据
 
 - Red：`python -m unittest discover -s .agents/skills/coding/tests -p "test_change*.py"`，退出码 1，运行 13 项，1 个失败、2 个错误；失败分别证明 Reference 24 尚无秒级/兼容规则、CLI 尚无 `--slug`、实现尚无 `generate_change_id`。测试在授权后的系统临时目录运行，排除了沙箱权限噪声。
+- Green：`python -m py_compile ... && python -m unittest discover -s .agents/skills/coding/tests -p "test_change*.py"`，退出码 0；Review 补强无时区时间、非法显式 ID 和同秒同 slug 不覆盖测试后，目标套件 18 项全部通过。
+- 内容预算：`test_coding_progressive_disclosure.py` 6 项、`test_router_skill_migration.py` 7 项，退出码均为 0；Coding Core 50,913 bytes，未超过 51,000 bytes。
+- 完整套件：在干净 LF worktree `004e561` 设置 `PYTHONUTF8=1`，执行 Workflow 同等 `py_compile` 与 `python -m unittest discover -s .agents/skills/coding/tests -p "test_*.py"`，退出码 0，362 项通过、1 项按既有条件跳过。
+- Runtime scope：`git diff --name-only origin/main...HEAD | python .github/scripts/runtime_package_scope.py --json` 输出 `content`；本次不要求三平台 binary package。
+- 独立 Review：以 `9dbeb2b7...72351a8` 为初始 Target 执行 A1/A2、兼容、CLI、时间、原子冲突、内容预算和测试充分性复核；发现无时区时间、非法显式 ID 与同秒冲突缺少直接回归测试，已由 `004e561` 补齐。对 `9dbeb2b7...004e561` 复核后无剩余 blocker/high/medium/low Finding。
 
 # 文档影响
 
@@ -177,6 +182,6 @@ data_changes: []
 # 交付
 
 - Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/167
-- 提交：待建立 Red/治理首个提交和后续实现提交。
-- 拉取请求：待首个本地提交后创建早期 PR。
+- 提交：`272c9ce` 建立 Red/治理基线；`72351a8` 完成秒级生成、兼容规则和测试；`004e561` 补强失败边界测试。
+- 拉取请求：https://github.com/dingyuwen777/Agent_Skills/pull/168；当前实现与 Review 已就绪，待最终 Change 提交、PR CI 和 merge。
 - 发布：本次不创建 Release；合并后按 content scope 验证 main。
