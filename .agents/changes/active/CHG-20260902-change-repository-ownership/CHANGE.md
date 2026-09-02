@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260902-change-repository-ownership
 title: 明确 Change 仓库归属与跨仓库治理边界
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: chore/163-change-repository-ownership
 created: 2026-09-02
@@ -36,7 +36,7 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/163
 - [x] 外部项目实现与 Agent_Skills Skill Mutation 同时发生时，各自进入各仓库治理闭环，不共用跨仓 Change。
 - [x] 保持 `coding-change/v1`、既有 Stable Reference ID、Runtime/Bundle/Project Payload/安装协议不变，不新增 `change_repository` frontmatter 字段。
 - [x] 永久回归锁定 Ownership、现有 `coding.py --root` carrier 与渐进披露语义，且不放宽既有上下文预算。
-- [ ] 当前 PR HEAD 完成独立 Standard Review、Ready Check 与全部 required PR CI。
+- [x] 独立 Standard Review 对当前语义实现无 blocker；进入 Ready 前完整 Skill Tests 与 Runtime Package scope 证据已取得。
 
 # 范围
 
@@ -98,7 +98,7 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/163
 | 跨组件 Golden Path | not_applicable | 不改变产品组件接线 |
 | 外部依赖 / Provider Probe | not_applicable | 不依赖第三方运行时事实 |
 | Build / Package / Runtime | not_applicable | Runtime Package Scope/Gate success；Linux/Windows/macOS package jobs 按 content scope 全部 skipped，未把治理文本误升为 package 变更 |
-| Docs / Governance / Other | required | Requirement Source success；完整 Skill Tests 353/353 通过；Ready 目前只因 Change 仍为 `in_progress` 失败，待 Review 后进入 Ready 并重跑 |
+| Docs / Governance / Other | required | Requirement Source success；完整 Skill Tests 353/353 通过；Standard Review 无 blocker；当前 Ready HEAD CI 将作为 merge gate 新鲜重跑 |
 
 # 完成审计
 
@@ -118,10 +118,10 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/163
 - [x] 先增加失败回归并取得 Red。
 - [x] 初始 Green 发现 context-budget 根因后重规划为窄 Reference 渐进披露；未提高预算阈值。
 - [x] 完成 ref04/ref15/ref24 canonical Owner 与永久回归。
-- [x] 运行完整 Skill Tests；最新 HEAD `67b5d53982a0a517b4bf6759078016c3ee460c86` 的 self-contained tests 为 353/353 通过。
+- [x] 运行完整 Skill Tests；语义实现 HEAD `67b5d53982a0a517b4bf6759078016c3ee460c86` 的 self-contained tests 为 353/353 通过。
 - [x] Runtime Package Scope/Gate 通过；三平台 package jobs 按 content scope skipped。
-- [ ] 执行独立 Standard Review 与 re-review；修复 Finding 后更新 Ready 证据。
-- [ ] 将本 Change 提升到 `ready_for_review`，取得 current PR HEAD 全部 required CI Green。
+- [x] Standard Review：base `d6bd9361d9f786907d86c66255e2415532b21b0c`、reviewed head `f28ec7ddae7af369bcf8c20bb3909523dd973cee`；A1/A2 无 blocker，PR review #5085595149。
+- [ ] 对本 Ready 状态提交执行 current-head re-review，并取得全部 required PR CI Green。
 - [ ] guarded merge 到 `main`。
 - [ ] 取得 `main` fresh CI，独立归档本 Change。
 - [ ] 对 Issue #163 执行 Closure Audit、关闭 Issue并清理当前已合并分支。
@@ -133,17 +133,18 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/163
 - Red commit `316e03dffc2e01989599e214017ce1ef8c86de24`：只新增 Ownership 回归；Skill Tests run `33589999080` 的 self-contained tests 失败，compile/smoke/Requirement Source 正常，证明缺口来自 canonical 语义而不是环境。
 - 初始规则 Green attempt：新增 Ownership 测试本身通过，但 run `33590281806` 暴露 4 个历史 context-budget failure（Review-only、Git Delivery、Skill Mutation、Figma review）；按规则禁止提高预算阈值，转为渐进披露设计。
 - 拆分窄详细 Owner 后，第二轮只剩 L3 public API 比既有预算多 766 bytes；继续消除等价重复，而不是弱化测试。
-- 最新 HEAD `67b5d53982a0a517b4bf6759078016c3ee460c86`，Skill Tests run `33590986588`：
+- 语义实现 HEAD `67b5d53982a0a517b4bf6759078016c3ee460c86`，Skill Tests run `33590986588`：
   - `python -m unittest discover -s .agents/skills/coding/tests -p 'test_*.py' -v` → `Ran 353 tests in 5.551s`，`OK`；
   - 新增 6 个 `test_change_repository_ownership` 测试全部通过；
   - `test_legacy_routes_preserve_safety_except_explicit_progressive_disclosure_changes`、Reference 连号、metadata、Bundle、Project Payload、Runtime disclosure 等既有守恒回归全部通过；
-  - Changed Coding Change Ready 当前唯一失败原因为本 Change 仍是 `in_progress`，不是实现/测试失败。
+  - 当时 Changed Coding Change Ready 唯一失败原因为本 Change 仍是 `in_progress`，不是实现/测试失败。
 - Runtime Package Tests run `33590986661`：Scope success、Gate success；Linux/Windows/macOS package jobs 均 skipped，符合 content scope。
+- Standard Review：reviewed head `f28ec7ddae7af369bcf8c20bb3909523dd973cee`，A1 Requirement Review 与 A2 Code/Rule Quality Review 均无 blocker；下一提交只改变 Change 的 Ready 状态/证据，仍需 re-review current head。
 
 ## 当前剩余验证
 
-- 独立 Standard Review / re-review 尚未结束。
-- Review 完成后更新 Change 状态并重跑 `ready_check.py --changed-since <current-base>` 与当前 PR HEAD CI。
+- 本提交把 Change 提升为 `ready_for_review`；必须等待其 current-head Skill Tests / Ready Check 与 Runtime Package Gate 新鲜完成。
+- 对该 Ready HEAD 执行 re-review，确认从 reviewed head 到 merge head 只存在预期 Change 状态/证据变化或重新审查任何新增差异。
 - merge 后必须取得 `main` fresh CI；该证据当前不可能提前产生。
 
 # 文档影响
@@ -165,7 +166,8 @@ Docs Impact：`not_applicable`。README / USAGE 面向维护者入口或最终�
 - Requirement Source：Issue #163（open，已按验证重规划同步）
 - 分支：`chore/163-change-repository-ownership`
 - PR：#164 `治理：明确 Change 仓库归属与跨仓库边界`
-- 当前实现 HEAD：`67b5d53982a0a517b4bf6759078016c3ee460c86`
+- 当前语义实现 HEAD：`67b5d53982a0a517b4bf6759078016c3ee460c86`
+- Standard Review：#5085595149（reviewed head `f28ec7ddae7af369bcf8c20bb3909523dd973cee`）
 - merge：待完成
 - main fresh CI：待完成
 - Change archive：待完成
