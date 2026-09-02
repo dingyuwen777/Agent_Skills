@@ -112,6 +112,25 @@ class PullRequestRequirementTraceabilityTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
 
+    def test_review_and_deliver_hands_off_only_after_pass_without_auto_fixing_author_code(self) -> None:
+        """第三方 PR 必须先独立 Review；PASS 才能交付，BLOCK 停止且默认不替作者修代码。"""
+        text = self._reference_text()
+        required_fragments = [
+            "review-and-deliver",
+            "Review PASS",
+            "BLOCK",
+            "Handoff",
+            "Coding / Git Delivery",
+            "review-and-fix",
+            "默认不自动修改",
+            "Post-Merge Finalization",
+            "关闭 Requirement Source",
+            "清理已合并任务分支",
+        ]
+        for fragment in required_fragments:
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, text)
+
     def test_pr_review_route_loads_traceability_reference(self) -> None:
         """用户自然语言审查 PR 时必须自动加载需求追溯规则。"""
         result = self._evaluate(
