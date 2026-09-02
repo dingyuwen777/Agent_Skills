@@ -81,15 +81,15 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/163
 
 # Requirement Traceability
 
-| 编号 | 要求 | 来源 | 状态 | 直接证据 |
+| 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Change 必须归属于唯一被修改/治理仓库，而非 Skill 来源仓库 | Issue #163 | satisfied | `24_Change仓库归属与Carrier.md` 的 `Change Repository Ownership`；`test_detailed_reference_owns_repository_scoped_change_semantics` Green |
-| R2 | carrier 与仓库相对影响边界以该 Change 所属 repository root 为边界 | Issue #163 | satisfied | ref24 明确 carrier/affected_paths/contracts/data_changes/Evidence 相对仓库根；`test_change_root_is_scoped_to_explicit_repository_root` 直接调用真实 `coding.py.resolve_change_root` 验证两个 repo root 隔离 |
-| R3 | 外部项目与 Agent_Skills 自维护 Change Ownership 分离 | Issue #163 | satisfied | ref24 明确外部项目不得写 Agent_Skills carrier，自维护才使用 Agent_Skills carrier；Ownership 回归 Green |
-| R4 | 外部项目实现 + Agent_Skills Skill Mutation 的多仓任务分别治理 | Issue #163 | satisfied | ref24 多仓规则 + ref15 `Skill Mutation 与外部项目 Change Ownership`；`test_multi_repository_task_uses_separate_governance_units` Green |
-| R5 | 不改变 Change schema、既有 Stable ID、Runtime/Bundle/Project Payload/安装协议，并保持渐进披露 | Issue #163 | satisfied | `test_change_schema_does_not_gain_repository_field`、metadata/bundle/projection/full suite Green；`test_detailed_owner_loads_only_for_persistent_change_facts` 证明 L3/持久治理加载而 Review/Git 不加载；既有 context-budget 回归最终 Green |
-| R6 | 实现 PR merge 后取得真实 `main` fresh CI，满足 Change `done` / archive 前置条件 | Issue #163 | satisfied | PR #164 guarded merge → `98edb9596dc8bb65cadec0b023ce86f87e622832`；main push Skill Tests run `33591476787` completed/success；Runtime Package Tests run `33591476793` completed/success |
-| R7 | 归档 PR merge、archive-main fresh、Issue Closure Audit/close 与本任务分支清理 | Issue #163 | explicitly_deferred | 这些事实只能在本归档提交进入 PR/merge 后真实产生；按现行 Post-Merge Finalization 模式由 Issue 生命周期继续承接，不能在 archive 文件创建前伪造。完成前不得报告整个端到端任务完成 |
+| R1 | Change 必须归属于唯一被修改/治理仓库，而非 Skill 来源仓库 | https://github.com/dingyuwen777/Agent_Skills/issues/163 | satisfied | `24_Change仓库归属与Carrier.md` 的 `Change Repository Ownership`；`test_detailed_reference_owns_repository_scoped_change_semantics` Green |
+| R2 | carrier 与仓库相对影响边界以该 Change 所属 repository root 为边界 | https://github.com/dingyuwen777/Agent_Skills/issues/163 | satisfied | ref24 明确 carrier/affected_paths/contracts/data_changes/Evidence 相对仓库根；`test_change_root_is_scoped_to_explicit_repository_root` 直接调用真实 `coding.py.resolve_change_root` 验证两个 repo root 隔离 |
+| R3 | 外部项目与 Agent_Skills 自维护 Change Ownership 分离 | https://github.com/dingyuwen777/Agent_Skills/issues/163 | satisfied | ref24 明确外部项目不得写 Agent_Skills carrier，自维护才使用 Agent_Skills carrier；Ownership 回归 Green |
+| R4 | 外部项目实现 + Agent_Skills Skill Mutation 的多仓任务分别治理 | https://github.com/dingyuwen777/Agent_Skills/issues/163 | satisfied | ref24 多仓规则 + ref15 `Skill Mutation 与外部项目 Change Ownership`；`test_multi_repository_task_uses_separate_governance_units` Green |
+| R5 | 不改变 Change schema、既有 Stable ID、Runtime/Bundle/Project Payload/安装协议，并保持渐进披露 | https://github.com/dingyuwen777/Agent_Skills/issues/163 | satisfied | `test_change_schema_does_not_gain_repository_field`、metadata/bundle/projection/full suite Green；`test_detailed_owner_loads_only_for_persistent_change_facts` 证明 L3/持久治理加载而 Review/Git 不加载；既有 context-budget 回归最终 Green |
+| R6 | 实现 PR merge 后取得真实 `main` fresh CI，满足 Change `done` / archive 前置条件 | https://github.com/dingyuwen777/Agent_Skills/issues/163 | satisfied | PR #164 guarded merge → `98edb9596dc8bb65cadec0b023ce86f87e622832`；main push Skill Tests run `33591476787` completed/success；Runtime Package Tests run `33591476793` completed/success |
+| R7 | 归档 PR merge、archive-main fresh、Issue Closure Audit/close 与本任务分支清理 | https://github.com/dingyuwen777/Agent_Skills/issues/163 | explicitly_deferred | 这些事实只能在本归档提交进入 PR/merge 后真实产生；按现行 Post-Merge Finalization 模式由 Issue 生命周期继续承接，不能在 archive 文件创建前伪造。完成前不得报告整个端到端任务完成 |
 
 # Validation Matrix
 
