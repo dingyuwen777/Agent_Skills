@@ -3,7 +3,12 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
+from runtime.agent_skills_runtime.routing import (
+    TASK_ROUTE_PROTOCOL,
+    compile_routing,
+    evaluate_route,
+    public_route_contract,
+)
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -75,22 +80,22 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
         self.assertIn(expected_order, reference)
 
     def test_end_to_end_delivery_authorization_and_post_merge_finalization_are_explicit(self) -> None:
-        """端到端交付授权必须覆盖必要收尾，同时保持高风险动作和 fork 分支权限边界。"""
+        """端到端交付授权必须进入动态路由，并保持高风险动作和 fork 分支权限边界。"""
         skill = self._read(".agents/skills/coding/SKILL.md")
         finalization = self._read(
             ".agents/skills/coding/references/23_端到端交付与合并后收尾.md"
         )
         maintenance = self._read(".agents/MAINTENANCE.md")
+        contract = public_route_contract(compile_routing(ROOT))
+
+        self.assertIn("用户授权了哪些 Git / PR / Release 动作？", skill)
+        self.assertIn("允许端到端交付", contract["维度"]["授权"])
+        self.assertIn("允许审查后交付", contract["维度"]["授权"])
 
         for marker in (
             "端到端交付授权",
             "开发并合并到主分支",
             "审查通过后合并",
-            "23_端到端交付与合并后收尾.md",
-        ):
-            self.assertIn(marker, skill, f"Coding Core 缺少端到端授权入口：{marker}")
-
-        for marker in (
             "develop-and-deliver",
             "review-and-deliver",
             "Post-Merge Finalization Gate",
