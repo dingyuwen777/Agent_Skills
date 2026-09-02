@@ -15,6 +15,7 @@ MANAGED_PATH = ".agents/skills/coding/assets/AGENTS.managed.md"
 REF13_PATH = ".agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md"
 REF14_PATH = ".agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md"
 REF16_PATH = ".agents/skills/coding/references/15_规则内容守恒与Skill维护.md"
+CODING_SKILL_PATH = ".agents/skills/coding/SKILL.md"
 CANONICAL_REPOSITORY = "dingyuwen777/Agent_Skills"
 RUNTIME_FORBIDDEN_MUTATION_MARKERS = (
     CANONICAL_REPOSITORY,
@@ -207,6 +208,35 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "影响 Runtime、Project Payload、Bundle、路由 metadata/Stable ID、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性或 v3 安装 ownership 时，再读 ref14",
         ):
             self.assertIn(marker, ref16, f"ref16 未守恒旧 Router 的源仓库维护规则：{marker}")
+
+    def test_skill_mutation_resolves_canonical_target_without_local_substitute(self) -> None:
+        """Mutation 必须写 canonical checkout，不能在宿主或目标项目另建替代 Skill。"""
+        root_agents = self._read("AGENTS.md")
+        coding = self._read(CODING_SKILL_PATH)
+        ref16 = self._read(REF16_PATH)
+
+        for marker in (
+            "Mutation Target Resolution",
+            CANONICAL_REPOSITORY,
+            "本地 clone / worktree",
+            "$CODEX_HOME/skills",
+            "目标项目 `.agents/skills`",
+            "插件缓存",
+            "Runtime / Project Payload",
+            "Release / 缓存 / Stub",
+            "不得创建或修改替代 Skill",
+            "失败关闭",
+        ):
+            self.assertIn(marker, root_agents + ref16, f"缺少 canonical Mutation 目标门禁：{marker}")
+
+        for marker in (
+            "Mutation 目标解析",
+            "canonical Owner",
+            "本地安装副本",
+            "替代 Skill",
+            "失败关闭",
+        ):
+            self.assertIn(marker, coding, f"Coding Core 缺少 Mutation 硬门禁：{marker}")
 
     def test_project_payload_plaintext_surface_excludes_source_mutation_governance(self) -> None:
         """真实 Project Payload 的可读正文不得携带源仓库 Mutation 治理或 Reference/Stub。"""
