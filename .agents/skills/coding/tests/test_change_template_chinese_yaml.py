@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import redirect_stdout
-from datetime import datetime
+from datetime import datetime, timezone
 import importlib.util
 from io import StringIO
 import tempfile
@@ -160,7 +160,6 @@ class ChangeTemplateChineseYamlTest(unittest.TestCase):
                     "CHG-20260902-140000-current-parent",
                 ],
             )
-
             self.assertEqual(
                 CODING.read_change_metadata(path)["depends_on"],
                 [
@@ -168,6 +167,49 @@ class ChangeTemplateChineseYamlTest(unittest.TestCase):
                     "CHG-20260902-140000-current-parent",
                 ],
             )
+
+    def test_explicit_legacy_id_cli_remains_supported(self) -> None:
+        """兼容入口 `--id` 应继续创建既有日期级 Change ID。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stdout = StringIO()
+            with redirect_stdout(stdout):
+                exit_code = CODING.main(
+                    [
+                        "new-change",
+                        "--root",
+                        str(root),
+                        "--id",
+                        "CHG-20260901-legacy-explicit",
+                        "--title",
+                        "显式兼容",
+                        "--owner",
+                        "test",
+                        "--branch",
+                        "test/legacy-explicit",
+                        "--level",
+                        "L2",
+                    ]
+                )
+
+            expected = (
+                root
+                / ".agents/changes/active/CHG-20260901-legacy-explicit/CHANGE.md"
+            )
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(stdout.getvalue().strip(), expected.relative_to(root).as_posix())
+            self.assertEqual(
+                CODING.read_change_metadata(expected)["id"],
+                "CHG-20260901-legacy-explicit",
+            )
+
+    def test_generated_change_id_converts_aware_time_to_beijing(self) -> None:
+        """显式传入其他时区时也必须转换为北京时间，不能照抄宿主时钟。"""
+        utc_now = datetime(2026, 9, 2, 6, 35, 27, tzinfo=timezone.utc)
+        self.assertEqual(
+            CODING.generate_change_id("analysis-scheme", now=utc_now),
+            "CHG-20260902-143527-analysis-scheme",
+        )
 
     def test_generated_change_id_rejects_non_kebab_slug(self) -> None:
         """自动生成入口必须拒绝会产生歧义目录名的非 kebab-case slug。"""
