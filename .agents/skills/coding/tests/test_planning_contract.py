@@ -91,9 +91,8 @@ class PlanningContractTest(unittest.TestCase):
 
     def test_plan_review_gate_blocks_material_decisions_not_routine_details(self) -> None:
         """重大工程决策必须由用户审核，普通可逆实现细节不能机械卡确认。"""
-        skill = self._read(".agents/skills/coding/SKILL.md")
         design = self._read(".agents/skills/coding/references/05_设计实施与根因调试.md")
-        self.assertIn("Plan Review Gate", skill)
+        self.assertIn("Plan Review Gate", design)
         for fragment in (
             "公共 Contract",
             "Schema / 数据语义",
