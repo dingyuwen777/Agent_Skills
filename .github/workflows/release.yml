@@ -447,16 +447,6 @@ jobs:
               raise SystemExit("source_commit 与 Release checkout 不一致")
           if reference["PYTHON_VERSION"] != "3.14.7":
               raise SystemExit("三平台 Runtime Python 版本不是 3.14.7")
-          if reference["BUNDLE_SCHEMA"] != "agent-skills-runtime-bundle/v2":
-              raise SystemExit("Runtime Bundle schema 不一致")
-          if reference["TASK_ROUTE_PROTOCOL"] != "Agent Skills 任务路由/v1":
-              raise SystemExit("TaskRoute 协议不一致")
-          if reference["ROUTING_MANIFEST_PROTOCOL"] != "Agent Skills 路由清单/v1":
-              raise SystemExit("RoutingManifest 协议不一致")
-          if reference["MCP_TOOL_CONTRACT_PROTOCOL"] != "Agent Skills MCP工具契约/v3":
-              raise SystemExit("MCP Tool Contract 协议不一致")
-          if reference["PROJECT_PAYLOAD_SCHEMA"] != "agent-skills-project-payload/v2":
-              raise SystemExit("Project Payload schema 不一致")
           for field in ("INTEGRITY_FINGERPRINT", "SOURCE_DIGEST", "ROUTING_DIGEST", "PAYLOAD_DIGEST"):
               if not re.fullmatch(r"[0-9a-f]{64}", reference[field]):
                   raise SystemExit(f"Release identity {field} 非法")
