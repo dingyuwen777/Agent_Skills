@@ -364,7 +364,7 @@ L3 必须有稳定的持久施工契约，并补充方案比较、公共兼容�
 
 ```text
 python <skill>/scripts/coding.py new-change --root <repo> \
-  --id CHG-YYYYMMDD-short-name --title <title> --owner <owner> \
+  --slug short-name --title <title> --owner <owner> \
   --branch <branch> --level L2 --area <area> --path <path>
 ```
 

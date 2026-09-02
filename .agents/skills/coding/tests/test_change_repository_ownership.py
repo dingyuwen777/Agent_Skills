@@ -71,6 +71,14 @@ class ChangeRepositoryOwnershipTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, text)
 
+    def test_detailed_reference_owns_second_precision_id_and_legacy_compatibility(self) -> None:
+        """Change ID 的新建格式与历史兼容策略只能由详细 Owner 定义。"""
+        text = self._read(OWNERSHIP_REFERENCE)
+        self.assertIn("CHG-YYYYMMDD-HHMMSS-kebab-case", text)
+        self.assertIn("CHG-YYYYMMDD-kebab-case", text)
+        self.assertIn("历史", text)
+        self.assertIn("`--slug`", text)
+
     def test_multi_repository_task_uses_separate_governance_units(self) -> None:
         """实际修改多个仓库时，各仓库分别治理，单个 Change 不跨仓承载实现。"""
         ownership = self._read(OWNERSHIP_REFERENCE)

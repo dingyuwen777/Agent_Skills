@@ -4,7 +4,7 @@
 
 # Change 仓库归属与 Carrier
 
-本 Reference 只负责已经需要持久施工契约后的 Repository Ownership、Carrier、ID 与元数据；“是否需要 Change”以及 Traceability、Validation、Completion、状态和归档仍由 [04_轻量变更管理.md](04_轻量变更管理.md) 负责。L3 或真实持久治理事实命中时必须加载本 Reference；普通 Review/Git/轻量 L2 不预付这些目录与 schema 细节。
+本 Reference 是持久施工契约 Repository Ownership、Carrier、ID、元数据的唯一 Owner；是否需要 Change 及 Traceability、Validation、Completion、状态、归档由 [04_轻量变更管理.md](04_轻量变更管理.md) 负责。L3/真实持久治理命中时加载；普通 Review/Git/轻量 L2 不预付目录与 schema。
 
 ## Change Repository Ownership
 
@@ -31,11 +31,11 @@ coding-change/v1
 ```text
 .agents/changes/
 ├── active/
-│   └── CHG-YYYYMMDD-short-name/
+│   └── CHG-YYYYMMDD-HHMMSS-short-name/
 │       └── CHANGE.md
 └── archive/
     └── YYYY-MM/
-        └── CHG-YYYYMMDD-short-name/
+        └── CHG-YYYYMMDD-HHMMSS-short-name/
             └── CHANGE.md
 ```
 
@@ -46,11 +46,11 @@ changes/active/
 changes/archive/
 ```
 
-承载同一类 Coding Change，工具沿用该现有 carrier，不为通用化强制搬迁。
+同类 Coding Change 沿用该 carrier，不因通用化搬迁。
 
 如果仓库存在 OpenSpec 等不同治理体系、又不存在已确认的 Coding carrier，`new-change` 必须拒绝静默创建平行目录，并要求先按项目规则确定承载方式。
 
-ID 使用 `CHG-YYYYMMDD-kebab-case`。一个 Change 默认只有一个 Owner 和一个主分支；协作者写进任务或决策区，不并列多个模糊 Owner。
+新建 ID 为北京时间 `CHG-YYYYMMDD-HHMMSS-kebab-case`，由 `new-change` 的 `--slug` 生成；历史 `CHG-YYYYMMDD-kebab-case`、`depends_on`、`--id` 继续兼容且不得改名，重名原子失败。每个 Change 仅一个 Owner 和主分支；协作者记入任务/决策，不并列 Owner。
 
 ## 必需元数据
 
