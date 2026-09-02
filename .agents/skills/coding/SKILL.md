@@ -116,6 +116,7 @@ CMakeLists.txt ≠ Linux-only
 16. **日志前缀统一且可定位。** 除非更高优先级的外部日志 wire-format Contract 强制其他序列化形式，所有人类可读日志记录统一使用 `[YYYY-MM-DD HH:mm:ss.SSS source.ext L<line>] [LEVEL] message`；时间必须是北京时间，毫秒固定三位，`source.ext` 与 `L<line>` 来自真实调用点，`LEVEL` 使用大写。结构化日志若因平台 Contract 必须采用 JSON 等形式，仍必须提供等价的北京时间、source、line、level 字段。
 17. **系统级分析先于局部实现。** 先恢复任务相关能力边界，再决定局部修复、复用、公共抽象或能力归一；系统级不等于全仓扫描。详见 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)。
 18. **受影响代码域必须整洁收口。** 清理本次受影响域内确认失效、重复或无用实现，同时保护兼容、隐式引用和用户工作，禁止扩大无关重构。详见 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)。
+19. **Skill Mutation 先做 Mutation 目标解析。** 只改 canonical Owner；本地安装副本不得成为替代 Skill。无法读取或交付时失败关闭。详见 [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md)。
 
 ## 2. 四维任务路由
 
