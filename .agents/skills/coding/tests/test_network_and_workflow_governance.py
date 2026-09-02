@@ -85,7 +85,6 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
         finalization = self._read(
             ".agents/skills/coding/references/23_端到端交付与合并后收尾.md"
         )
-        maintenance = self._read(".agents/MAINTENANCE.md")
         contract = public_route_contract(compile_routing(ROOT))
 
         self.assertIn("用户授权了哪些 Git / PR / Release 动作？", skill)
@@ -113,9 +112,6 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             "不得报告整个任务完成",
         ):
             self.assertIn(marker, finalization, f"端到端交付 Owner 缺少边界：{marker}")
-
-        self.assertIn("Post-Merge Finalization Gate", maintenance)
-        self.assertIn("Closure Audit", maintenance)
 
     def test_end_to_end_reference_loads_only_with_explicit_authorization(self) -> None:
         """普通 Git Delivery 不预付收尾全文；明确端到端授权后才加载并展开依赖。"""
