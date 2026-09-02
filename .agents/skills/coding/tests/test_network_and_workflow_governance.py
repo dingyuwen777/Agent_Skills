@@ -36,6 +36,29 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
         self.assertIn("证据等级是否保持", reference)
         self.assertIn("Branch Protection / Ruleset", reference)
 
+    def test_git_delivery_starts_from_local_branch_before_remote_and_early_pr(self) -> None:
+        """需要 PR 的工作必须先在本地分支产生首个提交，再创建远程分支与早期 PR。"""
+        skill = self._read(".agents/skills/coding/SKILL.md")
+        reference = self._read(
+            ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
+        )
+
+        for marker in (
+            "本地任务分支",
+            "首个本地提交",
+            "首次 push",
+            "远程跟踪分支",
+            "早期 PR",
+            "不得先创建远程空分支",
+        ):
+            self.assertIn(marker, skill + reference, f"缺少本地分支优先门禁：{marker}")
+
+        expected_order = (
+            "最新目标分支 → 本地任务分支 → 本地 Change / 失败测试 / 最小治理提交 "
+            "→ 首个本地提交 → 首次 push 创建远程跟踪分支 → 早期 PR"
+        )
+        self.assertIn(expected_order, reference)
+
 
 if __name__ == "__main__":
     unittest.main()
