@@ -88,8 +88,8 @@ Workflow run 删除不可恢复，因此采用 fail-closed allowlist：只有 `s
 | 用户 / Workflow Acceptance | required | 22 条 stale run 已删除；剩余 run 均通过 cleanup 全量复扫的正式 path allowlist。GitHub Actions Web 侧栏可能需要页面刷新/平台缓存更新后反映 API 状态。 |
 | 跨组件 Golden Path | not_applicable | 不涉及 Runtime/业务组件接线。 |
 | 外部依赖 Probe | required | GitHub Actions REST 是本次真实外部依赖；delete + post-delete rescan 均成功。 |
-| Build / Package / Runtime | required | 临时 workflow revision 的 Runtime Package Tests 已由 PR 触发；最终恢复 canonical workflow 后还需以最终 PR head 的 required Gate 作为交付证据。 |
-| Docs / Governance / Other | required | Issue #172、本 Change、cleanup job 日志、最终 diff 与最终 PR fresh CI。 |
+| Build / Package / Runtime | required | 临时 workflow revision 的 Runtime Package Tests 已完成 success；最终恢复 canonical workflow 后还需以最终 PR head 的 required Gate 作为交付证据。 |
+| Docs / Governance / Other | required | Issue #172、本 Change、cleanup job 日志、Release identity Change done archive、最终 diff 与最终 PR fresh CI。 |
 
 # 任务
 
@@ -98,11 +98,12 @@ Workflow run 删除不可恢复，因此采用 fail-closed allowlist：只有 `s
 - [x] 临时修改 Skill Tests，增加仅 PR 使用的 stale-run cleanup job。
 - [x] 执行 cleanup 并记录删除数量、路径/名称集合和最终 stale_count。
 - [x] 恢复 Skill Tests 原文件，更新本 Change 为 ready_for_review。
-- [ ] 归档已完成的 Release identity Change，并取得最终 PR required checks / Review 证据。
+- [x] 将已合入且完成 main fresh CI 的 Release identity Change 转为 `done` 并移动到 `archive/2026-09`。
+- [ ] 取得最终 PR required checks / Review 证据后等待 Git 交付授权。
 
 # 完成审计
 
 - [x] upstream_re_read: 已重新读取 Issue #172、main workflow 目录、cleanup job 日志和清理后的 Actions runs API；当前三个正式 workflow Owner 未变化。
-- [x] change_coverage: 删除集合只包含 22 条非 allowlist 已完成 run；正式 run ID 集合守恒断言通过，未扩大到三个正式 workflow。
-- [x] reverse_audit: cleanup 后从全部剩余 runs 反向筛选非 allowlist path 得到 0；临时 `skill-tests.yml` 也已恢复为 main canonical blob。
-- [x] unresolved_cleared: R1-R4 与实际清理/恢复范围均已满足；最终 PR CI/Review 属于后续交付门禁，不冒充为当前已通过。
+- [x] change_coverage: 删除集合只包含 22 条非 allowlist 已完成 run；正式 run ID 集合守恒断言通过，未扩大到三个正式 workflow；Release identity Change 已按其实际 merge/main 证据归档。
+- [x] reverse_audit: cleanup 后从全部剩余 runs 反向筛选非 allowlist path 得到 0；临时 `skill-tests.yml` 已恢复为 main canonical blob；PR 最终实现 diff 不再包含临时清理逻辑。
+- [x] unresolved_cleared: R1-R4、实际清理/恢复和 Release Change 归档均已满足；最终 PR CI/Review 与 Git merge 属于后续交付门禁，不冒充为当前已通过。
