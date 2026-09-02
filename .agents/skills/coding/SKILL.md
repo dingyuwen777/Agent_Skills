@@ -116,6 +116,7 @@ CMakeLists.txt ≠ Linux-only
 16. **日志前缀统一且可定位。** 除非更高优先级的外部日志 wire-format Contract 强制其他序列化形式，所有人类可读日志记录统一使用 `[YYYY-MM-DD HH:mm:ss.SSS source.ext L<line>] [LEVEL] message`；时间必须是北京时间，毫秒固定三位，`source.ext` 与 `L<line>` 来自真实调用点，`LEVEL` 使用大写。结构化日志若因平台 Contract 必须采用 JSON 等形式，仍必须提供等价的北京时间、source、line、level 字段。
 17. **系统级分析先于局部实现。** 先恢复任务相关能力边界，再决定局部修复、复用、公共抽象或能力归一；系统级不等于全仓扫描。详见 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)。
 18. **受影响代码域必须整洁收口。** 清理本次受影响域内确认失效、重复或无用实现，同时保护兼容、隐式引用和用户工作，禁止扩大无关重构。详见 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)。
+19. **Planning 仍属于 Coding。** L2/L3 的 Planning 与 Plan Review Gate 统一由 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md) 负责；不建立独立 Planner 或第二控制面，重大且高成本/难逆决策实施前审核，普通可逆实现细节不机械卡确认。
 
 ## 2. 四维任务路由
 
