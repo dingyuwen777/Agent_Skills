@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[4]
 
 
 class ReviewSkillIntegrationTest(unittest.TestCase):
-    """验证 Coding 到 Review 的条件式硬路由与测试专家分层仍保持通用。"""
+    """验证 Coding、Testing 与 Review 的条件式路由和职责边界保持清晰。"""
 
     def _read(self, path: str) -> str:
         """读取当前审查规则。"""
@@ -25,12 +25,17 @@ class ReviewSkillIntegrationTest(unittest.TestCase):
         self.assertIn(".agents/skills/review/SKILL.md", coding)
         self.assertIn("re-review", coding)
 
-    def test_review_testing_reference_keeps_project_specific_persistence_conditional(self) -> None:
-        """Review 测试策略必须明确项目不是 PostgreSQL 时不机械要求 PostgreSQL。"""
-        testing = self._read(".agents/skills/review/references/03_测试专家审查方法.md")
-        self.assertIn("Backend / API / PostgreSQL Integration", testing)
-        self.assertIn("项目实际不使用 PostgreSQL 时，不机械要求 PostgreSQL", testing)
-        self.assertIn("Real Provider Probe", testing)
+    def test_review_owns_adequacy_and_testing_owns_test_methods(self) -> None:
+        """Review 只审测试充分性，具体分层测试和项目映射由 Testing 专业 Owner 承担。"""
+        review = self._read(".agents/skills/review/references/03_测试专家审查方法.md")
+        testing = self._read(".agents/skills/testing/references/01_测试策略与分层证据.md")
+
+        self.assertIn("测试充分性", review)
+        self.assertIn("Handoff Testing", review)
+        self.assertIn("不复制第二套方法", review)
+        self.assertIn("Integration / Persistence / Runtime Dependency", testing)
+        self.assertIn("项目真实只使用 SQLite 时也不机械要求 PostgreSQL", testing)
+        self.assertIn("External Dependency Probe", testing)
         self.assertIn("Library / SDK", testing)
         self.assertIn("Infra / IaC / Release", testing)
 

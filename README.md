@@ -25,10 +25,24 @@ GitHub Release
 | Skill | 职责 | 正式入口 |
 | --- | --- | --- |
 | `router` | 所有任务的无条件入口、动态 Catalog、跨 Skill 选择、上下文与 Handoff | [`.agents/skills/router/SKILL.md`](.agents/skills/router/SKILL.md) |
-| `coding` | 研发、调试、验证、Git/CI 与交付 | [`.agents/skills/coding/SKILL.md`](.agents/skills/coding/SKILL.md) |
-| `review` | 独立 Code Review、Findings 与测试充分性审查 | [`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md) |
+| `coding` | 研发、调试、开发期验证治理、Git/CI 与交付 | [`.agents/skills/coding/SKILL.md`](.agents/skills/coding/SKILL.md) |
+| `testing` | 测试策略、黑盒/User Journey、探索式、Integration/Workflow/Regression 与独立测试执行 | [`.agents/skills/testing/SKILL.md`](.agents/skills/testing/SKILL.md) |
+| `review` | 独立 Code Review、Findings 与测试充分性/Evidence 审查 | [`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md) |
 | `docs` | 技术文档事实同步、审查、编写与更新 | [`.agents/skills/docs/SKILL.md`](.agents/skills/docs/SKILL.md) |
 | `figma` | Figma 设计事实、Canvas/Prototype、Ready 与 Design-to-Code 交接 | [`.agents/skills/figma/SKILL.md`](.agents/skills/figma/SKILL.md) |
+
+其中 Coding / Testing / Review 的长期边界是：
+
+```text
+Coding
+→ 实现、根因修复、开发期 TDD 与 Validation/Completion 治理
+
+Testing
+→ Test Strategy、用户场景黑盒、探索式、分层功能验证与 Regression 方法
+
+Review
+→ 独立需求/实现审查、Findings、测试充分性和 Evidence 是否足以支持结论
+```
 
 这些名称只是当前事实，不是永久白名单。正式 Skill 始终从：
 
@@ -121,11 +135,12 @@ Agent_Skills/
 ├── USAGE.md                  # Release 最终用户唯一说明
 ├── .agents/
 │   ├── MAINTENANCE.md        # Agent_Skills 源仓库 AI 维护规范
-│   ├── changes/              # 仅存在 Active L2/L3 Change 时临时出现；完成后删除
+│   ├── changes/              # Active L2/L3 Change；完成后归档到 archive/YYYY-MM
 │   └── skills/
 │       ├── ENTRY.md          # 唯一共享薄入口
 │       ├── router/           # 唯一正式跨 Skill Router
 │       ├── coding/
+│       ├── testing/
 │       ├── review/
 │       ├── docs/
 │       └── figma/
