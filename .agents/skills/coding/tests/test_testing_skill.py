@@ -60,8 +60,10 @@ class TestingSkillIntegrationTest(unittest.TestCase):
             }
         )
         self.assertIn("testing", result["命中Skill"])
+        self.assertNotIn("coding", result["命中Skill"])
         self.assertIn("testing.reference.01", result["必需Reference"])
         self.assertIn("testing.reference.02", result["必需Reference"])
+        self.assertNotIn("coding.reference.25", result["必需Reference"])
 
     def test_regression_routes_to_testing_without_requiring_browser(self) -> None:
         """CLI 回归测试应命中 Testing，但不能因为 Testing 存在就强加 Web 专有事实。"""
@@ -92,8 +94,43 @@ class TestingSkillIntegrationTest(unittest.TestCase):
         )
         self.assertIn("review", result["命中Skill"])
         self.assertIn("testing", result["命中Skill"])
+        self.assertNotIn("coding.reference.25", result["必需Reference"])
         self.assertIn("review.reference.03", result["必需Reference"])
         self.assertIn("testing.reference.01", result["必需Reference"])
+
+    def test_capability_or_project_shape_alone_does_not_force_testing(self) -> None:
+        """测试能力或 Web/CLI 项目形态本身不能机械拉入 Testing。"""
+        for project_type in ("前端Web", "CLI"):
+            with self.subTest(project_type=project_type):
+                result = self._evaluate(
+                    {
+                        "执行模式": ["实现"],
+                        "项目形态": [project_type],
+                        "风险": ["L1"],
+                        "能力": ["测试"],
+                    }
+                )
+                self.assertNotIn("testing", result["命中Skill"])
+                self.assertFalse(
+                    any(str(item).startswith("testing.reference.") for item in result["必需Reference"])
+                )
+
+    def test_coding_testing_handoff_only_loads_for_combined_implementation(self) -> None:
+        """实现任务显式叠加用户场景验收时，Coding 与 Testing 才共同加载 Handoff。"""
+        result = self._evaluate(
+            {
+                "执行模式": ["实现"],
+                "项目形态": ["前端Web"],
+                "阶段": ["功能开发"],
+                "风险": ["L2"],
+                "意图": ["用户场景验收"],
+                "能力": ["测试"],
+            }
+        )
+        self.assertIn("coding", result["命中Skill"])
+        self.assertIn("testing", result["命中Skill"])
+        self.assertIn("coding.reference.25", result["必需Reference"])
+        self.assertIn("testing.reference.02", result["必需Reference"])
 
     def test_testing_owns_scenario_methods_review_only_owns_adequacy(self) -> None:
         """专业方法只能在 Testing 展开，Review 保留充分性/Evidence 审查与 Handoff。"""
