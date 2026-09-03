@@ -6,35 +6,158 @@ on:
       - chg/runtime-binary-agent-skills
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  migrate:
-    if: ${{ !contains(github.event.head_commit.message, '[runtime-name-migrated]') }}
+  render-workflows:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout migration branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Setup Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.14.7"
-
-      - name: Apply deterministic migration
-        run: python scripts/_apply_runtime_name_migration.py
-
-      - name: Commit migrated source
+      - name: Render workflow replacements
         shell: bash
         run: |
           set -euo pipefail
-          # Workflow 文件由当前 GitHub App 单独维护；Actions Token 不承担 Workflow 写权限。
-          git checkout -- .github/workflows
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet && { echo "迁移脚本没有产生非 Workflow 变更" >&2; exit 1; }
-          git commit -m "[runtime-name-migrated] 运行时：统一 agent-skills 二进制命名"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+
+          root = Path.cwd()
+          legacy = "agent-skills-" + "mcp"
+          current = "agent-skills"
+
+          package = root / ".github/workflows/runtime-package-tests.yml"
+          package_text = package.read_text(encoding="utf-8").replace(legacy, current)
+          package.write_text(package_text, encoding="utf-8", newline="\n")
+
+          release = root / ".github/workflows/release.yml"
+          text = release.read_text(encoding="utf-8").replace(legacy, current)
+
+          replacements = (
+              ('name="agent-skills-v${RELEASE_VERSION}-linux"', 'name="agent-skills"'),
+              ('$name = "agent-skills-v$env:RELEASE_VERSION-windows"', '$name = "agent-skills"'),
+              ('name="agent-skills-v${RELEASE_VERSION}-macos"', 'name="agent-skills"'),
+              ('path: release-assets/agent-skills-v*-linux', 'path: release-assets/agent-skills'),
+              ('path: release-assets/agent-skills-v*-windows.exe', 'path: release-assets/agent-skills.exe'),
+              ('path: release-assets/agent-skills-v*-macos', 'path: release-assets/agent-skills'),
+              ('          merge-multiple: true\n', ''),
+          )
+          for old, new in replacements:
+              if text.count(old) != 1:
+                  raise SystemExit(f"release workflow replacement mismatch: {old!r}: {text.count(old)}")
+              text = text.replace(old, new, 1)
+
+          old_expected = '''          expected=(
+            "agent-skills-v${RELEASE_VERSION}-linux"
+            "agent-skills-v${RELEASE_VERSION}-windows.exe"
+            "agent-skills-v${RELEASE_VERSION}-macos"
+            "USAGE.md"
+          )'''
+          new_expected = '''          expected=(
+            "release-runtime-linux/agent-skills"
+            "release-runtime-windows/agent-skills.exe"
+            "release-runtime-macos/agent-skills"
+            "USAGE.md"
+          )'''
+          if text.count(old_expected) != 1:
+              raise SystemExit("release expected block mismatch")
+          text = text.replace(old_expected, new_expected, 1)
+
+          old_sha = '''          check_sha() {
+            local binary="$1"
+            local expected_sha="$2"
+            local actual_sha
+            actual_sha="$(sha256sum "release-assets/${binary}" | awk '{print $1}')"
+            test "${actual_sha}" = "${expected_sha}" || {
+              echo "Release artifact SHA256 不一致：${binary}" >&2
+              exit 1
+            }
+          }
+          check_sha "agent-skills-v${RELEASE_VERSION}-linux" "${LINUX_ARTIFACT_SHA256}"
+          check_sha "agent-skills-v${RELEASE_VERSION}-windows.exe" "${WINDOWS_ARTIFACT_SHA256}"
+          check_sha "agent-skills-v${RELEASE_VERSION}-macos" "${MACOS_ARTIFACT_SHA256}"
+          test -z "$(find release-assets -maxdepth 1 -name '*.manifest.json' -print -quit)"'''
+          new_sha = '''          check_sha() {
+            local binary_path="$1"
+            local expected_sha="$2"
+            local actual_sha
+            actual_sha="$(sha256sum "${binary_path}" | awk '{print $1}')"
+            test "${actual_sha}" = "${expected_sha}" || {
+              echo "Release artifact SHA256 不一致：${binary_path}" >&2
+              exit 1
+            }
+          }
+          check_sha "release-assets/release-runtime-linux/agent-skills" "${LINUX_ARTIFACT_SHA256}"
+          check_sha "release-assets/release-runtime-windows/agent-skills.exe" "${WINDOWS_ARTIFACT_SHA256}"
+          check_sha "release-assets/release-runtime-macos/agent-skills" "${MACOS_ARTIFACT_SHA256}"
+          test -z "$(find release-assets -name '*.manifest.json' -print -quit)"'''
+          if text.count(old_sha) != 1:
+              raise SystemExit("release SHA block mismatch")
+          text = text.replace(old_sha, new_sha, 1)
+
+          old_assets = '''          assets=(
+            "agent-skills-v${RELEASE_VERSION}-linux"
+            "agent-skills-v${RELEASE_VERSION}-windows.exe"
+            "agent-skills-v${RELEASE_VERSION}-macos"
+            "USAGE.md"
+          )'''
+          new_assets = '''          assets=(
+            "release-runtime-linux/agent-skills"
+            "release-runtime-windows/agent-skills.exe"
+            "release-runtime-macos/agent-skills"
+            "USAGE.md"
+          )'''
+          if text.count(old_assets) != 1:
+              raise SystemExit("release assets block mismatch")
+          text = text.replace(old_assets, new_assets, 1)
+
+          old_python = '''          packages = [
+              ("linux", f"agent-skills-v{version}-linux.zip", f"agent-skills-v{version}-linux"),
+              ("windows", f"agent-skills-v{version}-windows.zip", f"agent-skills-v{version}-windows.exe"),
+              ("macos", f"agent-skills-v{version}-macos.zip", f"agent-skills-v{version}-macos"),
+          ]
+          source = Path("release-assets")
+          package_dir = Path("release-package")
+          for platform, package_name, binary in packages:
+              expected = [binary, "USAGE.md"]
+              package = package_dir / package_name
+              with zipfile.ZipFile(package, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+                  for name in expected:
+                      archive.write(source / name, arcname=name)
+              with zipfile.ZipFile(package) as archive:
+                  actual = archive.namelist()
+              if actual != expected:
+                  raise SystemExit(f"ZIP 成员集合不正确：{platform}: {actual}")'''
+          new_python = '''          packages = [
+              ("linux", f"agent-skills-v{version}-linux.zip", Path("release-assets/release-runtime-linux/agent-skills"), "agent-skills"),
+              ("windows", f"agent-skills-v{version}-windows.zip", Path("release-assets/release-runtime-windows/agent-skills.exe"), "agent-skills.exe"),
+              ("macos", f"agent-skills-v{version}-macos.zip", Path("release-assets/release-runtime-macos/agent-skills"), "agent-skills"),
+          ]
+          usage = Path("release-assets/USAGE.md")
+          package_dir = Path("release-package")
+          for platform, package_name, binary_path, binary in packages:
+              expected = [binary, "USAGE.md"]
+              package = package_dir / package_name
+              with zipfile.ZipFile(package, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+                  archive.write(binary_path, arcname=binary)
+                  archive.write(usage, arcname="USAGE.md")
+              with zipfile.ZipFile(package) as archive:
+                  actual = archive.namelist()
+              if actual != expected:
+                  raise SystemExit(f"ZIP 成员集合不正确：{platform}: {actual}")'''
+          if text.count(old_python) != 1:
+              raise SystemExit("release package Python block mismatch")
+          text = text.replace(old_python, new_python, 1)
+          release.write_text(text, encoding="utf-8", newline="\n")
+
+          if legacy in release.read_text(encoding="utf-8") or legacy in package.read_text(encoding="utf-8"):
+              raise SystemExit("workflow migration left legacy binary name")
+
+          for label, path in (("RELEASE_B64", release), ("PACKAGE_B64", package)):
+              encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+              print(f"{label}={encoded}")
+          PY
