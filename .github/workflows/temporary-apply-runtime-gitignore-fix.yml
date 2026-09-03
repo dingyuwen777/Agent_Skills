@@ -1,0 +1,121 @@
+name: Temporary Apply Runtime Gitignore Fix
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/temporary-apply-runtime-gitignore-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    name: Apply exact Runtime gitignore fix
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Apply exact replacements
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              """精确替换一次目标文本；数量异常时失败关闭，避免模糊改写。"""
+              file = Path(path)
+              text = file.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one match, got {count}: {old!r}")
+              file.write_text(text.replace(old, new, 1), encoding="utf-8", newline="\n")
+
+          installer = "runtime/agent_skills_runtime/project_installer.py"
+          replace_once(installer, 'RUNTIME_IGNORE_RULE = "/.agents/runtime/"\n', "")
+          replace_once(
+              installer,
+              '    """幂等补充 Agent Skills 本地缓存和项目 Runtime 的 ignore 规则。"""',
+              '    """只幂等补充 Agent Skills 本地缓存 ignore，不认领项目自身的 Runtime ignore。"""',
+          )
+          replace_once(
+              installer,
+              '    missing = [rule for rule in (CACHE_IGNORE_RULE, RUNTIME_IGNORE_RULE) if rule not in lines and "/" + rule not in lines]',
+              '    missing = [] if CACHE_IGNORE_RULE in lines or "/" + CACHE_IGNORE_RULE in lines else [CACHE_IGNORE_RULE]',
+          )
+          replace_once(
+              installer,
+              '    addition = _render_with_newline("# Agent Skills local runtime/cache\\n" + "\\n".join(missing), newline)',
+              '    addition = _render_with_newline("# Agent Skills local cache\\n" + "\\n".join(missing), newline)',
+          )
+
+          bootstrap = ".agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md"
+          replace_once(
+              bootstrap,
+              '5. 安全增量维护 `AGENTS.md`、`.gitignore` 与 Codex/Cursor/Claude Code 项目 MCP 边界；',
+              '5. 安全增量维护 `AGENTS.md`、`.gitignore` 中 Agent_Skills 本地缓存规则与 Codex/Cursor/Claude Code 项目 MCP 边界；',
+          )
+          replace_once(
+              bootstrap,
+              'Bootstrap 只做机械可证明的内容：创建/增量更新 `AGENTS.md`、`.gitignore`、本地 Runtime ignore、事实入口导航和宿主项目配置；不自动创建 Change/RFC/ADR/OpenSpec，不决定框架/数据库/架构，不修改 Schema/Migration，也不代替宿主做项目语义判断。',
+              'Bootstrap 只做机械可证明的内容：创建/增量更新 `AGENTS.md`、`.gitignore` 中 Agent_Skills 本地缓存 ignore、事实入口导航和宿主项目配置；不自动创建 Change/RFC/ADR/OpenSpec，不决定框架/数据库/架构，不修改 Schema/Migration，也不代替宿主做项目语义判断。',
+          )
+          replace_once(
+              bootstrap,
+              '''## 8. `.gitignore` 规则\n\n所有目标项目应显式忽略：\n\n```gitignore\n.agents/project-context.json\n/.agents/runtime/\n```\n\n不存在则最小创建；已有等价规则不重复；已有其他规则只增量追加；路径为符号链接或特殊文件时拒绝修改，不为了加入两行重排项目已有规则。''',
+              '''## 8. `.gitignore` 规则\n\n安装器只为 Agent_Skills 的本地可失效缓存增量维护：\n\n```gitignore\n.agents/project-context.json\n```\n\n- 安装/升级**不自动新增** `/.agents/runtime/` 或等价 Runtime 目录 ignore；Runtime 是否进入项目版本控制由目标项目 Owner 决定。\n- **项目原本已有** `/.agents/runtime/` 或等价规则时保持原样，不删除、不重排、不重复追加。当前 `.gitignore` 没有逐行 ownership marker，不能猜该规则属于旧 Agent_Skills。\n- 缓存 ignore 不存在则最小创建；已有等价规则不重复；其他项目规则保留，只做必要增量追加；路径为符号链接或特殊文件时拒绝修改。''',
+          )
+          replace_once(
+              bootstrap,
+              '- `AGENTS.md` 用户原文/managed marker、`.gitignore` 与 Codex/Cursor/Claude 配置保留其他项目内容；',
+              '- `AGENTS.md` 用户原文/managed marker、`.gitignore` 与 Codex/Cursor/Claude 配置保留其他项目内容；安装器不自动新增 Runtime ignore，项目原本已有的 Runtime ignore 保持原样；',
+          )
+
+          runtime_ref = ".agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md"
+          replace_once(
+              runtime_ref,
+              '`.agents/runtime/` 是目标项目本地运行资产，应加入 `.gitignore`。安装不得生成 `.agents/agent-skills-install.json`、Reference/Stub、Private Routing Manifest、key/security sidecar。',
+              '`.agents/runtime/` 仍是目标项目本地运行资产，但安装/升级**不自动新增** `/.agents/runtime/` 或等价 Runtime ignore；Runtime 是否进入版本控制由项目 Owner 决定。**项目原本已有** Runtime ignore 时保持原样，不删除、不重排、不重复追加。安装不得生成 `.agents/agent-skills-install.json`、Reference/Stub、Private Routing Manifest、key/security sidecar。',
+          )
+          replace_once(
+              runtime_ref,
+              '- `.gitignore` 增量加入项目缓存/Runtime ignore；',
+              '- `.gitignore` 只增量维护 Agent_Skills 本地缓存 ignore；不认领项目 Runtime ignore；',
+          )
+          replace_once(
+              runtime_ref,
+              '7. 写 AGENTS、`.gitignore`、Host 配置；不写新的 ownership sidecar；',
+              '7. 写 AGENTS、`.gitignore` 本地缓存规则、Host 配置；不写新的 ownership sidecar；',
+          )
+
+          readme = "runtime/README.md"
+          replace_once(
+              readme,
+              '- `.agents/runtime/` 为项目本地运行资产并加入 `.gitignore`；',
+              '- `.agents/runtime/` 仍为项目本地运行资产，但安装/升级**不自动新增** Runtime ignore；**项目原本已有** `/.agents/runtime/` 或等价 ignore 时保持原样，不删除、不重复追加；',
+          )
+          PY
+
+      - name: Commit and push Green implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "yuwen.ding"
+          git config user.email "dingyuwen777@gmail.com"
+          git add \
+            runtime/agent_skills_runtime/project_installer.py \
+            .agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md \
+            .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md \
+            runtime/README.md
+          if git diff --cached --quiet; then
+            echo "No production/canonical changes required."
+            exit 0
+          fi
+          git commit -m "修复 Runtime 安装 gitignore 行为"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
