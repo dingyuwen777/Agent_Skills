@@ -1,10 +1,10 @@
 <!-- agent-routing:v1
-{"协议":"Agent Skills Reference路由/v1","标识":"testing.reference.03","触发":{"任一":[{"包含":{"维度":"阶段","取值":["缺陷修复","审查"]}},{"包含":{"维度":"意图","取值":["回归测试","Review-and-test","独立验证"]}}]},"依赖":["testing.reference.01"]}
+{"协议":"Agent Skills Reference路由/v1","标识":"testing.reference.03","触发":{"包含":{"维度":"意图","取值":["回归测试","Review-and-test","独立验证"]}},"依赖":["testing.reference.01"]}
 -->
 
 # 缺陷复现、回归与 Handoff
 
-Testing 对缺陷的职责是建立可靠失败证据、验证修复结果和保护回归，不维护第二套生产代码修复规则。
+Testing 对缺陷的职责是建立可靠失败证据、验证修复结果和保护回归，不维护第二套生产代码修复规则。`阶段=缺陷修复/审查` 本身不自动触发 Testing；只有当前任务确实存在回归、Review-and-test 或独立验证意图时进入本方法。
 
 ## 1. 先复现，再谈修复
 
