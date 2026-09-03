@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260903-144449-issue-acceptance-closure-contract
 title: 统一 Issue 验收标准与 Closure Audit 回写契约
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: chg/issue-acceptance-closure-contract
 created: 2026-09-03
@@ -39,39 +39,67 @@ data_changes: []
 
 # 目标
 
-统一 Agent_Skills 自身和被 Agent_Skills 帮助开发的项目在 Requirement Source / Issue 生命周期中的公共 Contract：Issue 类型/标题、Acceptance Criteria、验证要求与 Closure Audit 使用稳定语义。Issue/Ticket 的 Acceptance Criteria 是最终完成状态 Owner；Change 负责 Evidence Ledger，PR 负责交付，Closure Audit 负责把直接 Evidence 回写到 Requirement Source。Agent_Skills 的 GitHub profile 使用统一 chooser 名称、`[类型] 简洁主题` 标题、稳定 `AC1/AC2/...` task list，并在关闭前真实完成 `[ ] → [x] → write → re-read → close → re-read`；其他项目/平台优先遵守自身更强规范，否则使用等价默认 Contract。
+统一 Agent_Skills 自身和被 Agent_Skills 治理项目在 Requirement Source / Issue 生命周期中的默认公共 Contract：Issue 类型/标题、Acceptance Criteria、验证要求与 Closure Audit 使用稳定语义。Acceptance Criteria 是最终完成状态 Owner；Change 只承担 Evidence Ledger，PR 只承担交付关系；Closure Audit 必须用充分、直接且匹配的 Evidence 逐项验收并回写 Requirement Source。
+
+GitHub 默认使用稳定 `AC1/AC2/...` task list，并执行 `[ ] → [x] → write → re-read → close → re-read`。项目有更强 Issue/Ticket/Title/Closure Owner 时优先遵守；没有更强规则时，即使未复制 Agent_Skills GitHub Forms，Agent 行为仍执行同一默认 Contract。AIMA_UGC 作为真实业务仓库 Profile 验证，由其自身 #319 / Change / PR #320 独立承载。
 
 Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/184
 
+实现 PR：https://github.com/dingyuwen777/Agent_Skills/pull/185
+
+AIMA 跨仓验证 Owner：https://github.com/dingyuwen777/AIMA_UGC/issues/319
+
 # 需求追溯
 
-| 编号 | 要求 | 来源 | 状态 | 证据 |
-| --- | --- | --- | --- | --- |
-| R1 | canonical Issue Contract 明确 Acceptance Criteria 最终状态 Owner、稳定 AC ID 与状态语义 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC1 | not_satisfied | Red/Green closure contract 回归 |
-| R2 | GitHub Closure Audit 强制 checklist 写回、重读、close 后再读；未完成项阻止关闭 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC2 | not_satisfied | canonical rule + closure regressions + 本 Issue dogfood |
-| R3 | Change 直接追踪上游 AC 与 direct Evidence，不建立第二套需求 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC3 | not_satisfied | traceability rule/test |
-| R4 | 三类 Issue Form 统一 acceptance_criteria / AC 示例 / validation_requirements，同时保留专项字段 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC4 | not_satisfied | Issue Form contract tests |
-| R5 | PR Template 在 post-merge evidence 场景禁止 auto-close keyword 抢先关闭 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC5 | not_satisfied | PR template regression |
-| R6 | Post-Merge Finalization 固定 checklist sync → re-read → close → re-read → cleanup 顺序 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC6 | not_satisfied | finalization regression |
-| R7 | 公共 Contract / 类型 Profile / 平台 Profile 分层，项目现有 Owner 优先 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC7 | not_satisfied | canonical cross-platform regression |
-| R8 | 永久回归完整覆盖并保持现有高价值 Issue/PR/Closure 语义 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC8 | not_satisfied | full Skill Tests + diff review |
-| R9 | Review、PR/main/archive CI、guarded merge、归档以及本 Issue checklist 回写关闭闭环 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC9 | not_satisfied | final-head/main/archive/closure evidence |
-| R10 | Agent_Skills 三类 GitHub Issue chooser 名称与标题格式统一，目标项目有更强标题规范时优先遵守 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC10 | not_satisfied | canonical title contract + Issue Form regression |
+| 编号 | 上游 AC | 状态 | Direct Evidence / 证明对象 |
+| --- | --- | --- | --- |
+| R1 | #184 / AC1 | satisfied | ref17 `Issue Acceptance Contract` 明确 Acceptance Criteria final Owner、稳定 `AC1 / AC2 / ...` 与 `satisfied / not_applicable / deferred / unresolved`；`test_canonical_contract_owns_acceptance_state_and_evidence_mapping` 在 current Green suite 通过。 |
+| R2 | #184 / AC2 | satisfied | ref17 `Evidence Sufficiency Gate` 明确 Evidence 必须对应同一对象/行为/条件、revision/commit、必要环境并说明实际证明内容；明确 CI Green、测试存在/数量、PR merge、Change done 不能单独证明 AC；对应 Evidence Sufficiency regression 在 current Green suite 通过。 |
+| R3 | #184 / AC3 | satisfied | ref17 GitHub Closure 顺序固定为逐条 Requirement→Evidence、`- [ ]`→`- [x]`、写回、重读、close、再读；未勾选/partial/unverified/unresolved 阻止 close；`test_github_closure_requires_checkbox_writeback_reread_and_closed_confirmation` 通过。 |
+| R4 | #184 / AC4 | satisfied | ref17 明确 `Change 不创建第二套需求`，Change Traceability 必须映射上游 AC 与 direct Evidence；本 Change 已直接使用 `#184 / ACx` 建立映射，避免第二套完成定义。 |
+| R5 | #184 / AC5 | satisfied | 三类 Agent_Skills Form 均统一 `acceptance_criteria`、`label: 验收标准`、稳定 `AC1` task-list 示例、`validation_requirements / 验证要求` 且 required；Issue Form contract regression 通过，同时保留需求/Bug/技术变更专项字段。 |
+| R6 | #184 / AC6 | satisfied | PR Template 明确 `需要 post-merge evidence` 时不得使用 `Closes / Fixes / Resolves`，只保留 `Requirement-Source` 并由 Closure Audit 后关闭；PR-template regression 通过。 |
+| R7 | #184 / AC7 | satisfied | ref23 Post-Merge Finalization 固定 `Closure Audit → Acceptance checklist 同步 → 写后重读 → close → close 后再读 → 分支清理 → 最终报告`；顺序 regression 通过，失败状态保持 `blocked/incomplete`。 |
+| R8 | #184 / AC8 | satisfied | ref17 明确 `公共 Contract + 类型 Profile + 平台 Profile`、项目已有更强 Owner 优先、非 GitHub 使用等价 Acceptance/Closure 状态、不强制复制 Forms；cross-platform regression 通过。 |
+| R9 | #184 / AC9 | satisfied | Agent_Skills 三类 Form chooser/title 已统一为 `需求/[需求] `、`缺陷/[缺陷] `、`技术变更/[技术变更] `；ref17 Title Contract 明确标题不承载状态/优先级/Owner/分支/重复 Issue 编号；title regression 通过。 |
+| R10 | #184 / AC10 | satisfied | PR head `dd907409...` 的 Skill Tests #1066 / run `33727965339` 中 **399 项 self-contained tests 全部通过**；此前新增规则导致 Git Delivery Context 超预算时没有抬阈值，而是等价压缩重复 Profile 文本，最终 route-context-budget 同样通过。Runtime Package Tests #356 / run `33727965265` 正确判定治理 scope，Package Gate success、三平台 binary jobs skipped。 |
+| R11 | #184 / AC11 | explicitly_deferred | 独立 A1/A2 Review 当前 `NO_FINDINGS_WITHIN_SCOPE`；PR final-ready CI、guarded merge、implementation main-fresh、Change archive、archive-main fresh 和 Issue #184 最终 checklist/close 必须按生命周期取得，不能在 merge 前伪造。 |
+| R12 | #184 / AC12 | explicitly_deferred | 通用无-Form 默认行为已进入 ref17 并由 regression 保护；真实业务仓库 Profile 由 AIMA_UGC Requirement #319 / PR #320 / 独立 Change 承载。只有 AIMA 自身 final CI、merge、main-fresh、archive、#319 Closure Audit 完成后，#184 的 AC12 才能最终 satisfied。 |
+
+# Red / Green 证据
+
+Red head `a29e0b11694c32888f6e9eebb8f366029cbbd88f` 只包含 Change + 新 Closure Contract 回归。Skill Tests #1052 / run `33724854183` 在旧 canonical 实现上出现 8 个预期 failure，直接暴露 Acceptance final Owner、GitHub writeback/re-read、三 Form 公共 validation、PR auto-close、Finalization 与跨平台 Contract 缺口；Runtime Package #342 / run `33724854273` 对该治理范围 success。
+
+用户随后补充 Issue 标题统一和 Evidence Sufficiency，本 Requirement Source 更新为 AC1–AC12；对应 Red/Green 回归继续加入同一测试文件。实现完成后，语义回归已全部通过。一次 Green 候选因 Git Delivery 路由上下文 245347 bytes 超过既有 244832 bytes 硬预算 515 bytes 被永久预算测试阻止；没有提高阈值，而是压缩重复 UI Profile 说明，保留全部行为边界。最终实现 head `dd90740997daf8d125b05fc1a2275f3d07a2fe26` 的 self-contained suite 全绿。
+
+# 独立 Review
+
+Review Target：PR #185，Requirement Source #184，review implementation head `dd90740997daf8d125b05fc1a2275f3d07a2fe26`。
+
+A1 Requirement→Implementation：逐项从 AC1–AC12 反查 ref17/ref23、三类 Issue Forms、PR Template 与永久回归。AC1–AC10 均有直接实现；AC11 的 post-merge lifecycle、AC12 的 AIMA 独立仓库 lifecycle 保持 explicit deferred，没有用 CI Green、Review 或作者说明提前满足。
+
+A2 Implementation→Evidence：从 PR changed-files 反查仅涉及 Requirement/Closure canonical rules、Agent_Skills GitHub Profiles、PR Template、Change 和相关永久回归；没有 Runtime/MCP/Bundle/Project Payload/Release 产品面变化。Evidence Sufficiency 本身明确拒绝 CI/merge/Change done 机械满足自然语言 AC。目标仓库没有安装 GitHub Form 时仍由 Agent 行为 Contract 生效；AIMA 实现不进入 canonical 特例，保持项目 Ownership。
+
+Review 结论：`NO_FINDINGS_WITHIN_SCOPE`，无 BLOCKER/HIGH/需要阻塞交付的 MEDIUM。
 
 # Validation Matrix
 
-| 层级 | Scope | 状态 | 证据 |
-| --- | --- | --- | --- |
-| Red | 当前 main 缺少统一 Issue Title / AC / Closure 写回契约 | in_progress | Red Skill Tests #1052：新契约测试 8 个预期 failure；Runtime Package #342 governance/content scope Gate success |
-| Static contract | canonical rules / Issue Forms / PR Template / Finalization | pending | self-contained tests |
-| Routing / preservation | Issue/PR/端到端交付既有路由与高价值语义不回归 | pending | existing + updated regressions |
-| Runtime package scope | 本次治理/Skill 内容变化按真实 scope 分类，不机械要求 binary package | pending | Runtime Package Gate |
-| Review | A1 Requirement→Implementation + A2 Implementation→Evidence | pending | independent Review |
-| Closure dogfood | Issue #184 AC1-AC10 回写 `[x]`、重读、关闭、再读 | pending | final Closure Audit |
+| 验证层 | 结论 |
+| --- | --- |
+| Red | required；#1052 明确证明旧实现不满足新增 Closure/AC Contract |
+| Static / Contract | required；399 项 current self-contained suite 通过，覆盖 Title、Acceptance、Evidence Sufficiency、Forms、PR、Finalization、跨平台与无-Form 默认行为 |
+| Routing / Context | required；既有 Issue/PR/Git Delivery 路由与 Context Budget 全部通过，预算未上调 |
+| Runtime Package | governance scope；#356 Package Gate success，三平台 binary build not_applicable/skipped，未伪造 package evidence |
+| 产品业务 / Persistence / Schema | not_applicable；未修改业务代码、数据库、Schema/Migration 或 Provider |
+| Release / Deploy | not_applicable；未请求且未修改 Release/Deploy 产品行为 |
+| Independent Review | required；A1/A2 `NO_FINDINGS_WITHIN_SCOPE` |
+| PR final-ready / merge / main-fresh / archive | explicitly_deferred；只能由后续真实 revision/lifecycle 取得 |
+| AIMA project profile | explicitly_deferred to `dingyuwen777/AIMA_UGC#319`；跨仓独立治理 |
+| Final Requirement Closure | explicitly_deferred；只有 #184 AC1–AC12 均取得充分 Evidence 并真实回写后才可 close |
 
 # 完成审计
 
-- [ ] upstream_re_read: 合并前重新读取 Issue #184、当前 main 规则与最终 diff。
-- [ ] change_coverage: AC1-AC10 均有直接实现或验证证据。
-- [ ] reverse_audit: 从最终 diff 反查标题/公共 Contract、类型/平台边界、auto-close 时序和未授权范围扩大。
-- [ ] unresolved_cleared: 无未解决 blocker、CI failure、未验证适用 AC 或未回写 Issue 状态。
+- [x] upstream_re_read: 已重新读取 Issue #184（含用户追加的 AIMA 与 Evidence Sufficiency 要求）、Agent_Skills 当前 main baseline、最终 PR diff 和受影响 canonical Owners。
+- [x] change_coverage: AC1–AC10 已有直接实现/Evidence；AC11 post-merge lifecycle 与 AC12 AIMA lifecycle 有明确正式 Owner 和 `explicitly_deferred`，没有伪造完成。
+- [x] reverse_audit: 已从最终 diff 反查 Title/Acceptance/Evidence/Closure、类型/平台 Profile、auto-close、Finalization、无-Form 默认行为、上下文预算与非目标边界；未发现 Runtime/Release/业务范围扩大。
+- [x] unresolved_cleared: 当前产品/规则实现与独立 Review 无阻塞 finding；唯一未完成项均是必须发生在后续真实 revision 的 lifecycle evidence，已显式 deferred，不把它们当成已完成。
