@@ -1,10 +1,10 @@
 <!-- agent-routing:v1
-{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.25","触发":{"任一":[{"包含":{"维度":"意图","取值":["测试策略","功能测试","黑盒测试","用户场景验收","探索式测试","回归测试","Review-and-test","独立验证"]}},{"包含":{"维度":"能力","取值":["测试"]}}]},"依赖":["coding.reference.07"]}
+{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.25","触发":{"全部":[{"包含":{"维度":"执行模式","取值":["实现","诊断"]}},{"包含":{"维度":"意图","取值":["测试策略","功能测试","黑盒测试","用户场景验收","探索式测试","回归测试","独立验证"]}}]},"依赖":["coding.reference.07"]}
 -->
 
 # Testing 专业职责与 Coding Handoff
 
-本 Reference 只定义 Coding 与独立 Testing Skill 的 Ownership/Handoff，不复制 Testing 的测试方法。
+本 Reference 只定义 **Coding 正在实现/诊断且同时存在独立测试意图** 时与 Testing Skill 的 Ownership/Handoff，不复制 Testing 的测试方法。纯 Testing-only 或 Review-and-test 不因为本 Reference 反向加载 Coding。
 
 ## 1. Coding 仍拥有开发验证治理
 
@@ -21,7 +21,7 @@ Coding 保留：
 
 ## 2. Testing 是测试工程方法 Owner
 
-当任务需要以下任一能力时，通过 Router 进入 [`.agents/skills/testing/SKILL.md`](../../testing/SKILL.md)：
+当 Coding 任务同时需要以下任一独立测试能力时，通过 Router 叠加 [`.agents/skills/testing/SKILL.md`](../../testing/SKILL.md)：
 
 - Test Strategy / Test Gap 设计；
 - Scenario-based Black-box Acceptance；
@@ -29,7 +29,6 @@ Coding 保留：
 - Exploratory Testing；
 - 系统性 Integration / Contract / Golden Path / External Probe 测试设计；
 - 独立功能测试、独立验证；
-- Review-and-test；
 - Bug 的独立复现与 Regression；
 - 测试资产、Fixture/Fake/Mock/Harness 的专业设计。
 
