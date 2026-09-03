@@ -92,7 +92,7 @@ class IssueFormsContractTest(unittest.TestCase):
             "compatibility_migration",
             "risks_rollback",
             "acceptance_criteria",
-            "validation_plan",
+            "validation_requirements",
             "upstream_sources",
         ):
             self._assert_field_required(text, field_id)
@@ -117,6 +117,9 @@ class IssueFormsContractTest(unittest.TestCase):
             "项目已有更强 Issue/工单模板",
             "Issue Form",
             "模板完整不等于需求已经完整",
+            "AC1 / AC2 / ...",
+            "公共 Contract + 类型 Profile + 平台 Profile",
+            "Issue Title Contract",
         ]
         for fragment in required_fragments:
             with self.subTest(fragment=fragment):
