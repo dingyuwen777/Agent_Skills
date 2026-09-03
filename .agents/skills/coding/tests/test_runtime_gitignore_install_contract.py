@@ -16,6 +16,7 @@ RUNTIME_REFERENCE = ROOT / ".agents/skills/coding/references/13_本地MCP_Runtim
 BOOTSTRAP_REFERENCE = ROOT / ".agents/skills/coding/references/12_目标项目安装与AGENTS_Bootstrap.md"
 RUNTIME_README = ROOT / "runtime/README.md"
 INSTALLER_SOURCE = ROOT / "runtime/agent_skills_runtime/project_installer.py"
+RUNTIME_PACKAGE_WORKFLOW = ROOT / ".github/workflows/runtime-package-tests.yml"
 
 
 class RuntimeGitignoreInstallContractTest(unittest.TestCase):
@@ -103,6 +104,21 @@ class RuntimeGitignoreInstallContractTest(unittest.TestCase):
         """安装器不再保留可把 Runtime 目录重新定义成自动 ignore 的 Owner 常量。"""
         source = INSTALLER_SOURCE.read_text(encoding="utf-8")
         self.assertNotIn("RUNTIME_IGNORE_RULE", source)
+
+    def test_runtime_package_workflow_enforces_new_gitignore_contract(self) -> None:
+        """三平台 package 验收必须证明 cache ignore 存在且 Runtime ignore 不会被新安装写入。"""
+        workflow = RUNTIME_PACKAGE_WORKFLOW.read_text(encoding="utf-8")
+        self.assertGreaterEqual(
+            workflow.count('! grep -Fq "/.agents/runtime/" "${target}/.gitignore"'),
+            2,
+        )
+        self.assertGreaterEqual(
+            workflow.count('! grep -Fq "/.agents/runtime/" "${no_args_target}/.gitignore"'),
+            2,
+        )
+        self.assertIn("Windows 项目安装不应自动新增 Runtime ignore", workflow)
+        self.assertIn("Windows 无参数安装不应自动新增 Runtime ignore", workflow)
+        self.assertGreaterEqual(workflow.count(".agents/project-context.json"), 4)
 
     def test_canonical_install_contract_does_not_require_runtime_ignore(self) -> None:
         """Bootstrap/Runtime canonical Owner 与维护说明必须明确不自动写 Runtime ignore。"""
