@@ -1,4 +1,4 @@
-"""验证统一 Issue Acceptance / Closure Contract 不因模板或收尾维护而漂移。"""
+"""验证统一 Issue Title / Acceptance / Closure Contract 不因模板或收尾维护而漂移。"""
 
 from __future__ import annotations
 
@@ -11,15 +11,15 @@ TRACEABILITY = ROOT / ".agents/skills/coding/references/17_需求来源与PR追�
 FINALIZATION = ROOT / ".agents/skills/coding/references/23_端到端交付与合并后收尾.md"
 PR_TEMPLATE = ROOT / ".github/PULL_REQUEST_TEMPLATE.md"
 FORM_DIR = ROOT / ".github/ISSUE_TEMPLATE"
-FORM_NAMES = (
-    "01-requirement.yml",
-    "02-bug.yml",
-    "03-technical-change.yml",
-)
+FORM_PROFILES = {
+    "01-requirement.yml": ("需求", '[需求] '),
+    "02-bug.yml": ("缺陷", '[缺陷] '),
+    "03-technical-change.yml": ("技术变更", '[技术变更] '),
+}
 
 
 class IssueAcceptanceClosureContractTest(unittest.TestCase):
-    """锁定公共 Acceptance Contract、平台 Profile 和真实 Closure 时序。"""
+    """锁定公共 Issue Title/Acceptance Contract、平台 Profile 和真实 Closure 时序。"""
 
     def _read(self, path: Path) -> str:
         """读取 UTF-8 正式文本。"""
@@ -32,6 +32,29 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
         tail = text.split(marker, 1)[1]
         next_field = tail.find("\n  - type:")
         return tail if next_field < 0 else tail[:next_field]
+
+    def test_canonical_contract_owns_issue_title_format_without_overriding_project_owner(self) -> None:
+        """Issue 标题需要统一默认 Contract，但目标项目已有更强规范时继续由项目 Owner 决定。"""
+        text = self._read(TRACEABILITY)
+        required = (
+            "Issue Title Contract",
+            "[需求] <简洁目标>",
+            "[缺陷] <可观察问题>",
+            "[技术变更] <工程目标>",
+            "标题不承载状态、优先级、Owner、分支名或重复 Issue 编号",
+            "项目已有更强 Issue 标题规范",
+        )
+        for marker in required:
+            self.assertIn(marker, text, marker)
+
+    def test_agent_skills_issue_profiles_use_exact_chooser_names_and_title_prefixes(self) -> None:
+        """Agent_Skills 自身三类 GitHub Form 的 chooser 名称与 title 前缀必须统一。"""
+        for filename, (chooser_name, title_prefix) in FORM_PROFILES.items():
+            with self.subTest(filename=filename):
+                text = self._read(FORM_DIR / filename)
+                first_lines = text.splitlines()[:4]
+                self.assertIn(f"name: {chooser_name}", first_lines)
+                self.assertIn(f'title: "{title_prefix}"', first_lines)
 
     def test_canonical_contract_owns_acceptance_state_and_evidence_mapping(self) -> None:
         """Acceptance Criteria 应是 Requirement Source 的最终状态 Owner，而不是 Change 的第二套需求。"""
@@ -68,7 +91,7 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
 
     def test_three_issue_profiles_share_acceptance_and_validation_contract(self) -> None:
         """三类 GitHub Form 应共享验收标准、稳定 AC 示例和验证要求字段。"""
-        for filename in FORM_NAMES:
+        for filename in FORM_PROFILES:
             with self.subTest(filename=filename):
                 text = self._read(FORM_DIR / filename)
                 acceptance = self._field_block(text, "acceptance_criteria")
