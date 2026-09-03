@@ -19,6 +19,8 @@ Coding 保留：
 
 因此“新增 Testing Skill”不意味着每写一个函数或每跑一个 targeted test 都必须离开 Coding。
 
+[08_分层测试与验收策略.md](08_分层测试与验收策略.md) 只负责把 Coding 的通用 Validation Matrix 映射成 UI/API/Persistence/Contract/Golden Path/Probe 等**证据边界**，不再维护这些测试怎样设计、Fixture/Fake/Mock 怎样构造或场景怎样执行；这些专业方法只能由 Testing 当前 canonical rules 提供。
+
 ## 2. Testing 是测试工程方法 Owner
 
 当 Coding 任务同时需要以下任一独立测试能力时，通过 Router 叠加 [`.agents/skills/testing/SKILL.md`](../../testing/SKILL.md)：
@@ -34,7 +36,24 @@ Coding 保留：
 
 Coding 不在本 Reference 或其他 Coding Owner 中复制第二套 Testing 详细方法；Validation Matrix 继续描述“需要什么等级的证据”，Testing 描述“怎样设计和执行对应测试”。
 
-## 3. 常见组合
+## 3. Owner-gated 路由边界
+
+Task Route 先由 Skill Core trigger 选择专业 Owner；只有 Owner 已命中，其 References 才根据项目形态、风险、范围等 refinement facts 直接匹配。显式 Reference dependency 可以跨 Skill 扩展 required Context。
+
+因此：
+
+```text
+项目形态=前端Web/后端服务 + 风险=L2 + 意图=黑盒测试
+→ Testing-only（没有 Coding 执行意图时）
+
+执行模式=实现 + 项目形态=前端Web + 意图=用户场景验收
+→ Coding + Testing
+→ 本 Handoff Reference 生效
+```
+
+不能通过给 Testing-only 任务补一个虚假的 `执行模式=实现` 来“帮助路由”；Task Route 只能提交真实当前事实。
+
+## 4. 常见组合
 
 ### 普通开发期 TDD
 
@@ -75,7 +94,7 @@ Review
 → Review re-review
 ```
 
-## 4. 失败与权限边界
+## 5. 失败与权限边界
 
 - Testing Skill 或 required Reference 无法取得时，不能用 Coding 中的旧摘要/记忆冒充独立 Testing；
 - Testing 发现缺陷不自动获得生产代码修改、commit、push、merge、release 或 deploy 权限；

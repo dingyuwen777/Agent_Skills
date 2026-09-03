@@ -30,6 +30,9 @@ ROUTE_DIMENSIONS = (
     "能力",
     "授权",
 )
+_OWNER_REFINEMENT_DIMENSIONS = frozenset(
+    {"项目形态", "风险", "工具链", "范围", "治理", "授权"}
+)
 _RISK_ORDER = {"L1": 1, "L2": 2, "L3": 3}
 _ROUTING_BLOCK = re.compile(r"<!--\s*agent-routing:v1\s*\n(.*?)\n\s*-->", re.DOTALL)
 _SKILL_NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -469,6 +472,50 @@ def _matches_tristate(
     return _UNKNOWN
 
 
+def _matches_owner_projection(
+    expression: Mapping[str, Any],
+    signals: Mapping[str, set[str]],
+    unknown_dimensions: set[str],
+) -> int | None:
+    """只用 Owner 选择维度求值 Skill trigger；refinement 原子被投影掉但继续保留在公共词汇中。"""
+    operator = next(iter(expression))
+    value = expression[operator]
+    if operator == "包含":
+        dimension = str(value["维度"])
+        if dimension in _OWNER_REFINEMENT_DIMENSIONS:
+            return None
+        if signals[dimension] & {str(item) for item in value["取值"]}:
+            return _TRUE
+        return _UNKNOWN if dimension in unknown_dimensions else _FALSE
+    if operator in {"全部", "任一"}:
+        results = [
+            result
+            for item in value
+            if (result := _matches_owner_projection(item, signals, unknown_dimensions)) is not None
+        ]
+        if not results:
+            return None
+        if operator == "全部":
+            if any(result == _FALSE for result in results):
+                return _FALSE
+            if all(result == _TRUE for result in results):
+                return _TRUE
+            return _UNKNOWN
+        if any(result == _TRUE for result in results):
+            return _TRUE
+        if all(result == _FALSE for result in results):
+            return _FALSE
+        return _UNKNOWN
+    result = _matches_owner_projection(value, signals, unknown_dimensions)
+    if result is None:
+        return None
+    if result == _TRUE:
+        return _FALSE
+    if result == _FALSE:
+        return _TRUE
+    return _UNKNOWN
+
+
 def _dependency_closure(required: set[str], references: Mapping[str, Mapping[str, Any]]) -> set[str]:
     """展开当前 required References 的传递依赖闭包。"""
     expanded = set(required)
@@ -496,24 +543,27 @@ def _evaluate_fixed_point(
     *,
     unknown_dimensions: set[str] | None = None,
 ) -> tuple[set[str], set[str], str]:
-    """执行二值或三值 fixed-point；三值 UNKNOWN 按候选 required 处理而不自动扩大到无关规则。"""
+    """执行 Owner-gated fixed-point：Skill 先按 Owner 投影选择，Reference 再在已命中 Owner 内细化。"""
     references = {str(entry["标识"]): entry for entry in manifest["引用"]}
     skill_names = {str(entry["Skill"]) for entry in manifest["技能"]}
     required_ids: set[str] = set()
     matched_skills: set[str] = (
         {CONTROL_PLANE_SKILL} if CONTROL_PLANE_SKILL in skill_names else set()
     )
+    owner_unknown = unknown_dimensions or set()
     while True:
         before = (set(required_ids), set(matched_skills), set(signals["风险"]))
         for skill in manifest["技能"]:
-            matched = (
-                _matches(skill["触发"], signals)
-                if unknown_dimensions is None
-                else _matches_tristate(skill["触发"], signals, unknown_dimensions) != _FALSE
-            )
-            if matched:
-                matched_skills.add(str(skill["Skill"]))
+            skill_name = str(skill["Skill"])
+            if skill_name == CONTROL_PLANE_SKILL:
+                continue
+            owner_match = _matches_owner_projection(skill["触发"], signals, owner_unknown)
+            if owner_match == _TRUE or (unknown_dimensions is not None and owner_match == _UNKNOWN):
+                matched_skills.add(skill_name)
         for reference_id, reference in references.items():
+            owner = str(reference["Skill"])
+            if owner not in matched_skills:
+                continue
             matched = (
                 _matches(reference["触发"], signals)
                 if unknown_dimensions is None
@@ -534,7 +584,7 @@ def _evaluate_fixed_point(
 
 
 def evaluate_route(manifest: Mapping[str, Any], route: Mapping[str, Any]) -> dict[str, Any]:
-    """求值 required Context；确定任务保持原二值语义，未知事实只保守扩大相关候选并阻止未知诱导全库导出。"""
+    """求值 required Context；refinement facts 不直接选专业 Owner，显式 dependency 仍可跨 Skill。"""
     validate_routing_manifest(manifest)
     normalized = validate_task_route(route, public_route_contract(manifest))
     base_signals = {
