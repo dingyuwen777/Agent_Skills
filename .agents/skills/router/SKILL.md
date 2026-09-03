@@ -13,7 +13,7 @@ description: Agent_Skills 的唯一跨 Skill 控制面。每个使用 Agent_Skil
 
 ## Anti-Agent Boundary
 
-Router 只输出 Skill 选择、必需 References、最低风险、Handoff 和失败边界；不生成项目计划，不创建子 Agent，不执行代码/设计/文档/测试/Git/CI/发布/部署。组合多个 Skill 时只声明并集、顺序与交接条件。
+Router 只输出 Skill 选择、必需 References、最低风险、Handoff 和失败边界；不生成项目级执行计划，不创建子 Agent，不拆分或调度开发任务，不接管专业 Skill，也不执行代码/设计/文档/测试/Git/CI/发布/部署。组合多个 Skill 时只声明并集、顺序与交接条件。
 
 ## 1. 先建立目标项目事实
 
@@ -74,7 +74,7 @@ Source Mode 与 Runtime Mode 使用同一 canonical `SKILL.md + references/*.md`
 → 读取当前完整原文
 ```
 
-不得用历史聊天、摘要、旧缓存或目标项目安装副本替代 canonical Source；项目自有规则仍必须读取。Source Mode 不调用本地 Runtime MCP。
+不得用历史聊天、摘要、旧缓存替代 canonical Source；**目标项目中的安装副本**（含 managed block）**不作为当前通用治理语义来源**，项目自有规则仍必须读取。Source Mode 不调用本地 Runtime MCP。
 
 ### 4.3 Runtime Mode：Task Route → required Context
 
@@ -100,7 +100,7 @@ Task Route 是内部协议。`load_required_context` 只返回当前 required Co
 | 案例 | 命中原因与叠加 | Source Mode 读取 | Runtime Mode 任务信号 |
 | --- | --- | --- | --- |
 | L1 机械修改 | 行为/接口/数据不变 | Coding Core + L1 路由 | `执行模式=实现；风险=L1` |
-| L2 Feature | 新增可观察行为；持久治理按事实升级 | Coding + 验证；独立用户场景按需 Testing | `执行模式=实现；阶段=功能开发；风险=L2`；需要时加测试意图 |
+| L2 Feature | 新增可观察行为；先建立最小充分任务契约，持久治理按事实升级 | Coding + 验证；独立用户场景按需 Testing | `执行模式=实现；阶段=功能开发；风险=L2`；需要时加测试意图 |
 | L3 public API | 公共消费者 Contract 变化 | Coding + Contract/兼容/完成；按门禁 Review | `执行模式=方案,实现；风险=L3；范围=公共契约,API` |
 | Schema Migration | writer/reader/历史数据受影响 | Coding + Schema/Migration/回滚 | `执行模式=方案,实现；风险=L3；范围=Schema,Migration` |
 | Bug / Failure / Incident | 先复现根因；独立回归按需 Testing | Coding 根因；需要时 Testing Regression | `执行模式=诊断,实现；阶段=缺陷修复` |
@@ -127,7 +127,7 @@ Task Route 是内部协议。`load_required_context` 只返回当前 required Co
 - 触发：首次安装/升级 Agent_Skills、`AGENTS.md` Bootstrap/managed block，或 Bundle/Routing/MCP/Project Payload/安装分发变化。
 - 必须动作：恢复 installation/ownership/schema/宿主配置事实并读取对应完整 canonical Reference。
 - 不适用：普通业务任务未触及这些边界。
-- 交接：Bootstrap → Coding ref12；Runtime/分发 → Coding ref13。
+- 交接：Bootstrap/managed block 进入 Coding ref12；Runtime/分发边界在此基础上进入 Coding ref13。
 - 返回：真实 smoke 后回 Coding 验证/Review/Git。
 - 失败关闭：关键事实不可验证时停止写入/交付。
 
@@ -183,4 +183,4 @@ Task Route 是内部协议。`load_required_context` 只返回当前 required Co
 
 ## 12. Router 自身的维护边界
 
-Router 只拥有跨 Skill 的发现、入口、加载和 Handoff：Coding 的研发/TDD/验证治理归 Coding；Testing 的 Test Strategy/Black-box/User Journey/Exploratory/Integration/Regression 归 Testing；Review 的 Findings/充分性/re-review 归 Review；Docs、Figma、Runtime 细节分别归各自 Owner。不能为了入口自包含把专业细则复制回 Router/ENTRY/managed block。
+Router 只拥有跨 Skill 的发现、入口、加载和 Handoff：Coding 的研发/TDD/验证治理归 Coding；Testing 的 Test Strategy/Black-box/User Journey/Exploratory/Integration/Regression 归 Testing；Review 的 Findings/充分性/re-review 归 Review；Docs、Figma、Runtime 细节分别归各自 Owner；Runtime 细节由 Coding ref12/ref13 + Runtime 实现承接。不能为了入口自包含把专业细则复制回 Router/ENTRY/managed block。
