@@ -62,7 +62,7 @@ class TestingSkillIntegrationTest(unittest.TestCase):
         self.assertNotIn("coding", result["命中Skill"])
         self.assertIn("testing.reference.01", result["必需Reference"])
         self.assertIn("testing.reference.02", result["必需Reference"])
-        self.assertNotIn("coding.reference.25", result["必需Reference"])
+        self.assertNotIn("coding.reference.26", result["必需Reference"])
 
     def test_regression_routes_to_testing_without_requiring_browser(self) -> None:
         """纯 CLI 回归测试应命中 Testing，不因项目形态强加 Web 或 Coding。"""
@@ -93,7 +93,7 @@ class TestingSkillIntegrationTest(unittest.TestCase):
         )
         self.assertIn("review", result["命中Skill"])
         self.assertIn("testing", result["命中Skill"])
-        self.assertNotIn("coding.reference.25", result["必需Reference"])
+        self.assertNotIn("coding.reference.26", result["必需Reference"])
         self.assertIn("review.reference.03", result["必需Reference"])
         self.assertIn("testing.reference.01", result["必需Reference"])
 
@@ -128,7 +128,7 @@ class TestingSkillIntegrationTest(unittest.TestCase):
         )
         self.assertIn("coding", result["命中Skill"])
         self.assertIn("testing", result["命中Skill"])
-        self.assertIn("coding.reference.25", result["必需Reference"])
+        self.assertIn("coding.reference.26", result["必需Reference"])
         self.assertIn("testing.reference.02", result["必需Reference"])
 
     def test_testing_owns_scenario_methods_review_only_owns_adequacy(self) -> None:
