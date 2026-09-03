@@ -70,6 +70,24 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
         for marker in required:
             self.assertIn(marker, text, marker)
 
+    def test_satisfied_ac_requires_evidence_sufficiency_gate(self) -> None:
+        """AC 只有在充分且匹配的直接 Evidence 下才能 satisfied/勾选。"""
+        text = self._read(TRACEABILITY)
+        required = (
+            "Evidence Sufficiency Gate",
+            "充分、直接且与该 AC 匹配",
+            "同一对象、行为、条件",
+            "revision/commit",
+            "必要环境",
+            "实际证明了什么",
+            "CI Green",
+            "PR merge",
+            "Change `done`",
+            "不得勾选",
+        )
+        for marker in required:
+            self.assertIn(marker, text, marker)
+
     def test_github_closure_requires_checkbox_writeback_reread_and_closed_confirmation(self) -> None:
         """GitHub Issue 必须真实同步 task list，再关闭并再次确认 closed。"""
         text = self._read(TRACEABILITY)
