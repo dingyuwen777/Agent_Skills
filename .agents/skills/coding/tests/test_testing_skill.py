@@ -49,10 +49,9 @@ class TestingSkillIntegrationTest(unittest.TestCase):
         self.assertIn("测试", contract["维度"]["能力"])
 
     def test_black_box_user_journey_routes_to_testing_references(self) -> None:
-        """黑盒/User Journey 任务必须自动命中 Testing Core 与场景 Reference。"""
+        """纯黑盒/User Journey 任务必须命中 Testing，而不因通用验证模式误拉入 Coding。"""
         result = self._evaluate(
             {
-                "执行模式": ["验证"],
                 "项目形态": ["前端Web"],
                 "风险": ["L2"],
                 "意图": ["黑盒测试", "用户场景验收"],
@@ -66,10 +65,9 @@ class TestingSkillIntegrationTest(unittest.TestCase):
         self.assertNotIn("coding.reference.25", result["必需Reference"])
 
     def test_regression_routes_to_testing_without_requiring_browser(self) -> None:
-        """CLI 回归测试应命中 Testing，但不能因为 Testing 存在就强加 Web 专有事实。"""
+        """纯 CLI 回归测试应命中 Testing，不因项目形态强加 Web 或 Coding。"""
         result = self._evaluate(
             {
-                "执行模式": ["验证"],
                 "项目形态": ["CLI"],
                 "阶段": ["缺陷修复"],
                 "风险": ["L2"],
@@ -78,6 +76,7 @@ class TestingSkillIntegrationTest(unittest.TestCase):
             }
         )
         self.assertIn("testing", result["命中Skill"])
+        self.assertNotIn("coding", result["命中Skill"])
         self.assertIn("testing.reference.01", result["必需Reference"])
         self.assertIn("testing.reference.03", result["必需Reference"])
 
