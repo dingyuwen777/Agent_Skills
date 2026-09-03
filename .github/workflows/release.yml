@@ -121,7 +121,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           set -euo pipefail
-          name="agent-skills-mcp-v${RELEASE_VERSION}-linux"
+          name="agent-skills"
           build_json="$(python scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --release-version "${RELEASE_VERSION}" --json)"
           printf '%s\n' "${build_json}"
           BUILD_JSON="${build_json}" python - <<'PY'
@@ -152,9 +152,9 @@ jobs:
           target="${RUNNER_TEMP}/agent-skills-release-target"
           mkdir -p "${target}"
           "${artifact}" install --target "${target}" --json
-          test -x "${target}/.agents/runtime/agent-skills-mcp"
+          test -x "${target}/.agents/runtime/agent-skills"
           test ! -e "${target}/.agents/agent-skills-install.json"
-          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
+          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills" --json
 
           mkdir -p release-assets
           cp "${artifact}" "release-assets/${name}"
@@ -163,7 +163,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-linux
-          path: release-assets/agent-skills-mcp-v*-linux
+          path: release-assets/agent-skills
           if-no-files-found: error
           compression-level: 0
 
@@ -206,7 +206,7 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
-          $name = "agent-skills-mcp-v$env:RELEASE_VERSION-windows"
+          $name = "agent-skills"
           $buildJson = (python scripts/build_runtime.py --output-dir .runtime-dist --name $name --release-version $env:RELEASE_VERSION --json | Out-String)
           if ($LASTEXITCODE -ne 0) { throw "Windows Runtime build 失败" }
           Write-Output $buildJson
@@ -235,7 +235,7 @@ jobs:
           & $artifact install --target $target --json
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目安装失败" }
           if (Test-Path (Join-Path $target ".agents\agent-skills-install.json")) { throw "Release 安装不应生成 install manifest" }
-          $installedRuntime = Join-Path $target ".agents\runtime\agent-skills-mcp.exe"
+          $installedRuntime = Join-Path $target ".agents\runtime\agent-skills.exe"
           python scripts/runtime_mcp_smoke.py --artifact $installedRuntime --json
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime MCP smoke 失败" }
 
@@ -246,7 +246,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-windows
-          path: release-assets/agent-skills-mcp-v*-windows.exe
+          path: release-assets/agent-skills.exe
           if-no-files-found: error
           compression-level: 0
 
@@ -289,7 +289,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           set -euo pipefail
-          name="agent-skills-mcp-v${RELEASE_VERSION}-macos"
+          name="agent-skills"
           build_json="$(python scripts/build_runtime.py --output-dir .runtime-dist --name "${name}" --release-version "${RELEASE_VERSION}" --json)"
           printf '%s\n' "${build_json}"
           BUILD_JSON="${build_json}" python - <<'PY'
@@ -320,9 +320,9 @@ jobs:
           target="${RUNNER_TEMP}/agent-skills-release-target"
           mkdir -p "${target}"
           "${artifact}" install --target "${target}" --json
-          test -x "${target}/.agents/runtime/agent-skills-mcp"
+          test -x "${target}/.agents/runtime/agent-skills"
           test ! -e "${target}/.agents/agent-skills-install.json"
-          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills-mcp" --json
+          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills" --json
 
           mkdir -p release-assets
           cp "${artifact}" "release-assets/${name}"
@@ -331,7 +331,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-runtime-macos
-          path: release-assets/agent-skills-mcp-v*-macos
+          path: release-assets/agent-skills
           if-no-files-found: error
           compression-level: 0
 
@@ -358,7 +358,6 @@ jobs:
         with:
           pattern: release-runtime-*
           path: release-assets
-          merge-multiple: true
           digest-mismatch: error
 
       - name: Include end-user guide
@@ -416,9 +415,9 @@ jobs:
           test "${GITHUB_REF}" = "refs/heads/main"
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
           expected=(
-            "agent-skills-mcp-v${RELEASE_VERSION}-linux"
-            "agent-skills-mcp-v${RELEASE_VERSION}-windows.exe"
-            "agent-skills-mcp-v${RELEASE_VERSION}-macos"
+            "release-runtime-linux/agent-skills"
+            "release-runtime-windows/agent-skills.exe"
+            "release-runtime-macos/agent-skills"
             "USAGE.md"
           )
           for asset in "${expected[@]}"; do
@@ -454,19 +453,19 @@ jobs:
               raise SystemExit("Bundle version 非法")
           PY
           check_sha() {
-            local binary="$1"
+            local binary_path="$1"
             local expected_sha="$2"
             local actual_sha
-            actual_sha="$(sha256sum "release-assets/${binary}" | awk '{print $1}')"
+            actual_sha="$(sha256sum "${binary_path}" | awk '{print $1}')"
             test "${actual_sha}" = "${expected_sha}" || {
-              echo "Release artifact SHA256 不一致：${binary}" >&2
+              echo "Release artifact SHA256 不一致：${binary_path}" >&2
               exit 1
             }
           }
-          check_sha "agent-skills-mcp-v${RELEASE_VERSION}-linux" "${LINUX_ARTIFACT_SHA256}"
-          check_sha "agent-skills-mcp-v${RELEASE_VERSION}-windows.exe" "${WINDOWS_ARTIFACT_SHA256}"
-          check_sha "agent-skills-mcp-v${RELEASE_VERSION}-macos" "${MACOS_ARTIFACT_SHA256}"
-          test -z "$(find release-assets -maxdepth 1 -name '*.manifest.json' -print -quit)"
+          check_sha "release-assets/release-runtime-linux/agent-skills" "${LINUX_ARTIFACT_SHA256}"
+          check_sha "release-assets/release-runtime-windows/agent-skills.exe" "${WINDOWS_ARTIFACT_SHA256}"
+          check_sha "release-assets/release-runtime-macos/agent-skills" "${MACOS_ARTIFACT_SHA256}"
+          test -z "$(find release-assets -name '*.manifest.json' -print -quit)"
           if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
             echo "tag 已存在，拒绝覆盖：${RELEASE_TAG}" >&2
             exit 1
@@ -482,9 +481,9 @@ jobs:
         run: |
           set -euo pipefail
           assets=(
-            "agent-skills-mcp-v${RELEASE_VERSION}-linux"
-            "agent-skills-mcp-v${RELEASE_VERSION}-windows.exe"
-            "agent-skills-mcp-v${RELEASE_VERSION}-macos"
+            "release-runtime-linux/agent-skills"
+            "release-runtime-windows/agent-skills.exe"
+            "release-runtime-macos/agent-skills"
             "USAGE.md"
           )
           for asset in "${assets[@]}"; do
@@ -498,18 +497,18 @@ jobs:
 
           version = os.environ["RELEASE_VERSION"]
           packages = [
-              ("linux", f"agent-skills-v{version}-linux.zip", f"agent-skills-mcp-v{version}-linux"),
-              ("windows", f"agent-skills-v{version}-windows.zip", f"agent-skills-mcp-v{version}-windows.exe"),
-              ("macos", f"agent-skills-v{version}-macos.zip", f"agent-skills-mcp-v{version}-macos"),
+              ("linux", f"agent-skills-v{version}-linux.zip", Path("release-assets/release-runtime-linux/agent-skills"), "agent-skills"),
+              ("windows", f"agent-skills-v{version}-windows.zip", Path("release-assets/release-runtime-windows/agent-skills.exe"), "agent-skills.exe"),
+              ("macos", f"agent-skills-v{version}-macos.zip", Path("release-assets/release-runtime-macos/agent-skills"), "agent-skills"),
           ]
-          source = Path("release-assets")
+          usage = Path("release-assets/USAGE.md")
           package_dir = Path("release-package")
-          for platform, package_name, binary in packages:
+          for platform, package_name, binary_path, binary in packages:
               expected = [binary, "USAGE.md"]
               package = package_dir / package_name
               with zipfile.ZipFile(package, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-                  for name in expected:
-                      archive.write(source / name, arcname=name)
+                  archive.write(binary_path, arcname=binary)
+                  archive.write(usage, arcname="USAGE.md")
               with zipfile.ZipFile(package) as archive:
                   actual = archive.namelist()
               if actual != expected:
