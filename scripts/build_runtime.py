@@ -186,7 +186,7 @@ def _write_entrypoint(path: Path) -> None:
 def build_runtime(
     source_root: str | Path,
     output_dir: str | Path,
-    name: str = "agent-skills-mcp",
+    name: str = "agent-skills",
     release_version: str | None = None,
 ) -> dict[str, Any]:
     """构建自包含 onefile Runtime，并直接返回构建身份而不生成磁盘 sidecar。"""
@@ -301,7 +301,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="构建 Agent Skills 项目级自包含 MCP onefile Runtime")
     parser.add_argument("--source-root", default=str(SOURCE_ROOT), help="Agent_Skills 源仓库根目录")
     parser.add_argument("--output-dir", default="dist", help="构建产物目录，默认 dist")
-    parser.add_argument("--name", default="agent-skills-mcp", help="Runtime 可执行文件基础名")
+    parser.add_argument("--name", default="agent-skills", help="Runtime 可执行文件基础名")
     parser.add_argument(
         "--release-version",
         default=None,
