@@ -150,6 +150,20 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
         self.assertEqual(positions, sorted(positions), "Post-Merge Finalization 顺序发生漂移")
         self.assertIn("blocked/incomplete", text)
 
+    def test_target_repository_default_contract_does_not_require_installed_github_forms(self) -> None:
+        """目标仓库未复制 GitHub Form 时，Agent 默认 Issue lifecycle 仍必须生效。"""
+        text = self._read(TRACEABILITY)
+        required = (
+            "GitHub Form 只是可选 UI Profile",
+            "没有安装或复制 Agent_Skills GitHub Forms",
+            "创建、规范、更新和关闭 Requirement Source",
+            "仍执行本节默认 Contract",
+            "落地 Issue Form 不是 Agent 行为 Contract 生效的前置条件",
+            "每个仓库继续使用自己的 Requirement/Change/PR 生命周期",
+        )
+        for item in required:
+            self.assertIn(item, text, item)
+
     def test_contract_is_cross_platform_without_forcing_github_forms(self) -> None:
         """统一的是语义 Contract，不是把 GitHub YAML 强制复制给所有项目。"""
         text = self._read(TRACEABILITY)
