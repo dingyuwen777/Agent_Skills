@@ -6,7 +6,7 @@ on:
       - chg/runtime-binary-agent-skills
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   render-workflows:
@@ -18,14 +18,18 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Render workflow replacements
+      - name: Render workflow replacements and create unattached blobs
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          import base64
+          import json
+          import os
           import re
+          import urllib.request
 
           root = Path.cwd()
           legacy = "agent-skills-" + "mcp"
@@ -65,26 +69,40 @@ jobs:
               r'''          expected=\(\n\s+"agent-skills-v\$\{RELEASE_VERSION\}-linux"\n\s+"agent-skills-v\$\{RELEASE_VERSION\}-windows\.exe"\n\s+"agent-skills-v\$\{RELEASE_VERSION\}-macos"\n\s+"USAGE\.md"\n\s+\)''',
               '''          expected=(\n            "release-runtime-linux/agent-skills"\n            "release-runtime-windows/agent-skills.exe"\n            "release-runtime-macos/agent-skills"\n            "USAGE.md"\n          )''',
           )
-
           regex_once(
               r'''          check_sha\(\) \{.*?          test -z "\$\(find release-assets -maxdepth 1 -name '\*\.manifest\.json' -print -quit\)"''',
               '''          check_sha() {\n            local binary_path="$1"\n            local expected_sha="$2"\n            local actual_sha\n            actual_sha="$(sha256sum "${binary_path}" | awk '{print $1}')"\n            test "${actual_sha}" = "${expected_sha}" || {\n              echo "Release artifact SHA256 不一致：${binary_path}" >&2\n              exit 1\n            }\n          }\n          check_sha "release-assets/release-runtime-linux/agent-skills" "${LINUX_ARTIFACT_SHA256}"\n          check_sha "release-assets/release-runtime-windows/agent-skills.exe" "${WINDOWS_ARTIFACT_SHA256}"\n          check_sha "release-assets/release-runtime-macos/agent-skills" "${MACOS_ARTIFACT_SHA256}"\n          test -z "$(find release-assets -name '*.manifest.json' -print -quit)"''',
           )
-
           regex_once(
               r'''          assets=\(\n\s+"agent-skills-v\$\{RELEASE_VERSION\}-linux"\n\s+"agent-skills-v\$\{RELEASE_VERSION\}-windows\.exe"\n\s+"agent-skills-v\$\{RELEASE_VERSION\}-macos"\n\s+"USAGE\.md"\n\s+\)''',
               '''          assets=(\n            "release-runtime-linux/agent-skills"\n            "release-runtime-windows/agent-skills.exe"\n            "release-runtime-macos/agent-skills"\n            "USAGE.md"\n          )''',
           )
-
           regex_once(
               r'''          packages = \[\n\s+\("linux", f"agent-skills-v\{version\}-linux\.zip", f"agent-skills-v\{version\}-linux"\),\n\s+\("windows", f"agent-skills-v\{version\}-windows\.zip", f"agent-skills-v\{version\}-windows\.exe"\),\n\s+\("macos", f"agent-skills-v\{version\}-macos\.zip", f"agent-skills-v\{version\}-macos"\),\n\s+\]\n\s+source = Path\("release-assets"\)\n\s+package_dir = Path\("release-package"\)\n\s+for platform, package_name, binary in packages:\n\s+expected = \[binary, "USAGE\.md"\]\n\s+package = package_dir / package_name\n\s+with zipfile\.ZipFile\(package, "w", compression=zipfile\.ZIP_DEFLATED, compresslevel=9\) as archive:\n\s+for name in expected:\n\s+archive\.write\(source / name, arcname=name\)\n\s+with zipfile\.ZipFile\(package\) as archive:\n\s+actual = archive\.namelist\(\)\n\s+if actual != expected:\n\s+raise SystemExit\(f"ZIP 成员集合不正确：\{platform\}: \{actual\}"\)''',
               '''          packages = [\n              ("linux", f"agent-skills-v{version}-linux.zip", Path("release-assets/release-runtime-linux/agent-skills"), "agent-skills"),\n              ("windows", f"agent-skills-v{version}-windows.zip", Path("release-assets/release-runtime-windows/agent-skills.exe"), "agent-skills.exe"),\n              ("macos", f"agent-skills-v{version}-macos.zip", Path("release-assets/release-runtime-macos/agent-skills"), "agent-skills"),\n          ]\n          usage = Path("release-assets/USAGE.md")\n          package_dir = Path("release-package")\n          for platform, package_name, binary_path, binary in packages:\n              expected = [binary, "USAGE.md"]\n              package = package_dir / package_name\n              with zipfile.ZipFile(package, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:\n                  archive.write(binary_path, arcname=binary)\n                  archive.write(usage, arcname="USAGE.md")\n              with zipfile.ZipFile(package) as archive:\n                  actual = archive.namelist()\n              if actual != expected:\n                  raise SystemExit(f"ZIP 成员集合不正确：{platform}: {actual}")''',
           )
-
           release.write_text(text, encoding="utf-8", newline="\n")
           if legacy in text or legacy in package_text:
               raise SystemExit("workflow migration left legacy binary name")
 
-          for label, path in (("RELEASE_B64", release), ("PACKAGE_B64", package)):
-              print(f"{label}=" + base64.b64encode(path.read_bytes()).decode("ascii"))
+          token = os.environ["GH_TOKEN"]
+          repo = os.environ["GITHUB_REPOSITORY"]
+          def create_blob(label: str, path: Path) -> None:
+              payload = json.dumps({"content": path.read_text(encoding="utf-8"), "encoding": "utf-8"}).encode("utf-8")
+              request = urllib.request.Request(
+                  f"https://api.github.com/repos/{repo}/git/blobs",
+                  data=payload,
+                  method="POST",
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "Content-Type": "application/json",
+                  },
+              )
+              with urllib.request.urlopen(request) as response:
+                  result = json.load(response)
+              print(f"{label}_BLOB_SHA={result['sha']}")
+          create_blob("RELEASE", release)
+          create_blob("PACKAGE", package)
           PY
