@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
+from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
+
 
 ROOT = Path(__file__).resolve().parents[4]
 VALIDATION = ROOT / ".agents/skills/coding/references/07_通用验证与证据策略.md"
@@ -16,9 +18,33 @@ WORKFLOW_DIR = ROOT / ".github/workflows"
 class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
     """锁定 CI 最小充分而非“越多越好/越少越好”的治理边界。"""
 
+    @classmethod
+    def setUpClass(cls) -> None:
+        """编译当前 canonical routing，验证轻量 Reference 真实可达。"""
+        cls.manifest = compile_routing(ROOT)
+
     def _read(self, path: Path) -> str:
         """读取 UTF-8 正式文本。"""
         return path.read_text(encoding="utf-8")
+
+    def _evaluate(self, signals: dict[str, list[str]]) -> dict[str, object]:
+        """按正式 Task Route 协议求值。"""
+        return evaluate_route(
+            self.manifest,
+            {
+                "协议": TASK_ROUTE_PROTOCOL,
+                "信号": signals,
+                "未知项": [],
+                "依据": ["ci workflow minimal sufficiency regression"],
+            },
+        )
+
+    def test_implementation_route_loads_thin_workflow_health_check(self) -> None:
+        """Coding 实现任务必须自动加载轻量 Health Check，但不因它预加载完整 CI 审计。"""
+        result = self._evaluate({"执行模式": ["实现"], "风险": ["L1"]})
+        self.assertIn("coding", result["命中Skill"])
+        self.assertIn("coding.reference.28", result["必需Reference"])
+        self.assertNotIn("coding.reference.20", result["必需Reference"])
 
     def test_implementation_path_uses_thin_workflow_health_check(self) -> None:
         """持久仓库实现应轻量检查 CI 健康，发现真实问题时再升级完整审计。"""
