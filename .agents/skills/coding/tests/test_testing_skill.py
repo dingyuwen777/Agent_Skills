@@ -48,12 +48,10 @@ class TestingSkillIntegrationTest(unittest.TestCase):
         self.assertIn("回归测试", contract["维度"]["意图"])
         self.assertIn("测试", contract["维度"]["能力"])
 
-    def test_black_box_user_journey_routes_to_testing_references(self) -> None:
-        """纯黑盒/User Journey 任务必须命中 Testing，而不因通用验证模式误拉入 Coding。"""
+    def test_black_box_user_journey_can_route_to_testing_without_coding_intent(self) -> None:
+        """只有测试意图时必须能独立命中 Testing，不要求伪造 Coding 执行模式。"""
         result = self._evaluate(
             {
-                "项目形态": ["前端Web"],
-                "风险": ["L2"],
                 "意图": ["黑盒测试", "用户场景验收"],
                 "能力": ["测试"],
             }
@@ -64,13 +62,10 @@ class TestingSkillIntegrationTest(unittest.TestCase):
         self.assertIn("testing.reference.02", result["必需Reference"])
         self.assertNotIn("coding.reference.26", result["必需Reference"])
 
-    def test_regression_routes_to_testing_without_requiring_browser(self) -> None:
-        """纯 CLI 回归测试应命中 Testing，不因项目形态强加 Web 或 Coding。"""
+    def test_regression_can_route_to_testing_without_browser_or_coding_intent(self) -> None:
+        """纯回归测试必须能独立命中 Testing，且不要求 Browser 或 Coding 信号。"""
         result = self._evaluate(
             {
-                "项目形态": ["CLI"],
-                "阶段": ["缺陷修复"],
-                "风险": ["L2"],
                 "意图": ["回归测试"],
                 "能力": ["测试"],
             }
@@ -79,6 +74,21 @@ class TestingSkillIntegrationTest(unittest.TestCase):
         self.assertNotIn("coding", result["命中Skill"])
         self.assertIn("testing.reference.01", result["必需Reference"])
         self.assertIn("testing.reference.03", result["必需Reference"])
+
+    def test_known_project_facts_may_add_other_skills_without_stealing_testing_ownership(self) -> None:
+        """真实项目事实可按并集命中其他 Skill，但测试方法仍必须来自 Testing。"""
+        result = self._evaluate(
+            {
+                "项目形态": ["前端Web"],
+                "风险": ["L2"],
+                "意图": ["黑盒测试", "用户场景验收"],
+                "能力": ["测试"],
+            }
+        )
+        self.assertIn("testing", result["命中Skill"])
+        self.assertIn("testing.reference.01", result["必需Reference"])
+        self.assertIn("testing.reference.02", result["必需Reference"])
+        self.assertNotIn("coding.reference.26", result["必需Reference"])
 
     def test_review_and_test_routes_review_and_testing_together(self) -> None:
         """Review-and-test 必须由 Review 识别缺口并由 Testing 承担测试方法。"""
@@ -134,7 +144,9 @@ class TestingSkillIntegrationTest(unittest.TestCase):
     def test_testing_owns_scenario_methods_review_only_owns_adequacy(self) -> None:
         """专业方法只能在 Testing 展开，Review 保留充分性/Evidence 审查与 Handoff。"""
         testing = self._read(".agents/skills/testing/SKILL.md")
+        strategy = self._read(".agents/skills/testing/references/01_测试策略与分层证据.md")
         scenario = self._read(".agents/skills/testing/references/02_用户场景黑盒与探索式测试.md")
+        regression = self._read(".agents/skills/testing/references/03_缺陷复现回归与Handoff.md")
         review = self._read(".agents/skills/review/SKILL.md")
         review_evidence = self._read(".agents/skills/review/references/03_测试专家审查方法.md")
         coding_handoff = self._read(".agents/skills/coding/references/25_Testing专业职责与Handoff.md")
@@ -145,7 +157,16 @@ class TestingSkillIntegrationTest(unittest.TestCase):
             "Exploratory Testing",
             "Regression",
         ):
-            self.assertIn(marker, testing + scenario)
+            self.assertIn(marker, testing + strategy + scenario + regression)
+
+        for preserved in (
+            "method / URL / query / payload",
+            "事务 / 约束",
+            "幂等 / 锁 / 并发",
+            "只包含完美样例",
+            "盲目更新 snapshot",
+        ):
+            self.assertIn(preserved, strategy + scenario + regression)
 
         self.assertIn("测试充分性", review)
         self.assertIn("Handoff Testing", review + review_evidence)
@@ -159,7 +180,7 @@ class TestingSkillIntegrationTest(unittest.TestCase):
         router = self._read(".agents/skills/router/SKILL.md")
         self.assertIn("用户可见 L2/L3 Feature 或 Bug", testing)
         self.assertIn("真实公开入口", testing)
-        self.assertIn("隔离 L1 机械修改", router)
+        self.assertIn("隔离 L1", router)
         self.assertIn("不为了“走完所有 Skill”机械叠加 Testing", router)
 
 
