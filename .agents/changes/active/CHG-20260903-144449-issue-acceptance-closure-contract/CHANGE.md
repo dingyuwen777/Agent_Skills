@@ -15,6 +15,7 @@ affected_areas:
   - requirement-traceability
   - post-merge-finalization
   - issue-forms
+  - issue-title-contract
   - pr-template
   - skill-mutation
 affected_paths:
@@ -30,6 +31,7 @@ affected_paths:
   - .agents/skills/coding/tests/test_network_and_workflow_governance.py
   - .agents/skills/coding/tests/test_issue_acceptance_closure_contract.py
 contracts:
+  - Agent Skills Issue Title Contract
   - Agent Skills Issue Acceptance Contract
   - Agent Skills Requirement Closure Contract
 data_changes: []
@@ -37,7 +39,7 @@ data_changes: []
 
 # 目标
 
-统一 Agent_Skills 自身和被 Agent_Skills 帮助开发的项目在 Requirement Source / Issue 关闭阶段的 Acceptance Criteria 与 Closure Audit：Issue/Ticket 的 Acceptance Criteria 是最终完成状态 Owner；Change 负责 Evidence Ledger，PR 负责交付，Closure Audit 负责把直接 Evidence 回写到 Requirement Source。GitHub profile 使用稳定 `AC1/AC2/...` task list，并在关闭前真实完成 `[ ] → [x] → write → re-read → close → re-read`；其他平台使用项目现有的等价状态，不强制复制 GitHub YAML。
+统一 Agent_Skills 自身和被 Agent_Skills 帮助开发的项目在 Requirement Source / Issue 生命周期中的公共 Contract：Issue 类型/标题、Acceptance Criteria、验证要求与 Closure Audit 使用稳定语义。Issue/Ticket 的 Acceptance Criteria 是最终完成状态 Owner；Change 负责 Evidence Ledger，PR 负责交付，Closure Audit 负责把直接 Evidence 回写到 Requirement Source。Agent_Skills 的 GitHub profile 使用统一 chooser 名称、`[类型] 简洁主题` 标题、稳定 `AC1/AC2/...` task list，并在关闭前真实完成 `[ ] → [x] → write → re-read → close → re-read`；其他项目/平台优先遵守自身更强规范，否则使用等价默认 Contract。
 
 Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/184
 
@@ -54,21 +56,22 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/184
 | R7 | 公共 Contract / 类型 Profile / 平台 Profile 分层，项目现有 Owner 优先 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC7 | not_satisfied | canonical cross-platform regression |
 | R8 | 永久回归完整覆盖并保持现有高价值 Issue/PR/Closure 语义 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC8 | not_satisfied | full Skill Tests + diff review |
 | R9 | Review、PR/main/archive CI、guarded merge、归档以及本 Issue checklist 回写关闭闭环 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC9 | not_satisfied | final-head/main/archive/closure evidence |
+| R10 | Agent_Skills 三类 GitHub Issue chooser 名称与标题格式统一，目标项目有更强标题规范时优先遵守 | https://github.com/dingyuwen777/Agent_Skills/issues/184#AC10 | not_satisfied | canonical title contract + Issue Form regression |
 
 # Validation Matrix
 
 | 层级 | Scope | 状态 | 证据 |
 | --- | --- | --- | --- |
-| Red | 当前 main 缺少统一 AC/Closure 写回契约 | pending | 新增 Red regression |
+| Red | 当前 main 缺少统一 Issue Title / AC / Closure 写回契约 | in_progress | Red Skill Tests #1052：新契约测试 8 个预期 failure；Runtime Package #342 governance/content scope Gate success |
 | Static contract | canonical rules / Issue Forms / PR Template / Finalization | pending | self-contained tests |
 | Routing / preservation | Issue/PR/端到端交付既有路由与高价值语义不回归 | pending | existing + updated regressions |
 | Runtime package scope | 本次治理/Skill 内容变化按真实 scope 分类，不机械要求 binary package | pending | Runtime Package Gate |
 | Review | A1 Requirement→Implementation + A2 Implementation→Evidence | pending | independent Review |
-| Closure dogfood | Issue #184 AC1-AC9 回写 `[x]`、重读、关闭、再读 | pending | final Closure Audit |
+| Closure dogfood | Issue #184 AC1-AC10 回写 `[x]`、重读、关闭、再读 | pending | final Closure Audit |
 
 # 完成审计
 
 - [ ] upstream_re_read: 合并前重新读取 Issue #184、当前 main 规则与最终 diff。
-- [ ] change_coverage: AC1-AC9 均有直接实现或验证证据。
-- [ ] reverse_audit: 从最终 diff 反查公共 Contract、类型/平台边界、auto-close 时序和未授权范围扩大。
+- [ ] change_coverage: AC1-AC10 均有直接实现或验证证据。
+- [ ] reverse_audit: 从最终 diff 反查标题/公共 Contract、类型/平台边界、auto-close 时序和未授权范围扩大。
 - [ ] unresolved_cleared: 无未解决 blocker、CI failure、未验证适用 AC 或未回写 Issue 状态。
