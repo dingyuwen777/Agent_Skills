@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260903-144449-issue-acceptance-closure-contract
 title: 统一 Issue 验收标准与 Closure Audit 回写契约
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: chg/issue-acceptance-closure-contract
 created: 2026-09-03
@@ -62,44 +62,67 @@ AIMA 跨仓验证 Owner：https://github.com/dingyuwen777/AIMA_UGC/issues/319
 | R7 | AC7：Post-Merge Finalization 固定 Acceptance 同步、写后重读、close 后再读，再 cleanup/report | external:https://github.com/dingyuwen777/Agent_Skills/issues/184#AC7 | satisfied | ref23 固定 `Closure Audit → Acceptance checklist 同步 → 写后重读 → close → close 后再读 → 分支清理 → 最终报告`；顺序 regression 通过，失败保持 `blocked/incomplete`。 |
 | R8 | AC8：通用 Contract 跨项目/跨平台，项目更强 Owner 优先，不强制安装 GitHub Form | external:https://github.com/dingyuwen777/Agent_Skills/issues/184#AC8 | satisfied | ref17 明确 `公共 Contract + 类型 Profile + 平台 Profile`、项目已有 Owner 优先、非 GitHub 使用等价 Acceptance/Closure 状态、不强制复制 Forms；cross-platform regression 通过。 |
 | R9 | AC9：Agent_Skills 三类 chooser/title 使用统一默认格式且标题不承载额外状态元数据 | external:https://github.com/dingyuwen777/Agent_Skills/issues/184#AC9 | satisfied | 三类 Form 已统一为 `需求/[需求] `、`缺陷/[缺陷] `、`技术变更/[技术变更] `；ref17 Title Contract 明确标题不承载状态/优先级/Owner/分支/重复 Issue 编号；title regression 通过。 |
-| R10 | AC10：永久回归防止 Title/AC/Evidence/Closure/auto-close/Finalization 与 Context Budget 漂移 | external:https://github.com/dingyuwen777/Agent_Skills/issues/184#AC10 | satisfied | PR head `dd907409...` 的 Skill Tests #1066 / run `33727965339` 中 399 项 self-contained tests 全部通过；一次 Git Delivery Context 超预算 515 bytes 被永久预算测试阻止后没有抬阈值，而是等价压缩重复 Profile 文本，route-context-budget 恢复 Green。Runtime Package #356 / run `33727965265` governance scope Gate success，三平台 binary jobs skipped。 |
-| R11 | AC11：Review、PR final-head、guarded merge、main-fresh、Change archive、archive-main fresh 与最终 Issue Closure 完整闭环 | external:https://github.com/dingyuwen777/Agent_Skills/issues/184#AC11 | explicitly_deferred | 独立 A1/A2 Review 已 `NO_FINDINGS_WITHIN_SCOPE`；其余 merge/main/archive/closure evidence 必须由后续真实 revision 取得，不能在 merge 前伪造。 |
+| R10 | AC10：永久回归防止 Title/AC/Evidence/Closure/auto-close/Finalization 与 Context Budget 漂移 | external:https://github.com/dingyuwen777/Agent_Skills/issues/184#AC10 | satisfied | PR final-ready head `ba22c67eaa4c43d646e2918fb314fe5df9d673f1` 的 Skill Tests #1069 / run `33729172719` 与 Runtime Package #359 / run `33729172720` success；399 项 self-contained tests 全部通过。此前 Git Delivery Context 超预算 515 bytes 时没有抬阈值，而是等价压缩重复 Profile 文本，route-context-budget 恢复 Green。 |
+| R11 | AC11：Review、PR final-head、guarded merge、main-fresh、Change archive、archive-main fresh 与最终 Issue Closure 完整闭环 | external:https://github.com/dingyuwen777/Agent_Skills/issues/184#AC11 | explicitly_deferred | 独立 A1/A2 Review `NO_FINDINGS_WITHIN_SCOPE`；PR #185 以 expected head `ba22c67e...` guarded squash merge，implementation merge SHA `40c44569d8ab5a26b3ce3dba32f6ec1113c0ac44`；`main@40c44569...` fresh Skill Tests #1070 / run `33729355772` 与 Runtime Package #360 / run `33729355738` success。当前归档 PR 自身的 merge/archive-main fresh 与最终 #184 checklist/close 由 post-merge finalization 继续执行，避免归档 Change 自引用。 |
 | R12 | AC12：无更强项目规则时目标仓库即使未复制 GitHub Forms 也使用默认 Contract，并由 AIMA 真实 Profile 验证 | external:https://github.com/dingyuwen777/Agent_Skills/issues/184#AC12 | explicitly_deferred | 通用无-Form 默认行为已进入 ref17 并由 regression 保护；真实业务仓库 Profile 由 AIMA_UGC #319 / PR #320 / 独立 Change 承载，只有 AIMA 自身 final CI、merge、main-fresh、archive、#319 Closure Audit 完成后才能最终 satisfied。 |
 
 # Red / Green 证据
 
 Red head `a29e0b11694c32888f6e9eebb8f366029cbbd88f` 只包含 Change + 新 Closure Contract 回归。Skill Tests #1052 / run `33724854183` 在旧 canonical 实现上出现 8 个预期 failure，直接暴露 Acceptance final Owner、GitHub writeback/re-read、三 Form 公共 validation、PR auto-close、Finalization 与跨平台 Contract 缺口；Runtime Package #342 / run `33724854273` 对该治理范围 success。
 
-用户随后补充 Issue 标题统一和 Evidence Sufficiency，本 Requirement Source 更新为 AC1–AC12；对应 Red/Green 回归继续加入同一测试文件。实现完成后，语义回归已全部通过。一次 Green 候选因 Git Delivery 路由上下文 245347 bytes 超过既有 244832 bytes 硬预算 515 bytes 被永久预算测试阻止；没有提高阈值，而是压缩重复 UI Profile 说明，保留全部行为边界。最终实现 head `dd90740997daf8d125b05fc1a2275f3d07a2fe26` 的 self-contained suite 全绿。
+用户随后补充 Issue 标题统一和 Evidence Sufficiency，本 Requirement Source 更新为 AC1–AC12；对应 Red/Green 回归继续加入同一测试文件。实现完成后，语义回归已全部通过。一次 Green 候选因 Git Delivery 路由上下文 245347 bytes 超过既有 244832 bytes 硬预算 515 bytes 被永久预算测试阻止；没有提高阈值，而是压缩重复 UI Profile 说明，保留全部行为边界。
 
 # 独立 Review
 
-Review Target：PR #185，Requirement Source #184，review implementation head `dd90740997daf8d125b05fc1a2275f3d07a2fe26`。
+Review Target：PR #185，Requirement Source #184，review implementation head `dd90740997daf8d125b05fc1a2275f3d07a2fe26`，最终 Ready 只继续修正 Change schema/追溯格式与等价文本压缩，没有扩大产品范围。
 
-A1 Requirement→Implementation：逐项从 AC1–AC12 反查 ref17/ref23、三类 Issue Forms、PR Template 与永久回归。AC1–AC10 均有直接实现；AC11 的 post-merge lifecycle、AC12 的 AIMA 独立仓库 lifecycle 保持 explicit deferred，没有用 CI Green、Review 或作者说明提前满足。
+A1 Requirement→Implementation：逐项从 AC1–AC12 反查 ref17/ref23、三类 Issue Forms、PR Template 与永久回归。AC1–AC10 均有直接实现；AC11 的最终归档/Closure lifecycle、AC12 的 AIMA 独立仓库 lifecycle 保持 explicit deferred，没有用 CI Green、Review 或作者说明提前满足。
 
 A2 Implementation→Evidence：从 PR changed-files 反查仅涉及 Requirement/Closure canonical rules、Agent_Skills GitHub Profiles、PR Template、Change 和相关永久回归；没有 Runtime/MCP/Bundle/Project Payload/Release 产品面变化。Evidence Sufficiency 本身明确拒绝 CI/merge/Change done 机械满足自然语言 AC。目标仓库没有安装 GitHub Form 时仍由 Agent 行为 Contract 生效；AIMA 实现不进入 canonical 特例，保持项目 Ownership。
 
 Review 结论：`NO_FINDINGS_WITHIN_SCOPE`，无 BLOCKER/HIGH/需要阻塞交付的 MEDIUM。
+
+# 实现合并与 Main-fresh 验证
+
+PR #185 使用 `expected_head_sha=ba22c67eaa4c43d646e2918fb314fe5df9d673f1` guarded squash merge。
+
+实现 merge SHA：`40c44569d8ab5a26b3ce3dba32f6ec1113c0ac44`。
+
+`main@40c44569...` fresh CI：
+
+- Skill Tests #1070 / run `33729355772`：success；Requirement Source、compile/smoke、399 项 self-contained、Active Change Ready Check、Agent Skills Gate 全部通过。
+- Runtime Package Tests #360 / run `33729355738`：success；governance scope、Package Gate 成功，三平台 binary jobs 按 scope 正确 skipped。
+
+只有取得上述 implementation main-fresh evidence 后才开始本次 Change archive。
 
 # Validation Matrix
 
 | 验证层 | 结论 |
 | --- | --- |
 | Red | required；#1052 明确证明旧实现不满足新增 Closure/AC Contract |
-| Static / Contract | required；399 项 current self-contained suite 通过，覆盖 Title、Acceptance、Evidence Sufficiency、Forms、PR、Finalization、跨平台与无-Form 默认行为 |
+| Static / Contract | required；399 项 self-contained suite 通过，覆盖 Title、Acceptance、Evidence Sufficiency、Forms、PR、Finalization、跨平台与无-Form 默认行为 |
 | Routing / Context | required；既有 Issue/PR/Git Delivery 路由与 Context Budget 全部通过，预算未上调 |
-| Runtime Package | governance scope；#356 Package Gate success，三平台 binary build not_applicable/skipped，未伪造 package evidence |
+| Runtime Package | governance scope；PR final-ready #359 与 implementation main-fresh #360 Package Gate 均 success，三平台 binary build not_applicable/skipped |
 | 产品业务 / Persistence / Schema | not_applicable；未修改业务代码、数据库、Schema/Migration 或 Provider |
 | Release / Deploy | not_applicable；未请求且未修改 Release/Deploy 产品行为 |
 | Independent Review | required；A1/A2 `NO_FINDINGS_WITHIN_SCOPE` |
-| PR final-ready / merge / main-fresh / archive | explicitly_deferred；只能由后续真实 revision/lifecycle 取得 |
+| Implementation merge / main-fresh | satisfied；PR #185 guarded merge + #1070/#360 success |
+| Archive PR / archive-main | explicitly_deferred；由当前 finalization 自身完成，避免 archived Change 自引用 |
 | AIMA project profile | explicitly_deferred to `dingyuwen777/AIMA_UGC#319`；跨仓独立治理 |
 | Final Requirement Closure | explicitly_deferred；只有 #184 AC1–AC12 均取得充分 Evidence 并真实回写后才可 close |
 
+# 归档生命周期
+
+- [x] PR #185 使用 expected head guard 合并到 main。
+- [x] implementation merge `40c44569...` 的 main-fresh Skill Tests #1070 与 Runtime Package #360 全绿。
+- [ ] 当前 finalization PR 合并，并取得 archive-main fresh CI。
+- [ ] AIMA_UGC #319 完整项目 Profile lifecycle 与 Closure Audit 完成。
+- [ ] Issue #184 AC1–AC12 Closure Audit、checklist 回写、重读与 close/re-read 完成。
+- [ ] 当前任务分支确认已清理。
+
 # 完成审计
 
-- [x] upstream_re_read: 已重新读取 Issue #184（含用户追加的 AIMA 与 Evidence Sufficiency 要求）、Agent_Skills 当前 main baseline、最终 PR diff 和受影响 canonical Owners。
-- [x] change_coverage: AC1–AC10 已有直接实现/Evidence；AC11 post-merge lifecycle 与 AC12 AIMA lifecycle 有明确正式 Owner 和 `explicitly_deferred`，没有伪造完成。
-- [x] reverse_audit: 已从最终 diff 反查 Title/Acceptance/Evidence/Closure、类型/平台 Profile、auto-close、Finalization、无-Form 默认行为、上下文预算与非目标边界；未发现 Runtime/Release/业务范围扩大。
-- [x] unresolved_cleared: 当前产品/规则实现与独立 Review 无阻塞 finding；唯一未完成项均是必须发生在后续真实 revision 的 lifecycle evidence，已显式 deferred，不把它们当成已完成。
+- [x] upstream_re_read: 已重新读取 Issue #184、最终实现 PR #185、main-fresh #1070/#360 与 AIMA 独立 Owner #319。
+- [x] change_coverage: AC1–AC10 已完成；AC11 剩余 archive/Closure 与 AC12 AIMA lifecycle 有明确正式 Owner 和 `explicitly_deferred`，没有伪造完成。
+- [x] reverse_audit: 已反查 Title/Acceptance/Evidence/Closure、类型/平台 Profile、auto-close、Finalization、无-Form 默认行为、上下文预算与非目标边界；未发现 Runtime/Release/业务范围扩大。
+- [x] unresolved_cleared: 当前 Agent_Skills 实现/main-fresh/Review 无阻塞 finding；剩余事项均是后续真实 lifecycle evidence，按 Owner 继续执行。
