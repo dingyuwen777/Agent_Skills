@@ -51,20 +51,20 @@ AIMA 跨仓验证 Owner：https://github.com/dingyuwen777/AIMA_UGC/issues/319
 
 # 需求追溯
 
-| 编号 | 上游 AC | 状态 | Direct Evidence / 证明对象 |
-| --- | --- | --- | --- |
-| R1 | #184 / AC1 | satisfied | ref17 `Issue Acceptance Contract` 明确 Acceptance Criteria final Owner、稳定 `AC1 / AC2 / ...` 与 `satisfied / not_applicable / deferred / unresolved`；`test_canonical_contract_owns_acceptance_state_and_evidence_mapping` 在 current Green suite 通过。 |
-| R2 | #184 / AC2 | satisfied | ref17 `Evidence Sufficiency Gate` 明确 Evidence 必须对应同一对象/行为/条件、revision/commit、必要环境并说明实际证明内容；明确 CI Green、测试存在/数量、PR merge、Change done 不能单独证明 AC；对应 Evidence Sufficiency regression 在 current Green suite 通过。 |
-| R3 | #184 / AC3 | satisfied | ref17 GitHub Closure 顺序固定为逐条 Requirement→Evidence、`- [ ]`→`- [x]`、写回、重读、close、再读；未勾选/partial/unverified/unresolved 阻止 close；`test_github_closure_requires_checkbox_writeback_reread_and_closed_confirmation` 通过。 |
-| R4 | #184 / AC4 | satisfied | ref17 明确 `Change 不创建第二套需求`，Change Traceability 必须映射上游 AC 与 direct Evidence；本 Change 已直接使用 `#184 / ACx` 建立映射，避免第二套完成定义。 |
-| R5 | #184 / AC5 | satisfied | 三类 Agent_Skills Form 均统一 `acceptance_criteria`、`label: 验收标准`、稳定 `AC1` task-list 示例、`validation_requirements / 验证要求` 且 required；Issue Form contract regression 通过，同时保留需求/Bug/技术变更专项字段。 |
-| R6 | #184 / AC6 | satisfied | PR Template 明确 `需要 post-merge evidence` 时不得使用 `Closes / Fixes / Resolves`，只保留 `Requirement-Source` 并由 Closure Audit 后关闭；PR-template regression 通过。 |
-| R7 | #184 / AC7 | satisfied | ref23 Post-Merge Finalization 固定 `Closure Audit → Acceptance checklist 同步 → 写后重读 → close → close 后再读 → 分支清理 → 最终报告`；顺序 regression 通过，失败状态保持 `blocked/incomplete`。 |
-| R8 | #184 / AC8 | satisfied | ref17 明确 `公共 Contract + 类型 Profile + 平台 Profile`、项目已有更强 Owner 优先、非 GitHub 使用等价 Acceptance/Closure 状态、不强制复制 Forms；cross-platform regression 通过。 |
-| R9 | #184 / AC9 | satisfied | Agent_Skills 三类 Form chooser/title 已统一为 `需求/[需求] `、`缺陷/[缺陷] `、`技术变更/[技术变更] `；ref17 Title Contract 明确标题不承载状态/优先级/Owner/分支/重复 Issue 编号；title regression 通过。 |
-| R10 | #184 / AC10 | satisfied | PR head `dd907409...` 的 Skill Tests #1066 / run `33727965339` 中 **399 项 self-contained tests 全部通过**；此前新增规则导致 Git Delivery Context 超预算时没有抬阈值，而是等价压缩重复 Profile 文本，最终 route-context-budget 同样通过。Runtime Package Tests #356 / run `33727965265` 正确判定治理 scope，Package Gate success、三平台 binary jobs skipped。 |
-| R11 | #184 / AC11 | explicitly_deferred | 独立 A1/A2 Review 当前 `NO_FINDINGS_WITHIN_SCOPE`；PR final-ready CI、guarded merge、implementation main-fresh、Change archive、archive-main fresh 和 Issue #184 最终 checklist/close 必须按生命周期取得，不能在 merge 前伪造。 |
-| R12 | #184 / AC12 | explicitly_deferred | 通用无-Form 默认行为已进入 ref17 并由 regression 保护；真实业务仓库 Profile 由 AIMA_UGC Requirement #319 / PR #320 / 独立 Change 承载。只有 AIMA 自身 final CI、merge、main-fresh、archive、#319 Closure Audit 完成后，#184 的 AC12 才能最终 satisfied。 |
+| 编号 | 要求 | 来源 | 状态 | 证据 |
+| --- | --- | --- | --- | --- |
+| R1 | Acceptance Criteria 是最终完成状态 Owner，使用稳定 AC ID 与显式状态语义 | #184 / AC1 | satisfied | ref17 `Issue Acceptance Contract` 明确 final Owner、稳定 `AC1 / AC2 / ...` 与 `satisfied / not_applicable / deferred / unresolved`；`test_canonical_contract_owns_acceptance_state_and_evidence_mapping` 在 Green suite 通过。 |
+| R2 | 每个 AC 只有在充分、直接且匹配的 Evidence 下才能 satisfied / 打勾 | #184 / AC2 | satisfied | ref17 `Evidence Sufficiency Gate` 明确同一对象/行为/条件、revision/commit、必要环境和实际证明内容；明确 CI Green、测试存在/数量、PR merge、Change done 不能单独证明 AC；Evidence Sufficiency regression 通过。 |
+| R3 | GitHub Closure Audit 强制逐项 Evidence、checklist 写回、重读、close 后再读，未完成项阻止关闭 | #184 / AC3 | satisfied | ref17 固定逐条 Requirement→Evidence、`- [ ]`→`- [x]`、写回、重读、close、再读；`test_github_closure_requires_checkbox_writeback_reread_and_closed_confirmation` 通过。 |
+| R4 | Change 直接追踪上游 AC 和 direct Evidence，不创建第二套需求 | #184 / AC4 | satisfied | ref17 明确 `Change 不创建第二套需求`；本 Change 直接使用 `#184 / ACx` 作为来源并逐项记录 Evidence。 |
+| R5 | 三类 Issue Form 统一验收标准、稳定 AC 示例和验证要求，同时保留类型专项字段 | #184 / AC5 | satisfied | 三类 Form 均统一 `acceptance_criteria`、`label: 验收标准`、`AC1` task-list 示例、`validation_requirements / 验证要求` 且 required；Issue Form contract regressions 通过。 |
+| R6 | 需要 post-merge evidence 时 PR 禁止提前 auto-close | #184 / AC6 | satisfied | PR Template 明确需要 post-merge evidence 时不得使用 `Closes / Fixes / Resolves`，只保留 `Requirement-Source`，由 Closure Audit 后关闭；PR-template regression 通过。 |
+| R7 | Post-Merge Finalization 固定 Acceptance 同步、写后重读、close 后再读，再 cleanup/report | #184 / AC7 | satisfied | ref23 固定 `Closure Audit → Acceptance checklist 同步 → 写后重读 → close → close 后再读 → 分支清理 → 最终报告`；顺序 regression 通过，失败保持 `blocked/incomplete`。 |
+| R8 | 通用 Contract 跨项目/跨平台，项目更强 Owner 优先，不强制安装 GitHub Form | #184 / AC8 | satisfied | ref17 明确 `公共 Contract + 类型 Profile + 平台 Profile`、项目已有 Owner 优先、非 GitHub 使用等价 Acceptance/Closure 状态、不强制复制 Forms；cross-platform regression 通过。 |
+| R9 | Agent_Skills 三类 chooser/title 使用统一默认格式且标题不承载额外状态元数据 | #184 / AC9 | satisfied | 三类 Form 已统一为 `需求/[需求] `、`缺陷/[缺陷] `、`技术变更/[技术变更] `；ref17 Title Contract 明确标题不承载状态/优先级/Owner/分支/重复 Issue 编号；title regression 通过。 |
+| R10 | 永久回归防止 Title/AC/Evidence/Closure/auto-close/Finalization 与 Context Budget 漂移 | #184 / AC10 | satisfied | PR head `dd907409...` 的 Skill Tests #1066 / run `33727965339` 中 399 项 self-contained tests 全部通过；一次 Git Delivery Context 超预算 515 bytes 被永久预算测试阻止后没有抬阈值，而是等价压缩重复 Profile 文本，route-context-budget 恢复 Green。Runtime Package #356 / run `33727965265` governance scope Gate success，三平台 binary jobs skipped。 |
+| R11 | Review、PR final-head、guarded merge、main-fresh、Change archive、archive-main fresh 与最终 Issue Closure 完整闭环 | #184 / AC11 | explicitly_deferred | 独立 A1/A2 Review 已 `NO_FINDINGS_WITHIN_SCOPE`；其余 merge/main/archive/closure evidence 必须由后续真实 revision 取得，不能在 merge 前伪造。 |
+| R12 | 无更强项目规则时目标仓库即使未复制 GitHub Forms 也使用默认 Contract，并由 AIMA 真实 Profile 验证 | #184 / AC12 | explicitly_deferred | 通用无-Form 默认行为已进入 ref17 并由 regression 保护；真实业务仓库 Profile 由 AIMA_UGC #319 / PR #320 / 独立 Change 承载，只有 AIMA 自身 final CI、merge、main-fresh、archive、#319 Closure Audit 完成后才能最终 satisfied。 |
 
 # Red / Green 证据
 
