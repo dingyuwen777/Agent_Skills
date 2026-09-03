@@ -35,7 +35,6 @@ CLAUDE_MANAGED_END = "<!-- agent-skills:claude:end -->"
 CODEX_MANAGED_START = "# agent-skills:mcp:start"
 CODEX_MANAGED_END = "# agent-skills:mcp:end"
 CACHE_IGNORE_RULE = ".agents/project-context.json"
-RUNTIME_IGNORE_RULE = "/.agents/runtime/"
 SKILL_ENTRY_ASSET = "ENTRY.md"
 _CODEX_SERVER_PATTERN = re.compile(r"(?m)^\s*\[mcp_servers\.agent-skills\]\s*$")
 _FACT_SOURCE_NAMES = {
@@ -219,15 +218,15 @@ def _updated_agents_content(root: Path, existing: bytes | None, payload_files: M
 
 
 def _updated_gitignore(existing: bytes | None) -> bytes:
-    """幂等补充 Agent Skills 本地缓存和项目 Runtime 的 ignore 规则。"""
+    """只幂等补充 Agent Skills 本地缓存 ignore，不认领项目自身的 Runtime ignore。"""
     content = existing or b""
     text = _validate_utf8(content, ".gitignore") if existing is not None else ""
     lines = {line.strip() for line in text.splitlines()}
-    missing = [rule for rule in (CACHE_IGNORE_RULE, RUNTIME_IGNORE_RULE) if rule not in lines and "/" + rule not in lines]
+    missing = [] if CACHE_IGNORE_RULE in lines or "/" + CACHE_IGNORE_RULE in lines else [CACHE_IGNORE_RULE]
     if not missing:
         return content
     newline = _detect_newline(content)
-    addition = _render_with_newline("# Agent Skills local runtime/cache\n" + "\n".join(missing), newline)
+    addition = _render_with_newline("# Agent Skills local cache\n" + "\n".join(missing), newline)
     if not content:
         return addition + newline
     if content.endswith(newline + newline):

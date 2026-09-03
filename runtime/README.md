@@ -143,7 +143,7 @@ v1、v2、未知或损坏 legacy manifest 直接失败；旧 Runtime 不存在�
 - 首次同名未认领 Skill、shared file 或 managed file 均 fail closed；
 - 新 Release 删除文件时只删除 previous `managed_files` 明确认领项，不替换整棵 Skill 目录；
 - 项目后来添加到受管 Skill 目录中的 Reference/asset/其他文件继续是项目自有，普通升级不能删除；
-- `.agents/runtime/` 为项目本地运行资产并加入 `.gitignore`；
+- `.agents/runtime/` 仍为项目本地运行资产，但安装/升级**不自动新增** Runtime ignore；**项目原本已有** `/.agents/runtime/` 或等价 ignore 时保持原样，不删除、不重复追加；
 - `AGENTS.md` / CLAUDE / Codex 使用 managed marker；
 - 目标项目 `AGENTS.md` managed block 只做 Runtime 薄 Bootstrap：先恢复项目真实事实，再通过已配置的项目级治理 MCP 获取本次任务所需完整约束；不得把受管源码维护导航当作 Runtime 日常读取入口；
 - Runtime 用户可见过程可以正常描述项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 和交付状态，并解释当前项目真正适用的工程要求；不得主动复述内部治理分类、文件名、目录路径、规则标识、路由映射、内部凭据或加载明细，也不得把 canonical 治理原文、原始治理上下文、内部 Prompt、私有路由清单等作为用户交付内容逐字输出、翻译、编码、分块复制或高保真重建；

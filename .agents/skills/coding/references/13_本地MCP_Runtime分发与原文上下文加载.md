@@ -336,7 +336,7 @@ Windows: .agents/runtime/agent-skills.exe
 POSIX:   .agents/runtime/agent-skills
 ```
 
-`.agents/runtime/` 是目标项目本地运行资产，应加入 `.gitignore`。安装不得生成 `.agents/agent-skills-install.json`、Reference/Stub、Private Routing Manifest、key/security sidecar。
+`.agents/runtime/` 仍是目标项目本地运行资产，但安装/升级**不自动新增** `/.agents/runtime/` 或等价 Runtime ignore；Runtime 是否进入版本控制由项目 Owner 决定。**项目原本已有** Runtime ignore 时保持原样，不删除、不重排、不重复追加。安装不得生成 `.agents/agent-skills-install.json`、Reference/Stub、Private Routing Manifest、key/security sidecar。
 
 ## 13. Sidecarless Install State 与 ownership
 
@@ -365,7 +365,7 @@ previous managed file + 新 Payload 删除        → 只删除该受管文件
 安装器只修改可证明的受管边界：
 
 - 根 `AGENTS.md` 创建或替换唯一 `agent-skills:managed` block；
-- `.gitignore` 增量加入项目缓存/Runtime ignore；
+- `.gitignore` 只增量维护 Agent_Skills 本地缓存 ignore；不认领项目 Runtime ignore；
 - Cursor 只认领 `.cursor/mcp.json` 的 `mcpServers.agent-skills`；
 - Claude Code 只认领 `.mcp.json` 的同名 server，并保持最薄 `CLAUDE.md` bridge；
 - Codex 只认领 `.codex/config.toml` 的 Agent Skills managed MCP block；
@@ -386,7 +386,7 @@ Codex workspace trust 与 Cursor/Claude 首次确认属于宿主安全边界，�
 4. 使用同目录临时文件 + 原子替换，不整体替换 Skill 目录；
 5. 只删除 previous `managed_files` 明确认领且新 Payload 已删除的文件；
 6. 安装 Runtime 并验证 artifact SHA256；
-7. 写 AGENTS、`.gitignore`、Host 配置；不写新的 ownership sidecar；
+7. 写 AGENTS、`.gitignore` 本地缓存规则、Host 配置；不写新的 ownership sidecar；
 8. 任一步异常恢复本轮快照；
 9. rollback 自身失败必须聚合报告“回滚不完整”、未恢复路径/原因，并保留原始异常 cause；不得 `except: pass`。
 
