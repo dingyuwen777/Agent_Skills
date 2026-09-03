@@ -44,33 +44,17 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/178
 
 实现 PR：https://github.com/dingyuwen777/Agent_Skills/pull/179
 
-# 最终结果
-
-- [x] Testing-only + 已知 Web/Backend/L2/API/Persistence 等 refinement facts 不再反向命中 Coding。
-- [x] Skill Owner 先于 Reference refinement；直接 Reference 不能激活未命中 Owner；显式 dependency 仍可跨 Skill 扩展 Owner。
-- [x] Coding + 独立测试意图仍正确组合 Coding + Testing，并保留“生产修复回 Coding → Testing Regression → Review 合并判断”的 Handoff。
-- [x] 原 Coding 分层测试专项已收口为 Evidence Boundary / Testing Handoff profile，不再复制 Test Strategy、Black-box、User Journey、Exploratory、Integration、Golden Path、Probe、Regression、Fixture/Fake/Mock/Harness 的专业方法。
-- [x] 新增 Backend/Service Coding profile，覆盖 transaction、atomicity、idempotency、concurrency、async job、retry/timeout、resource lifecycle、observability/error boundary，不新增 Backend Skill。
-- [x] 增加 Route-level Context Budget 永久回归，直接统计 ENTRY + matched Skill Core + required canonical References。
-- [x] 增加 Source evaluator / RuntimeStore required Context exact-text conformance。
-- [x] Testing Runtime Projection 的 Owner/Handoff/Black-box/Regression 核心语义被永久回归锁定，同时继续隐藏 canonical Reference identity。
-- [x] 动态 Skill Catalog、Stable ID、公共 Task Route 词汇、Project Payload no-Reference、防披露与现有 MCP/Bundle/Payload 协议保持兼容。
-- [x] 实现 PR 经过独立 Review、final-head Skill/Runtime CI、expected-head guarded merge，并在实现 merge SHA 上取得 fresh main Skill/Runtime CI。
-- [x] 当前 Change 已进入 post-merge archive；归档 PR 自身的 merge/final-main-fresh 属于仓库规定的 finalization lifecycle，由归档 PR 与 GitHub Actions 记录继续证明，不改写已归档历史来制造自引用证据。
+归档 PR：https://github.com/dingyuwen777/Agent_Skills/pull/180
 
 # 根因
 
-旧 `runtime/agent_skills_runtime/routing.py::evaluate_route()` 会对全库 References 直接执行 trigger match。结果是：即使专业任务只命中 Testing，`风险=L2`、`项目形态=前端Web/后端服务`、`范围=API/持久化`、授权等普通任务事实仍可能命中 Coding Reference，再把 Coding Owner 反向加入上下文。
+旧 `runtime/agent_skills_runtime/routing.py::evaluate_route()` 会对全库 References 直接执行 trigger match。即使任务只具备 Testing 专业意图，`风险=L2`、`项目形态=前端Web/后端服务`、`范围=API/持久化`、工具链、治理或授权等普通任务事实仍可能命中 Coding Reference，再把 Coding Owner 反向加入上下文。
 
 只收窄 Coding Skill Core 或只瘦身旧测试 Reference 不能解决根因，因为其他 Coding References 仍可能通过 refinement facts 反向激活 Coding。
 
-# 方案比较与采用方案
+# 采用方案
 
-## 方案 A：给所有 Coding References 逐个补 Owner anchor
-
-拒绝。需要大面积重写 metadata，新增 Reference 仍可能忘记 anchor，并重复表达 Owner 语义，长期维护成本高。
-
-## 方案 B：Owner-gated evaluator（采用）
+采用 Owner-gated evaluator：
 
 ```text
 Task facts
@@ -89,11 +73,9 @@ Owner 选择阶段把以下维度作为 refinement 投影掉：
 
 这些维度仍保留在 canonical metadata 和公共 Task Route vocabulary 中，并继续用于 Owner 已命中后的 Reference refinement。`执行模式 / 阶段 / 意图 / 能力` 可表达专业 Owner 意图。Router 作为控制面始终存在。
 
-unknown facts 继续采用三值保守语义并保持 fail-close；防导出的候选域收敛到当前 matched Owner domain，避免 unknown refinement facts 把无关专业 Skill 全库一起带入。
+unknown facts 继续采用三值保守语义并保持 fail-close；防导出的候选域收敛到当前 matched Owner domain，避免 unknown refinement facts 把无关专业 Skill 全库带入。
 
-## 方案 C：只瘦身旧 Coding 测试方法
-
-拒绝。只能减少重复文本，不能阻止其他 Coding References 通过 risk/project-shape/scope 反向激活 Coding。
+未采用“给所有 Coding References 逐个补 Owner anchor”：该方案需要大面积重写 metadata，新增 Reference 仍可能忘记 anchor，并重复表达 Owner 语义。也未采用“只瘦身旧 Coding 测试方法”：它不能解决全局 direct Reference match 的根因。
 
 # 职责边界
 
@@ -125,21 +107,9 @@ unknown facts 继续采用三值保守语义并保持 fail-close；防导出的�
 
 继续拥有独立上游要求重建、实现审查、测试充分性/Evidence 判断、Findings 与 re-review；不维护第二套 Coding 或 Testing 方法。
 
-# 后端 Coding profile
+# 后端 Coding Profile
 
-新增 `coding.reference.27`，只在真实 Coding 执行模式 + Backend/Full-stack 或 API/Persistence 范围命中。它负责服务端实施边界，而不是新建 Backend Skill。
-
-覆盖：
-
-- public service/API/event/command 真实入口；
-- server-side validation / auth / error contract；
-- transaction / atomicity / data owner；
-- idempotency / concurrency / duplicate request；
-- async job / worker / retry / timeout / backpressure；
-- resource lifecycle / graceful shutdown；
-- observability / error categorization。
-
-明确不拥有 Testing、Review、Git/CI/Release 的专业方法。
+新增 `coding.reference.27`，只在真实 Coding 执行模式 + Backend/Full-stack 或 API/Persistence 范围命中，不新增 Backend Skill。它覆盖 public service/API/event/command 入口、server-side validation/error contract、transaction/atomicity/data owner、idempotency/concurrency、async job/worker/retry/timeout/backpressure、resource lifecycle/graceful shutdown、observability/error categorization，并显式不拥有 Testing、Review、Git/CI/Release 的专业方法。
 
 # 永久回归
 
@@ -152,77 +122,56 @@ unknown facts 继续采用三值保守语义并保持 fail-close；防导出的�
 - `test_testing_runtime_projection.py`：Testing Runtime Projection 核心语义守恒 + Reference identity 防披露。
 - `test_backend_service_profile.py`：Backend profile 正确命中、Frontend 不误命中、正式 Skill Catalog 不新增 backend。
 
-既有 `test_routing_conformance.py` 只对 Design-only Figma 的 Owner 期望做了本次职责语义明确支持的更新；实现过程中误带入的其他历史 fixture 改写已经恢复，没有借本任务扩大测试基准变化。
+既有 `test_routing_conformance.py` 最终只对 Design-only Figma 的 Owner 期望做了本次职责语义明确支持的更新；实现过程中误带入的其他历史 fixture 改写已经恢复。
 
-# Requirement Traceability
+# 需求追溯
 
-| 编号 | 要求 | 状态 | 最终证据 |
-| --- | --- | --- | --- |
-| R1 | refinement facts 不单独触发 Coding/其他专业 Owner | satisfied | Red Skill #1026 → final-head Skill #1030 success → main-fresh Skill #1031 success |
-| R2 | direct Reference 受 Owner gate，dependency 可跨 Skill | satisfied | owner-gated fixture + self-contained suites #1030/#1031 |
-| R3 | Testing 成为唯一专业测试方法 Owner | satisfied | ref08/ref25 收口 + Testing ownership regressions |
-| R4 | Coding + Testing Handoff / dev TDD 不回归 | satisfied | Testing/routing conformance suites #1030/#1031 |
-| R5 | Route-level Context Budget | satisfied | `test_route_context_budget.py`；预算未因失败而抬高 |
-| R6 | Source/Runtime required Context exact-text 同源 | satisfied | `test_source_runtime_context_conformance.py` + Runtime package CI |
-| R7 | Testing Runtime Projection 语义与防披露 | satisfied | `test_testing_runtime_projection.py` + 三平台 Runtime package/MCP/install |
-| R8 | Backend/Service Coding profile，不新增 Backend Skill | satisfied | `coding.reference.27` + backend profile regression |
-| R9 | 动态分发、公共词汇、协议、防披露不回归 | satisfied | Skill #1030/#1031 + Runtime #320/#321 |
-| R10 | Review / final-head CI / guarded merge / implementation main-fresh / archive lifecycle | explicitly_deferred | 实现部分已经满足；归档 PR 的 merge/final-main-fresh 由 post-merge finalization 自身记录，避免 archived Change 自引用 |
+| 编号 | 要求 | 来源 | 状态 | 证据 |
+| --- | --- | --- | --- | --- |
+| R1 | refinement facts 不单独触发 Coding/其他专业 Owner | https://github.com/dingyuwen777/Agent_Skills/issues/178 | satisfied | Red Skill #1026 → final-head Skill #1030 success → implementation main-fresh Skill #1031 success |
+| R2 | direct Reference 受 Owner gate，显式 dependency 仍可跨 Skill | https://github.com/dingyuwen777/Agent_Skills/issues/178 | satisfied | `test_owner_gated_routing.py` 已进入 final-head/main-fresh self-contained suites 并通过 |
+| R3 | Testing 成为唯一专业测试方法 Owner，Coding 旧专项方法收口 | https://github.com/dingyuwen777/Agent_Skills/issues/178 | satisfied | ref08/ref25 收口 + Testing ownership regressions 通过 |
+| R4 | Coding + Testing 组合 Handoff 与开发期 TDD 不回归 | https://github.com/dingyuwen777/Agent_Skills/issues/178 | satisfied | Testing/routing conformance suites #1030/#1031 通过 |
+| R5 | 增加 Route-level Context Budget 永久回归 | https://github.com/dingyuwen777/Agent_Skills/issues/178 | satisfied | `test_route_context_budget.py` 通过；预算未因失败而抬高 |
+| R6 | 增加 Source/Runtime required Context exact-text conformance | https://github.com/dingyuwen777/Agent_Skills/issues/178 | satisfied | `test_source_runtime_context_conformance.py` + Runtime package CI 通过 |
+| R7 | Testing Runtime Projection 核心语义受保护且不泄露 Reference identity | https://github.com/dingyuwen777/Agent_Skills/issues/178 | satisfied | `test_testing_runtime_projection.py` + 三平台 Runtime package/MCP/install 通过 |
+| R8 | 新增 Backend/Service Coding 专项 Reference，不新增 Backend Skill | https://github.com/dingyuwen777/Agent_Skills/issues/178 | satisfied | `coding.reference.27` + `test_backend_service_profile.py` 通过 |
+| R9 | 动态分发、公共词汇、防披露、协议与既有高价值治理语义不回归 | https://github.com/dingyuwen777/Agent_Skills/issues/178 | satisfied | Skill #1030/#1031 + Runtime #320/#321 通过 |
+| R10 | Review / final-head CI / guarded merge / implementation main-fresh / archive lifecycle | https://github.com/dingyuwen777/Agent_Skills/issues/178 | explicitly_deferred | 实现部分已满足；归档 PR 自身的 merge/final-main-fresh 由 post-merge finalization 自身记录，避免 archived Change 自引用 |
 
-# Red 证据
+# Red 与实现证据
 
 分支从 `main@eb2ca179c7284497b054bf531ec1f6cc5d54ec7f` 创建。
 
-Red commit：`c4ed0fef6867afb390b526be7b647f5e45862fba`，只包含 Change + owner-isolation failure tests。
+Red commit：`c4ed0fef6867afb390b526be7b647f5e45862fba`，只包含 Change + owner-isolation failure tests。PR #179 在该 head 上：Skill Tests #1026 / run `33711679686` 在 self-contained tests 失败；Runtime Package Tests #316 / run `33711679588` 成功；Requirement Source 成功。该 Red 直接证明旧 evaluator 会让 Testing-only + Web/Backend/L2 refinement facts 反向拉入 Coding。
 
-PR #179 在该 head 上：
-
-- Skill Tests #1026 / run `33711679686`：failure，失败在 self-contained tests；
-- Runtime Package Tests #316 / run `33711679588`：success；
-- Requirement Source：success。
-
-该 Red 直接证明旧 evaluator 会让 Testing-only + Web/Backend/L2 refinement facts 反向拉入 Coding。
-
-# 实现与修正提交
+实现与修正：
 
 - `e5cbbca5c4efee49b802d5af7ca06749a16221e2`：Owner-gated evaluator、职责收口、Backend profile、永久回归；
 - `2c407df882c5212fe618097cb9193e76ce82ef61`：保留 unknown fail-close、收窄 Backend trigger、修正已批准 Owner 语义；
 - `ffbe921c622c8bfa11d5def00ba5cb30807e3c59`：恢复误带入的无关 routing fixture 改写，只保留 Design-only Figma 的有依据 Owner 变化；
 - `2128db6a2e5804d2a61401fcabc01f9b43b9db74`：Completion Audit / 独立 Review 完成并进入 `ready_for_review`。
 
-中间 implementation head `e5cbbca...` 的 Skill Tests #1027 暴露 3 个兼容点：旧 unknown 期望、Design-only Figma 旧 Owner 期望、Backend profile 对 unknown project shape 过度加载。三项分别按根因处理，没有删除断言、放宽 Owner gate或提高 Context Budget 制造 Green。
+中间 implementation head `e5cbbca...` 的 Skill Tests #1027 暴露旧 unknown 期望、Design-only Figma 旧 Owner 期望、Backend profile 对 unknown project shape 过度加载三个兼容点；三项分别按根因处理，没有删除断言、放宽 Owner gate 或提高 Context Budget 制造 Green。
 
 # 独立 Review
 
 Review Target：PR #179，base `eb2ca179c7284497b054bf531ec1f6cc5d54ec7f`，review head `ffbe921c622c8bfa11d5def00ba5cb30807e3c59`。
 
-A1：重新读取 Issue #178、根规则、Maintenance、Router、Coding/Testing/Review canonical Owner，从上游要求反查 Change/实现；未发现 Requirement omission。
-
-A2：从最终 diff 反查永久测试、Runtime package、Docs targeted 同步与兼容边界；未发现证据夸大或未覆盖的高风险实现边界。
+A1 重新读取 Issue #178、根规则、Maintenance、Router、Coding/Testing/Review canonical Owner，从上游要求反查 Change/实现；未发现 Requirement omission。A2 从最终 diff 反查永久测试、Runtime package、Docs targeted 同步与兼容边界；未发现证据夸大或未覆盖的高风险实现边界。
 
 Review 结论：`NO_FINDINGS_WITHIN_SCOPE`，无 BLOCKER/HIGH/MEDIUM 需要返回 Coding/Testing。
 
-# PR final-head 新鲜验证
+# PR Final-head 验证
 
 Ready head：`2128db6a2e5804d2a61401fcabc01f9b43b9db74`。
 
-- Skill Tests #1030 / run `33714542861`：success；
-  - Requirement Source：success；
-  - changed Python compile：success；
-  - CLI smoke：success；
-  - self-contained tests：success；
-  - changed Coding Change Ready Check：success；
-  - Agent Skills Gate：success。
-- Runtime Package Tests #320 / run `33714542862`：success；
-  - Scope：success；
-  - Windows/macOS/Linux onefile build + self-test：success；
-  - real stdio MCP contract：success；
-  - project-only single-binary install：success；
-  - Package Gate：success。
+- Skill Tests #1030 / run `33714542861`：success；Requirement Source、changed Python compile、CLI smoke、self-contained tests、changed Coding Change Ready Check、Agent Skills Gate 全部成功。
+- Runtime Package Tests #320 / run `33714542862`：success；Scope、Windows/macOS/Linux onefile build+self-test、real stdio MCP contract、project-only single-binary install、Package Gate 全部成功。
 
-合并前重新确认：PR head 未漂移、main 未漂移、无 unresolved review thread/comment。
+合并前重新确认 PR head 未漂移、main 未漂移、无 unresolved review thread/comment。
 
-# 实现合并与 main-fresh 证据
+# 实现合并与 Main-fresh 验证
 
 PR #179 使用 `expected_head_sha=2128db6a2e5804d2a61401fcabc01f9b43b9db74` guarded squash merge。
 
@@ -230,10 +179,10 @@ PR #179 使用 `expected_head_sha=2128db6a2e5804d2a61401fcabc01f9b43b9db74` guar
 
 `main@4d0b0153...` fresh CI：
 
-- Skill Tests #1031 / run `33714728234`：success；self-contained suite、Active Change Ready Check、Agent Skills Gate 全部通过；
+- Skill Tests #1031 / run `33714728234`：success；self-contained suite、Active Change Ready Check、Agent Skills Gate 全部通过。
 - Runtime Package Tests #321 / run `33714728302`：success；Windows/macOS/Linux onefile/self-test、real stdio MCP、project-only install、Package Gate 全部通过。
 
-只有取得以上 main-fresh evidence 后才开始归档 Change。
+只有取得以上 implementation main-fresh evidence 后才开始归档 Change。
 
 # 验证矩阵最终状态
 
@@ -250,9 +199,7 @@ PR #179 使用 `expected_head_sha=2128db6a2e5804d2a61401fcabc01f9b43b9db74` guar
 
 # 文档影响
 
-`targeted`。
-
-已同步直接承载治理语义的 Router 与 Coding/Testing Handoff References。README/USAGE 的安装方式、MCP tool contract、用户命令、Release artifact 结构均未改变，因此没有制造无关用户文档 diff。
+`targeted`。已同步直接承载治理语义的 Router 与 Coding/Testing Handoff References。README/USAGE 的安装方式、MCP tool contract、用户命令、Release artifact 结构均未改变，因此没有制造无关用户文档 diff。
 
 # 兼容、依赖、迁移、部署和回滚
 
@@ -268,6 +215,13 @@ PR #179 使用 `expected_head_sha=2128db6a2e5804d2a61401fcabc01f9b43b9db74` guar
 
 当前会话本地沙箱无法解析 `github.com` 完成 clone，因此本任务没有伪造“本地完整仓库测试通过”。权威执行证据来自 GitHub Actions 的真实仓库 checkout 和 Windows/macOS/Linux 构建环境。
 
+# 完成审计
+
+- [x] upstream_re_read：已重新读取 Issue #178、根 `AGENTS.md`、Maintenance、Router、Coding/Testing/Review canonical Owner，并独立重建完成定义。
+- [x] change_coverage：R1-R10 全部覆盖；R1-R9 satisfied，R10 仅将归档 PR 自身 merge/final-main-fresh 按生命周期 explicitly_deferred，没有把 Change 自身当 Requirement Source。
+- [x] reverse_audit：已从 Testing-only、Coding+Testing、Backend Coding、Review/Docs/Figma、Runtime Projection 和三平台 Runtime package 反向检查 Owner、required Context 与 Evidence boundary。
+- [x] unresolved_cleared：当前无 not_satisfied；没有未处理 BLOCKER/HIGH/MEDIUM；R10 的 deferred 有 Maintenance post-merge finalization 依据。
+
 # 归档与交付
 
 - Requirement Issue：#178
@@ -276,6 +230,7 @@ PR #179 使用 `expected_head_sha=2128db6a2e5804d2a61401fcabc01f9b43b9db74` guar
 - implementation main-fresh Skill Tests：#1031 / run `33714728234` success
 - implementation main-fresh Runtime Package Tests：#321 / run `33714728302` success
 - Change 归档路径：`.agents/changes/archive/2026-09/CHG-20260903-112817-testing-coding-context-governance/CHANGE.md`
+- 归档 PR：#180
 - Release：not_applicable，本任务未发布新版本
 
-本历史记录在实现 main-fresh 通过后归档。归档 PR 自身的 CI、guarded merge、最终 main-fresh CI、Issue 关闭与分支清理由仓库 post-merge finalization 继续执行；这些动作不会通过再次改写 archived Change 来制造循环依赖证据。
+本历史记录在实现 main-fresh 通过后归档。归档 PR 自身的 guarded merge、最终 main-fresh CI、Issue 关闭与分支清理由仓库 post-merge finalization 继续执行；这些动作不会通过再次改写 archived Change 来制造循环依赖证据。
