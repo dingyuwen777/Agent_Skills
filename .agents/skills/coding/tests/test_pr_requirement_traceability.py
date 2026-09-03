@@ -89,6 +89,10 @@ class PullRequestRequirementTraceabilityTest(unittest.TestCase):
             "先回写",
             "无写权限",
             "关闭关键字不得绕过",
+            "`- [ ]` → `- [x]`",
+            "写回 Issue body",
+            "再次读取 Issue",
+            "仍适用的未勾选项",
             "非 GitHub 平台",
         ]
         for fragment in required_fragments:

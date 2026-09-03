@@ -5,6 +5,7 @@ Requirement-Source: #<Issue>
 - 如果仓库已有更强的正式需求源，也可以直接填写当前 checkout 中存在的仓库相对正式路径，例如 `Requirement-Source: AGENTS.md`。
 - `Requirement-Source:` 表示“本 PR 为什么存在、应按什么需求审查”。
 - `Closes` / `Fixes` / `Resolves` 只在本 PR 合并后确实完成整个 Issue 时使用；不要用关闭关键字替代 `Requirement-Source:`。
+- Requirement Source **需要 post-merge evidence**（例如 main fresh CI、迁移/部署后验证或 Change archive）时，merge 前**不得使用 `Closes` / `Fixes` / `Resolves`**；只保留 `Requirement-Source:`，由 Post-Merge Finalization 完成 Closure Audit、Acceptance 状态写回与重读确认后再关闭。
 
 ## 背景与现状
 

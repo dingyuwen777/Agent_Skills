@@ -1,4 +1,4 @@
-name: 技术变更 / 工程改进
+name: 技术变更
 description: 提交重构、基础设施、CI、性能、安全、依赖或可维护性等技术变更
 title: "[技术变更] "
 body:
@@ -97,19 +97,19 @@ body:
     id: acceptance_criteria
     attributes:
       label: 验收标准
-      description: 用可观察、可验证条件定义技术变更完成，而不是只写“重构完成”。
+      description: 每条使用稳定 AC1/AC2/... 编号，用可观察、可验证条件定义技术变更完成；关闭 Issue 前按直接 Evidence 逐项回写。
       placeholder: |
-        - [ ] ……行为保持兼容
-        - [ ] ……指标达到……
-        - [ ] ……旧路径安全移除/保留
+        - [ ] AC1：……行为保持兼容
+        - [ ] AC2：……指标达到……
+        - [ ] AC3：……旧路径安全移除 / 保留
     validations:
       required: true
 
   - type: textarea
-    id: validation_plan
+    id: validation_requirements
     attributes:
-      label: 验证计划
-      description: 需要哪些单元/集成/E2E、基准、迁移演练、安全检查、部署验证或人工验收？
+      label: 验证要求
+      description: 需要哪些单元 / 集成 / E2E、基准、迁移演练、安全检查、部署验证或人工验收才能直接证明 AC？
       placeholder: |
         - 单元 / 集成：……
         - 性能 / 安全：……

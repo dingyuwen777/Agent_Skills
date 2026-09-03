@@ -198,6 +198,9 @@ class RequirementSourceValidationTests(unittest.TestCase):
         self.assertIn("Requirement-Source:", template)
         self.assertIn("Closes", template)
         self.assertIn("不要用关闭关键字替代", template)
+        self.assertIn("需要 post-merge evidence", template)
+        self.assertIn("不得使用 `Closes` / `Fixes` / `Resolves`", template)
+        self.assertIn("Closure Audit", template)
 
 
 if __name__ == "__main__":

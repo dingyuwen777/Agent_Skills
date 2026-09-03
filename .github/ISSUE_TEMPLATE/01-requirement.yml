@@ -1,4 +1,4 @@
-name: 需求 / 功能
+name: 需求
 description: 提交新增或调整可观察能力、行为或用户流程的需求
 title: "[需求] "
 body:
@@ -71,11 +71,11 @@ body:
     id: acceptance_criteria
     attributes:
       label: 验收标准
-      description: 写成可观察、可验证的完成条件。避免“体验更好”“代码优化”等无法验收的表述。
+      description: 每条使用稳定 AC1/AC2/... 编号，并写成可观察、可验证的完成条件；该 task list 是关闭 Issue 时需要逐项回写的最终 Acceptance 状态。
       placeholder: |
-        - [ ] 当……时，应……
-        - [ ] ……保持不变
-        - [ ] 对应测试 / 验证可以证明……
+        - [ ] AC1：当……时，应……
+        - [ ] AC2：……保持不变
+        - [ ] AC3：对应测试 / 验证可以证明……
     validations:
       required: true
 
