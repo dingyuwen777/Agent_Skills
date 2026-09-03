@@ -352,7 +352,7 @@ def run_smoke(artifact: str | Path, source_root: str | Path = SOURCE_ROOT) -> di
 def _build_parser() -> argparse.ArgumentParser:
     """构造真实 stdio MCP smoke 参数。"""
     parser = argparse.ArgumentParser(description="验证 Agent Skills Runtime 的真实 stdio MCP Tool Contract")
-    parser.add_argument("--artifact", required=True, help="agent-skills-mcp 可执行文件")
+    parser.add_argument("--artifact", required=True, help="agent-skills 可执行文件")
     parser.add_argument("--source-root", default=str(SOURCE_ROOT), help="canonical Agent_Skills 源仓库根目录")
     parser.add_argument("--json", action="store_true", help="以 JSON 输出验证结果")
     return parser

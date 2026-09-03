@@ -23,7 +23,7 @@ class RuntimeCliDisclosureTest(unittest.TestCase):
             "removed_skills": ["legacy-skill"],
             "removed_shared_files": ["OLD_ENTRY.md"],
             "removed_managed_files": ["coding/SKILL.md"],
-            "runtime": ".agents/runtime/agent-skills-mcp.exe",
+            "runtime": ".agents/runtime/agent-skills.exe",
             "manifest": ".agents/agent-skills-install.json",
             "hosts": ["codex", "cursor", "claude-code"],
         }

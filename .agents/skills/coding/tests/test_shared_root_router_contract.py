@@ -85,7 +85,7 @@ class SharedRootRouterContractTest(unittest.TestCase):
             root = Path(directory)
             target = root / "target"
             target.mkdir()
-            artifact = root / "agent-skills-mcp.exe"
+            artifact = root / "agent-skills.exe"
             artifact.write_bytes(b"runtime")
             payload = build_project_payload(ROOT, build_bundle(ROOT))
 

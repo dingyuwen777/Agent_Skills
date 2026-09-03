@@ -43,7 +43,7 @@ class RuntimeSidecarlessStateTest(unittest.TestCase):
             temp_root = Path(temp_dir)
             target = temp_root / "target"
             target.mkdir()
-            artifact = temp_root / "agent-skills-mcp"
+            artifact = temp_root / "agent-skills"
             artifact.write_bytes(b"runtime-fixture")
 
             result = install_project(target, payload, artifact, release_version="3.1.0")
@@ -62,7 +62,7 @@ class RuntimeSidecarlessStateTest(unittest.TestCase):
     def test_old_runtime_install_state_query_has_bounded_timeout(self) -> None:
         """旧 Runtime 卡死时 ownership 查询必须在有限时间失败，不能让升级无限等待。"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            runtime = Path(temp_dir) / "agent-skills-mcp"
+            runtime = Path(temp_dir) / "agent-skills"
             runtime.write_bytes(b"runtime-fixture")
             timeout = PROJECT_INSTALLER._INSTALL_STATE_QUERY_TIMEOUT_SECONDS
             with patch.object(

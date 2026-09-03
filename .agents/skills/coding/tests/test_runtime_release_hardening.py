@@ -51,13 +51,13 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
         """manifest 仍在也不能猜测无 marker 的同名 Codex table 属于 Agent Skills。"""
         existing = (
             b"[mcp_servers.agent-skills]\n"
-            b'command = ".agents/runtime/agent-skills-mcp"\n'
+            b'command = ".agents/runtime/agent-skills"\n'
             b'args = ["serve"]\n'
         )
         with self.assertRaisesRegex(ValueError, "marker|同名 MCP server"):
             INSTALLER._updated_codex_config(
                 existing,
-                ".agents/runtime/agent-skills-mcp",
+                ".agents/runtime/agent-skills",
                 True,
             )
 
@@ -67,7 +67,7 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
             b"# keep\n\n"
             + INSTALLER.CODEX_MANAGED_START.encode("utf-8")
             + b"\n[mcp_servers.agent-skills]\n"
-            + b'command = ".agents/runtime/agent-skills-mcp"\n'
+            + b'command = ".agents/runtime/agent-skills"\n'
             + b'args = ["serve"]\n'
             + INSTALLER.CODEX_MANAGED_END.encode("utf-8")
             + b"\n\n[mcp_servers.agent-skills]\n"
@@ -76,7 +76,7 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "重复|同名 MCP server"):
             INSTALLER._updated_codex_config(
                 existing,
-                ".agents/runtime/agent-skills-mcp",
+                ".agents/runtime/agent-skills",
                 True,
             )
 
@@ -88,7 +88,7 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
             temp_root = Path(temp_dir)
             target = temp_root / "target"
             target.mkdir()
-            artifact = temp_root / "agent-skills-mcp"
+            artifact = temp_root / "agent-skills"
             artifact.write_bytes(b"runtime-fixture")
             install_project(target, payload, artifact, release_version="1.0.0")
 

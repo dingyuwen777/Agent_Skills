@@ -104,10 +104,12 @@ Runtime Skill Projection 必须由当前 Bundle 中实际 canonical Reference �
 
 ## 3. 项目安装边界
 
+当前 Runtime 产品 basename 统一为 `agent-skills`：Windows 项目安装为 `.agents/runtime/agent-skills.exe`，Linux/macOS 安装为 `.agents/runtime/agent-skills`。该名称同时用于 Builder 默认产物与 Release ZIP 内 binary。
+
 onefile binary 无参数运行默认安装/升级当前目录；也支持：
 
 ```text
-agent-skills-mcp install --target <project-root>
+agent-skills install --target <project-root>
 ```
 
 当前 Project Payload 使用 v2。**新安装和升级不再生成 `.agents/agent-skills-install.json` 或其他 ownership sidecar。** 当前 Runtime 的 installation ownership 由 `install_state.py` 直接从已验证 Project Payload 确定性派生，协议为：
@@ -127,7 +129,7 @@ agent-skills-runtime-install-state/v1
 
 否则
 
-旧已安装 .agents/runtime/agent-skills-mcp[.exe]
+旧已安装 .agents/runtime/agent-skills[.exe]
 → 内部 __install-state --json
 → 返回旧 Runtime 内嵌 Project Payload 对应的 ownership
 → 新安装器严格校验后使用
@@ -238,7 +240,7 @@ source_digest / routing_digest / payload_digest
 Skill 集合与 context_budget
 ```
 
-这些字段由普通 Runtime Package CI 直接解析；正式 Release 的每个平台 job 再通过 `GITHUB_OUTPUT` 把公共 identity 和该平台 `artifact_sha256` 传给发布 job。构建目录因此只有实际 onefile binary 等必要构建产物，不再需要 `agent-skills-mcp*.manifest.json` 作为第二份身份副本。
+这些字段由普通 Runtime Package CI 直接解析；正式 Release 的每个平台 job 再通过 `GITHUB_OUTPUT` 把公共 identity 和该平台 `artifact_sha256` 传给发布 job。构建目录因此只有实际 onefile binary 等必要构建产物，不再需要 `agent-skills*.manifest.json` 作为第二份身份副本。
 
 Builder 的维护者 JSON 输出还包含聚合 `context_budget`：
 
@@ -257,13 +259,13 @@ base_router_plus_core_bytes
 Linux/macOS 默认输出目录中正式 onefile：
 
 ```text
-dist/agent-skills-mcp
+dist/agent-skills
 ```
 
 Windows：
 
 ```text
-dist/agent-skills-mcp.exe
+dist/agent-skills.exe
 ```
 
 同目录不应出现同名或版本化 `*.manifest.json`。
@@ -271,7 +273,7 @@ dist/agent-skills-mcp.exe
 ## 6. 真实 MCP 验证
 
 ```bash
-python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
+python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 ```
 
 该 smoke 使用真实 stdio MCP client 验证六个 Tool、中文 input schema、去标识化公共 envelope、route contract、submit、required Context exact-text、stale/伪造/跨 task capability、unknown-induced full-corpus fail-closed 和 checkpoint，不用内部 Python 函数调用冒充 MCP 边界。hash/size/source/routing 等完整性仍在维护侧 Bundle/Builder 验证，不要求通过公共 context envelope 暴露。

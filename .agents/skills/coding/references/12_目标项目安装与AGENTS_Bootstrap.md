@@ -87,21 +87,21 @@ Windows：
 
 ```powershell
 cd D:\work\MyProject
-.\agent-skills-mcp.exe
+.\agent-skills.exe
 ```
 
 Linux / macOS：
 
 ```bash
 cd /work/MyProject
-chmod +x ./agent-skills-mcp
-./agent-skills-mcp
+chmod +x ./agent-skills
+./agent-skills
 ```
 
 无参数运行等价于安装/升级当前目录；也可显式：
 
 ```text
-agent-skills-mcp install --target <目标项目根目录> --json
+agent-skills install --target <目标项目根目录> --json
 ```
 
 当前 Project Payload 使用 v2。新安装不写持久 ownership manifest；内部 install-state 从 Runtime 自身内嵌 Project Payload 确定性派生，只供后续安装器恢复 previous ownership，不进入普通 MCP/public status。

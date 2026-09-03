@@ -487,7 +487,7 @@ def install_project(
     agents_root = target / ".agents"
     skills_root = agents_root / "skills"
     legacy_manifest_path = target / LEGACY_INSTALL_MANIFEST_PATH
-    runtime_name = "agent-skills-mcp.exe" if artifact.suffix.lower() == ".exe" else "agent-skills-mcp"
+    runtime_name = "agent-skills.exe" if artifact.suffix.lower() == ".exe" else "agent-skills"
     runtime_target = agents_root / "runtime" / runtime_name
     runtime_relative = runtime_target.relative_to(target).as_posix()
 

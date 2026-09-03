@@ -35,6 +35,17 @@ Runtime
 
 专业 Skill 不复制 Runtime 实现规则；Runtime 也不重新解释 Coding / Review / Docs / Figma 的专业语义。
 
+### Agent_Skills 跨版本兼容策略
+
+Agent_Skills 自身维护**默认不承担跨版本升级兼容**或向后兼容义务。除非当前 Requirement Source 明确要求，否则每次修改以当前目标分支 / 目标版本的**干净安装**和当前版本内行为为验收基线，不因为历史版本曾经存在某个 Runtime、二进制名、配置、sidecar、协议或目录，就自动增加兼容代码。
+
+具体约束：
+
+- 不为未明确要求的旧版本自动增加 `alias`、`fallback`、双文件、双读写、旧路径探测、旧协议 reader 或迁移分支；
+- 已存在的兼容实现只是当前代码事实，不自动形成后续维护承诺；如果新的 Requirement 不要求保留，可以按当前目标版本的真实设计删除或改写；
+- 如果 Requirement Source 明确要求兼容某个历史版本，必须把兼容范围、迁移/失败边界、回滚和对应验证写入当前 Change，不能使用“兼容所有旧版本”这类无边界承诺；
+- 本策略**不能绕过当前任务明确要求保持的产品契约**、数据安全、回滚、Release 打包方式、公开协议或其他不变项。当前任务要求保持的行为必须继续由直接 Evidence 证明。
+
 ## 3. 通用核心与项目 Overlay
 
 Agent_Skills 规定“怎样可靠工作”；目标项目规定“这个项目具体是什么”。
@@ -83,10 +94,10 @@ Agent_Skills 规定“怎样可靠工作”；目标项目规定“这个项目�
 ```text
 GitHub Release
 ├── agent-skills-v<SemVer>-linux.zip
-│   ├── Linux Runtime binary
+│   ├── agent-skills
 │   └── USAGE.md
 ├── agent-skills-v<SemVer>-windows.zip
-│   ├── Windows Runtime binary
+│   ├── agent-skills.exe
 │   └── USAGE.md
 └── agent-skills-v<SemVer>-macos.zip
     ├── macOS Runtime binary
