@@ -112,7 +112,7 @@ agent-skills install --target <目标项目根目录> --json
 2. previous ownership 只接受合法 legacy v3，或旧已安装 Runtime 返回并通过严格校验的内嵌 install-state；两者都没有时按首次安装处理，有旧受管冲突时 fail closed；
 3. 只逐文件更新/删除可证明受管的 shared/Core/运行资产，保留项目自有内容；
 4. 安装并校验项目 Runtime；
-5. 安全增量维护 `AGENTS.md`、`.gitignore` 与 Codex/Cursor/Claude Code 项目 MCP 边界；
+5. 安全增量维护 `AGENTS.md`、`.gitignore` 中 Agent_Skills 本地缓存规则与 Codex/Cursor/Claude Code 项目 MCP 边界；
 6. 成功后不写 install manifest；若使用 legacy v3，则在事务末端删除；
 7. 任一步失败按安装前快照恢复本轮受管变化，回滚不完整必须显式报告。
 
@@ -136,7 +136,7 @@ coding/assets/AGENTS.managed.md
 
 `AGENTS.managed.md` 不复制 Entry/Router 或 Runtime disclosure 细则；详细内部规则留在唯一 Owner。Entry/Router/Core 仍是宿主原生发现、分发与 ownership 所需运行资产，不能为了减少明文而随意删除。
 
-Bootstrap 只做机械可证明的内容：创建/增量更新 `AGENTS.md`、`.gitignore`、本地 Runtime ignore、事实入口导航和宿主项目配置；不自动创建 Change/RFC/ADR/OpenSpec，不决定框架/数据库/架构，不修改 Schema/Migration，也不代替宿主做项目语义判断。
+Bootstrap 只做机械可证明的内容：创建/增量更新 `AGENTS.md`、`.gitignore` 中 Agent_Skills 本地缓存 ignore、事实入口导航和宿主项目配置；不自动创建 Change/RFC/ADR/OpenSpec，不决定框架/数据库/架构，不修改 Schema/Migration，也不代替宿主做项目语义判断。
 
 ## 5. 目标项目没有 AGENTS.md
 
@@ -177,14 +177,15 @@ managed block 的披露职责以第 7 节为准；详细 Runtime 用户可见规
 
 ## 8. `.gitignore` 规则
 
-所有目标项目应显式忽略：
+安装器只为 Agent_Skills 的本地可失效缓存增量维护：
 
 ```gitignore
 .agents/project-context.json
-/.agents/runtime/
 ```
 
-不存在则最小创建；已有等价规则不重复；已有其他规则只增量追加；路径为符号链接或特殊文件时拒绝修改，不为了加入两行重排项目已有规则。
+- 安装/升级**不自动新增** `/.agents/runtime/` 或等价 Runtime 目录 ignore；Runtime 是否进入项目版本控制由目标项目 Owner 决定。
+- **项目原本已有** `/.agents/runtime/` 或等价规则时保持原样，不删除、不重排、不重复追加。当前 `.gitignore` 没有逐行 ownership marker，不能猜该规则属于旧 Agent_Skills。
+- 缓存 ignore 不存在则最小创建；已有等价规则不重复；其他项目规则保留，只做必要增量追加；路径为符号链接或特殊文件时拒绝修改。
 
 ## 9. Project Skill 与逐文件 ownership
 
@@ -267,7 +268,7 @@ Greenfield / 空仓库：
 - 旧 Runtime install-state 能恢复 previous managed/shared/Skill ownership；查询失败或不可证明时 fail closed；
 - 动态正式 Skill、shared Entry、Router/Core 安装正确，目标项目无 canonical Reference/Stub；
 - 同名未认领 shared/Skill/managed file 在写入前 fail closed，项目自有 Skill/Reference/资产保留；
-- `AGENTS.md` 用户原文/managed marker、`.gitignore` 与 Codex/Cursor/Claude 配置保留其他项目内容；
+- `AGENTS.md` 用户原文/managed marker、`.gitignore` 与 Codex/Cursor/Claude 配置保留其他项目内容；安装器不自动新增 Runtime ignore，项目原本已有的 Runtime ignore 保持原样；
 - Runtime 安装后的根 `AGENTS.md` 满足第 7 节项目侧行为契约，不展开 Runtime/Source/MCP/Router/Reference/路由/加载清单，真实工程过程仍可见；
 - marker 外 Overlay 使用项目自身术语，不复制通用治理能力自身的执行、分发或实现说明；
 - 安装失败和 rollback failure 都有可验证、可诊断结果。
