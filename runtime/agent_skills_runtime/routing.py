@@ -607,8 +607,16 @@ def evaluate_route(manifest: Mapping[str, Any], route: Mapping[str, Any]) -> dic
             {dimension: set(values) for dimension, values in base_signals.items()},
             unknown_dimensions=unknown_dimensions,
         )
-        all_reference_ids = {str(entry["标识"]) for entry in manifest["引用"]}
-        if required_ids == all_reference_ids and known_required != all_reference_ids:
+        owner_reference_ids = {
+            str(entry["标识"])
+            for entry in manifest["引用"]
+            if str(entry["Skill"]) in matched_skills
+        }
+        if (
+            owner_reference_ids
+            and required_ids == owner_reference_ids
+            and known_required != owner_reference_ids
+        ):
             raise ValueError(
                 "当前任务事实不足以建立最小充分治理约束；请先恢复更多当前项目事实后重新建立任务约束"
             )
