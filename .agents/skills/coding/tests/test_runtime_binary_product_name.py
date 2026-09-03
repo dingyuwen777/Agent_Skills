@@ -47,13 +47,23 @@ class RuntimeBinaryProductNameTest(unittest.TestCase):
     def test_release_keeps_three_platform_zip_names_and_uses_unversioned_binary_member(self) -> None:
         """Release 仍是三平台 ZIP，但 ZIP 内 Runtime basename 固定为 agent-skills。"""
         release = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
-        for platform in ("windows", "linux", "macos"):
-            self.assertIn(f"agent-skills-v${{VERSION}}-{platform}.zip", release)
+        for marker in (
+            'f"agent-skills-v{version}-linux.zip"',
+            'f"agent-skills-v{version}-windows.zip"',
+            'f"agent-skills-v{version}-macos.zip"',
+            'Path("release-assets/release-runtime-linux/agent-skills")',
+            'Path("release-assets/release-runtime-windows/agent-skills.exe")',
+            'Path("release-assets/release-runtime-macos/agent-skills")',
+            'expected = [binary, "USAGE.md"]',
+        ):
+            self.assertIn(marker, release)
         self.assertIn('name="agent-skills"', release)
         self.assertIn('$name = "agent-skills"', release)
+        self.assertNotIn("merge-multiple: true", release)
         self.assertNotIn(LEGACY_BINARY_NAME, release)
-        self.assertNotRegex(release, r"agent-skills-v\$\{?RELEASE_VERSION\}?-(?:linux|macos)")
-        self.assertNotRegex(release, r"agent-skills-v\$env:RELEASE_VERSION-windows")
+        self.assertNotIn("agent-skills-v${RELEASE_VERSION}-linux", release)
+        self.assertNotIn("agent-skills-v${RELEASE_VERSION}-macos", release)
+        self.assertNotIn('agent-skills-v$env:RELEASE_VERSION-windows', release)
 
     def test_maintenance_declares_no_default_cross_version_upgrade_compatibility(self) -> None:
         """Agent_Skills 自维护默认以当前版本为准，兼容层只能由显式 Requirement 触发。"""

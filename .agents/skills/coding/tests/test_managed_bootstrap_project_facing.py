@@ -110,7 +110,7 @@ class ManagedBootstrapProjectFacingTest(unittest.TestCase):
             sandbox = Path(directory)
             target = sandbox / "target"
             target.mkdir()
-            artifact = sandbox / "agent-skills-mcp"
+            artifact = sandbox / "agent-skills"
             artifact.write_bytes(b"runtime-fixture")
             install_project(target, payload, artifact, release_version="9.9.9-test")
 

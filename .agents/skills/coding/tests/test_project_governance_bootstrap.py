@@ -145,7 +145,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             root = Path(directory)
             target = root / "target-project"
             target.mkdir()
-            runtime_artifact = root / "agent-skills-mcp"
+            runtime_artifact = root / "agent-skills"
             runtime_artifact.write_bytes(b"runtime-fixture")
 
             install_project(

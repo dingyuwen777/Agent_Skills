@@ -252,11 +252,19 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertNotIn('expected_package="agent-skills-v${RELEASE_TAG#v}.zip"', workflow)
         self.assertNotIn('gh release upload "${RELEASE_TAG}" release-assets/*', workflow)
         for binary in (
-            "agent-skills-mcp-v${RELEASE_VERSION}-linux",
-            '"agent-skills-mcp-v$env:RELEASE_VERSION-windows"',
-            "agent-skills-mcp-v${RELEASE_VERSION}-macos",
+            'name="agent-skills"',
+            '$name = "agent-skills"',
+            "release-assets/release-runtime-linux/agent-skills",
+            "release-assets/release-runtime-windows/agent-skills.exe",
+            "release-assets/release-runtime-macos/agent-skills",
         ):
             self.assertIn(binary, workflow)
+        for versioned_raw_binary in (
+            "agent-skills-v${RELEASE_VERSION}-linux",
+            '"agent-skills-v$env:RELEASE_VERSION-windows"',
+            "agent-skills-v${RELEASE_VERSION}-macos",
+        ):
+            self.assertNotIn(versioned_raw_binary, workflow)
         for forbidden in (
             "agent-skills-full-kit",
             "install_runtime.py",

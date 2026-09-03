@@ -94,7 +94,7 @@ def _load_embedded_store() -> RuntimeStore:
 def _runtime_artifact_path() -> Path:
     """返回当前 onefile Runtime 自身路径；源码模式不能冒充可安装 artifact。"""
     if not getattr(sys, "frozen", False):
-        raise RuntimeError("项目安装必须从构建后的 agent-skills-mcp onefile artifact 执行")
+        raise RuntimeError("项目安装必须从构建后的 agent-skills onefile artifact 执行")
     artifact = Path(sys.executable).resolve()
     if artifact.is_symlink() or not artifact.is_file():
         raise RuntimeError(f"当前 Runtime artifact 不是可安装普通文件：{artifact}")

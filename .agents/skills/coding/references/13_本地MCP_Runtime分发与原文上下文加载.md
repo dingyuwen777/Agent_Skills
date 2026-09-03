@@ -16,7 +16,7 @@ Runtime 还必须建立**模式感知的信息披露边界**：Source Mode 直�
 
 出现以下任务时必须读取本文件：
 
-- 构建、Release、安装或升级 `agent-skills-mcp`；
+- 构建、Release、安装或升级 `agent-skills`；
 - 修改 Runtime Bundle、Project Payload、动态 Skill Catalog、Shared Entry、Runtime Skill Projection、install-state 或宿主 MCP 配置；
 - 修改路由 metadata/Stable ID、加密格式、MCP Tool Contract、`source_digest`、`routing_digest`、`payload_digest` 或 Builder/Release identity；
 - 调试 Task Route → private Routing Manifest → required canonical Context；
@@ -52,7 +52,7 @@ Project Payload v2
 → 不安装 canonical Reference / Stub / Private Routing Manifest
 
 Project-local Runtime
-→ .agents/runtime/agent-skills-mcp[.exe]
+→ .agents/runtime/agent-skills[.exe]
 → local stdio MCP
 → 当前任务 required Context 才按需解密
 → 不写 key/security/Reference/ownership sidecar
@@ -332,8 +332,8 @@ serve                         → stdio MCP Server
 项目 Runtime 安装：
 
 ```text
-Windows: .agents/runtime/agent-skills-mcp.exe
-POSIX:   .agents/runtime/agent-skills-mcp
+Windows: .agents/runtime/agent-skills.exe
+POSIX:   .agents/runtime/agent-skills
 ```
 
 `.agents/runtime/` 是目标项目本地运行资产，应加入 `.gitignore`。安装不得生成 `.agents/agent-skills-install.json`、Reference/Stub、Private Routing Manifest、key/security sidecar。
@@ -448,15 +448,15 @@ Skill 集合与聚合 context_budget
 
 ```text
 agent-skills-v<SemVer>-linux.zip
-├── agent-skills-mcp-v<SemVer>-linux
+├── agent-skills
 └── USAGE.md
 
 agent-skills-v<SemVer>-windows.zip
-├── agent-skills-mcp-v<SemVer>-windows.exe
+├── agent-skills.exe
 └── USAGE.md
 
 agent-skills-v<SemVer>-macos.zip
-├── agent-skills-mcp-v<SemVer>-macos
+├── agent-skills
 └── USAGE.md
 ```
 
@@ -465,6 +465,8 @@ agent-skills-v<SemVer>-macos.zip
 三平台通过 job outputs 比较公共 identity；平台 binary SHA 各自与自己的 Builder 输出绑定，不要求跨平台 SHA 相等。发布前后都必须核验 Draft/Published Release 资产集合精确为三个平台 ZIP，不能通过宽泛通配夹带临时文件。
 
 ## 18. 当前版本安装与未来不兼容迁移
+
+Agent_Skills 源仓库维护默认不承担跨版本升级兼容；除非 Requirement Source 明确要求，当前版本以干净安装和当前版本内行为为验收基线，不为历史 binary/config/schema 自动保留 alias、fallback 或双 reader。已有 legacy/previous ownership 路径只是当前实现事实，不构成下一次变更必须继续兼容的承诺。
 
 本 Change 只验收当前 Bundle v3 的首次/无参数/显式安装与当前版本重复安装；Project Payload v2、sidecarless ownership、Host managed 和安装事务边界保持。
 
@@ -513,7 +515,7 @@ Runtime Mode 对用户可以继续说明检查了哪些**目标项目**代码/�
 
 ## 21. ChatGPT 网页端边界
 
-当前 Runtime 是**项目本地 stdio MCP**。纯网页端 ChatGPT 不能直接启动用户电脑上的 `agent-skills-mcp`，也不能因为 GitHub 中存在 Runtime 源码就把本地 MCP 当作已经连接。
+当前 Runtime 是**项目本地 stdio MCP**。纯网页端 ChatGPT 不能直接启动用户电脑上的 `agent-skills`，也不能因为 GitHub 中存在 Runtime 源码就把本地 MCP 当作已经连接。
 
 网页端如果通过 GitHub 获得 Agent_Skills 私有源仓库读取权限，使用 Source Mode：先读取目标项目事实与 **Agent_Skills 根 AGENTS.md**，再按 Router 和 canonical metadata **直接读取 canonical Reference**。**该路径是源码直接读取模式**，**不调用本地六个 MCP Tool**；目标项目安装资产只作安装状态事实，不能替代当前 canonical Source。Source Mode 可以正常显示明文 Skill/Reference 和源码导航过程。
 

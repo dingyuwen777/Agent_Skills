@@ -156,20 +156,20 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
 
     def test_windows_project_host_configs_use_portable_runtime_commands(self) -> None:
         """Windows 项目配置不得固化安装机器盘符和绝对目录。"""
-        target = self._install("agent-skills-mcp.exe", "windows-target")
-        self._assert_portable_host_commands(target, "agent-skills-mcp.exe")
+        target = self._install("agent-skills.exe", "windows-target")
+        self._assert_portable_host_commands(target, "agent-skills.exe")
 
     def test_posix_project_host_configs_use_portable_runtime_commands(self) -> None:
         """Linux/macOS 项目配置应使用相同项目根语义并保留无扩展名 Runtime。"""
-        target = self._install("agent-skills-mcp", "posix-target")
-        self._assert_portable_host_commands(target, "agent-skills-mcp")
+        target = self._install("agent-skills", "posix-target")
+        self._assert_portable_host_commands(target, "agent-skills")
 
     def test_upgrade_rewrites_old_absolute_commands_without_losing_user_config(self) -> None:
         """无 sidecar 升级仍应移除旧机器路径并保留其他 Host 用户配置。"""
-        target = self._install("agent-skills-mcp.exe", "upgrade-target")
+        target = self._install("agent-skills.exe", "upgrade-target")
         old_payload = self._payload()
         old_state = build_install_state(old_payload, "1.2.3")
-        old_command = r"C:\\old-machine\\repo\\.agents\\runtime\\agent-skills-mcp.exe"
+        old_command = r"C:\\old-machine\\repo\\.agents\\runtime\\agent-skills.exe"
 
         cursor_path = target / ".cursor/mcp.json"
         cursor = json.loads(cursor_path.read_text(encoding="utf-8"))
@@ -194,13 +194,13 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
             encoding="utf-8",
         )
 
-        artifact = self.root / "upgrade-runtime" / "agent-skills-mcp.exe"
+        artifact = self.root / "upgrade-runtime" / "agent-skills.exe"
         artifact.parent.mkdir()
         artifact.write_bytes(b"runtime-v2")
         with patch.object(INSTALLER, "_query_installed_runtime_state", return_value=old_state):
             install_project(target, self._payload(), artifact, release_version="1.3.0")
 
-        self._assert_portable_host_commands(target, "agent-skills-mcp.exe")
+        self._assert_portable_host_commands(target, "agent-skills.exe")
         cursor_after = json.loads(cursor_path.read_text(encoding="utf-8"))
         claude_after = json.loads(claude_path.read_text(encoding="utf-8"))
         codex_after = tomllib.loads(codex_path.read_text(encoding="utf-8"))

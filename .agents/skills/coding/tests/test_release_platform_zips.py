@@ -57,18 +57,20 @@ class ReleasePlatformZipsTest(unittest.TestCase):
         script = _extract_workflow_run_block("Build platform distribution ZIPs")
         version = "2.0.0"
         binaries = {
-            "linux": f"agent-skills-mcp-v{version}-linux",
-            "windows": f"agent-skills-mcp-v{version}-windows.exe",
-            "macos": f"agent-skills-mcp-v{version}-macos",
+            "linux": "agent-skills",
+            "windows": "agent-skills.exe",
+            "macos": "agent-skills",
         }
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             assets = root / "release-assets"
             assets.mkdir()
-            for index, binary in enumerate(binaries.values()):
-                (assets / binary).write_bytes(f"asset-{index}".encode("utf-8"))
+            for index, (platform, binary) in enumerate(binaries.items()):
+                platform_dir = assets / f"release-runtime-{platform}"
+                platform_dir.mkdir()
+                (platform_dir / binary).write_bytes(f"asset-{index}".encode("utf-8"))
             (assets / "USAGE.md").write_text("usage", encoding="utf-8")
-            (assets / f"agent-skills-mcp-v{version}-linux.manifest.json").write_text("{}", encoding="utf-8")
+            (assets / f"agent-skills-v{version}-linux.manifest.json").write_text("{}", encoding="utf-8")
             (assets / "unexpected.tmp").write_text("不要进入 ZIP", encoding="utf-8")
 
             env = os.environ.copy()

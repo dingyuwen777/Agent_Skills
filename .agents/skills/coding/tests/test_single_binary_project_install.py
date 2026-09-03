@@ -40,7 +40,7 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
             "# Entry\n\n读取 `.agents/skills/router/SKILL.md`。\n",
             encoding="utf-8",
         )
-        self.runtime_artifact = self.root / "agent-skills-mcp.exe"
+        self.runtime_artifact = self.root / "agent-skills.exe"
         self.runtime_artifact.write_bytes(b"runtime-v1")
         self._write_skill("router", with_reference=False)
         self._write_skill("coding", with_bootstrap_assets=True)
@@ -150,7 +150,7 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.assertIn("agent_skills_load_required_context", (self.target / ROUTER_RELATIVE).read_text(encoding="utf-8"))
         self.assertIn("KEEP-CLAUDE", (self.target / "CLAUDE.md").read_text(encoding="utf-8"))
         self.assertIn("@AGENTS.md", (self.target / "CLAUDE.md").read_text(encoding="utf-8"))
-        self.assertEqual((self.target / ".agents/runtime/agent-skills-mcp.exe").read_bytes(), b"runtime-v1")
+        self.assertEqual((self.target / ".agents/runtime/agent-skills.exe").read_bytes(), b"runtime-v1")
         expected_state = build_install_state(payload, "1.2.3")
         for relative in expected_state["managed_files"]:
             self.assertTrue((self.target / ".agents/skills" / relative).is_file(), relative)
@@ -268,7 +268,7 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.assertFalse((self.target / ".agents/skills/security").exists())
         self.assertTrue((custom / "SKILL.md").is_file())
         self.assertTrue((self.target / ROUTER_RELATIVE).is_file())
-        self.assertEqual((self.target / ".agents/runtime/agent-skills-mcp.exe").read_bytes(), b"runtime-v2")
+        self.assertEqual((self.target / ".agents/runtime/agent-skills.exe").read_bytes(), b"runtime-v2")
         self.assertEqual(result["removed_skills"], ["security"])
         self.assertEqual(result["removed_shared_files"], [])
         self.assertFalse((self.target / INSTALL_MANIFEST_PATH).exists())
@@ -309,12 +309,12 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         install_project(self.target, first_payload, self.runtime_artifact, release_version="1.2.3")
         old_state = build_install_state(first_payload, "1.2.3")
         old_entry = (self.target / ENTRY_RELATIVE).read_bytes()
-        old_runtime = (self.target / ".agents/runtime/agent-skills-mcp.exe").read_bytes()
+        old_runtime = (self.target / ".agents/runtime/agent-skills.exe").read_bytes()
 
         (self.source / ENTRY_RELATIVE).write_text("# Entry v2\n", encoding="utf-8")
         self.runtime_artifact.write_bytes(b"runtime-v2")
         second_payload = self._payload()
-        runtime_target = (self.target / ".agents/runtime/agent-skills-mcp.exe").resolve()
+        runtime_target = (self.target / ".agents/runtime/agent-skills.exe").resolve()
         artifact = self.runtime_artifact.resolve()
         original_sha = INSTALLER._sha256_file
 
@@ -333,7 +333,7 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
                     install_project(self.target, second_payload, self.runtime_artifact, release_version="1.3.0")
 
         self.assertEqual((self.target / ENTRY_RELATIVE).read_bytes(), old_entry)
-        self.assertEqual((self.target / ".agents/runtime/agent-skills-mcp.exe").read_bytes(), old_runtime)
+        self.assertEqual((self.target / ".agents/runtime/agent-skills.exe").read_bytes(), old_runtime)
         self.assertFalse((self.target / INSTALL_MANIFEST_PATH).exists())
 
 
