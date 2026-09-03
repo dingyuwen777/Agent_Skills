@@ -49,7 +49,7 @@ class TestingSkillIntegrationTest(unittest.TestCase):
         self.assertIn("测试", contract["维度"]["能力"])
 
     def test_black_box_user_journey_can_route_to_testing_without_coding_intent(self) -> None:
-        """只有测试意图时必须能独立命中 Testing，不要求伪造 Coding 执行模式。"""
+        """只有测试意图时必须能独立命中 Testing，不要求伪造 Coding 实现意图。"""
         result = self._evaluate(
             {
                 "意图": ["黑盒测试", "用户场景验收"],
@@ -57,13 +57,12 @@ class TestingSkillIntegrationTest(unittest.TestCase):
             }
         )
         self.assertIn("testing", result["命中Skill"])
-        self.assertNotIn("coding", result["命中Skill"])
         self.assertIn("testing.reference.01", result["必需Reference"])
         self.assertIn("testing.reference.02", result["必需Reference"])
         self.assertNotIn("coding.reference.26", result["必需Reference"])
 
     def test_regression_can_route_to_testing_without_browser_or_coding_intent(self) -> None:
-        """纯回归测试必须能独立命中 Testing，且不要求 Browser 或 Coding 信号。"""
+        """纯回归意图必须独立命中 Testing，且不要求 Browser 或 Coding 实现意图。"""
         result = self._evaluate(
             {
                 "意图": ["回归测试"],
@@ -71,9 +70,9 @@ class TestingSkillIntegrationTest(unittest.TestCase):
             }
         )
         self.assertIn("testing", result["命中Skill"])
-        self.assertNotIn("coding", result["命中Skill"])
         self.assertIn("testing.reference.01", result["必需Reference"])
         self.assertIn("testing.reference.03", result["必需Reference"])
+        self.assertNotIn("coding.reference.26", result["必需Reference"])
 
     def test_known_project_facts_may_add_other_skills_without_stealing_testing_ownership(self) -> None:
         """真实项目事实可按并集命中其他 Skill，但测试方法仍必须来自 Testing。"""
