@@ -10,8 +10,8 @@ Agent_Skills 按项目安装。下载并解压与你操作系统匹配的 ZIP，
 
 ```text
 agent-skills-v<VERSION>-windows.zip
-agent-skills.zip
-agent-skills.zip
+agent-skills-v<VERSION>-linux.zip
+agent-skills-v<VERSION>-macos.zip
 ```
 
 每个 ZIP 根目录只包含当前平台的可执行文件和同一版本的本说明文件：
