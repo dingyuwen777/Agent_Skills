@@ -42,6 +42,8 @@ Requirement Source：https://github.com/dingyuwen777/Agent_Skills/issues/181
 
 实现 PR：https://github.com/dingyuwen777/Agent_Skills/pull/182
 
+归档 PR：https://github.com/dingyuwen777/Agent_Skills/pull/183
+
 本次明确不提供旧二进制名 alias、fallback、双写、迁移探测或旧版本升级兼容。Maintenance 已固化：Agent_Skills 自身后续修改默认以当前目标版本干净安装和当前版本行为为验收基线；只有 Requirement Source 明确要求时才承担跨版本升级兼容。
 
 # 采用方案
@@ -75,7 +77,7 @@ agent-skills-v<SemVer>-macos.zip   -> agent-skills + USAGE.md
 | R4 | 不新增旧名兼容层，不验证旧安装升级 | https://github.com/dingyuwen777/Agent_Skills/issues/181 | satisfied | live 旧名扫描回归通过；最终实现未新增旧名 alias、fallback、双文件或迁移探测 |
 | R5 | Maintenance 固化 Agent_Skills 默认不承担跨版本升级兼容义务 | https://github.com/dingyuwen777/Agent_Skills/issues/181 | satisfied | Maintenance preservation 回归通过；规则明确只有显式 Requirement 才增加兼容/迁移层 |
 | R6 | MCP/Bundle/Project Payload schema、Python/依赖和 Release 打包方式不发生无关变化 | https://github.com/dingyuwen777/Agent_Skills/issues/181 | satisfied | changed-files 不含协议/Schema/requirements；389 项既有 Runtime/路由/Release 回归和三平台 package identity 均通过 |
-| R7 | 完整 Skill Tests、三平台 Runtime Package、独立 Review、guarded merge 与 main-fresh 闭环 | https://github.com/dingyuwen777/Agent_Skills/issues/181 | explicitly_deferred | 实现 PR #182 已 guarded merge，implementation main-fresh #1048/#338 已成功；当前归档 PR 自身的 merge/final-main-fresh 与随后 Issue Closure/branch cleanup 由 finalization 流程执行，避免 archived Change 自引用 |
+| R7 | 完整 Skill Tests、三平台 Runtime Package、独立 Review、guarded merge 与 main-fresh 闭环 | https://github.com/dingyuwen777/Agent_Skills/issues/181 | explicitly_deferred | 实现 PR #182 已 guarded merge，implementation main-fresh #1048/#338 已成功；归档 PR #183 自身的 merge/final-main-fresh 与随后 Issue Closure/branch cleanup 由 finalization 流程执行，避免 archived Change 自引用 |
 
 # Red 与实现证据
 
@@ -128,7 +130,7 @@ PR #182 使用 `expected_head_sha=b53a1973b704a500a57e44b353512f5eb4d71e91` guar
 
 - [x] PR #182 使用 expected head guard 合并到 main。
 - [x] implementation merge `88b8ca22...` 的 main-fresh Skill Tests #1048 与 Runtime Package #338 全绿。
-- [ ] 当前 finalization PR 合并，并取得 archive-main fresh CI。
+- [ ] 归档 PR #183 合并，并取得 archive-main fresh CI。
 - [ ] Issue #181 Closure Audit 后关闭。
 - [ ] `chg/runtime-binary-agent-skills` 与 finalization 分支确认已清理。
 
