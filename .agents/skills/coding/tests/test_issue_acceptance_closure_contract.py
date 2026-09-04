@@ -154,6 +154,38 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
         for marker in required:
             self.assertIn(marker, text, marker)
 
+    def test_live_hardening_preserves_existing_issue_creation_and_type_contracts(self) -> None:
+        """新增 live gate 不能删掉原 Issue 建立条件、类型职责和未知项边界。"""
+        text = self._read(TRACEABILITY)
+        required = (
+            "没有更强且已被正式采用的等价需求载体",
+            "需要可追溯协作的 L2/L3",
+            "创建 Issue 的 GitHub 写授权",
+            "新增或改变用户、调用方或系统可以观察到的能力",
+            "当前可观察行为偏离已经确认的期望行为",
+            "主要目标是架构、重构、基础设施、CI、性能、安全、依赖、部署、维护性或工程质量",
+            "关键未知项会影响范围",
+            "不能因为表单提交成功就自动被视为 `resolved`",
+        )
+        for marker in required:
+            self.assertIn(marker, text, marker)
+
+    def test_live_hardening_preserves_pr_split_and_delivery_authorization_semantics(self) -> None:
+        """压缩上下文不能丢失多 PR 追溯、授权连续性和 Review PASS 的既有语义。"""
+        traceability = self._read(TRACEABILITY)
+        for marker in (
+            "一个 Issue 拆成多个 PR",
+            "每个 PR 都可以写同一个 `Requirement-Source`",
+        ):
+            self.assertIn(marker, traceability, marker)
+
+        finalization = self._read(FINALIZATION)
+        for marker in (
+            "不把同一已确认交付范围机械拆成每一步重新询问",
+            "Review PASS 表示 Review 当前结论没有阻塞交付",
+        ):
+            self.assertIn(marker, finalization, marker)
+
     def test_github_closure_requires_checkbox_writeback_reread_and_closed_confirmation(self) -> None:
         """GitHub Issue 必须真实同步 task list，再关闭并再次确认 closed。"""
         text = self._read(TRACEABILITY)
