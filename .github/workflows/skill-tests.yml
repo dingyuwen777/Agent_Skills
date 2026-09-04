@@ -11,29 +11,16 @@ permissions:
   issues: read
   pull-requests: read
 
+concurrency:
+  group: agent-skills-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  requirement-source:
-    name: Requirement Source
+  agent-skills-core:
+    name: Agent Skills Gate
     runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Setup Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.14.7"
-
-      - name: Verify PR Requirement Source
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: python .github/scripts/check_pr_requirement_source.py --root .
-
-  skill-tests:
-    name: Skill Tests
-    runs-on: ubuntu-24.04
+    outputs:
+      runtime_scope: ${{ steps.runtime-scope.outputs.runtime_scope }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -45,6 +32,48 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14.7"
+
+      - name: Verify PR Requirement Source
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python .github/scripts/check_pr_requirement_source.py --root .
+
+      - name: Detect Runtime package evidence scope
+        id: runtime-scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${GITHUB_SHA}"
+          fi
+
+          if [[ -z "${BASE_SHA}" || "${BASE_SHA}" =~ ^0+$ ]] || ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            runtime_scope=package
+          else
+            runtime_scope="$(git diff --name-only --no-renames "${BASE_SHA}" "${HEAD_SHA}" | python .github/scripts/runtime_package_scope.py)"
+          fi
+
+          echo "runtime_scope=${runtime_scope}" >> "${GITHUB_OUTPUT}"
+          case "${runtime_scope}" in
+            governance)
+              echo "Governance-only changes detected; binary package evidence is not applicable."
+              ;;
+            content)
+              echo "Runtime content changed; semantic Skill Tests are required and binary package evidence is not applicable."
+              ;;
+            package)
+              echo "Runtime executable/package/platform risk detected; Linux/Windows/macOS package evidence is required."
+              ;;
+            *)
+              echo "Unknown Runtime package scope: ${runtime_scope}" >&2
+              exit 1
+              ;;
+          esac
 
       - name: Python version
         run: python --version
@@ -116,20 +145,384 @@ jobs:
           --root .
           --changed-since ${{ github.event.pull_request.base.sha }}
 
-  agent-skills-gate:
-    name: Agent Skills Gate
-    if: always()
-    needs:
-      - requirement-source
-      - skill-tests
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Verify required core governance evidence
+      - name: Install Runtime build dependencies
+        if: steps.runtime-scope.outputs.runtime_scope == 'package'
+        run: python -m pip install -r runtime/requirements-build.txt
+
+      - name: Build and self-test Linux onefile Runtime
+        if: steps.runtime-scope.outputs.runtime_scope == 'package'
         shell: bash
-        env:
-          REQUIREMENT_SOURCE_RESULT: ${{ needs.requirement-source.result }}
-          SKILL_TESTS_RESULT: ${{ needs.skill-tests.result }}
         run: |
           set -euo pipefail
-          test "${REQUIREMENT_SOURCE_RESULT}" = "success"
-          test "${SKILL_TESTS_RESULT}" = "success"
+          build_json="$(python scripts/build_runtime.py --output-dir .runtime-dist --json)"
+          printf '%s\n' "${build_json}"
+          BUILD_JSON="${build_json}" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          payload = json.loads(os.environ["BUILD_JSON"])
+          assert payload["release_version"] == "0.0.0-dev"
+          assert payload["python_version"] == "3.14.7"
+          assert re.fullmatch(r"[0-9a-f]{64}", payload["integrity_fingerprint"])
+          artifact = Path(payload["artifact"])
+          assert artifact.is_file()
+          digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+          assert digest == payload["artifact_sha256"]
+          PY
+          .runtime-dist/agent-skills status --json
+          .runtime-dist/agent-skills self-test --json
+          test ! -e .runtime-dist/agent-skills-runtime-kit.zip
+          test -z "$(find .runtime-dist -maxdepth 1 -name '*.manifest.json' -print -quit)"
+
+      - name: Verify Linux real stdio MCP contract
+        if: steps.runtime-scope.outputs.runtime_scope == 'package'
+        run: >-
+          python scripts/runtime_mcp_smoke.py
+          --artifact .runtime-dist/agent-skills
+          --json
+
+      - name: Verify Linux project-only single-binary installation
+        if: steps.runtime-scope.outputs.runtime_scope == 'package'
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact="${GITHUB_WORKSPACE}/.runtime-dist/agent-skills"
+          target="${RUNNER_TEMP}/agent-skills-project-target"
+          no_args_target="${RUNNER_TEMP}/agent-skills-project-no-args"
+          mkdir -p "${target}" "${no_args_target}"
+
+          "${artifact}" install --target "${target}" --json
+          "${artifact}" install --target "${target}" --json
+          test -x "${target}/.agents/runtime/agent-skills"
+          test ! -e "${target}/.agents/agent-skills-install.json"
+          test -f "${target}/.cursor/mcp.json"
+          test -f "${target}/.mcp.json"
+          test -f "${target}/.codex/config.toml"
+          test -f "${target}/CLAUDE.md"
+          test -f "${target}/.agents/skills/ENTRY.md"
+          test -f "${target}/.agents/skills/router/SKILL.md"
+          ! grep -Fq ".agents/skills/" "${target}/AGENTS.md"
+          ! grep -Fq "ENTRY.md" "${target}/AGENTS.md"
+          ! grep -Fq "router/SKILL.md" "${target}/AGENTS.md"
+          ! grep -Fq "Reference" "${target}/AGENTS.md"
+          for forbidden in "治理能力自身" "内部能力" "用户可见进度" "Runtime Mode" "Source Mode"; do
+            ! grep -Fq "${forbidden}" "${target}/AGENTS.md"
+          done
+          grep -Fq "必须先读取并遵守当前目录及上级适用的项目规则" "${target}/AGENTS.md"
+          grep -Fq "当前真实文件" "${target}/AGENTS.md"
+          grep -Fq "首次接入" "${target}/AGENTS.md"
+          grep -Fq "完整性无法确认" "${target}/AGENTS.md"
+          grep -Fq ".agents/skills/router/SKILL.md" "${target}/.agents/skills/ENTRY.md"
+          grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/router/SKILL.md"
+          grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/router/SKILL.md"
+          test ! -e "${target}/.agents/skills/coding/references"
+          grep -Fq ".agents/project-context.json" "${target}/.gitignore"
+          ! grep -Fq "/.agents/runtime/" "${target}/.gitignore"
+          test "$(grep -c '<!-- agent-skills:managed:start -->' "${target}/AGENTS.md")" -eq 1
+          "${target}/.agents/runtime/agent-skills" status --json
+          state_json="$("${target}/.agents/runtime/agent-skills" __install-state --json)"
+          STATE_JSON="${state_json}" python - <<'PY'
+          import json
+          import os
+          state = json.loads(os.environ["STATE_JSON"])
+          assert state["schema"] == "agent-skills-runtime-install-state/v1"
+          assert "ENTRY.md" in state["shared_files"]
+          assert "router/SKILL.md" in state["managed_files"]
+          PY
+          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills" --json
+
+          cd "${no_args_target}"
+          "${artifact}"
+          test -x "${no_args_target}/.agents/runtime/agent-skills"
+          test ! -e "${no_args_target}/.agents/agent-skills-install.json"
+          test -f "${no_args_target}/.agents/skills/ENTRY.md"
+          test -f "${no_args_target}/.agents/skills/router/SKILL.md"
+          ! grep -Fq ".agents/skills/" "${no_args_target}/AGENTS.md"
+          ! grep -Fq "ENTRY.md" "${no_args_target}/AGENTS.md"
+          ! grep -Fq "router/SKILL.md" "${no_args_target}/AGENTS.md"
+          for forbidden in "治理能力自身" "内部能力" "用户可见进度" "Runtime Mode" "Source Mode"; do
+            ! grep -Fq "${forbidden}" "${no_args_target}/AGENTS.md"
+          done
+          grep -Fq "必须先读取并遵守当前目录及上级适用的项目规则" "${no_args_target}/AGENTS.md"
+          grep -Fq ".agents/project-context.json" "${no_args_target}/.gitignore"
+          ! grep -Fq "/.agents/runtime/" "${no_args_target}/.gitignore"
+
+  runtime-windows-package:
+    name: Runtime Windows Package
+    needs: agent-skills-core
+    if: needs.agent-skills-core.outputs.runtime_scope == 'package'
+    runs-on: windows-2025
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14.7"
+
+      - name: Python version
+        run: python --version
+
+      - name: Install Runtime build dependencies
+        run: python -m pip install -r runtime/requirements-build.txt
+
+      - name: Build and self-test Windows onefile Runtime
+        shell: pwsh
+        run: |
+          $buildJson = (python scripts/build_runtime.py --output-dir .runtime-dist --json | Out-String)
+          if ($LASTEXITCODE -ne 0) { throw "Windows Runtime build 失败" }
+          Write-Output $buildJson
+          $build = $buildJson | ConvertFrom-Json
+          if ($build.release_version -ne "0.0.0-dev") { throw "普通 CI Runtime 必须使用 development version" }
+          if ($build.python_version -ne "3.14.7") { throw "Runtime Python 版本不是 3.14.7" }
+          if ($build.integrity_fingerprint -notmatch '^[0-9a-f]{64}$') { throw "Runtime integrity fingerprint 非法" }
+          $artifactHash = (Get-FileHash -Algorithm SHA256 $build.artifact).Hash.ToLowerInvariant()
+          if ($artifactHash -ne $build.artifact_sha256) { throw "Runtime artifact SHA256 与 Builder 输出不一致" }
+          .\.runtime-dist\agent-skills.exe status --json
+          .\.runtime-dist\agent-skills.exe self-test --json
+          if (Test-Path .\.runtime-dist\agent-skills-runtime-kit.zip) { throw "不应生成 Windows Runtime Kit" }
+          if (Get-ChildItem .\.runtime-dist -Filter *.manifest.json -File) { throw "Builder 不应生成 manifest sidecar" }
+
+      - name: Verify real stdio MCP contract
+        shell: pwsh
+        run: |
+          python scripts/runtime_mcp_smoke.py --artifact .\.runtime-dist\agent-skills.exe --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows Runtime MCP smoke 失败" }
+
+      - name: Verify project-only single-binary installation
+        shell: pwsh
+        run: |
+          $artifact = (Resolve-Path .\.runtime-dist\agent-skills.exe).Path
+          $target = Join-Path $env:RUNNER_TEMP "agent-skills-project-target"
+          $noArgsTarget = Join-Path $env:RUNNER_TEMP "agent-skills-project-no-args"
+          New-Item -ItemType Directory -Force -Path $target, $noArgsTarget | Out-Null
+
+          & $artifact install --target $target --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows 项目首次安装失败" }
+          & $artifact install --target $target --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows 项目重复升级失败" }
+
+          $installedRuntime = Join-Path $target ".agents\runtime\agent-skills.exe"
+          $legacyManifest = Join-Path $target ".agents\agent-skills-install.json"
+          $entry = Join-Path $target ".agents\skills\ENTRY.md"
+          $router = Join-Path $target ".agents\skills\router\SKILL.md"
+          $agents = Join-Path $target "AGENTS.md"
+          foreach ($path in @(
+            $installedRuntime,
+            $entry,
+            $router,
+            $agents,
+            (Join-Path $target ".cursor\mcp.json"),
+            (Join-Path $target ".mcp.json"),
+            (Join-Path $target ".codex\config.toml"),
+            (Join-Path $target "CLAUDE.md")
+          )) {
+            if (-not (Test-Path $path)) { throw "Windows 项目安装缺少文件: $path" }
+          }
+          if (Test-Path $legacyManifest) { throw "Windows 新安装不应保留 agent-skills-install.json" }
+          $gitignore = Join-Path $target ".gitignore"
+          if (-not (Select-String -Path $gitignore -Pattern ".agents/project-context.json" -SimpleMatch -Quiet)) { throw "Windows 项目安装缺少 cache ignore" }
+          if (Select-String -Path $gitignore -Pattern "/.agents/runtime/" -SimpleMatch -Quiet) { throw "Windows 项目安装不应自动新增 Runtime ignore" }
+          foreach ($forbidden in @(".agents/skills/", "ENTRY.md", "router/SKILL.md", "Reference", "治理能力自身", "内部能力", "用户可见进度", "Runtime Mode", "Source Mode")) {
+            if (Select-String -Path $agents -Pattern $forbidden -SimpleMatch -Quiet) {
+              throw "Windows 目标 AGENTS 泄露 Runtime 内部治理结构: $forbidden"
+            }
+          }
+          foreach ($required in @("必须先读取并遵守当前目录及上级适用的项目规则", "当前真实文件", "首次接入", "完整性无法确认")) {
+            if (-not (Select-String -Path $agents -Pattern $required -SimpleMatch -Quiet)) {
+              throw "Windows 目标 AGENTS 缺少项目侧治理入口: $required"
+            }
+          }
+          if (-not (Select-String -Path $entry -Pattern ".agents/skills/router/SKILL.md" -SimpleMatch -Quiet)) { throw "Windows Entry 未指向 Router Skill" }
+          if (-not (Select-String -Path $router -Pattern ".agents/skills/coding/SKILL.md" -SimpleMatch -Quiet)) { throw "Windows Router 未指向 Coding Skill" }
+          if (-not (Select-String -Path $router -Pattern "agent_skills_load_required_context" -SimpleMatch -Quiet)) { throw "Windows Router 未保留 Runtime required Context 路由" }
+          if (Test-Path (Join-Path $target ".agents\skills\coding\references")) { throw "Windows 目标项目不应安装 Reference 或 Stub" }
+          & $installedRuntime status --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime status 失败" }
+          $state = (& $installedRuntime __install-state --json | Out-String | ConvertFrom-Json)
+          if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime install-state 失败" }
+          if ($state.schema -ne "agent-skills-runtime-install-state/v1") { throw "Windows Runtime install-state schema 非法" }
+          if (@($state.shared_files) -notcontains "ENTRY.md") { throw "Windows Runtime install-state 未认领 ENTRY.md" }
+          if (@($state.managed_files) -notcontains "router/SKILL.md") { throw "Windows Runtime install-state 未认领 Router" }
+          python scripts/runtime_mcp_smoke.py --artifact $installedRuntime --json
+          if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime MCP smoke 失败" }
+
+          Push-Location $noArgsTarget
+          try {
+            & $artifact
+            if ($LASTEXITCODE -ne 0) { throw "Windows binary 无参数项目安装失败" }
+          } finally {
+            Pop-Location
+          }
+          if (-not (Test-Path (Join-Path $noArgsTarget ".agents\runtime\agent-skills.exe"))) { throw "Windows binary 无参数运行未安装项目 Runtime" }
+          if (-not (Test-Path (Join-Path $noArgsTarget ".agents\skills\ENTRY.md"))) { throw "Windows binary 无参数运行未安装 Entry" }
+          if (-not (Test-Path (Join-Path $noArgsTarget ".agents\skills\router\SKILL.md"))) { throw "Windows binary 无参数运行未安装 Router Skill" }
+          if (Test-Path (Join-Path $noArgsTarget ".agents\agent-skills-install.json")) { throw "Windows 无参数安装不应生成 install manifest" }
+          $noArgsGitignore = Join-Path $noArgsTarget ".gitignore"
+          if (-not (Select-String -Path $noArgsGitignore -Pattern ".agents/project-context.json" -SimpleMatch -Quiet)) { throw "Windows 无参数安装缺少 cache ignore" }
+          if (Select-String -Path $noArgsGitignore -Pattern "/.agents/runtime/" -SimpleMatch -Quiet) { throw "Windows 无参数安装不应自动新增 Runtime ignore" }
+          $noArgsAgents = Join-Path $noArgsTarget "AGENTS.md"
+          foreach ($forbidden in @(".agents/skills/", "ENTRY.md", "router/SKILL.md", "治理能力自身", "内部能力", "用户可见进度", "Runtime Mode", "Source Mode")) {
+            if (Select-String -Path $noArgsAgents -Pattern $forbidden -SimpleMatch -Quiet) { throw "Windows binary 无参数运行的 AGENTS 泄露内部治理结构: $forbidden" }
+          }
+          if (-not (Select-String -Path $noArgsAgents -Pattern "必须先读取并遵守当前目录及上级适用的项目规则" -SimpleMatch -Quiet)) { throw "Windows binary 无参数运行的 AGENTS 缺少项目侧治理入口" }
+
+  runtime-macos-package:
+    name: Runtime macOS Package
+    needs: agent-skills-core
+    if: needs.agent-skills-core.outputs.runtime_scope == 'package'
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14.7"
+
+      - name: Python version
+        run: python --version
+
+      - name: Install Runtime build dependencies
+        run: python -m pip install -r runtime/requirements-build.txt
+
+      - name: Build and self-test macOS onefile Runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          build_json="$(python scripts/build_runtime.py --output-dir .runtime-dist --json)"
+          printf '%s\n' "${build_json}"
+          BUILD_JSON="${build_json}" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          payload = json.loads(os.environ["BUILD_JSON"])
+          assert payload["release_version"] == "0.0.0-dev"
+          assert payload["python_version"] == "3.14.7"
+          assert re.fullmatch(r"[0-9a-f]{64}", payload["integrity_fingerprint"])
+          artifact = Path(payload["artifact"])
+          assert artifact.is_file()
+          digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+          assert digest == payload["artifact_sha256"]
+          PY
+          .runtime-dist/agent-skills status --json
+          .runtime-dist/agent-skills self-test --json
+          test ! -e .runtime-dist/agent-skills-runtime-kit.zip
+          test -z "$(find .runtime-dist -maxdepth 1 -name '*.manifest.json' -print -quit)"
+
+      - name: Verify real stdio MCP contract
+        run: >-
+          python scripts/runtime_mcp_smoke.py
+          --artifact .runtime-dist/agent-skills
+          --json
+
+      - name: Verify project-only single-binary installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact="${GITHUB_WORKSPACE}/.runtime-dist/agent-skills"
+          target="${RUNNER_TEMP}/agent-skills-project-target"
+          no_args_target="${RUNNER_TEMP}/agent-skills-project-no-args"
+          mkdir -p "${target}" "${no_args_target}"
+
+          "${artifact}" install --target "${target}" --json
+          "${artifact}" install --target "${target}" --json
+          test -x "${target}/.agents/runtime/agent-skills"
+          test ! -e "${target}/.agents/agent-skills-install.json"
+          test -f "${target}/.cursor/mcp.json"
+          test -f "${target}/.mp.json"
+          test -f "${target}/.codex/config.toml"
+          test -f "${target}/CLAUDE.md"
+          test -f "${target}/.agents/skills/ENTRY.md"
+          test -f "${target}/.agents/skills/router/SKILL.md"
+          ! grep -Fq ".agents/skills/" "${target}/AGENTS.md"
+          ! grep -Fq "ENTRY.md" "${target}/AGENTS.md"
+          ! grep -Fq "router/SKILL.md" "${target}/AGENTS.md"
+          ! grep -Fq "Reference" "${target}/AGENTS.md"
+          for forbidden in "治理能力自身" "内部能力" "用户可见进度" "Runtime Mode" "Source Mode"; do
+            ! grep -Fq "${forbidden}" "${target}/AGENTS.md"
+          done
+          grep -Fq "必须先读取并遵守当前目录及上级适用的项目规则" "${target}/AGENTS.md"
+          grep -Fq "当前真实文件" "${target}/AGENTS.md"
+          grep -Fq "首次接入" "${target}/AGENTS.md"
+          grep -Fq "完整性无法确认" "${target}/AGENTS.md"
+          grep -Fq ".agents/skills/router/SKILL.md" "${target}/.agents/skills/ENTRY.md"
+          grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/router/SKILL.md"
+          grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/router/SKILL.md"
+          test ! -e "${target}/.agents/skills/coding/references"
+          grep -Fq ".agents/project-context.json" "${target}/.gitignore"
+          ! grep -Fq "/.agents/runtime/" "${target}/.gitignore"
+          test "$(grep -c '<!-- agent-skills:managed:start -->' "${target}/AGENTS.md")" -eq 1
+          "${target}/.agents/runtime/agent-skills" status --json
+          state_json="$("${target}/.agents/runtime/agent-skills" __install-state --json)"
+          STATE_JSON="${state_json}" python - <<'PY'
+          import json
+          import os
+          state = json.loads(os.environ["STATE_JSON"])
+          assert state["schema"] == "agent-skills-runtime-install-state/v1"
+          assert "ENTRY.md" in state["shared_files"]
+          assert "router/SKILL.md" in state["managed_files"]
+          PY
+          python scripts/runtime_mcp_smoke.py --artifact "${target}/.agents/runtime/agent-skills" --json
+
+          cd "${no_args_target}"
+          "${artifact}"
+          test -x "${no_args_target}/.agents/runtime/agent-skills"
+          test ! -e "${no_args_target}/.agents/agent-skills-install.json"
+          test -f "${no_args_target}/.agents/skills/ENTRY.md"
+          test -f "${no_args_target}/.agents/skills/router/SKILL.md"
+          ! grep -Fq ".agents/skills/" "${no_args_target}/AGENTS.md"
+          ! grep -Fq "ENTRY.md" "${no_args_target}/AGENTS.md"
+          ! grep -Fq "router/SKILL.md" "${no_args_target}/AGENTS.md"
+          for forbidden in "治理能力自身" "内部能力" "用户可见进度" "Runtime Mode" "Source Mode"; do
+            ! grep -Fq "${forbidden}" "${no_args_target}/AGENTS.md"
+          done
+          grep -Fq "必须先读取并遵守当前目录及上级适用的项目规则" "${no_args_target}/AGENTS.md"
+          grep -Fq ".agents/project-context.json" "${no_args_target}/.gitignore"
+          ! grep -Fq "/.agents/runtime/" "${no_args_target}/.gitignore"
+
+  runtime-package-gate:
+    name: Runtime Package Gate
+    if: always()
+    needs:
+      - agent-skills-core
+      - runtime-windows-package
+      - runtime-macos-package
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify required Runtime package evidence
+        shell: bash
+        env:
+          CORE_RESULT: ${{ needs.agent-skills-core.result }}
+          RUNTIME_SCOPE: ${{ needs.agent-skills-core.outputs.runtime_scope }}
+          WINDOWS_RESULT: ${{ needs.runtime-windows-package.result }}
+          MACOS_RESULT: ${{ needs.runtime-macos-package.result }}
+        run: |
+          set -euo pipefail
+          test "${CORE_RESULT}" = "success"
+          case "${RUNTIME_SCOPE}" in
+            governance|content)
+              test "${WINDOWS_RESULT}" = "skipped"
+              test "${MACOS_RESULT}" = "skipped"
+              ;;
+            package)
+              test "${WINDOWS_RESULT}" = "success"
+              test "${MACOS_RESULT}" = "success"
+              ;;
+            *)
+              echo "Unknown runtime_scope value: ${RUNTIME_SCOPE}" >&2
+              exit 1
+              ;;
+          esac

@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260904-223026-ci-runner-consolidation
 title: 合并日常 CI Runner 责任并保持三平台 Runtime 证明
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: infra/205-ci-runner-consolidation
 created: 2026-09-04
@@ -62,16 +62,16 @@ Excluded：Coding/Testing/Review 等 Skill/Reference 语义、Router/Stable ID�
 | Runtime Package Gate | 最终 always Job | 汇总 Core scope + Windows/macOS；package 时 Core 已包含 Linux 成功 |
 | Agent Skills Gate | Core required Job | 不再为纯汇总额外启动 Ubuntu |
 
-# Requirement Traceability
+# 需求追溯
 
-| ID | Requirement | Source | Status | Evidence |
+| 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | governance/content PR 5→≤2 runner Job | https://github.com/dingyuwen777/Agent_Skills/issues/205 | in_progress | 待真实 Actions 统计 |
-| R2 | package PR 8→≤4 且三平台真实证明 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | in_progress | 待本 package-scope PR Actions |
-| R3 | 两个 required context 不变且阻塞失败 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | in_progress | 待 Ruleset + check-runs |
-| R4 | Runtime scope package/content/governance 责任不降 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | in_progress | 待 classifier 回归 |
-| R5 | Workflow responsibility / Job model 永久回归 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | in_progress | 待测试 |
-| R6 | Deep Review、merge、main fresh、archive、Closure | https://github.com/dingyuwen777/Agent_Skills/issues/205 | explicitly_deferred | 实现后按顺序完成 |
+| R1 | governance/content PR 5→≤2 runner Job | https://github.com/dingyuwen777/Agent_Skills/issues/205 | explicitly_deferred | Workflow 静态结构已收敛为 Core + Runtime Package Gate；最终 Job 数必须由本 PR final-head Actions 实际统计后回填。 |
+| R2 | package PR 8→≤4 且三平台真实证明 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | explicitly_deferred | 新 DAG 设计为 Core 内 Linux + 独立 Windows/macOS + Runtime Package Gate；本 PR 修改 Workflow 本身会被 classifier 判为 package，最终由三平台真实 CI 回填。 |
+| R3 | 两个 required context 不变且阻塞失败 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | explicitly_deferred | Workflow 中仍保留 exact `Agent Skills Gate` / `Runtime Package Gate` job name；Ruleset 未修改，最终以 final-head check-runs 验证。 |
+| R4 | Runtime scope package/content/governance 责任不降 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | satisfied | classifier 继续三档；新统一 `skill-tests.yml` 与已删除旧 Workflow 路径均列为 package，Runtime 非 README 仍为 package，Skill/Reference 仍为 content，并有永久回归。 |
+| R5 | Workflow responsibility / Job model 永久回归 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | satisfied | `test_ci_workflow_minimal_sufficiency.py` 锁定永久 Workflow 只剩 Release + unified Skill Tests，并锁定 4 个 `runs-on` Owner 与两个 required context；`test_runtime_package_scope.py` 锁定 scope 与 package 条件。 |
+| R6 | Deep Review、merge、main fresh、archive、Closure | https://github.com/dingyuwen777/Agent_Skills/issues/205 | explicitly_deferred | 这些是 final-head CI 之后的 L3/Post-Merge 生命周期动作，按 canonical 顺序执行，不在实现前伪造完成。 |
 
 # Validation Matrix
 
@@ -90,10 +90,18 @@ Excluded：Coding/Testing/Review 等 Skill/Reference 语义、Router/Stable ID�
 - [x] 建立并写后重读 Issue #205。
 - [x] 恢复 main、Ruleset、永久 Workflow、scope classifier 和 Workflow responsibility regression。
 - [x] 完成 Evidence Preservation Mapping。
-- [ ] 修改 scope/Workflow 回归并验证 Red/Green。
-- [ ] 合并永久 CI Workflow，保留三平台 package evidence。
+- [x] 合并 Requirement/Skill/scope/Linux package 到 `Agent Skills Gate` Core；Windows/macOS 保持真实平台 Job。
+- [x] 删除失去独立 Owner 的 `runtime-package-tests.yml`，并把 `Runtime Package Gate` 汇总责任迁入统一 Workflow。
+- [x] 更新 scope 与 Workflow responsibility 永久回归。
 - [ ] final-head package-scope CI、Deep Review、Completion Audit。
 - [ ] guarded merge、main fresh、独立 archive PR、Issue Closure Audit 与分支清理。
+
+# 完成审计
+
+- [x] upstream_re_read：写入前已重新读取 Issue #205、当前 main、Ruleset、Maintenance、永久 Workflow、scope classifier 与对应回归，未发现目标或门禁漂移。
+- [x] change_coverage：R1–R6 全部映射 #205；R4/R5 已由机器实现与回归覆盖，必须依赖 final-head Actions 的 R1/R2/R3 保持显式 deferred。
+- [x] reverse_audit：从两个 required context 反查 Core、scope、Linux/Windows/macOS、ready_check 与最终 package gate；没有删除 package evidence，也没有用 Workflow path skip 制造 required Pending/假绿。
+- [x] unresolved_cleared：没有 `not_satisfied`；尚需真实 GitHub Actions、Review、merge/main fresh/archive/Closure 的项目均有明确 Owner 与后置阶段，因此只标 `explicitly_deferred`。
 
 # 回滚
 

@@ -40,16 +40,14 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         )
 
     def test_implementation_route_loads_thin_workflow_health_check(self) -> None:
-        """Coding 实现任务必须自动加载轻量 Health Check，但不因它预加载完整 CI 审计。"""
         result = self._evaluate({"执行模式": ["实现"], "风险": ["L1"]})
         self.assertIn("coding", result["命中Skill"])
         self.assertIn("coding.reference.28", result["必需Reference"])
         self.assertNotIn("coding.reference.20", result["必需Reference"])
 
     def test_implementation_path_uses_thin_workflow_health_check(self) -> None:
-        """持久仓库实现应轻量检查 CI 健康，发现真实问题时再升级完整审计。"""
         text = self._read(WORKFLOW_HEALTH)
-        required = (
+        for marker in (
             "Workflow Health Check",
             "明显重复责任",
             "失效 / 无 Owner Workflow",
@@ -57,14 +55,12 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
             "required-check consumer 漂移",
             "不预付完整 Workflow Responsibility Audit",
             "治理=CI 变更",
-        )
-        for marker in required:
+        ):
             self.assertIn(marker, text, marker)
 
     def test_thin_health_check_defines_ci_sufficiency_without_copying_detailed_method(self) -> None:
-        """轻量路径只定义充分性不变量和升级，不复制详细 Workflow 审计方法。"""
         text = self._read(WORKFLOW_HEALTH)
-        required = (
+        for marker in (
             "CI Sufficiency",
             "充分性按 required 持续验证责任覆盖判断，不按 Workflow 数量判断",
             "永久 CI Owner",
@@ -72,16 +68,14 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
             "necessary / mergeable / redundant / obsolete / unknown",
             "`unknown` 不得删除",
             "详细 Workflow Responsibility Audit 与 Evidence Preservation Mapping 继续由",
-        )
-        for marker in required:
+        ):
             self.assertIn(marker, text, marker)
         self.assertNotIn("### Evidence Preservation Mapping", text)
         self.assertNotIn("### Workflow Responsibility Audit", text)
 
     def test_validation_owner_keeps_detailed_workflow_responsibility_audit(self) -> None:
-        """详细 Workflow 责任恢复、消费者与证据守恒继续只有 Validation Owner 维护。"""
         text = self._read(VALIDATION)
-        required = (
+        for marker in (
             "## CI / Workflow Responsibility Audit",
             "先做 Workflow Responsibility Audit，再改 YAML",
             "触发事件 / path scope",
@@ -90,12 +84,10 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
             "依赖哪些前置 Job / artifact / environment",
             "Evidence Preservation Mapping 是删除/合并前置条件",
             "保持 check identity 与治理消费者一致",
-        )
-        for marker in required:
+        ):
             self.assertIn(marker, text, marker)
 
     def test_deletion_and_scoped_skip_preserve_evidence_at_lowest_safe_granularity(self) -> None:
-        """删除/合并和 scoped skip 只能在责任守恒且 fail-safe 时发生。"""
         health = self._read(WORKFLOW_HEALTH)
         validation = self._read(VALIDATION)
         for marker in (
@@ -115,9 +107,8 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
             self.assertIn(marker, validation, marker)
 
     def test_actions_control_plane_cleanup_preserves_audit_evidence(self) -> None:
-        """Actions 控制面可清无效对象，但历史审计 Evidence 不能为整洁被误删。"""
         text = self._read(WORKFLOW_HEALTH)
-        required = (
+        for marker in (
             "Actions Control-Plane Cleanup",
             "Source Workflow",
             "disabled / deleted / orphaned / no-owner Workflow",
@@ -126,12 +117,10 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
             "capability-limited",
             "cleanup gap",
             "不得声称 Actions 控制面已经清理",
-        )
-        for marker in required:
+        ):
             self.assertIn(marker, text, marker)
 
     def test_ci_escalation_reference_remains_a_thin_route(self) -> None:
-        """CI 升级 Reference 只能路由到既有 Owner，不能复制第二套 Workflow 方法。"""
         text = self._read(CI_ESCALATION)
         self.assertIn('"依赖":["coding.reference.11"]', text)
         self.assertIn("只承担 CI / Workflow 变更的审查路由升级", text)
@@ -140,13 +129,27 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertNotIn("### CI Sufficiency", text)
 
     def test_current_agent_skills_source_workflows_are_small_and_explicit(self) -> None:
-        """当前源码 Workflow 面保持小而明确；变化时必须显式更新责任审计，而非静默累积。"""
+        """永久 Workflow 合并后只保留 Release 与统一 CI Owner。"""
         names = sorted(path.name for path in WORKFLOW_DIR.glob("*.yml"))
         self.assertEqual(
             names,
-            ["release.yml", "runtime-package-tests.yml", "skill-tests.yml"],
+            ["release.yml", "skill-tests.yml"],
             "永久 Workflow 集合发生变化；必须重新执行 Workflow Responsibility Audit 并更新本回归",
         )
+
+    def test_unified_ci_keeps_both_required_checks_and_runner_budget(self) -> None:
+        """统一 CI 必须保持两个 required context，并锁定普通/Package runner Job 上界。"""
+        workflow = self._read(WORKFLOW_DIR / "skill-tests.yml")
+        self.assertEqual(workflow.count("runs-on:"), 4)
+        self.assertIn("name: Agent Skills Gate", workflow)
+        self.assertIn("name: Runtime Package Gate", workflow)
+        self.assertIn("name: Runtime Windows Package", workflow)
+        self.assertIn("name: Runtime macOS Package", workflow)
+        self.assertNotIn("name: Runtime Linux Package", workflow)
+        self.assertIn("Build and self-test Linux onefile Runtime", workflow)
+        self.assertIn("if: steps.runtime-scope.outputs.runtime_scope == 'package'", workflow)
+        self.assertIn("if: needs.agent-skills-core.outputs.runtime_scope == 'package'", workflow)
+        self.assertIn("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", workflow)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,8 @@ _SCOPE_RANK = {
 _PACKAGE_EXACT_PATHS = {
     ".gitattributes",
     ".github/scripts/runtime_package_scope.py",
+    ".github/workflows/skill-tests.yml",
+    # 保留已合并旧 Workflow 的路径，确保删除/意外恢复该控制面时仍按 package 风险处理。
     ".github/workflows/runtime-package-tests.yml",
     ".github/workflows/release.yml",
     "scripts/build_runtime.py",

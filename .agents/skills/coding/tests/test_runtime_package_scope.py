@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[4]
-WORKFLOW = ROOT / ".github/workflows/runtime-package-tests.yml"
+WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"
 CLASSIFIER = ROOT / ".github/scripts/runtime_package_scope.py"
 MAINTENANCE = ROOT / ".agents/MAINTENANCE.md"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
@@ -26,53 +26,46 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
     """验证普通 CI 按证据边界分级，而正式 Release 保持全平台验证。"""
 
     def test_runtime_package_scope_has_dedicated_classifier(self) -> None:
-        """Scope 判定必须有可单测的唯一 classifier，不能继续只靠内联宽泛 glob。"""
         self.assertTrue(CLASSIFIER.is_file(), "缺少 Runtime Package scope classifier")
         workflow = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("runtime_scope", workflow)
         self.assertIn(".github/scripts/runtime_package_scope.py", workflow)
         self.assertNotIn("runtime/*|runtime/**/*", workflow)
 
-    def test_scope_job_pins_python_and_disables_rename_collapsing(self) -> None:
-        """Scope classifier 必须使用固定 Python，并让 rename 同时暴露旧/新路径以避免降级漏判。"""
+    def test_core_scope_pins_python_and_disables_rename_collapsing(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        scope_section = workflow.split("  runtime-linux-package:", 1)[0]
-        self.assertIn("Setup Python", scope_section)
-        self.assertIn('python-version: "3.14.7"', scope_section)
-        self.assertIn('git diff --name-only --no-renames "${BASE_SHA}" "${HEAD_SHA}"', scope_section)
+        core_section = workflow.split("  runtime-windows-package:", 1)[0]
+        self.assertIn("Setup Python", core_section)
+        self.assertIn('python-version: "3.14.7"', core_section)
+        self.assertIn('git diff --name-only --no-renames "${BASE_SHA}" "${HEAD_SHA}"', core_section)
 
     def test_governance_paths_skip_three_platform_binary(self) -> None:
-        """维护文档、Change 与仓库治理文本只需要治理/Skill 证据。"""
         classify_paths = _load_classifier().classify_paths
-        paths = (
+        for path in (
             "README.md",
             "runtime/README.md",
             ".agents/MAINTENANCE.md",
             ".agents/changes/active/CHG-example/CHANGE.md",
-        )
-        for path in paths:
+        ):
             with self.subTest(path=path):
                 self.assertEqual(classify_paths([path]), "governance")
 
     def test_runtime_content_paths_use_semantic_tests_without_binary_build(self) -> None:
-        """canonical Skill/Reference/Entry 与 Project Payload 内容变化归 content。"""
         classify_paths = _load_classifier().classify_paths
-        paths = (
+        for path in (
             ".agents/skills/ENTRY.md",
             ".agents/skills/coding/SKILL.md",
             ".agents/skills/coding/references/13_example.md",
             ".agents/skills/coding/assets/AGENTS.managed.md",
             ".agents/skills/coding/scripts/coding.py",
             "USAGE.md",
-        )
-        for path in paths:
+        ):
             with self.subTest(path=path):
                 self.assertEqual(classify_paths([path]), "content")
 
     def test_package_paths_require_three_platform_binary(self) -> None:
-        """可执行、构建、安装、平台与 package gate 边界变化必须归 package。"""
         classify_paths = _load_classifier().classify_paths
-        paths = (
+        for path in (
             ".gitattributes",
             "runtime/requirements.txt",
             "runtime/requirements-build.txt",
@@ -81,15 +74,14 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
             "scripts/build_runtime.py",
             "scripts/runtime_mcp_smoke.py",
             ".github/scripts/runtime_package_scope.py",
+            ".github/workflows/skill-tests.yml",
             ".github/workflows/runtime-package-tests.yml",
             ".github/workflows/release.yml",
-        )
-        for path in paths:
+        ):
             with self.subTest(path=path):
                 self.assertEqual(classify_paths([path]), "package")
 
     def test_mixed_paths_take_highest_evidence_scope(self) -> None:
-        """混合修改必须取最高风险，不能被低风险文本掩盖 package 变化。"""
         classify_paths = _load_classifier().classify_paths
         self.assertEqual(
             classify_paths(
@@ -107,22 +99,24 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
         )
         self.assertEqual(classify_paths([]), "governance")
 
-    def test_runtime_package_jobs_only_run_for_package_scope(self) -> None:
-        """三平台 binary jobs 必须只由 package 档触发，governance/content 都应跳过。"""
+    def test_package_jobs_only_run_for_package_scope(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        self.assertGreaterEqual(workflow.count("needs.scope.outputs.runtime_scope == 'package'"), 3)
-        self.assertIn('RUNTIME_SCOPE: ${{ needs.scope.outputs.runtime_scope }}', workflow)
-        for marker in ("governance)", "content)", "package)"):
+        self.assertGreaterEqual(
+            workflow.count("steps.runtime-scope.outputs.runtime_scope == 'package'"), 4
+        )
+        self.assertGreaterEqual(
+            workflow.count("needs.agent-skills-core.outputs.runtime_scope == 'package'"), 2
+        )
+        self.assertIn('RUNTIME_SCOPE: ${{ needs.agent-skills-core.outputs.runtime_scope }}', workflow)
+        for marker in ("governance|content)", "package)"):
             self.assertIn(marker, workflow)
 
     def test_skill_ci_compiles_and_smokes_classifier(self) -> None:
-        """classifier 必须进入永久 Skill CI，避免 Workflow 使用未编译的维护脚本。"""
-        workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
+        workflow = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn(".github/scripts/runtime_package_scope.py", workflow)
         self.assertIn("runtime_package_scope.py --help", workflow)
 
     def test_maintenance_owns_evidence_boundary_rule(self) -> None:
-        """维护规则必须明确 L3 与三平台打包解耦，并保留 Release 全平台责任。"""
         maintenance = MAINTENANCE.read_text(encoding="utf-8")
         for marker in (
             "governance / content / package",
@@ -133,7 +127,6 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
             self.assertIn(marker, maintenance)
 
     def test_release_workflow_still_builds_all_platform_artifacts(self) -> None:
-        """普通 CI 的 scope 优化不得改变正式 Release 三平台 artifact 证明责任。"""
         release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for marker in ("Release Runtime Linux", "Release Runtime Windows", "Release Runtime macOS"):
             self.assertIn(marker, release)
