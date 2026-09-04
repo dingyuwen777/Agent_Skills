@@ -137,6 +137,30 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
             "永久 Workflow 集合发生变化；必须重新执行 Workflow Responsibility Audit 并更新本回归",
         )
 
+    def test_change_archive_is_lifecycle_owner_not_duplicate_ci_or_release(self) -> None:
+        """Change Archive 只承担 merge 后 carrier 写入，不得复制统一 CI 或 Release 责任。"""
+        workflow = self._read(WORKFLOW_DIR / "change-archive.yml")
+        for marker in (
+            "name: Change Archive",
+            "types: [closed]",
+            "workflow_dispatch:",
+            "group: change-archive-main",
+            "environment: change-archive-main",
+            ".github/scripts/archive_change_after_merge.py",
+            ".agents/skills/coding/scripts/ready_check.py --root .",
+            "git push origin HEAD:main",
+        ):
+            self.assertIn(marker, workflow, marker)
+        for duplicated_owner_marker in (
+            "python -m unittest discover",
+            "scripts/build_runtime.py",
+            "gh release create",
+            "gh release edit",
+        ):
+            self.assertNotIn(duplicated_owner_marker, workflow, duplicated_owner_marker)
+        self.assertNotIn("\n  push:", workflow)
+        self.assertNotIn("contents: write", workflow)
+
     def test_unified_ci_keeps_both_required_checks_and_runner_budget(self) -> None:
         """统一 CI 必须保持两个 required context，并锁定普通/Package runner Job 上界。"""
         workflow = self._read(WORKFLOW_DIR / "skill-tests.yml")
