@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import re
 import stat
 import subprocess
 from pathlib import Path, PurePosixPath
@@ -18,6 +19,14 @@ PROJECT_PAYLOAD_SCHEMA = "agent-skills-project-payload/v2"
 SHARED_RUNTIME_FILES = ("ENTRY.md",)
 _EXCLUDED_TOP_LEVEL = {"tests"}
 _EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
+_NATIVE_AGENT_INTERNAL_NAVIGATION = (
+    re.compile(r"\$[A-Za-z][A-Za-z0-9_-]*"),
+    re.compile(r"(?i)(?:^|[\s`'\"(])\.agents/skills/"),
+    re.compile(r"(?i)\bSKILL\.md\b"),
+    re.compile(r"(?i)\btriggered\s+references?\b"),
+    re.compile(r"(?i)\b(?:Coding|Testing|Docs|Review|Figma|Router)\s+Skill\b"),
+    re.compile(r"(?i)\bthose\s+Skills\b"),
+)
 
 
 def _sha256_bytes(payload: bytes) -> str:
@@ -51,6 +60,21 @@ def _is_excluded_runtime_path(relative: PurePosixPath) -> bool:
     if relative.parts[0] == "references":
         return True
     return False
+
+
+def _validate_native_agent_metadata(relative: PurePosixPath, payload: bytes) -> None:
+    """动态拒绝 native agent metadata 中会诱导复述内部能力身份的导航文本。"""
+    if not relative.parts or relative.parts[0] != "agents":
+        return
+    try:
+        text = payload.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise ValueError(f"Project Payload native agent metadata 不是合法 UTF-8：{relative.as_posix()}") from error
+    for pattern in _NATIVE_AGENT_INTERNAL_NAVIGATION:
+        if pattern.search(text):
+            raise ValueError(
+                f"Project Payload native agent metadata 包含内部能力导航：{relative.as_posix()}"
+            )
 
 
 def _canonical_payload_mode(mode: int) -> int:
@@ -168,6 +192,7 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
             relative = path.relative_to(skills_root).as_posix()
             mode = _payload_file_mode(root, path, tracked_modes)
             file_payload = path.read_bytes()
+            _validate_native_agent_metadata(relative_in_skill, file_payload)
             if relative_in_skill == PurePosixPath("SKILL.md"):
                 file_payload = project_runtime_skill_core(file_payload, bundle_references)
             files.append(_encode_file(relative, file_payload, mode))
