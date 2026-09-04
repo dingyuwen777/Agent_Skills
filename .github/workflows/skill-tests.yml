@@ -442,7 +442,7 @@ jobs:
           test -x "${target}/.agents/runtime/agent-skills"
           test ! -e "${target}/.agents/agent-skills-install.json"
           test -f "${target}/.cursor/mcp.json"
-          test -f "${target}/.mp.json"
+          test -f "${target}/.mcp.json"
           test -f "${target}/.codex/config.toml"
           test -f "${target}/CLAUDE.md"
           test -f "${target}/.agents/skills/ENTRY.md"
