@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[4]
 SKILLS_ROOT = ROOT / ".agents" / "skills"
 _FRONTMATTER = re.compile(r"\A---\r?\n.*?\r?\n---\r?\n", re.DOTALL)
 _ROUTING_BLOCK = re.compile(r"<!--\s*agent-routing:v1\s*\r?\n.*?\r?\n\s*-->", re.DOTALL)
+RUNTIME_OUTPUT_GUARD_MARKER = "对用户只描述项目实际动作、风险、证据和交付状态"
 
 
 def _routing_block(payload: dict[str, object]) -> str:
@@ -35,6 +36,17 @@ def _payload_texts(payload: dict[str, object]) -> dict[str, str]:
         if path.count("/") == 1 and path.endswith("/SKILL.md"):
             result[path] = decode_payload_file(entry).decode("utf-8")
     return result
+
+
+def _payload_file_text(payload: dict[str, object], relative_path: str) -> str:
+    """读取 Project Payload 指定 UTF-8 文件，找不到时让测试直接失败。"""
+    files = payload["files"]
+    if not isinstance(files, list):
+        raise AssertionError("Project Payload files 不是列表")
+    for entry in files:
+        if isinstance(entry, dict) and str(entry.get("path", "")) == relative_path:
+            return decode_payload_file(entry).decode("utf-8")
+    raise AssertionError(f"Project Payload 缺少文件：{relative_path}")
 
 
 def _protected_metadata(text: str) -> tuple[str, str]:
@@ -66,7 +78,7 @@ def _write_fixture_router(skills: Path) -> None:
 
 
 class RuntimeSkillProjectionTest(unittest.TestCase):
-    """验证 Source Core 保持完整，而 Runtime Core 自动去除 canonical Reference 身份导航。"""
+    """验证 Source Core 保持完整，而 Runtime Core 隐藏内部导航并强化用户可见表达边界。"""
 
     def test_source_mode_keeps_canonical_reference_navigation(self) -> None:
         """构建 Runtime Projection 不能要求维护者删除 canonical SKILL 中的源码导航。"""
@@ -120,6 +132,17 @@ class RuntimeSkillProjectionTest(unittest.TestCase):
             with self.subTest(skill=skill):
                 self.assertEqual(_protected_metadata(runtime), _protected_metadata(source))
 
+    def test_every_runtime_skill_core_gets_user_visible_output_guard(self) -> None:
+        """所有动态发现的 Runtime Skill Core 都必须得到同一输出 guard，而不是硬编码当前 Skill 名单。"""
+        payload = build_project_payload(ROOT, build_bundle(ROOT))
+        texts = _payload_texts(payload)
+        self.assertGreaterEqual(len(texts), 2)
+        for path, text in texts.items():
+            with self.subTest(path=path):
+                self.assertIn(RUNTIME_OUTPUT_GUARD_MARKER, text)
+                self.assertIn("内部能力身份继续用于路由、约束加载和专业执行", text)
+                self.assertIn("不得把内部能力名称或标签转写成用户可见任务分工", text)
+
     def test_runtime_projection_is_deterministic(self) -> None:
         """同一 canonical 输入重复构建必须得到完全相同的 Project Payload Core bytes 和 digest。"""
         bundle = build_bundle(ROOT)
@@ -128,8 +151,33 @@ class RuntimeSkillProjectionTest(unittest.TestCase):
         self.assertEqual(first["payload_digest"], second["payload_digest"])
         self.assertEqual(_payload_texts(first), _payload_texts(second))
 
+    def test_runtime_native_agent_metadata_has_no_internal_navigation_prompt(self) -> None:
+        """Runtime 分发的 native metadata 可以保留专业语义和 display name，但 default prompt 不再教模型复述内部导航。"""
+        payload = build_project_payload(ROOT, build_bundle(ROOT))
+        expected_semantics = {
+            "coding/agents/openai.yaml": ("L1-L3", "Asia/Shanghai", "Git commit messages in Chinese"),
+            "docs/agents/openai.yaml": ("not_applicable", "targeted", "full"),
+            "review/agents/openai.yaml": ("review-only", "review-and-test", "review-and-fix", "Findings"),
+            "figma/agents/openai.yaml": ("baseline-ready", "review-only", "review-and-fix", "NOT_READY"),
+        }
+        for path, markers in expected_semantics.items():
+            text = _payload_file_text(payload, path)
+            for forbidden in (
+                "Use $",
+                ".agents/skills/",
+                "SKILL.md",
+                "triggered references",
+                "Coding Skill",
+                "those Skills",
+            ):
+                with self.subTest(path=path, forbidden=forbidden):
+                    self.assertNotIn(forbidden, text)
+            for marker in markers:
+                with self.subTest(path=path, marker=marker):
+                    self.assertIn(marker, text)
+
     def test_new_skill_and_reference_are_sanitized_without_static_allowlist(self) -> None:
-        """新增合法 Skill/Reference 后 Projection 必须自动识别其身份，不要求修改固定名称列表。"""
+        """新增合法 Skill/Reference 后 Projection 必须自动识别其身份，并自动获得输出 guard。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             skills = root / ".agents" / "skills"
@@ -179,6 +227,42 @@ class RuntimeSkillProjectionTest(unittest.TestCase):
             self.assertIn("fixture security workflow", text)
             self.assertIn("失败时必须停止发布", text)
             self.assertIn("完整约束", text)
+            self.assertIn(RUNTIME_OUTPUT_GUARD_MARKER, text)
+
+    def test_unsafe_future_native_agent_metadata_fails_closed_without_static_skill_list(self) -> None:
+        """未来新增 Skill 若把内部命名式导航写入 native metadata，Project Payload 必须动态失败关闭。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            skills = root / ".agents" / "skills"
+            skills.mkdir(parents=True)
+            (skills / "ENTRY.md").write_text("# Entry\n", encoding="utf-8")
+            _write_fixture_router(skills)
+
+            security = skills / "security"
+            security.mkdir()
+            (security / "SKILL.md").write_text(
+                "---\nname: security\ndescription: fixture security workflow\n---\n\n"
+                + _routing_block(
+                    {
+                        "协议": SKILL_ROUTE_PROTOCOL,
+                        "Skill": "security",
+                        "触发": {"包含": {"维度": "能力", "取值": ["安全审查"]}},
+                    }
+                )
+                + "# Security\n\n失败时必须停止发布。\n",
+                encoding="utf-8",
+            )
+            agents = security / "agents"
+            agents.mkdir()
+            (agents / "openai.yaml").write_text(
+                'interface:\n  display_name: "Security"\n  short_description: "fixture"\n'
+                '  default_prompt: "Use $security and read .agents/skills/security/SKILL.md before acting."\n',
+                encoding="utf-8",
+            )
+
+            bundle = build_bundle(root)
+            with self.assertRaisesRegex(ValueError, "native agent metadata.*内部能力导航"):
+                build_project_payload(root, bundle)
 
     def test_reference_identity_inside_protected_frontmatter_fails_closed(self) -> None:
         """若 canonical frontmatter 自身暴露 Reference 身份，Projection 不得静默改写宿主入口，只能拒绝构建。"""
