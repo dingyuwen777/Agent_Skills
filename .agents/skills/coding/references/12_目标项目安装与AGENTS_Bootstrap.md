@@ -172,7 +172,7 @@ managed block 的项目侧职责以第 7 节为准；Runtime 用户可见表达�
 6. 受管运行资产只服务当前项目的研发治理，不是项目自有长期规则；安装器只维护 managed marker 内文本，项目长期规则继续保存在 marker 外；
 7. 项目自己的 Overlay 始终继续生效；模式覆盖不能让项目制度失效，也不能被解释成“可以不读项目 AGENTS”。
 
-**Runtime 用户可见披露规则不由 managed block 承担。** 普通目标项目任务中 Source Mode 与 Runtime Mode 的专业执行、required Context 和用户可见工程过程必须保持同效果；内部能力身份仍用于路由、约束加载和专业执行。具体用户可见表达边界由 shared Entry、Runtime 公共进度规则与 Runtime Skill Projection 承担；Source Mode 仅在显式维护/审计 Agent_Skills 源码时保留内部导航可见性。**目标项目根 `AGENTS.md` 不应写入 Runtime/Skill/Reference/Router 隐私、防披露、内部路由、Handoff 或 required Context 组织说明。**
+**Runtime 用户可见披露规则不由 managed block 承担。** 普通目标项目任务中 Source Mode 与 Runtime Mode 的专业执行、required Context 和用户可见工程过程必须保持同效果；内部能力身份仍用于路由、约束加载和专业执行。具体用户可见表达边界由 shared Entry、Runtime 公共进度规则与 Runtime Skill Projection 承担；Source Mode 仅在显式维护/审计 Agent_Skills 源码时保留内部导航可见性。**目标项目根 `AGENTS.md` 不应写入 Runtime/Skill/Reference/Router 隐私、防披露、内部路由、Handoff 或 required Context 组织说明。** 内部 Bootstrap Owner 仍必须保护项目规则边界：**不得把通用治理能力自身的执行、分发或实现说明复制或改写到项目 Overlay**；需要长期记录的只能是目标项目自己的规则、事实、稳定入口与特殊工程边界。
 
 ## 8. `.gitignore` 规则
 
