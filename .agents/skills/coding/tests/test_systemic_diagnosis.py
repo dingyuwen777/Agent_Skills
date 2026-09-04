@@ -36,9 +36,9 @@ class SystemicDiagnosisContractTest(unittest.TestCase):
             },
         )
 
-    def test_core_has_lightweight_diagnostic_escalation_gate(self) -> None:
-        """Coding Core 必须防止首因过早收敛，同时允许证据充分的简单问题快速闭合。"""
-        skill = self._read(".agents/skills/coding/SKILL.md")
+    def test_diagnostic_reference_has_lightweight_escalation_gate(self) -> None:
+        """诊断必达专项必须防止首因过早收敛，同时允许证据充分的简单问题快速闭合。"""
+        debugging = self._read(".agents/skills/coding/references/22_根因调试.md")
         for fragment in (
             "Diagnostic Escalation Gate",
             "第一个成立因素",
@@ -49,7 +49,7 @@ class SystemicDiagnosisContractTest(unittest.TestCase):
             "简单问题快速闭合",
         ):
             with self.subTest(fragment=fragment):
-                self.assertIn(fragment, skill)
+                self.assertIn(fragment, debugging)
 
     def test_root_cause_debugging_supports_multicausal_model_without_losing_old_rules(self) -> None:
         """根因调试必须支持多因素因果集合，并完整保留既有可证伪与停止条件。"""
@@ -113,9 +113,9 @@ class SystemicDiagnosisContractTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, combined)
 
-    def test_validation_closes_user_symptom_and_stage_contributions(self) -> None:
-        """修复验证必须回到整体 symptom，并按真实可测阶段证明主要贡献因素已消除。"""
-        validation = self._read(".agents/skills/coding/references/07_通用验证与证据策略.md")
+    def test_diagnostic_validation_closes_user_symptom_and_stage_contributions(self) -> None:
+        """诊断修复验证必须回到整体 symptom，并按真实可测阶段证明主要贡献因素已消除。"""
+        debugging = self._read(".agents/skills/coding/references/22_根因调试.md")
         for fragment in (
             "整体用户 symptom",
             "分阶段指标 / 边界",
@@ -125,7 +125,7 @@ class SystemicDiagnosisContractTest(unittest.TestCase):
             "不存在的指标",
         ):
             with self.subTest(fragment=fragment):
-                self.assertIn(fragment, validation)
+                self.assertIn(fragment, debugging)
 
     def test_testing_handoff_stays_conditional_for_diagnostics(self) -> None:
         """普通局部诊断不自动拉 Testing，只有真实独立测试工程意图才叠加。"""
@@ -152,11 +152,15 @@ class SystemicDiagnosisContractTest(unittest.TestCase):
         self.assertIn("coding", with_testing_intent["命中Skill"])
         self.assertIn("testing", with_testing_intent["命中Skill"])
 
-    def test_diagnostic_route_keeps_systemic_and_root_cause_rules_reachable(self) -> None:
-        """诊断任务必须继续取得系统分析和根因专项，不能为轻量路径切断 canonical 规则。"""
-        result = self._route(mode="诊断", stage="故障处置", risk="L2")
-        self.assertIn("coding.reference.22", result["必需Reference"])
-        self.assertIn("coding.reference.23", result["必需Reference"])
+    def test_progressive_disclosure_keeps_full_debugging_out_of_ordinary_work(self) -> None:
+        """完整根因专项只在诊断/故障/性能场景加载，普通功能开发不因本 Change 变重。"""
+        diagnostic = self._route(mode="诊断", stage="故障处置", risk="L2")
+        self.assertIn("coding.reference.22", diagnostic["必需Reference"])
+        self.assertIn("coding.reference.23", diagnostic["必需Reference"])
+
+        ordinary = self._route(mode="实现", stage="功能开发", risk="L2")
+        self.assertIn("coding.reference.22", ordinary["必需Reference"])
+        self.assertNotIn("coding.reference.23", ordinary["必需Reference"])
 
 
 if __name__ == "__main__":
