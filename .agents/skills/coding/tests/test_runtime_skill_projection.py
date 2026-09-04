@@ -151,8 +151,8 @@ class RuntimeSkillProjectionTest(unittest.TestCase):
         self.assertEqual(first["payload_digest"], second["payload_digest"])
         self.assertEqual(_payload_texts(first), _payload_texts(second))
 
-    def test_runtime_native_agent_metadata_has_no_internal_navigation_prompt(self) -> None:
-        """Runtime 分发的 native metadata 可以保留专业语义和 display name，但 default prompt 不再教模型复述内部导航。"""
+    def test_source_and_runtime_native_agent_metadata_are_exactly_same_and_navigation_free(self) -> None:
+        """native metadata 必须在 canonical source 就去内部导航，Runtime 原样分发，不能形成双模式提示差异。"""
         payload = build_project_payload(ROOT, build_bundle(ROOT))
         expected_semantics = {
             "coding/agents/openai.yaml": ("L1-L3", "Asia/Shanghai", "Git commit messages in Chinese"),
@@ -161,20 +161,24 @@ class RuntimeSkillProjectionTest(unittest.TestCase):
             "figma/agents/openai.yaml": ("baseline-ready", "review-only", "review-and-fix", "NOT_READY"),
         }
         for path, markers in expected_semantics.items():
-            text = _payload_file_text(payload, path)
+            source = (SKILLS_ROOT / path).read_text(encoding="utf-8")
+            runtime = _payload_file_text(payload, path)
+            with self.subTest(path=path, check="same-bytes"):
+                self.assertEqual(runtime, source)
             for forbidden in (
                 "Use $",
                 ".agents/skills/",
                 "SKILL.md",
                 "triggered references",
-                "Coding Skill",
-                "those Skills",
             ):
                 with self.subTest(path=path, forbidden=forbidden):
-                    self.assertNotIn(forbidden, text)
+                    self.assertNotIn(forbidden, source)
+            with self.subTest(path=path, forbidden="Skill identity"):
+                self.assertIsNone(re.search(r"(?i)\bSkills?\b", source))
             for marker in markers:
                 with self.subTest(path=path, marker=marker):
-                    self.assertIn(marker, text)
+                    self.assertIn(marker, source)
+            self.assertIn("never narrate internal capability selection, routing, handoffs or rule-loading identities", source)
 
     def test_new_skill_and_reference_are_sanitized_without_static_allowlist(self) -> None:
         """新增合法 Skill/Reference 后 Projection 必须自动识别其身份，并自动获得输出 guard。"""
