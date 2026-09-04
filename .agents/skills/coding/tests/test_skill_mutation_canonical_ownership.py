@@ -89,19 +89,18 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             self.assertNotIn(forbidden, router, f"Runtime Router 暴露源仓库 Mutation 治理：{forbidden}")
 
     def test_managed_block_is_project_facing_without_source_mutation_or_internal_navigation_terms(self) -> None:
-        """目标项目 managed block 只暴露项目规则优先、工程过程和受管资产边界。"""
+        """目标项目 managed block 只暴露项目规则、事实、校准和受管资产边界。"""
         managed = self._read(MANAGED_PATH)
         for marker in (
             "项目自己的",
             "无论采用哪种通用治理执行方式",
             "必须先读取并遵守当前目录及上级适用的项目规则",
+            "当前真实文件",
             "只改变通用治理约束的取得和呈现方式",
+            "首次接入",
+            "完整性无法确认",
             "受管运行资产",
             "不作为项目自有长期规则直接手工维护",
-            "代码修改",
-            "测试",
-            "文档同步",
-            "治理能力自身的运行与实现细节不属于项目进度或交付内容",
             "不得用旧记忆、摘要或自行猜测替代",
         ):
             self.assertIn(marker, managed, f"managed block 缺少项目侧入口保护：{marker}")
@@ -122,6 +121,10 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "Source Mode",
             "内部任务路由",
             "必需上下文加载",
+            "治理能力自身",
+            "内部能力",
+            "用户可见进度",
+            "防披露",
         ):
             self.assertNotIn(forbidden, managed, f"managed block 暴露维护者专用语义：{forbidden}")
 
