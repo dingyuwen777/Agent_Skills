@@ -26,6 +26,7 @@ affected_paths:
   - .agents/skills/coding/tests/test_ready_check.py
   - .agents/skills/coding/tests/test_delivery_archive_governance.py
   - .agents/skills/coding/tests/test_repository_change_archive_automation.py
+  - .agents/skills/coding/tests/test_ci_workflow_minimal_sufficiency.py
   - .github/scripts/archive_change_after_merge.py
   - .github/workflows/change-archive.yml
 contracts:
@@ -54,6 +55,7 @@ data_changes: []
 - 调整 Change Traceability 模板与 Ready validator。
 - 增加覆盖授权、自动归档 Ownership、AC binding 和 mutation impact audit 的永久回归。
 - 为 Agent_Skills 仓库补齐 `.agents/changes` 的 repository-native archive helper、Workflow 与永久回归。
+- 更新 Workflow Responsibility Audit 的永久 Workflow 清单，明确新增归档 Workflow 是独立 lifecycle 基础设施 Owner，而不是重复 CI Owner。
 
 # 非目标
 
@@ -81,6 +83,7 @@ data_changes: []
 - post-merge merge SHA、main-fresh Run 等事实由 PR/Actions/Requirement Owner 承担，不为完整性机械复制回 Change。
 - Agent_Skills 自身的归档 Workflow 使用专用 `Change Archivist` GitHub App token；Job 顶层保持只读权限。App 未配置时安全 no-op，并支持 `workflow_dispatch(pr_number)` 在平台配置后重跑。
 - 归档必须绑定 merged PR 的 `merge_commit_sha` 原文；当前 main Active Change 与 merged revision 不一致、已有 archive 不同源、多个 Active Change、active/archive 双存在或 push 前 main 漂移时全部 fail closed。
+- 新增第三个永久 Workflow 后必须更新既有 Workflow Responsibility Audit；它只承担 post-merge Change lifecycle write，不复制 `skill-tests.yml` 的 required CI 或 `release.yml` 的发布责任。
 
 # 需求追溯
 
@@ -94,26 +97,26 @@ data_changes: []
 | R6 | 持久 gated Change 的 R 显式绑定上游稳定 AC，历史 untouched archive 兼容 | #207 / AC6 | satisfied | CHANGE.template 明确 `#123 / AC1` / path#AC1；ready_check Acceptance binding parser 只对 Active Ready / 当前 changed archive 强制，新回归覆盖 generic source 拒绝、Issue AC 接受与 untouched archive 兼容。 |
 | R7 | develop-and-submit 与 review-and-deliver 形成一次 Implementation PR merge 的交接 | #207 / AC7 | satisfied | ref23 明确 developer 到 PR Ready 停止、Maintainer review-and-deliver PASS 后只 guarded merge Implementation PR 一次，再进入 main-fresh/archive/Closure。 |
 | R8 | Skill Mutation 增加 Rule→Template→Parser/Validator→CLI→CI→Tests→Runtime/Source 影响审计 | #207 / AC8 | satisfied | canonical Skill Mutation 专项 Reference 已接入；Rule/Template/validator/tests/runtime/source parity 逐层要求 affected / not_applicable 并 fail closed。 |
-| R9 | 永久回归覆盖新生命周期且不提高上下文预算 | #207 / AC9 | satisfied | `test_delivery_archive_governance.py`、`test_ready_check.py` 与新增 `test_repository_change_archive_automation.py` 覆盖授权、稳定 AC、成功归档、同源幂等、merged revision/并发漂移、歧义和窄权限 Workflow；未提高 Context Budget 阈值。 |
+| R9 | 永久回归覆盖新生命周期且不提高上下文预算 | #207 / AC9 | satisfied | `test_delivery_archive_governance.py`、`test_ready_check.py`、`test_repository_change_archive_automation.py` 与 `test_ci_workflow_minimal_sufficiency.py` 覆盖授权、稳定 AC、成功归档、同源幂等、merged revision/并发漂移、歧义、窄权限 Workflow 与永久 Workflow 责任审计；使用仓库既有 `unittest` self-contained runner，未新增测试依赖、未提高 Context Budget 阈值。 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | Ready validator、授权生命周期和 repository archive helper 永久回归进入 current head，由 Skill Tests 执行。 |
+| 行为 / 单元 / 组件 | required | Ready validator、授权生命周期、repository archive helper 与 Workflow Responsibility Audit 永久回归进入 current head，由 self-contained Skill Tests 执行。 |
 | 接口 / 契约 | required | canonical References、Change Source 语法、routing contract、merged PR metadata/revision binding 和 App credential contract 均有机器实现/回归。 |
 | 集成 / 持久化 / 运行依赖 | required | Workflow 在真实 checkout 上从 merged PR 获取 files/merge_commit_sha，校验 Ready gate、精确 staged allowlist，并在 push 前重新确认 current main。 |
 | 用户 / 工作流验收 | required | develop-and-submit / develop-and-deliver / review-and-deliver 三条协作路径与单 Implementation merge → repository archive 已形成明确状态机。 |
 | 跨组件关键路径 | required | Router metadata → Runtime evaluator → Ready gate；merged PR → archive helper → `.agents/changes` → Ready validator → guarded main push 均有直接接线。 |
 | 外部依赖 / 供应方探测 | not_applicable | 不调用业务 Provider；GitHub App 私钥/Ruleset 是平台配置事实，由真实 post-merge archive 验证，不在源码伪造。 |
 | 构建 / 打包 / 运行 | required | canonical Reference 继续进入 Bundle/Runtime Package；repository archive 脚本位于 `.github/`，不是分发给目标项目的 Skill payload。 |
-| 文档 / 治理 / 其他 | required | Rule/Template/Validator/Tests 一致性保持；repository-specific Workflow 不改变通用 Skill 对其他托管平台的非目标边界。 |
+| 文档 / 治理 / 其他 | required | Rule/Template/Validator/Tests 一致性保持；Workflow Responsibility Audit 明确三个永久 Workflow 的独立职责；repository-specific Workflow 不改变通用 Skill 对其他托管平台的非目标边界。 |
 
 # 完成审计
 
 - [x] upstream_re_read：已重新读取 #207 AC1–AC9，并以当前 Requirement Source 为最终完成定义。
 - [x] change_coverage：R1–R9 一一映射 AC1–AC9，没有把本 Change 作为第二套 Requirement。
-- [x] reverse_audit：已从团队提交 PR、Maintainer 自交付、Review-and-deliver、权限不足、archive 成功/失败、App 未配置、merged revision 漂移、R→AC 与 Runtime routing 反向检查。
+- [x] reverse_audit：已从团队提交 PR、Maintainer 自交付、Review-and-deliver、权限不足、archive 成功/失败、App 未配置、merged revision 漂移、R→AC、Runtime routing 与永久 Workflow 责任变化反向检查。
 - [x] unresolved_cleared：实现范围内所有 R 均已有 current-head 代码/永久回归；实际 merge/main-fresh/archive revision/Closure 仍由 GitHub 与 Issue Owner 提供，不在 Change 伪造未来证据。
 
 # 任务
@@ -125,13 +128,14 @@ data_changes: []
 - [x] 增加 Skill Mutation impact audit。
 - [x] 同步 Ready Check 既有回归到稳定 AC 语法。
 - [x] 补齐 Agent_Skills 自身 repository-native Change Archive helper / Workflow / 永久回归。
+- [x] 更新 Workflow Responsibility Audit，确认新增归档 Workflow 为必要且非重复 Owner。
 - [x] 完成需求追溯与 Completion Audit；post-merge 平台证据由 Requirement Owner 继续承载。
 
 # 验证
 
 ## 计划
 
-- 目标测试：`test_ready_check.py`、`test_delivery_archive_governance.py`、`test_repository_change_archive_automation.py`。
+- 目标测试：`test_ready_check.py`、`test_delivery_archive_governance.py`、`test_repository_change_archive_automation.py`、`test_ci_workflow_minimal_sufficiency.py`。
 - 相关测试：PR traceability、routing conformance、source/runtime conformance、context budget。
 - 静态/运行门禁：当前 Skill Tests / Runtime Package Tests。
 - 就绪检查：`python .agents/skills/coding/scripts/ready_check.py --root . --require-active-ready`。
@@ -139,7 +143,7 @@ data_changes: []
 
 ## 新鲜证据
 
-- current branch 包含 canonical 规则、模板、validator、repository-native archive 基础设施与永久回归；PR current-head / merge / main-fresh / archive fresh 由 GitHub Actions 与 Issue Closure Audit 提供。
+- current branch 包含 canonical 规则、模板、validator、repository-native archive 基础设施、永久回归与 Workflow Responsibility Audit 更新；PR current-head / merge / main-fresh / archive fresh 由 GitHub Actions 与 Issue Closure Audit 提供。
 
 # 文档影响
 
@@ -148,6 +152,6 @@ data_changes: []
 # 交付
 
 - Requirement Source：#207
-- Implementation：#209 + 本次 repository archive follow-up PR。
+- Implementation：#209 + #210（repository archive follow-up）。
 - 发布：本任务不自动执行正式 Release；源码合并后由现有 Release 生命周期决定。
 - 平台配置：专用 Change Archivist App / `change-archive-main` Environment / Ruleset bypass 是真实 GitHub Settings 事实；未配置时 Workflow 必须安全 no-op，Issue 保持 open。

@@ -129,11 +129,11 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertNotIn("### CI Sufficiency", text)
 
     def test_current_agent_skills_source_workflows_are_small_and_explicit(self) -> None:
-        """永久 Workflow 合并后只保留 Release 与统一 CI Owner。"""
+        """永久 Workflow 只保留统一 CI、Release 与 Change lifecycle 基础设施 Owner。"""
         names = sorted(path.name for path in WORKFLOW_DIR.glob("*.yml"))
         self.assertEqual(
             names,
-            ["release.yml", "skill-tests.yml"],
+            ["change-archive.yml", "release.yml", "skill-tests.yml"],
             "永久 Workflow 集合发生变化；必须重新执行 Workflow Responsibility Audit 并更新本回归",
         )
 
