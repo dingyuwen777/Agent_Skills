@@ -161,7 +161,9 @@ coding-change/v1
 - 当前 Change 不能把自己当 Requirement Source；
 - `completion_gate: required` 时，进入 `ready_for_review` 前 Requirement Traceability 全部 satisfied、Completion Audit 全部完成；
 - CI 绿色不能替代上游需求完整性、独立 Review 或文档影响审计；
-- `done` Change 不得留在 active；功能/治理变更正常合并并完成 `main` 新鲜验证后，将该 Change 的 `status` 更新为 `done`，保留 Requirement Traceability、Validation Matrix、Completion Audit、Review 与最终交付证据，并移动到 `archive/YYYY-MM/<change-id>/CHANGE.md`；不得删除已完成的 Change 历史。
+- `done` Change 不得留在 active；Implementation PR 在开发与 Review 阶段必须保持对应 Change 为 `active/ready_for_review`，merge 后由仓库自己的 **repository-native Change Archive** 基础设施将同一 Change ID 执行 `active → archive/YYYY-MM` 与 `status → done`；**Agent 不执行归档 commit，Agent 不创建归档 PR**；
+- `archive/done` 只表示该施工交付已经真实进入目标分支并被冻结，**不等价于 Requirement / Issue Closure**。如果 implementation main-fresh 失败，已经发生的 merge/archive 仍保持历史事实，修复或回滚建立新的工作单元，不把旧 Change 移回 active；
+- Change Archive 失败、超时、权限未配置或结果歧义时，端到端交付保持 `blocked/incomplete`；Agent 不手工搬目录、不 direct push main、不修改已 merge 的 Change source 来掩盖基础设施故障；修复平台/基础设施后重跑仓库原生归档并验证结果。
 
 ## 7. 内容守恒
 
@@ -258,7 +260,8 @@ Release
 - 提交信息使用中文；
 - 不绕过 Branch Protection、Ruleset、CI 或现有门禁；仓库当前未配置这些机制时也不能用“没有平台强制”替代本仓库自身 PR/CI 流程；
 - 合并后确认 main 指向预期 merge commit，并重新运行本次 changed scope 应触发的 main 新鲜 CI；纯 Skill/治理变化不人为触发无关三平台 Runtime package workflow；
-- L2/L3 Change 在功能/治理变更合并且 main 新鲜验证成功后，通过独立最小归档提交/PR 把该 Change 更新为 `done` 并移动到 `archive/YYYY-MM/...`；归档提交本身只运行其真实 changed scope 所需门禁；
+- L2/L3 Implementation PR 中的 Change 保持 `active/ready_for_review`；merge 后由 `.github/workflows/change-archive.yml` 的 repository-native **Change Archive** 基础设施使用专用归档身份完成 `active → archive/YYYY-MM` 与 `status → done`。**Agent 不执行归档 commit，Agent 不创建归档 PR**；自动归档失败时保持 `blocked/incomplete`，修复平台或基础设施后重跑并验证，不由 Agent 接管；
+- implementation main fresh CI 与 Change Archive 可以按真实 GitHub Actions 独立运行；完整 Closure 前必须同时取得当前 implementation merge revision 的 required main-fresh Evidence、同一 Change 的 archive/done 结果，以及项目要求的 archive revision governance fresh Evidence；archive/done **不等价于 Requirement** 已完成；
 - Release 只从 main 手工运行 `.github/workflows/release.yml`，输入唯一正式版本来源 `v<SemVer>`；仓库不维护第二份根版本文件；
 - Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并拒绝覆盖已有 tag/Release；
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
@@ -290,8 +293,8 @@ Release
 - 不重复调用同一已确认失败的 Ready mutation；
 - 真正合并前必须重新确认 `draft=false`、mergeable、required CI、当前 head SHA 与 reviewed head 一致；
 - GitHub merge 一律走 REST merge；宿主支持时必须传入 `expected_head_sha`，不使用无 head guard 的替代合并路径；
-- merge 后必须执行 main fresh CI；
-- main 新鲜验证成功后再执行 Change archive；归档 PR 同样不能依赖人工 Ready。
+- merge 后必须执行 implementation main fresh CI；
+- merge 后由 repository-native Change Archive 自动归档；Agent 等待/验证 archive/done 与 archive revision required governance fresh Evidence，再执行 Closure Audit、Acceptance 状态同步和 Requirement Closure。归档失败时保持 `blocked/incomplete`，不创建归档 PR、不手工 direct push main。
 
 ## 11. 完成报告
 
