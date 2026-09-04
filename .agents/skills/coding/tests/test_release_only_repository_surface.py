@@ -170,20 +170,31 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertIn(".agents/MAINTENANCE.md", root_agents)
         self.assertIn("不得复制到目标项目", root_agents)
 
-        self.assertNotIn(".agents/skills/", managed)
-        self.assertNotIn("ROUTER.md", managed)
-        self.assertNotIn("agent_skills_load_required_context", managed)
-        self.assertNotIn(".agents/skills/figma/SKILL.md", managed)
-        self.assertNotIn(".agents/skills/review/SKILL.md", managed)
-        self.assertNotIn(".agents/skills/docs/SKILL.md", managed)
-        self.assertNotIn("研发治理 MCP", managed)
-        self.assertNotIn("Runtime Mode", managed)
-        self.assertIn("无论采用哪种通用治理执行方式", managed)
-        self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", managed)
-        self.assertIn("只改变通用治理约束的取得和呈现方式", managed)
-        self.assertIn("代码修改", managed)
-        self.assertIn("文档同步", managed)
-        self.assertIn("治理能力自身的运行与实现细节不属于项目进度或交付内容", managed)
+        for forbidden in (
+            ".agents/skills/",
+            "ROUTER.md",
+            "agent_skills_load_required_context",
+            ".agents/skills/figma/SKILL.md",
+            ".agents/skills/review/SKILL.md",
+            ".agents/skills/docs/SKILL.md",
+            "研发治理 MCP",
+            "Runtime Mode",
+            "Source Mode",
+            "治理能力自身",
+            "内部能力",
+            "用户可见进度",
+        ):
+            self.assertNotIn(forbidden, managed)
+        for required in (
+            "无论采用哪种通用治理执行方式",
+            "必须先读取并遵守当前目录及上级适用的项目规则",
+            "当前真实文件",
+            "只改变通用治理约束的取得和呈现方式",
+            "首次接入",
+            "完整性无法确认",
+            "本区块由安装/升级流程维护",
+        ):
+            self.assertIn(required, managed)
 
         for marker in (
             ".agents/skills/coding/SKILL.md",
