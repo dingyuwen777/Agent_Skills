@@ -88,6 +88,104 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
         for marker in required:
             self.assertIn(marker, text, marker)
 
+    def test_issue_create_or_update_requires_live_reread_and_contract_validation(self) -> None:
+        """创建或实质更新 Requirement Source 后必须验证平台真实 live 对象。"""
+        text = self._read(TRACEABILITY)
+        required = (
+            "Issue Creation / Update Live Validation Gate",
+            "创建或实质更新 GitHub Requirement Source",
+            "重新读取平台上的真实 live Requirement Source",
+            "未完成这次写后重读",
+            "不得把该 Requirement Source 视为 `resolved`",
+        )
+        for marker in required:
+            self.assertIn(marker, text, marker)
+
+    def test_github_acceptance_rejects_numbered_list_and_comment_only_state(self) -> None:
+        """GitHub 的普通编号列表或 comment-only Evidence 不能冒充可回写 Acceptance 状态。"""
+        text = self._read(TRACEABILITY)
+        required = (
+            "GitHub 默认 Acceptance 状态必须使用可回写 task list",
+            "`- [ ] AC1：...`",
+            "普通 `1. 2. 3.` 编号列表",
+            "不能冒充 Acceptance 状态 Owner",
+            "comment-only Evidence",
+        )
+        for marker in required:
+            self.assertIn(marker, text, marker)
+
+    def test_live_validation_normalizes_only_when_requirement_semantics_are_preserved(self) -> None:
+        """live Issue 只有在保持原需求语义时才可规范化，否则必须失败关闭。"""
+        text = self._read(TRACEABILITY)
+        required = (
+            "保持原 Requirement 语义",
+            "再次重新读取",
+            "`blocked/unresolved`",
+            "无写权限",
+            "并发漂移",
+        )
+        for marker in required:
+            self.assertIn(marker, text, marker)
+
+    def test_delivery_checkpoints_revalidate_live_requirement_source_contract(self) -> None:
+        """PR、Review、Ready 与 merge preflight 都必须重新验证 live Requirement Source。"""
+        text = self._read(TRACEABILITY)
+        required = (
+            "Delivery Live Requirement Source Validation",
+            "创建或更新 PR",
+            "正式 Review",
+            "PR Ready / 可合并",
+            "merge preflight",
+            "重新读取当前 live Requirement Source",
+            "旧 `resolved` 结论失效",
+        )
+        for marker in required:
+            self.assertIn(marker, text, marker)
+
+    def test_open_legacy_issue_can_be_normalized_without_bulk_rewriting_closed_history(self) -> None:
+        """仍作为当前来源的 open Issue 可有界规范化，但 closed 历史不做猜测性批量迁移。"""
+        text = self._read(TRACEABILITY)
+        required = (
+            "仍 open 且继续作为当前 Requirement Source",
+            "原有验收顺序",
+            "已关闭历史 Issue",
+            "不批量迁移",
+        )
+        for marker in required:
+            self.assertIn(marker, text, marker)
+
+    def test_live_hardening_preserves_existing_issue_creation_and_type_contracts(self) -> None:
+        """新增 live gate 不能删掉原 Issue 建立条件、类型职责和未知项边界。"""
+        text = self._read(TRACEABILITY)
+        required = (
+            "没有更强且已被正式采用的等价需求载体",
+            "需要可追溯协作的 L2/L3",
+            "创建 Issue 的 GitHub 写授权",
+            "新增或改变用户、调用方或系统可以观察到的能力",
+            "当前可观察行为偏离已经确认的期望行为",
+            "主要目标是架构、重构、基础设施、CI、性能、安全、依赖、部署、维护性或工程质量",
+            "关键未知项会影响范围",
+            "不能因为表单提交成功就自动被视为 `resolved`",
+        )
+        for marker in required:
+            self.assertIn(marker, text, marker)
+
+    def test_live_hardening_preserves_pr_split_and_delivery_authorization_semantics(self) -> None:
+        """压缩上下文不能丢失多 PR 追溯、授权连续性和 Review PASS 的既有语义。"""
+        traceability = self._read(TRACEABILITY)
+        for marker in (
+            "一个 Issue 拆成多个 PR",
+            "每个 PR 都可以写同一个 `Requirement-Source`",
+        ):
+            self.assertIn(marker, traceability, marker)
+
+        finalization = self._read(FINALIZATION)
+        for marker in (
+            "不把同一已确认交付范围机械拆成每一步重新询问",
+            "Review PASS 表示 Review 当前结论没有阻塞交付",
+        ):
+            self.assertIn(marker, finalization, marker)
+
     def test_github_closure_requires_checkbox_writeback_reread_and_closed_confirmation(self) -> None:
         """GitHub Issue 必须真实同步 task list，再关闭并再次确认 closed。"""
         text = self._read(TRACEABILITY)
@@ -106,6 +204,8 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
         self.assertEqual(positions, sorted(positions), "Closure 写回/重读/关闭顺序发生漂移")
         self.assertIn("仍适用的未勾选项", text)
         self.assertIn("不得关闭", text)
+        self.assertIn("comment-only Evidence", text)
+        self.assertIn("不能代替 Issue body Acceptance 状态", text)
 
     def test_three_issue_profiles_share_acceptance_and_validation_contract(self) -> None:
         """三类 GitHub Form 应共享验收标准、稳定 AC 示例和验证要求字段。"""
@@ -131,6 +231,20 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
         )
         for marker in required:
             self.assertIn(marker, text, marker)
+
+    def test_develop_and_deliver_validates_live_source_before_branch_and_change(self) -> None:
+        """端到端开发在建分支/Change 前必须先确认新建或复用 Requirement Source 的 live Contract。"""
+        text = self._read(FINALIZATION)
+        ordered = (
+            "创建或复用 Requirement Source / Issue",
+            "通过 live Requirement Source Contract Validation",
+            "建立当前任务分支与 Change",
+        )
+        positions = []
+        for marker in ordered:
+            self.assertIn(marker, text, marker)
+            positions.append(text.index(marker))
+        self.assertEqual(positions, sorted(positions), "Requirement Source live validation 未位于分支/Change 前")
 
     def test_finalization_orders_acceptance_sync_before_close_and_cleanup(self) -> None:
         """端到端收尾必须先同步 Acceptance，再 close，最后 cleanup/report。"""
