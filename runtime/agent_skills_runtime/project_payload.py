@@ -24,8 +24,7 @@ _NATIVE_AGENT_INTERNAL_NAVIGATION = (
     re.compile(r"(?i)(?:^|[\s`'\"(])\.agents/skills/"),
     re.compile(r"(?i)\bSKILL\.md\b"),
     re.compile(r"(?i)\btriggered\s+references?\b"),
-    re.compile(r"(?i)\b(?:Coding|Testing|Docs|Review|Figma|Router)\s+Skill\b"),
-    re.compile(r"(?i)\bthose\s+Skills\b"),
+    re.compile(r"(?i)\bSkills?\b"),
 )
 
 
