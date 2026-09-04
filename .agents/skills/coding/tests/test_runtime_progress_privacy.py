@@ -85,6 +85,7 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
         """共享入口必须禁止身份转写，同时允许内部身份继续服务路由和专业执行。"""
         entry = self._read(ENTRY)
         for marker in (
+            "Source Mode 与 Runtime Mode 的专业执行效果和用户可见工程过程必须一致",
             "Runtime Mode",
             "控制面动作保持静默",
             "任何内部能力名称或标签",
@@ -93,20 +94,30 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
             "实现、测试、文档同步、复核、Git/CI 和交付",
             "内部执行上下文",
             "不得转写成用户可见文本",
+            "不能为了隐藏名称而删除或少加载规则",
         ):
             self.assertIn(marker, entry)
 
     def test_entry_preserves_source_mode_and_host_ui_boundary(self) -> None:
-        """早期入口必须保留 Source Mode 可见性，并承认宿主 UI 不是 Prompt 可控制表面。"""
+        """早期入口必须保留 Source Mode 维护例外，并承认宿主 UI 不是 Prompt 可控制表面。"""
         entry = self._read(ENTRY)
         for marker in (
             "Source Mode",
             "可以正常讨论内部导航和路由事实",
+            "显式维护 Agent_Skills 源码",
             "宿主 UI",
             "不受 Prompt / Skill / Runtime 文本规则直接控制",
             "不能宣称可以隐藏",
         ):
             self.assertIn(marker, entry)
+
+    def test_source_and_runtime_share_exact_entry_and_same_professional_context_contract(self) -> None:
+        """共享 Entry 在 Source/Runtime 逐字一致，且一致性不得通过少加载专业 Context 实现。"""
+        source_entry = self._read(ENTRY)
+        runtime_entry = self._payload_text("ENTRY.md")
+        self.assertEqual(runtime_entry, source_entry)
+        self.assertIn("同一 canonical 路由事实、同一专业规则和同一 required Context", source_entry)
+        self.assertIn("不允许来自专业规则删减、摘要替代或少加载 Context", source_entry)
 
     def test_existing_canonical_runtime_rule_remains_mode_aware(self) -> None:
         """详细 Runtime Owner 必须继续保留 Source/Runtime 两种披露边界，不能被薄入口反向削弱。"""
@@ -150,7 +161,7 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
                 "所有 Agent 可控制的用户可见文本",
                 "任何内部能力名称或标签",
                 "不得使用“用、调用、交给或由某个内部能力”",
-                "改写为项目工程动作",
+                "改写为实现、测试、文档同步、复核、Git/CI 和交付等项目工程动作",
                 "项目调查",
                 "代码修改",
                 "测试",
