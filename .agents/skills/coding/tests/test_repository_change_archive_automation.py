@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import runpy
 import subprocess
 import sys
@@ -219,7 +220,7 @@ class RepositoryChangeArchiveAutomationTest(unittest.TestCase):
             "cancel-in-progress: false",
             "environment: change-archive-main",
             "configured=false",
-            "actions/create-github-app-token@v2",
+            "actions/create-github-app-token@",
             "CHANGE_ARCHIVE_APP_ID",
             "CHANGE_ARCHIVE_APP_PRIVATE_KEY",
             "merge_commit_sha",
@@ -230,6 +231,11 @@ class RepositoryChangeArchiveAutomationTest(unittest.TestCase):
         ]
         for fragment in required:
             self.assertIn(fragment, workflow)
+        for line in workflow.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("uses:"):
+                ref = stripped.split("uses:", 1)[1].strip().split()[0]
+                self.assertRegex(ref, r"@[0-9a-f]{40}$", f"未固定 Action commit：{ref}")
         self.assertNotIn("contents: write", workflow)
         self.assertNotIn("\n  push:", workflow)
 
