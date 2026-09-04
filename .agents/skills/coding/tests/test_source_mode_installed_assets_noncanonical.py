@@ -53,11 +53,12 @@ class SourceModeInstalledAssetsNoncanonicalTest(unittest.TestCase):
             "保留但非 canonical",
             "安装版本与 drift",
             "不得把其中的 Runtime/MCP/披露/路由/加载说明作为当前通用治理语义",
-            "不得复制或改写到项目 Overlay",
+            "项目 Overlay 只记录项目自己的规则、事实和长期工程边界",
             "正式 Runtime upgrade",
             "不手工覆盖 installer-owned managed block",
         ):
             self.assertIn(required, bootstrap)
+        self.assertIn("目标项目根 `AGENTS.md` 不应写入 Runtime/Skill/Reference/Router", bootstrap)
 
     def test_web_source_mode_uses_current_canonical_source_and_only_inspects_installation_drift(self) -> None:
         """网页端只把目标项目旧安装资产当作版本/ownership/drift 事实。"""

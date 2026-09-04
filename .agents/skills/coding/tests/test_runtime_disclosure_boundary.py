@@ -1,4 +1,4 @@
-"""验证 Runtime Mode 隐藏治理实现细节，同时保留工程过程可见性。"""
+"""验证 Runtime Mode 隐藏治理实现身份，同时保留工程过程和内部执行能力。"""
 
 from __future__ import annotations
 
@@ -91,55 +91,48 @@ def _task_route() -> dict[str, object]:
 
 
 class RuntimeDisclosureBoundaryTest(unittest.TestCase):
-    """覆盖 Runtime 公共面与 Source Mode 可见性边界。"""
+    """覆盖 Runtime 公共面、目标 AGENTS 与 Source Mode 可见性边界。"""
 
     def setUp(self) -> None:
         """为每个测试建立新的 RuntimeStore，避免任务状态相互影响。"""
         self.store = RuntimeStore(_fixture_bundle(), release_version="9.9.9-test")
 
-    def test_runtime_managed_bootstrap_is_project_facing_and_keeps_engineering_progress(self) -> None:
-        """目标项目入口只表达项目侧行为契约，同时允许真实工程处理过程。"""
+    def test_runtime_managed_bootstrap_is_only_project_facing_bootstrap(self) -> None:
+        """目标项目 managed block 只表达项目事实/规则/Bootstrap，不承担内部披露规则。"""
         text = RUNTIME_BOOTSTRAP.read_text(encoding="utf-8")
         for forbidden in (
             ".agents/skills/",
             "ROUTER.md",
             "Reference",
-            "References",
             "Stable ID",
             "路由令牌",
-            "命中Skill",
             "dingyuwen777/Agent_Skills",
             "GitHub App",
             "Maintenance Mode",
             "Runtime Mode",
             "Source Mode",
-            "研发治理 MCP",
-            "progress update",
-            "commentary",
-            "tool preamble",
             "内部任务路由",
             "必需上下文加载",
+            "治理能力自身",
+            "内部能力",
+            "用户可见进度",
+            "防披露",
         ):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, text)
         for required in (
-            "无论采用哪种通用治理执行方式",
             "必须先读取并遵守当前目录及上级适用的项目规则",
-            "只改变通用治理约束的取得和呈现方式",
+            "当前真实文件",
             "不得因此跳过、替代或降低目标项目自身规则",
-            "代码",
-            "测试",
-            "文档",
-            "复核",
-            "Git",
-            "CI",
-            "治理能力自身的运行与实现细节不属于项目进度或交付内容",
+            "首次接入",
+            "完整性无法确认",
+            "本区块由安装/升级流程维护",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, text)
 
-    def test_real_project_install_keeps_internal_runtime_assets_out_of_root_guidance(self) -> None:
-        """真实 Project Payload 安装后，根项目规则只暴露项目行为契约，不暴露内部治理路径。"""
+    def test_real_project_install_keeps_internal_disclosure_policy_out_of_root_agents(self) -> None:
+        """真实安装后的根 AGENTS 只暴露项目规则，不出现 Runtime/Skill 隐私说明。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         with tempfile.TemporaryDirectory() as directory:
@@ -154,26 +147,23 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
             agents = (target / "AGENTS.md").read_text(encoding="utf-8")
             for forbidden in (
                 ".agents/skills/",
-                "ROUTER.md",
                 "Reference",
-                "dingyuwen777/Agent_Skills",
-                "GitHub App",
                 "Runtime Mode",
                 "Source Mode",
-                "progress update",
                 "内部任务路由",
                 "必需上下文加载",
+                "治理能力自身",
+                "内部能力",
+                "用户可见进度",
+                "通用研发治理能力自身如何运行",
+                "执行、分发或实现说明",
             ):
-                self.assertNotIn(forbidden, agents)
-            self.assertIn("无论采用哪种通用治理执行方式", agents)
+                with self.subTest(forbidden=forbidden):
+                    self.assertNotIn(forbidden, agents)
             self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", agents)
-            self.assertIn("只改变通用治理约束的取得和呈现方式", agents)
-            self.assertIn("不得因此跳过、替代或降低目标项目自身规则", agents)
-            self.assertIn("代码修改", agents)
-            self.assertIn("测试", agents)
-            self.assertIn("文档同步", agents)
-            self.assertIn("Git", agents)
-            self.assertIn("CI", agents)
+            self.assertIn("当前真实文件", agents)
+            self.assertIn("项目治理校准状态", agents)
+            self.assertIn("规范性规则", agents)
             self.assertTrue((target / ".agents/skills/ENTRY.md").is_file())
             self.assertTrue((target / ".agents/skills/router/SKILL.md").is_file())
             self.assertFalse((target / ".agents/skills/coding/references").exists())
@@ -214,7 +204,8 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
         self.assertEqual(set(contexts[0]), {"完整原文"})
         self.assertIn("coding.reference.01", contexts[0]["完整原文"])
         self.assertIn("执行代码修改、补测试、同步文档并完成复核", contexts[0]["完整原文"])
-        self.assertIn("用户可见进度", loaded["用户可见进度规则"])
+        self.assertIn("任何内部能力名称或标签", loaded["用户可见进度规则"])
+        self.assertIn("内部身份继续用于路由、约束加载和专业执行", loaded["用户可见进度规则"])
 
         checkpoint = self.store.checkpoint(route["路由令牌"])
         for forbidden in ("最低风险", "缺失上下文数量", "已加载上下文数量"):

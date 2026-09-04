@@ -56,7 +56,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             "描述性事实",
             "managed block 外",
             "不能通过修改 `AGENTS.md` 让错误实现合法化",
-            "项目 Overlay 只描述项目自己的规则、事实和长期工程边界",
+            "项目 Overlay",
             "重新读取最终 `AGENTS.md`",
             "继续原始研发任务",
             "继续原始只读任务",
@@ -77,7 +77,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             "开发与验证入口",
             "CI / Git / Release / 部署",
             "项目特殊长期约束",
-            "项目自有 Overlay 只描述本项目的规则、事实和长期工程边界",
+            "本文件记录当前项目真实规则、稳定事实入口、长期工程边界和特殊约束",
         ):
             self.assertIn(marker, template)
         for marker in (
@@ -86,7 +86,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             "无论采用哪种通用治理执行方式",
             "必须先读取并遵守当前目录及上级适用的项目规则",
             "只改变通用治理约束的取得和呈现方式",
-            "治理能力自身的运行与实现细节不属于项目进度或交付内容",
+            "完整性无法确认",
         ):
             self.assertIn(marker, managed)
         for forbidden in (
@@ -97,6 +97,8 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             "研发治理 MCP",
             "内部任务路由",
             "必需上下文加载",
+            "治理能力自身",
+            "用户可见进度",
         ):
             self.assertNotIn(forbidden, managed)
         self.assertNotIn("本项目使用 React", template)
@@ -162,15 +164,20 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             self.assertIn("无论采用哪种通用治理执行方式", agents)
             self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", agents)
             self.assertIn("只改变通用治理约束的取得和呈现方式", agents)
-            self.assertIn("代码修改", agents)
-            self.assertIn("测试", agents)
-            self.assertIn("文档同步", agents)
             self.assertIn("当前工程基线", agents)
+            self.assertIn("开发与验证入口", agents)
             self.assertIn("CI / Git / Release / 部署", agents)
-            self.assertNotIn(".agents/skills/", agents)
-            self.assertNotIn("ROUTER.md", agents)
-            self.assertNotIn("progress update", agents)
-            self.assertNotIn("内部任务路由", agents)
+            for forbidden in (
+                ".agents/skills/",
+                "ROUTER.md",
+                "progress update",
+                "内部任务路由",
+                "治理能力自身",
+                "用户可见进度",
+                "Runtime Mode",
+                "Source Mode",
+            ):
+                self.assertNotIn(forbidden, agents)
             self.assertNotIn("本项目使用 React", agents)
             self.assertNotIn("数据库：PostgreSQL", agents)
 

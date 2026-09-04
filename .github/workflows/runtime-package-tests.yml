@@ -139,10 +139,13 @@ jobs:
           ! grep -Fq "ENTRY.md" "${target}/AGENTS.md"
           ! grep -Fq "router/SKILL.md" "${target}/AGENTS.md"
           ! grep -Fq "Reference" "${target}/AGENTS.md"
-          grep -Fq "代码修改" "${target}/AGENTS.md"
-          grep -Fq "测试" "${target}/AGENTS.md"
-          grep -Fq "文档同步" "${target}/AGENTS.md"
-          grep -Fq "对用户正常说明" "${target}/AGENTS.md"
+          for forbidden in "治理能力自身" "内部能力" "用户可见进度" "Runtime Mode" "Source Mode"; do
+            ! grep -Fq "${forbidden}" "${target}/AGENTS.md"
+          done
+          grep -Fq "必须先读取并遵守当前目录及上级适用的项目规则" "${target}/AGENTS.md"
+          grep -Fq "当前真实文件" "${target}/AGENTS.md"
+          grep -Fq "首次接入" "${target}/AGENTS.md"
+          grep -Fq "完整性无法确认" "${target}/AGENTS.md"
           grep -Fq ".agents/skills/router/SKILL.md" "${target}/.agents/skills/ENTRY.md"
           grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/router/SKILL.md"
           grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/router/SKILL.md"
@@ -171,7 +174,10 @@ jobs:
           ! grep -Fq ".agents/skills/" "${no_args_target}/AGENTS.md"
           ! grep -Fq "ENTRY.md" "${no_args_target}/AGENTS.md"
           ! grep -Fq "router/SKILL.md" "${no_args_target}/AGENTS.md"
-          grep -Fq "对用户正常说明" "${no_args_target}/AGENTS.md"
+          for forbidden in "治理能力自身" "内部能力" "用户可见进度" "Runtime Mode" "Source Mode"; do
+            ! grep -Fq "${forbidden}" "${no_args_target}/AGENTS.md"
+          done
+          grep -Fq "必须先读取并遵守当前目录及上级适用的项目规则" "${no_args_target}/AGENTS.md"
           grep -Fq ".agents/project-context.json" "${no_args_target}/.gitignore"
           ! grep -Fq "/.agents/runtime/" "${no_args_target}/.gitignore"
 
@@ -254,14 +260,14 @@ jobs:
           $gitignore = Join-Path $target ".gitignore"
           if (-not (Select-String -Path $gitignore -Pattern ".agents/project-context.json" -SimpleMatch -Quiet)) { throw "Windows 项目安装缺少 cache ignore" }
           if (Select-String -Path $gitignore -Pattern "/.agents/runtime/" -SimpleMatch -Quiet) { throw "Windows 项目安装不应自动新增 Runtime ignore" }
-          foreach ($forbidden in @(".agents/skills/", "ENTRY.md", "router/SKILL.md", "Reference")) {
+          foreach ($forbidden in @(".agents/skills/", "ENTRY.md", "router/SKILL.md", "Reference", "治理能力自身", "内部能力", "用户可见进度", "Runtime Mode", "Source Mode")) {
             if (Select-String -Path $agents -Pattern $forbidden -SimpleMatch -Quiet) {
               throw "Windows 目标 AGENTS 泄露 Runtime 内部治理结构: $forbidden"
             }
           }
-          foreach ($required in @("代码修改", "测试", "文档同步", "对用户正常说明")) {
+          foreach ($required in @("必须先读取并遵守当前目录及上级适用的项目规则", "当前真实文件", "首次接入", "完整性无法确认")) {
             if (-not (Select-String -Path $agents -Pattern $required -SimpleMatch -Quiet)) {
-              throw "Windows 目标 AGENTS 缺少工程过程语义: $required"
+              throw "Windows 目标 AGENTS 缺少项目侧治理入口: $required"
             }
           }
           if (-not (Select-String -Path $entry -Pattern ".agents/skills/router/SKILL.md" -SimpleMatch -Quiet)) { throw "Windows Entry 未指向 Router Skill" }
@@ -293,10 +299,10 @@ jobs:
           if (-not (Select-String -Path $noArgsGitignore -Pattern ".agents/project-context.json" -SimpleMatch -Quiet)) { throw "Windows 无参数安装缺少 cache ignore" }
           if (Select-String -Path $noArgsGitignore -Pattern "/.agents/runtime/" -SimpleMatch -Quiet) { throw "Windows 无参数安装不应自动新增 Runtime ignore" }
           $noArgsAgents = Join-Path $noArgsTarget "AGENTS.md"
-          foreach ($forbidden in @(".agents/skills/", "ENTRY.md", "router/SKILL.md")) {
+          foreach ($forbidden in @(".agents/skills/", "ENTRY.md", "router/SKILL.md", "治理能力自身", "内部能力", "用户可见进度", "Runtime Mode", "Source Mode")) {
             if (Select-String -Path $noArgsAgents -Pattern $forbidden -SimpleMatch -Quiet) { throw "Windows binary 无参数运行的 AGENTS 泄露内部治理结构: $forbidden" }
           }
-          if (-not (Select-String -Path $noArgsAgents -Pattern "对用户正常说明" -SimpleMatch -Quiet)) { throw "Windows binary 无参数运行的 AGENTS 缺少用户进度说明边界" }
+          if (-not (Select-String -Path $noArgsAgents -Pattern "必须先读取并遵守当前目录及上级适用的项目规则" -SimpleMatch -Quiet)) { throw "Windows binary 无参数运行的 AGENTS 缺少项目侧治理入口" }
 
   runtime-macos-package:
     name: Runtime macOS Package
@@ -374,10 +380,13 @@ jobs:
           ! grep -Fq "ENTRY.md" "${target}/AGENTS.md"
           ! grep -Fq "router/SKILL.md" "${target}/AGENTS.md"
           ! grep -Fq "Reference" "${target}/AGENTS.md"
-          grep -Fq "代码修改" "${target}/AGENTS.md"
-          grep -Fq "测试" "${target}/AGENTS.md"
-          grep -Fq "文档同步" "${target}/AGENTS.md"
-          grep -Fq "对用户正常说明" "${target}/AGENTS.md"
+          for forbidden in "治理能力自身" "内部能力" "用户可见进度" "Runtime Mode" "Source Mode"; do
+            ! grep -Fq "${forbidden}" "${target}/AGENTS.md"
+          done
+          grep -Fq "必须先读取并遵守当前目录及上级适用的项目规则" "${target}/AGENTS.md"
+          grep -Fq "当前真实文件" "${target}/AGENTS.md"
+          grep -Fq "首次接入" "${target}/AGENTS.md"
+          grep -Fq "完整性无法确认" "${target}/AGENTS.md"
           grep -Fq ".agents/skills/router/SKILL.md" "${target}/.agents/skills/ENTRY.md"
           grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/router/SKILL.md"
           grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/router/SKILL.md"
@@ -406,7 +415,10 @@ jobs:
           ! grep -Fq ".agents/skills/" "${no_args_target}/AGENTS.md"
           ! grep -Fq "ENTRY.md" "${no_args_target}/AGENTS.md"
           ! grep -Fq "router/SKILL.md" "${no_args_target}/AGENTS.md"
-          grep -Fq "对用户正常说明" "${no_args_target}/AGENTS.md"
+          for forbidden in "治理能力自身" "内部能力" "用户可见进度" "Runtime Mode" "Source Mode"; do
+            ! grep -Fq "${forbidden}" "${no_args_target}/AGENTS.md"
+          done
+          grep -Fq "必须先读取并遵守当前目录及上级适用的项目规则" "${no_args_target}/AGENTS.md"
           grep -Fq ".agents/project-context.json" "${no_args_target}/.gitignore"
           ! grep -Fq "/.agents/runtime/" "${no_args_target}/.gitignore"
 

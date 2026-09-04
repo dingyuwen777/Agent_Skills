@@ -99,15 +99,17 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         ):
             self.assertNotRegex(workflow, pattern, f"Release workflow 不应硬编码协议版本：{pattern}")
 
-    def test_runtime_install_assertion_tracks_current_managed_progress_semantics(self) -> None:
-        """常规 Skill CI 必须在 managed 进度语义变化时同步暴露 Runtime 安装断言漂移。"""
+    def test_runtime_install_assertion_tracks_project_facing_agents_contract(self) -> None:
+        """三平台真实安装应验证项目侧 AGENTS，而把用户输出隐私留给 MCP/Projection Owner。"""
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
         workflow = self._read(".github/workflows/runtime-package-tests.yml")
-        progress_contract = "对用户正常说明"
-        self.assertIn(progress_contract, managed)
-        self.assertEqual(workflow.count(progress_contract), 6)
-        self.assertNotIn('grep -Fq "用户可见"', workflow)
-        self.assertNotIn('Pattern "用户可见"', workflow)
+        project_contract = "必须先读取并遵守当前目录及上级适用的项目规则"
+        self.assertIn(project_contract, managed)
+        self.assertEqual(workflow.count(project_contract), 6)
+        self.assertNotIn("对用户正常说明", managed)
+        self.assertNotIn("对用户正常说明", workflow)
+        for forbidden in ("治理能力自身", "内部能力", "用户可见进度"):
+            self.assertNotIn(forbidden, managed)
 
     def test_project_runtime_is_host_connection_scoped_not_system_daemon(self) -> None:
         """项目 MCP 使用宿主 stdio 子进程；允许会话级存活，但禁止系统服务/独立守护。"""

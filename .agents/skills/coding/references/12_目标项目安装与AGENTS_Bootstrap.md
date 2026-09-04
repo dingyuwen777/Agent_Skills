@@ -142,7 +142,7 @@ Bootstrap 只做机械可证明的内容：创建/增量更新 `AGENTS.md`、`.g
 
 没有根 `AGENTS.md` 时，使用 [`coding/assets/AGENTS.template.md`](../assets/AGENTS.template.md) 创建项目 Overlay 初版。初版包含 managed block、项目 Overlay 维护边界和当前真实存在的规则/Manifest/需求/Contract/Schema/Migration/README 等事实入口，并明确“发现入口”不等于已经确认某个框架、数据库或架构。
 
-managed block 的披露职责以第 7 节为准；详细 Runtime 用户可见规则继续由内部 Runtime Owner 承担。
+managed block 的项目侧职责以第 7 节为准；Runtime 用户可见表达、内部身份和私有资产披露规则继续由 shared Entry 与 Runtime Owner 承担，不写入项目 Overlay。
 
 ## 6. 目标项目已经有 AGENTS.md
 
@@ -168,12 +168,11 @@ managed block 的披露职责以第 7 节为准；详细 Runtime 用户可见规
 2. 默认通过项目已经配置的治理能力取得通用约束；系统、开发者或用户级更高优先级指令如果明确指定其他 Agent_Skills 执行方式，**只改变通用治理约束的取得和呈现方式**，**不得因此跳过、替代或降低目标项目自身规则**、Contract、Schema/Migration、CI、正式设计、部署和验收边界；
 3. 通用示例、历史聊天、缓存和猜测不能覆盖目标项目事实；
 4. 首次接入、治理状态未校准或长期治理事实漂移时，在实质性代码修改前执行有界 Project Governance Bootstrap，并在完成后重新读取最终 `AGENTS.md`；
-5. 用户可见过程可以正常说明项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git、CI、Release 和交付状态；治理能力自身的运行与实现细节不属于项目进度或交付内容；
-6. 必需治理约束无法可靠取得、完整性无法确认，或存在无法安全解析的高优先级冲突时明确报告并停止依赖对应约束，不得用旧记忆、摘要或猜测替代；
-7. 受管运行资产只服务治理能力运行，不是项目自有长期规则；安装器只维护 managed marker 内文本，项目长期规则继续保存在 marker 外；
-8. 项目自己的 Overlay 始终继续生效；模式覆盖不能让项目制度失效，也不能被解释成“可以不读项目 AGENTS”。
+5. 必需治理约束无法可靠取得、完整性无法确认，或存在无法安全解析的高优先级冲突时明确报告并停止依赖对应约束，不得用旧记忆、摘要或猜测替代；
+6. 受管运行资产只服务当前项目的研发治理，不是项目自有长期规则；安装器只维护 managed marker 内文本，项目长期规则继续保存在 marker 外；
+7. 项目自己的 Overlay 始终继续生效；模式覆盖不能让项目制度失效，也不能被解释成“可以不读项目 AGENTS”。
 
-**详细的 Runtime 用户可见披露规则不由 managed block 承担。** 内部能力发现/选择/加载、Router 判断、Task Route、required Context、各类 Agent 可控输出通道、内部文件/标识与失败表达的具体约束继续由 shared Entry、Runtime canonical Reference 和 Runtime 公共进度规则承担。**不得为了让最早入口“更强”而把这些内部控制面清单复制回目标项目根 `AGENTS.md`**。
+**Runtime 用户可见披露规则不由 managed block 承担。** 普通目标项目任务中 Source Mode 与 Runtime Mode 的专业执行、required Context 和用户可见工程过程必须保持同效果；内部能力身份仍用于路由、约束加载和专业执行。具体用户可见表达边界由 shared Entry、Runtime 公共进度规则与 Runtime Skill Projection 承担；Source Mode 仅在显式维护/审计 Agent_Skills 源码时保留内部导航可见性。**目标项目根 `AGENTS.md` 不应写入 Runtime/Skill/Reference/Router 隐私、防披露、内部路由、Handoff 或 required Context 组织说明。** 内部 Bootstrap Owner 仍必须保护项目规则边界：**不得把通用治理能力自身的执行、分发或实现说明复制或改写到项目 Overlay**；需要长期记录的只能是目标项目自己的规则、事实、稳定入口与特殊工程边界。
 
 ## 8. `.gitignore` 规则
 
@@ -245,7 +244,7 @@ Greenfield / 空仓库：
 4. 规范性规则若与当前实现冲突，先视为实现/配置偏离；**不能通过修改 `AGENTS.md` 让错误实现合法化**，也不能因为代码没遵守就自动弱化规则；
 5. **描述性事实**只有在当前机器事实/代码/CI/运行证据足以证明过时时才最小修正；不能仅凭文件名发明框架、数据库、架构、Owner、Contract、CI 或部署结论；
 6. 高权威事实源冲突或证据不足时保留为**未确认事项**；重要 Contract/Schema/数据/安全/部署冲突继续核实或请求 Owner 决策；
-7. 可确认长期事实只在 **managed block 外**增量补充，并使用当前项目自己的模块、Contract、Schema、测试、CI、部署、业务和设计术语表达；**项目 Overlay 只描述项目自己的规则、事实和长期工程边界，不解释通用治理能力自身如何运行，也不把治理能力自身的执行、分发或实现说明写入项目规范**。Source Mode **不得复制或改写到项目 Overlay**；发现 drift 只报告**正式 Runtime upgrade**，**不手工覆盖 installer-owned managed block**；
+7. 可确认长期事实只在 **managed block 外**增量补充，并使用当前项目自己的模块、Contract、Schema、测试、CI、部署、业务和设计术语表达；项目 Overlay 只记录项目自己的规则、事实和长期工程边界，不创建与当前项目无关的占位制度、示例架构或第二套事实。Source Mode 发现 installer-owned drift 只报告**正式 Runtime upgrade**，**不手工覆盖 installer-owned managed block**；
 8. 已有仍有效文本尽量保持原位置和语义，只做必要 targeted 修正；新模板没有真实事实的章节保持为空或明确未确认；
 9. 首次治理成功后把项目自有状态更新为“状态：已校准”；
 10. **重新读取最终 `AGENTS.md`**，确认项目规则、事实、未确认事项和 managed block 边界没有互相覆盖；
@@ -269,8 +268,9 @@ Greenfield / 空仓库：
 - 动态正式 Skill、shared Entry、Router/Core 安装正确，目标项目无 canonical Reference/Stub；
 - 同名未认领 shared/Skill/managed file 在写入前 fail closed，项目自有 Skill/Reference/资产保留；
 - `AGENTS.md` 用户原文/managed marker、`.gitignore` 与 Codex/Cursor/Claude 配置保留其他项目内容；安装器不自动新增 Runtime ignore，项目原本已有的 Runtime ignore 保持原样；
-- Runtime 安装后的根 `AGENTS.md` 满足第 7 节项目侧行为契约，不展开 Runtime/Source/MCP/Router/Reference/路由/加载清单，真实工程过程仍可见；
-- marker 外 Overlay 使用项目自身术语，不复制通用治理能力自身的执行、分发或实现说明；
+- Runtime 安装后的根 `AGENTS.md` 满足第 7 节项目侧行为契约，不展开 Runtime/Source/MCP/Router/Reference/路由/加载或防披露说明；
+- marker 外 Overlay 只使用项目自身术语和可确认事实，不加入与当前项目无关的通用治理说明；
+- Source Mode 与 Runtime Mode 的 required Context、专业规则与 ordinary user-visible engineering behavior 保持同效果；
 - 安装失败和 rollback failure 都有可验证、可诊断结果。
 
 任何“安装完成”结论都必须来自本轮实际验证，不能用代码阅读或 Python 模块单测替代最终平台 artifact 证据。
