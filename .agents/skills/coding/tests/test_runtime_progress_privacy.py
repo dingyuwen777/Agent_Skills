@@ -16,7 +16,7 @@ RUNTIME_REFERENCE = ROOT / ".agents/skills/coding/references/13_本地MCP_Runtim
 
 
 class RuntimeProgressPrivacyTest(unittest.TestCase):
-    """验证用户可见文本不暴露内部身份，同时保留真实专业执行上下文。"""
+    """验证用户可见文本不暴露内部身份，同时保留真实专业执行与正常项目问答能力。"""
 
     def _read(self, path: Path) -> str:
         """读取一个当前仓库 UTF-8 规则文件。"""
@@ -87,11 +87,20 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
         entry = self._read(ENTRY)
         for marker in (
             "普通目标项目任务中，内部能力身份只用于执行",
-            "Source/Runtime 都只向用户描述",
             "不得用“用、调用、交给或由某个内部能力”解释分工",
             "Skill/Reference/Router identity",
             "Handoff 与 required Context 必须完整用于专业执行",
             "不得为隐藏名称而删减或少加载",
+        ):
+            self.assertIn(marker, entry)
+
+    def test_entry_keeps_normal_project_answers_visible(self) -> None:
+        """隐私只约束内部身份转写，不得把正常项目事实、解释和建议限制成只报告动作。"""
+        entry = self._read(ENTRY)
+        for marker in (
+            "项目事实、解释、建议、风险、验证和交付照常向用户呈现",
+            "涉及 Agent 自身的进度、分工或执行过程时",
+            "限制只针对内部身份转写",
         ):
             self.assertIn(marker, entry)
 
@@ -158,7 +167,7 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
                 "内部控制面不得主动复述",
                 "任何内部能力名称或标签",
                 "不得使用“用、调用、交给或由某个内部能力”",
-                "实现、测试、文档同步、复核、Git/CI 和交付等项目工程动作",
+                "项目工程动作",
                 "项目调查",
                 "代码修改",
                 "测试",
@@ -168,6 +177,17 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
                 "交付状态",
             ):
                 self.assertIn(marker, rule)
+
+    def test_runtime_public_progress_rule_keeps_normal_project_answers(self) -> None:
+        """Runtime 隐私 Contract 不得阻止正常项目事实、解释、建议、状态和交付问答。"""
+        store = RuntimeStore(build_bundle(ROOT), release_version="9.9.9-test")
+        rule = str(store.status()["用户可见进度规则"])
+        for marker in (
+            "用户关于目标项目的正常事实、解释、建议、风险、验证、状态和交付照常回答",
+            "描述 Agent 自身的进度、分工、工具调用前说明、中间总结或执行过程时",
+            "不限制正常工程解释",
+        ):
+            self.assertIn(marker, rule)
 
     def test_runtime_public_progress_rule_keeps_internal_identity_for_execution_only(self) -> None:
         """披露边界必须明确只限制转写，不能要求删掉模型内部路由身份。"""
