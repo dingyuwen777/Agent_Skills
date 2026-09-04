@@ -26,14 +26,16 @@ class ManagedBootstrapProjectFacingTest(unittest.TestCase):
         return path.read_text(encoding="utf-8")
 
     def test_managed_block_is_project_facing_contract(self) -> None:
-        """根 managed block 应描述项目侧行为，而不是解释内部控制面。"""
+        """根 managed block 应描述项目侧行为，而不是解释内部控制面或防披露策略。"""
         managed = self._read(MANAGED)
         for required in (
             "无论采用哪种通用治理执行方式",
             "必须先读取并遵守当前目录及上级适用的项目规则",
             "只改变通用治理约束的取得和呈现方式",
             "不得因此跳过、替代或降低目标项目自身规则",
-            "治理能力自身的运行与实现细节不属于项目进度或交付内容",
+            "首次接入",
+            "完整性无法确认",
+            "本区块由安装/升级流程维护",
         ):
             self.assertIn(required, managed)
 
@@ -52,6 +54,9 @@ class ManagedBootstrapProjectFacingTest(unittest.TestCase):
             "必需上下文加载",
             "路由映射",
             "规则标识",
+            "治理能力自身",
+            "用户可见进度",
+            "防披露",
         ):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, managed)
@@ -75,22 +80,33 @@ class ManagedBootstrapProjectFacingTest(unittest.TestCase):
             self.assertIn(boundary, managed)
 
     def test_project_template_requires_project_native_governance_language(self) -> None:
-        """宿主大模型校准项目 Overlay 时应写项目规范，而不是复制治理实现说明。"""
+        """宿主大模型校准项目 Overlay 时应写项目事实和规则，不写工具自身说明。"""
         template = self._read(TEMPLATE)
         for required in (
-            "项目自有 Overlay 只描述本项目的规则、事实和长期工程边界",
-            "不解释通用研发治理能力自身如何运行",
-            "不把治理能力自身的执行、分发或实现说明写入项目规范",
+            "本文件记录当前项目真实规则、稳定事实入口、长期工程边界和特殊约束",
+            "所有项目事实以当前仓库、实际运行结果和 Owner 已确认决定为准",
+            "项目治理校准和后续定向维护使用当前项目自己的模块",
+            "不创建与当前项目无关的占位制度、示例架构或第二套事实",
         ):
             self.assertIn(required, template)
+        for forbidden in (
+            "治理能力自身",
+            "内部能力",
+            "用户可见进度",
+            "Runtime Mode",
+            "Source Mode",
+            "Skill/Reference",
+            "内部任务路由",
+        ):
+            self.assertNotIn(forbidden, template)
 
     def test_detailed_disclosure_remains_in_internal_owners(self) -> None:
-        """根入口变薄后，Bootstrap 和 Runtime 内部 Owner 仍必须完整承接披露语义。"""
+        """目标 AGENTS 变薄后，Bootstrap 和 Runtime 内部 Owner 继续完整承接披露语义。"""
         bootstrap = self._read(BOOTSTRAP_REFERENCE)
         for required in (
-            "详细的 Runtime 用户可见披露规则不由 managed block 承担",
-            "不得为了让最早入口“更强”而把这些内部控制面清单复制回目标项目根 `AGENTS.md`",
-            "项目 Overlay 只描述项目自己的规则、事实和长期工程边界",
+            "Runtime 用户可见披露规则不由 managed block 承担",
+            "目标项目根 `AGENTS.md`",
+            "项目 Overlay",
         ):
             self.assertIn(required, bootstrap)
 
@@ -118,9 +134,16 @@ class ManagedBootstrapProjectFacingTest(unittest.TestCase):
             self.assertIn("无论采用哪种通用治理执行方式", agents)
             self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", agents)
             self.assertIn("只改变通用治理约束的取得和呈现方式", agents)
-            self.assertNotIn("progress update", agents)
-            self.assertNotIn("内部任务路由", agents)
-            self.assertNotIn("必需上下文加载", agents)
+            for forbidden in (
+                "progress update",
+                "内部任务路由",
+                "必需上下文加载",
+                "治理能力自身",
+                "用户可见进度",
+                "Runtime Mode",
+                "Source Mode",
+            ):
+                self.assertNotIn(forbidden, agents)
 
 
 if __name__ == "__main__":
