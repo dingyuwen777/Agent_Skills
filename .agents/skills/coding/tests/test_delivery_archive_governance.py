@@ -7,13 +7,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
+
 
 ROOT = Path(__file__).resolve().parents[4]
 READY_CHECK_PATH = ROOT / ".agents/skills/coding/scripts/ready_check.py"
 REF14 = ROOT / ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
-REF15 = ROOT / ".agents/skills/coding/references/15_规则内容守恒与Skill维护.md"
 REF23 = ROOT / ".agents/skills/coding/references/23_端到端交付与合并后收尾.md"
+REF28 = ROOT / ".agents/skills/coding/references/28_SkillMutation影响面一致性审计.md"
 TEMPLATE = ROOT / ".agents/skills/coding/assets/CHANGE.template.md"
+REFERENCE_ID = "coding.reference.24"
 
 
 def _load_ready_check():
@@ -67,6 +70,19 @@ data_changes: []
 class DeliveryArchiveGovernanceTest(unittest.TestCase):
     """覆盖本次多人交付与自动归档治理 Contract。"""
 
+    def _evaluate(self, signals: dict[str, list[str]]) -> dict[str, object]:
+        """按正式 Runtime evaluator 计算一条任务路由。"""
+        manifest = compile_routing(ROOT)
+        return evaluate_route(
+            manifest,
+            {
+                "协议": TASK_ROUTE_PROTOCOL,
+                "信号": signals,
+                "未知项": [],
+                "依据": ["delivery archive governance regression"],
+            },
+        )
+
     def test_delivery_modes_and_effective_authorization_are_explicit(self) -> None:
         """提交 PR 与端到端交付必须是不同授权，文字请求不能升级真实权限。"""
         text = REF23.read_text(encoding="utf-8")
@@ -81,6 +97,21 @@ class DeliveryArchiveGovernanceTest(unittest.TestCase):
         self.assertIn("Requested Action", git_text)
         self.assertIn("Effective Authorization", git_text)
         self.assertIn("BLOCKED_BY_AUTHORIZATION", git_text)
+
+    def test_develop_and_submit_authorization_routes_to_delivery_reference(self) -> None:
+        """开发并提交 PR 的授权必须能被 Source/Runtime 同源路由加载到交付 Reference。"""
+        result = self._evaluate(
+            {
+                "执行模式": ["实现", "Git"],
+                "阶段": ["交付"],
+                "风险": ["L2"],
+                "意图": ["Git 交付"],
+                "能力": ["Git"],
+                "授权": ["允许开发并提交PR"],
+            }
+        )
+        self.assertIn(REFERENCE_ID, result["必需Reference"])
+        self.assertIn("coding", result["命中Skill"])
 
     def test_repository_native_archive_is_not_agent_git_delivery(self) -> None:
         """Change 归档必须由目标仓库基础设施执行，Agent 只验证结果。"""
@@ -101,7 +132,7 @@ class DeliveryArchiveGovernanceTest(unittest.TestCase):
 
     def test_skill_mutation_requires_rule_to_runtime_impact_audit(self) -> None:
         """规则变化必须反查模板、机器门禁、CI、测试与 Runtime/Source parity。"""
-        text = REF15.read_text(encoding="utf-8")
+        text = REF28.read_text(encoding="utf-8")
         for fragment in (
             "Rule / Contract",
             "Template",
