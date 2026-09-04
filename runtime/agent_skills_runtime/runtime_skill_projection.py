@@ -6,6 +6,8 @@ from collections.abc import Iterable, Mapping
 import re
 from urllib.parse import unquote
 
+from .disclosure import RUNTIME_SKILL_OUTPUT_GUARD
+
 
 RUNTIME_CONTEXT_LABEL = "当前场景所需完整约束"
 _RUNTIME_CONSTRAINT_TERM = "完整约束"
@@ -152,6 +154,9 @@ def project_runtime_skill_core(
     projected = _collapse_projection_labels(projected)
     if projected.count(_ROUTING_PLACEHOLDER) != 1:
         raise ValueError("Runtime Skill Projection 路由 metadata 占位符被意外修改")
-    projected = frontmatter + projected.replace(_ROUTING_PLACEHOLDER, routing)
+    projected = frontmatter + projected.replace(
+        _ROUTING_PLACEHOLDER,
+        routing + RUNTIME_SKILL_OUTPUT_GUARD,
+    )
     _assert_projection_hides_reference_identity(projected, identities)
     return projected.encode("utf-8")
