@@ -16,7 +16,7 @@ RUNTIME_REFERENCE = ROOT / ".agents/skills/coding/references/13_本地MCP_Runtim
 
 
 class RuntimeProgressPrivacyTest(unittest.TestCase):
-    """验证 Runtime 保留真实工程过程，同时不把内部能力身份转写给用户。"""
+    """验证用户可见文本不暴露内部身份，同时保留真实专业执行上下文。"""
 
     def _read(self, path: Path) -> str:
         """读取一个当前仓库 UTF-8 规则文件。"""
@@ -58,10 +58,11 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
                 self.assertNotIn(forbidden, managed)
 
     def test_new_project_template_does_not_explain_governance_internals(self) -> None:
-        """新建项目 AGENTS 模板只写项目 Overlay，不解释通用治理能力自身如何运行。"""
+        """新建项目 AGENTS 模板只写项目事实与 Overlay，不解释通用治理能力自身如何运行。"""
         template = self._read(TEMPLATE)
         for marker in (
-            "项目自有 Overlay",
+            "本文件记录当前项目真实规则",
+            "项目 Overlay 维护规则",
             "当前仓库文件",
             "规范性规则",
             "项目治理校准",
@@ -85,46 +86,41 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
         """共享入口必须禁止身份转写，同时允许内部身份继续服务路由和专业执行。"""
         entry = self._read(ENTRY)
         for marker in (
-            "Source Mode 与 Runtime Mode 的专业执行效果和用户可见工程过程必须一致",
-            "Runtime Mode",
-            "控制面动作保持静默",
-            "任何内部能力名称或标签",
-            "不得使用“用、调用、交给或由某个内部能力”",
-            "改写为项目工程动作",
-            "实现、测试、文档同步、复核、Git/CI 和交付",
-            "内部执行上下文",
-            "不得转写成用户可见文本",
-            "不能为了隐藏名称而删除或少加载规则",
+            "普通目标项目任务中，内部能力身份只用于执行",
+            "Source/Runtime 都只向用户描述",
+            "不得用“用、调用、交给或由某个内部能力”解释分工",
+            "Skill/Reference/Router identity",
+            "Handoff 与 required Context 必须完整用于专业执行",
+            "不得为隐藏名称而删减或少加载",
         ):
             self.assertIn(marker, entry)
 
-    def test_entry_preserves_source_mode_and_host_ui_boundary(self) -> None:
-        """早期入口必须保留 Source Mode 维护例外，并承认宿主 UI 不是 Prompt 可控制表面。"""
+    def test_entry_preserves_source_maintenance_and_host_ui_boundary(self) -> None:
+        """薄入口保留 Source 维护例外，并承认宿主 UI 不是 Prompt 可控制表面。"""
         entry = self._read(ENTRY)
         for marker in (
             "Source Mode",
-            "可以正常讨论内部导航和路由事实",
-            "显式维护 Agent_Skills 源码",
+            "维护/审计 Agent_Skills 自身",
+            "可讨论内部导航",
             "宿主 UI",
             "不受 Prompt / Skill / Runtime 文本规则直接控制",
             "不能宣称可以隐藏",
         ):
             self.assertIn(marker, entry)
 
-    def test_source_and_runtime_share_exact_entry_and_same_professional_context_contract(self) -> None:
-        """共享 Entry 在 Source/Runtime 逐字一致，且一致性不得通过少加载专业 Context 实现。"""
+    def test_source_and_runtime_share_entry_without_reducing_professional_context(self) -> None:
+        """共享 Entry 在 Source/Runtime 逐字一致，且不得靠少加载专业 Context 获得隐私。"""
         source_entry = self._read(ENTRY)
         runtime_entry = self._payload_text("ENTRY.md")
         self.assertEqual(runtime_entry, source_entry)
-        self.assertIn("同一 canonical 路由事实、同一专业规则和同一 required Context", source_entry)
-        self.assertIn("不允许来自专业规则删减、摘要替代或少加载 Context", source_entry)
+        self.assertIn("required Context 必须完整用于专业执行", source_entry)
+        self.assertIn("不得为隐藏名称而删减或少加载", source_entry)
 
     def test_existing_canonical_runtime_rule_remains_mode_aware(self) -> None:
         """详细 Runtime Owner 必须继续保留 Source/Runtime 两种披露边界，不能被薄入口反向削弱。"""
         reference = self._read(RUNTIME_REFERENCE)
         for marker in (
             "Source Mode",
-            "可以正常看到和讨论 Skill、Reference、文件路径、Stable ID 与路由过程",
             "Runtime Mode 允许正常展示项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 与交付状态",
             "用户可见过程",
         ):
@@ -159,9 +155,10 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
             rule = str(payload["用户可见进度规则"])
             for marker in (
                 "所有 Agent 可控制的用户可见文本",
+                "内部控制面不得主动复述",
                 "任何内部能力名称或标签",
                 "不得使用“用、调用、交给或由某个内部能力”",
-                "改写为实现、测试、文档同步、复核、Git/CI 和交付等项目工程动作",
+                "实现、测试、文档同步、复核、Git/CI 和交付等项目工程动作",
                 "项目调查",
                 "代码修改",
                 "测试",
