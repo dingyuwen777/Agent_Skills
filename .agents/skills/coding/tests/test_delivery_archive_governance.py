@@ -15,6 +15,7 @@ READY_CHECK_PATH = ROOT / ".agents/skills/coding/scripts/ready_check.py"
 REF14 = ROOT / ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
 REF23 = ROOT / ".agents/skills/coding/references/23_端到端交付与合并后收尾.md"
 REF28 = ROOT / ".agents/skills/coding/references/28_SkillMutation影响面一致性审计.md"
+MAINTENANCE = ROOT / ".agents/MAINTENANCE.md"
 TEMPLATE = ROOT / ".agents/skills/coding/assets/CHANGE.template.md"
 REFERENCE_ID = "coding.reference.24"
 
@@ -129,6 +130,26 @@ class DeliveryArchiveGovernanceTest(unittest.TestCase):
         for fragment in required:
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
+
+    def test_maintenance_overlay_uses_repository_native_archive_owner(self) -> None:
+        """源仓库维护入口不能恢复 Agent 自建归档提交/PR 的旧生命周期。"""
+        text = MAINTENANCE.read_text(encoding="utf-8")
+        for fragment in (
+            "repository-native",
+            "Change Archive",
+            "Agent 不执行归档 commit",
+            "Agent 不创建归档 PR",
+            "blocked/incomplete",
+            "不等价于 Requirement",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, text)
+        for obsolete in (
+            "通过独立最小归档提交/PR",
+            "main 新鲜验证成功后再执行 Change archive；归档 PR",
+        ):
+            with self.subTest(obsolete=obsolete):
+                self.assertNotIn(obsolete, text)
 
     def test_skill_mutation_requires_rule_to_runtime_impact_audit(self) -> None:
         """规则变化必须反查模板、机器门禁、CI、测试与 Runtime/Source parity。"""
