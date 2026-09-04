@@ -107,6 +107,7 @@ class ManagedBootstrapProjectFacingTest(unittest.TestCase):
             "Runtime 用户可见披露规则不由 managed block 承担",
             "目标项目根 `AGENTS.md`",
             "项目 Overlay",
+            "不得把通用治理能力自身的执行、分发或实现说明复制或改写到项目 Overlay",
         ):
             self.assertIn(required, bootstrap)
 
