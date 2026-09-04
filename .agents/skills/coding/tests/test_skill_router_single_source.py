@@ -35,20 +35,31 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertIn(MAINTENANCE_PATH, root_agents)
         self.assertNotIn("## 8. Runtime 维护不变量", root_agents)
 
-        self.assertNotIn(ROUTER_PATH, managed)
-        self.assertNotIn(".agents/skills/", managed)
-        self.assertNotIn("agent_skills_load_required_context", managed)
-        self.assertNotIn(".agents/skills/figma/SKILL.md", managed)
-        self.assertNotIn(".agents/skills/review/SKILL.md", managed)
-        self.assertNotIn(".agents/skills/docs/SKILL.md", managed)
-        self.assertNotIn("研发治理 MCP", managed)
-        self.assertNotIn("Runtime Mode", managed)
-        self.assertIn("无论采用哪种通用治理执行方式", managed)
-        self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", managed)
-        self.assertIn("只改变通用治理约束的取得和呈现方式", managed)
-        self.assertIn("代码修改", managed)
-        self.assertIn("文档同步", managed)
-        self.assertIn("治理能力自身的运行与实现细节不属于项目进度或交付内容", managed)
+        for forbidden in (
+            ROUTER_PATH,
+            ".agents/skills/",
+            "agent_skills_load_required_context",
+            ".agents/skills/figma/SKILL.md",
+            ".agents/skills/review/SKILL.md",
+            ".agents/skills/docs/SKILL.md",
+            "研发治理 MCP",
+            "Runtime Mode",
+            "Source Mode",
+            "治理能力自身",
+            "内部能力",
+            "用户可见进度",
+        ):
+            self.assertNotIn(forbidden, managed)
+        for required in (
+            "无论采用哪种通用治理执行方式",
+            "必须先读取并遵守当前目录及上级适用的项目规则",
+            "当前真实文件",
+            "只改变通用治理约束的取得和呈现方式",
+            "首次接入",
+            "完整性无法确认",
+            "本区块由安装/升级流程维护",
+        ):
+            self.assertIn(required, managed)
 
     def test_router_preserves_high_value_routing_and_failure_semantics(self) -> None:
         """旧 managed block 的高价值触发、失败和权限规则必须完整迁入唯一 Router。"""
