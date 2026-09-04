@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import runpy
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,7 +22,9 @@ def _write(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def _change(change_id: str, *, status: str = "ready_for_review", updated: str = "2026-09-04") -> str:
+def _change(
+    change_id: str, *, status: str = "ready_for_review", updated: str = "2026-09-04"
+) -> str:
     return f"""---
 schema: coding-change/v1
 id: {change_id}
@@ -71,6 +74,19 @@ def _git(root: Path, *args: str) -> str:
 
 class RepositoryChangeArchiveAutomationTest(unittest.TestCase):
     """锁定 Agent_Skills 仓库自身 Change 自动归档的确定性边界。"""
+
+    def test_archive_cli_help_is_self_contained(self) -> None:
+        """新增维护脚本必须在统一 Skill CI 已安装的最小依赖面内可独立启动。"""
+        result = subprocess.run(
+            [sys.executable, str(ARCHIVER), "--help"],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("--merged-revision", result.stdout)
+        self.assertIn("--changed-paths-file", result.stdout)
 
     def test_archive_moves_exact_ready_change_and_preserves_body(self) -> None:
         module = _module()
