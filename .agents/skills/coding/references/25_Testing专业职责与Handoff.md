@@ -36,6 +36,19 @@ Coding 保留：
 
 Coding 不在本 Reference 或其他 Coding Owner 中复制第二套 Testing 详细方法；Validation Matrix 继续描述“需要什么等级的证据”，Testing 描述“怎样设计和执行对应测试”。
 
+### 诊断场景的条件式 Handoff
+
+普通局部诊断不自动叠加 Testing。Coding 可以先用代码、调用链、日志、最小实验和开发期回归完成 Lightweight/Standard 根因分析；不能因为任务叫“Bug”或“性能问题”就机械增加完整测试工作流。
+
+只有当前诊断确实需要独立测试工程方法时再叠加 Testing，例如：
+
+- 需要从**独立用户路径**复现或证明可观察工作流；
+- 需要**系统性黑盒 / 探索式**测试发现内部分析尚未覆盖的行为；
+- 需要**复杂 Integration / Regression**、Golden Path、外部 Probe 或专门 Harness 才能证明真实失败边界；
+- Review 明确发现 Test Gap，需要独立测试设计/执行。
+
+是否 Handoff 由真实测试意图和证据缺口决定，不由项目形态、风险等级或 Coding 已进入 Systemic 诊断本身自动触发。
+
 ## 3. Owner-gated 路由边界
 
 Task Route 先由 Skill Core trigger 选择专业 Owner；只有 Owner 已命中，其 References 才根据项目形态、风险、范围等 refinement facts 直接匹配。显式 Reference dependency 可以跨 Skill 扩展 required Context。
