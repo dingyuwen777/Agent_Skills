@@ -71,25 +71,25 @@ Excluded：Coding/Testing/Review 等 Skill/Reference 语义、Router/Stable ID�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | governance/content PR 5→≤2 runner Job | https://github.com/dingyuwen777/Agent_Skills/issues/205 | explicitly_deferred | 统一 DAG 的 governance/content 静态结构只有 `Agent Skills Gate` + `Runtime Package Gate`；Issue 明确要求由本独立 governance-only archive PR 的真实 Actions 统计完成最终 Evidence，归档 PR 首轮成功后回填。 |
+| R1 | governance/content PR 5→≤2 runner Job | https://github.com/dingyuwen777/Agent_Skills/issues/205 | satisfied | governance-only archive PR #208 head `8093bbbf42e72ab1af9e45afc440e6dc2390e893` 的 run `33888244905` completed/success。GitHub 返回 4 个 Job 对象，但 Windows `101073403686` 与 macOS `101073403986` 均为 `skipped` 且 `runner_id=null`；真正启动 runner 的只有 `Agent Skills Gate` job `101073266024` 与 `Runtime Package Gate` job `101073402996`，即实际 runner Job `5→2`，下降 60%。Core 中 Linux build/MCP/install package steps 也全部 skipped。 |
 | R2 | package PR 8→≤4 且三平台真实证明 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | satisfied | PR #206 final-head run `33886346584` 实际 `total_count=4`，Agent Skills Gate、Runtime Windows Package、Runtime macOS Package、Runtime Package Gate 全部 success；Core 内 Linux onefile/self-test/MCP/install success，Windows/macOS 对应真实 runner 的 build/self-test/MCP/install 也 success。merge revision `main@1399fcef44fca6a9fd743c4fbe96e68d6fd803c2` 的 push run `33887326289` 再次 4/4 success。 |
-| R3 | 两个 required context 不变且阻塞失败 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | satisfied | active Ruleset `main-quality-gate` 仍精确要求 `Agent Skills Gate` 与 `Runtime Package Gate`；PR #206 final-head 两个 context success。首轮 Red `33885577141` 中 Core self-contained tests 失败后 Windows/macOS 被 skipped 且 Runtime Package Gate failure，直接证明失败不会被假绿吞掉。 |
-| R4 | Runtime scope package/content/governance 责任不降 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | satisfied | classifier 继续三档；统一 `skill-tests.yml`、已删除旧 Workflow 路径、Release 与 Runtime package 边界均列为 package；Skill/Reference 仍为 content；永久 scope regression 通过 final-head 436 tests。 |
+| R3 | 两个 required context 不变且阻塞失败 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | satisfied | active Ruleset `main-quality-gate` 仍精确要求 `Agent Skills Gate` 与 `Runtime Package Gate`；PR #206 final-head 两个 context success。首轮 Red `33885577141` 中 Core self-contained tests 失败后 Windows/macOS 被 skipped 且 Runtime Package Gate failure，直接证明失败不会被假绿吞掉。archive PR #208 两个 required context 也均 success。 |
+| R4 | Runtime scope package/content/governance 责任不降 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | satisfied | classifier 继续三档；统一 `skill-tests.yml`、已删除旧 Workflow 路径、Release 与 Runtime package 边界均列为 package；Skill/Reference 仍为 content；永久 scope regression 通过 final-head 436 tests。archive PR #208 的 governance diff 实际跳过全部 package steps/platform jobs。 |
 | R5 | Workflow responsibility / Job model 永久回归 | https://github.com/dingyuwen777/Agent_Skills/issues/205 | satisfied | final-head 436 self-contained tests success；`test_ci_workflow_minimal_sufficiency.py` 锁定永久 Workflow 为 Release + unified Skill Tests 与 4 个 runner Owner，Runtime package / sidecar / gitignore / action pin / Python pin 等旧证明断言已迁入统一 Workflow Owner。 |
-| R6 | Deep Review、merge、main fresh、archive、Closure | https://github.com/dingyuwen777/Agent_Skills/issues/205 | explicitly_deferred | implementation Deep Review `5114631619` 为 `NO_FINDINGS_WITHIN_SCOPE`，PR #206 expected-head guarded squash merge 已完成，merge revision `1399fcef...` 的 main-fresh `33887326289` success。当前独立 archive PR、archive-main fresh、Issue Acceptance writeback/Closure 与分支清理仍按 post-merge 顺序执行。 |
+| R6 | Deep Review、merge、main fresh、archive、Closure | https://github.com/dingyuwen777/Agent_Skills/issues/205 | explicitly_deferred | implementation Deep Review `5114631619` 为 `NO_FINDINGS_WITHIN_SCOPE`，PR #206 expected-head guarded squash merge 已完成，merge revision `1399fcef...` 的 main-fresh `33887326289` success。当前 archive PR #208 首轮 governance-only run `33888244905` 已 success；仍需本证据回填 HEAD 的 fresh required checks、archive guarded merge/archive-main fresh、Issue Acceptance writeback/Closure 与分支清理。 |
 
 # Validation Matrix
 
 | Layer | Required | Evidence |
 | --- | --- | --- |
-| Unit / Governance | required | PR #206 final-head 436/436 self-contained tests success；Requirement Source、changed Change readiness success。 |
-| Runtime package Linux | required_when_package | `33886346584` / `33887326289` Core 内 Linux onefile + self-test + MCP + install success。 |
-| Runtime package Windows | required_when_package | `33886346584` / `33887326289` Windows 2025 real package build/self-test/MCP/install success。 |
-| Runtime package macOS | required_when_package | `33886346584` / `33887326289` macOS 15 real package build/self-test/MCP/install success。 |
-| Required checks | required | final-head `Agent Skills Gate` + `Runtime Package Gate` success；Ruleset unchanged；首轮 Red 证明 fail-safe。 |
+| Unit / Governance | required | PR #206 final-head 436/436 self-contained tests success；Requirement Source、changed Change readiness success。archive PR #208 首轮 Core 也再次通过全部 self-contained tests 与 changed archive readiness。 |
+| Runtime package Linux | required_when_package | `33886346584` / `33887326289` Core 内 Linux onefile + self-test + MCP + install success；governance run `33888244905` 正确 skipped。 |
+| Runtime package Windows | required_when_package | `33886346584` / `33887326289` Windows 2025 real package build/self-test/MCP/install success；governance run `33888244905` job skipped 且无 runner。 |
+| Runtime package macOS | required_when_package | `33886346584` / `33887326289` macOS 15 real package build/self-test/MCP/install success；governance run `33888244905` job skipped 且无 runner。 |
+| Required checks | required | final-head `Agent Skills Gate` + `Runtime Package Gate` success；Ruleset unchanged；首轮 Red 证明 fail-safe；archive PR #208 首轮同两 context success。 |
 | Review | required | L3 Deep Review `5114631619`，exact base `fac6c7a72cfba82275bb31bf4ca11d86aa6f6f00` / head `cd1bd8beabd43969d6185d92def81da7b8df5df8`，结论 `NO_FINDINGS_WITHIN_SCOPE`，review threads 为空。 |
-| GitHub PR / main | required | PR #206 guarded squash merge → `1399fcef44fca6a9fd743c4fbe96e68d6fd803c2`；implementation main-fresh run `33887326289` completed/success。 |
-| Governance fast path | required | 当前 archive PR 用于取得 governance-only 2-job 直接证据；首轮结果回填 R1 后再 merge。 |
+| GitHub PR / main | required | PR #206 guarded squash merge → `1399fcef44fca6a9fd743c4fbe96e68d6fd803c2`；implementation main-fresh run `33887326289` completed/success。archive PR #208 首轮 `33888244905` completed/success。 |
+| Governance fast path | required | PR #208 run `33888244905`：仅 Core job `101073266024` 与 Gate job `101073402996` 获得 runner；Windows/macOS skipped、Linux package steps skipped，实际 2 runners，AC1 已直接满足。 |
 
 # 实施步骤
 
@@ -102,15 +102,15 @@ Excluded：Coding/Testing/Review 等 Skill/Reference 语义、Router/Stable ID�
 - [x] 更新 scope 与 Workflow responsibility 永久回归。
 - [x] PR #206 final-head package-scope 4-job CI 全绿并完成 L3 Deep Review。
 - [x] expected-head guarded squash merge，implementation main-fresh package-scope 4-job CI 全绿。
-- [ ] 当前 governance-only archive PR 实测 2-job fast path并回填 R1。
-- [ ] archive PR merge、archive-main fresh、Issue #205 Acceptance writeback/Closure 与可用范围内的分支清理。
+- [x] archive PR #208 首轮 governance-only run 直接证明 2-runner fast path。
+- [ ] 当前证据回填 HEAD required checks、archive PR guarded merge、archive-main fresh、Issue #205 Acceptance writeback/Closure 与可用范围内的分支清理。
 
 # 完成审计
 
-- [x] upstream_re_read：implementation merge 前已重新读取 Issue #205、当前 main、active Ruleset、Maintenance、永久 Workflow、scope classifier 与 Review 规则；目标与门禁未漂移。
-- [x] change_coverage：R1–R6 全部映射 #205；R2–R5 已由 final-head/main-fresh 直接机器证据闭合；R1 按 Issue 指定由 governance-only archive PR 实测，R6 只剩 archive/Closure 生命周期。
-- [x] reverse_audit：从两个 required context 反查 Core、scope、Linux/Windows/macOS、ready_check 与最终 package gate；首轮 Red 还证明 Core failure 会阻止平台任务并使 Gate failure，没有删减或静默 skip package evidence。
-- [x] unresolved_cleared：没有 `not_satisfied`；R1 与 R6 的剩余项是当前 archive/Closure 自引用生命周期，均明确 Owner 与执行顺序，不冒充已完成。
+- [x] upstream_re_read：implementation merge 前已重新读取 Issue #205、当前 main、active Ruleset、Maintenance、永久 Workflow、scope classifier 与 Review 规则；目标与门禁未漂移。archive PR 首轮 CI 后又核对了实际 Job/runner 分配。
+- [x] change_coverage：R1–R6 全部映射 #205；R1–R5 已由 final-head/main-fresh/archive-fast-path 直接机器证据闭合；R6 只剩 archive merge/main-fresh/Closure 生命周期。
+- [x] reverse_audit：从两个 required context 反查 Core、scope、Linux/Windows/macOS、ready_check 与最终 package gate；首轮 Red 证明 Core failure 会阻止平台任务并使 Gate failure，archive run 又反向证明 governance scope 不启动任何 package runner。
+- [x] unresolved_cleared：没有 `not_satisfied`；R6 的剩余项是当前 archive/Closure 自引用生命周期，有明确 Owner 与执行顺序，不冒充已完成。
 
 # Red / Green / Review / Merge 证据
 
@@ -119,6 +119,7 @@ Excluded：Coding/Testing/Review 等 Skill/Reference 语义、Router/Stable ID�
 - Deep Review `5114631619`：A1/A2、testing adequacy、Ruleset/main freshness 复核，`NO_FINDINGS_WITHIN_SCOPE`，无 unresolved review thread。
 - Guarded merge：PR #206 使用 `expected_head_sha=cd1bd8beabd43969d6185d92def81da7b8df5df8` squash merge，merge revision `1399fcef44fca6a9fd743c4fbe96e68d6fd803c2`。
 - implementation main-fresh `33887326289`：push event completed/success，`total_count=4`，Linux/Windows/macOS 与 Runtime Package Gate 再次全部 success。
+- governance fast-path `33888244905`：archive PR #208 completed/success；仅 jobs `101073266024` / `101073402996` 有 runner，Windows/macOS 无 runner，Linux package steps skipped，实际 2-runner 成本。
 
 # 回滚
 
