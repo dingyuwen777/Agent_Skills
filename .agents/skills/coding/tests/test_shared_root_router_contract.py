@@ -80,7 +80,7 @@ class SharedRootRouterContractTest(unittest.TestCase):
             project_installer._normalise_shared_files(["nested\\ENTRY.md"], "fixture")
 
     def test_runtime_install_state_owns_shared_entry_without_persistent_manifest(self) -> None:
-        """Runtime 自描述认领共享 Entry 与 Router Core，目标项目不落 manifest，根 AGENTS 不暴露内部路径。"""
+        """Runtime 自描述认领共享 Entry 与 Router Core，目标项目不落 manifest，根 AGENTS 只保留项目侧规则。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             target = root / "target"
@@ -102,7 +102,17 @@ class SharedRootRouterContractTest(unittest.TestCase):
             self.assertNotIn(".agents/skills/", agents)
             self.assertNotIn("研发治理 MCP", agents)
             self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", agents)
-            self.assertIn("治理能力自身的运行与实现细节不属于项目进度或交付内容", agents)
+            self.assertIn("当前真实文件", agents)
+            self.assertIn("首次接入", agents)
+            self.assertIn("完整性无法确认", agents)
+            for forbidden in (
+                "治理能力自身",
+                "内部能力",
+                "用户可见进度",
+                "Runtime Mode",
+                "Source Mode",
+            ):
+                self.assertNotIn(forbidden, agents)
 
 
 if __name__ == "__main__":
