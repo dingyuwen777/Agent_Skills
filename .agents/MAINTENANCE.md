@@ -144,7 +144,7 @@ runtime/README.md
 
 根 `AGENTS.md`、本 `MAINTENANCE.md`、Router、`SKILL.md`、References、Change 都是 Agent/治理规则，不是额外的人类用户手册。
 
-正式 Skill 不维护辅助 README；规则由 `SKILL.md + references + metadata/assets` 承担。完成的 Coding Change 归档到当前 carrier 的 `archive/YYYY-MM/...`，保存当次需求、取舍、验证和交付证据；Git/PR 继续保存提交与讨论历史。归档不是当前系统事实源，维护者不需要顺序阅读历史 Change 才能理解当前系统。仓库仍不维护独立 ChangeLog 或 Release 流水账文档。
+正式 Skill 不维护辅助 README；规则由 `SKILL.md + references + metadata/assets` 承担。完成的 Coding Change 归档到当前 carrier 的 `archive/YYYY-MM/...`，保存当次需求、取舍、验证和交付证据；Git/PR 继续保存提交与讨论历史。归档不是当前系统事实源，维护者不需要顺序阅读历史 Change 才能理解当前系统。**不得删除已完成的 Change 历史。**仓库仍不维护独立 ChangeLog 或 Release 流水账文档。
 
 Docs Skill 仍然是目标项目技术文档工作流；“本仓库不保留 docs/ 目录”不等于删除 Docs Skill。
 
