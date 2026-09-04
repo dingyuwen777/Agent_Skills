@@ -17,7 +17,7 @@ def _change_document(
     schema: str = "coding-change/v1",
     status: str = "ready_for_review",
     requirement_status: str = "satisfied",
-    source: str = "AGENTS.md",
+    source: str = "AGENTS.md#AC1",
     evidence: str = "tests: ready-check",
     audit_checked: bool = True,
     completion_gate: str = "required",
@@ -173,7 +173,7 @@ class ReadyCheckTest(unittest.TestCase):
         """仓库 Requirement Source 不存在时必须失败。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            self._write_change(root, _change_document(source="docs/missing.md", chinese=True))
+            self._write_change(root, _change_document(source="docs/missing.md#AC1", chinese=True))
             result = self._run(root, "--require-active-ready")
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("docs/missing.md", result.stdout + result.stderr)
@@ -182,7 +182,7 @@ class ReadyCheckTest(unittest.TestCase):
         """当前 Change 不能把自身当作 Requirement Source。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source = ".agents/changes/active/CHG-20260826-ready-check-fixture/CHANGE.md"
+            source = ".agents/changes/active/CHG-20260826-ready-check-fixture/CHANGE.md#AC1"
             self._write_change(root, _change_document(source=source, chinese=True))
             result = self._run(root, "--require-active-ready")
             self.assertNotEqual(result.returncode, 0)
