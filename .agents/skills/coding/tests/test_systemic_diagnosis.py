@@ -76,9 +76,16 @@ class SystemicDiagnosisContractTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, debugging)
 
-    def test_systemic_analysis_has_causal_coverage_gate_and_no_template_scan(self) -> None:
-        """系统诊断必须覆盖真实链路阶段，但不能把不存在的阶段或全仓扫描当模板要求。"""
+    def test_systemic_diagnosis_uses_real_system_chain_without_bloating_ordinary_analysis(self) -> None:
+        """系统能力链保持通用薄 Owner，详细因果覆盖只在诊断专项展开。"""
         systemic = self._read(".agents/skills/coding/references/21_系统级分析与代码整洁收口.md")
+        debugging = self._read(".agents/skills/coding/references/22_根因调试.md")
+        for fragment in (
+            "调用链、数据流、状态流",
+            "系统级分析先于局部实现",
+            "不等于全仓扫描",
+        ):
+            self.assertIn(fragment, systemic)
         for fragment in (
             "Causal / Diagnostic Coverage Gate",
             "排队 / 调度",
@@ -94,13 +101,11 @@ class SystemicDiagnosisContractTest(unittest.TestCase):
             "不机械全仓扫描",
         ):
             with self.subTest(fragment=fragment):
-                self.assertIn(fragment, systemic)
+                self.assertIn(fragment, debugging)
 
     def test_root_cause_conclusion_requires_omission_and_coverage_audit(self) -> None:
         """完整根因结论前必须检查遗漏、未解释症状、独立失败边界与 correctness 遮蔽。"""
-        systemic = self._read(".agents/skills/coding/references/21_系统级分析与代码整洁收口.md")
         debugging = self._read(".agents/skills/coding/references/22_根因调试.md")
-        combined = systemic + debugging
         for fragment in (
             "Omission / Coverage Audit",
             "未查看的链路阶段",
@@ -111,7 +116,7 @@ class SystemicDiagnosisContractTest(unittest.TestCase):
             "已确认因素 / 候选根因",
         ):
             with self.subTest(fragment=fragment):
-                self.assertIn(fragment, combined)
+                self.assertIn(fragment, debugging)
 
     def test_diagnostic_validation_closes_user_symptom_and_stage_contributions(self) -> None:
         """诊断修复验证必须回到整体 symptom，并按真实可测阶段证明主要贡献因素已消除。"""
