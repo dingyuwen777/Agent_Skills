@@ -250,15 +250,27 @@ class UniversalFigmaSkillTest(unittest.TestCase):
 
         self.assertIn(".agents/skills/ENTRY.md", root_agents)
         self.assertIn(".agents/skills/router/SKILL.md", root_agents)
-        self.assertNotIn(".agents/skills/", managed)
-        self.assertNotIn("ROUTER.md", managed)
-        self.assertNotIn("figma", managed.lower())
-        self.assertNotIn("研发治理 MCP", managed)
-        self.assertNotIn("Runtime Mode", managed)
-        self.assertIn("无论采用哪种通用治理执行方式", managed)
-        self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", managed)
-        self.assertIn("只改变通用治理约束的取得和呈现方式", managed)
-        self.assertIn("治理能力自身的运行与实现细节不属于项目进度或交付内容", managed)
+        for forbidden in (
+            ".agents/skills/",
+            "ROUTER.md",
+            "figma",
+            "研发治理 MCP",
+            "Runtime Mode",
+            "Source Mode",
+            "治理能力自身",
+            "内部能力",
+            "用户可见进度",
+        ):
+            self.assertNotIn(forbidden.lower() if forbidden == "figma" else forbidden, managed.lower() if forbidden == "figma" else managed)
+        for required in (
+            "无论采用哪种通用治理执行方式",
+            "必须先读取并遵守当前目录及上级适用的项目规则",
+            "当前真实文件",
+            "只改变通用治理约束的取得和呈现方式",
+            "首次接入",
+            "完整性无法确认",
+        ):
+            self.assertIn(required, managed)
 
         self.assertIn("figma", router.lower())
         self.assertIn(".agents/skills/*/SKILL.md", router)
