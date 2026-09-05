@@ -1,5 +1,5 @@
 <!-- agent-routing:v1
-{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.16","触发":{"包含":{"维度":"意图","取值":["Skill Mutation","新增 Skill","修改 Skill","删除 Skill","重命名 Skill","新增 Reference","修改 Reference","删除 Reference","重命名 Reference"]}},"依赖":["coding.reference.02","coding.reference.04","coding.reference.07","coding.reference.11"],"最低风险":"L2"}
+{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.16","触发":{"包含":{"维度":"意图","取值":["Skill Mutation","Skill Mutation Audit","Skill Mutation Apply","新增 Skill","修改 Skill","删除 Skill","重命名 Skill","新增 Reference","修改 Reference","删除 Reference","重命名 Reference"]}},"依赖":["coding.reference.02"]}
 -->
 
 # 规则内容守恒与 Skill 维护
@@ -9,6 +9,13 @@
 ## 0. Mutation Audit / Proposal 与 Mutation Apply
 
 Skill Mutation 必须先区分**只读分析/建议**和**真正 canonical 写入**，不能因为用户在讨论“怎么改 Skill”就预付完整写入流程。
+
+正式 Task Route 中：
+
+- `Skill Mutation Audit` 明确表示只读 Audit / Proposal；
+- `Skill Mutation Apply` 明确表示 canonical 写入；
+- 兼容旧请求的宽泛 `Skill Mutation` 在尚未出现写入动作事实前按 Audit-compatible 状态处理，**不得因为意图含糊预付 Apply-only Change / Validation / Review / Impact Audit**；
+- 一旦用户明确要求新增、修改、删除、重命名、同步或实际写入 canonical Skill/Reference，当前任务事实必须细化为 `Skill Mutation Apply` 或对应具体写入意图，再进入 Apply 门禁。
 
 ### Mutation Audit / Proposal
 
@@ -31,7 +38,7 @@ Skill Mutation 必须先区分**只读分析/建议**和**真正 canonical 写�
 
 ### Mutation Apply
 
-用户明确要求新增、修改、删除、重命名、同步或实际写入 canonical Skill/Reference 时，进入 `Mutation Apply`。Agent_Skills 源仓库本身的 Apply 继续遵守当前 Maintenance 的 L2/L3、Change、Completion、独立 Review、PR、CI、main-fresh、Change Archive 和 Closure 门禁；本节**不降低正式仓库 CI 门禁**，也不扩大任何 Git/merge/release/deploy 权限。
+用户明确要求新增、修改、删除、重命名、同步或实际写入 canonical Skill/Reference 时，进入 `Mutation Apply`。Apply 通过 `coding.reference.29` 的显式依赖恢复 Change、Validation、两阶段复核与影响面审计，并保持最低 L2。Agent_Skills 源仓库本身的 Apply 继续遵守当前 Maintenance 的 L2/L3、Change、Completion、独立 Review、PR、CI、main-fresh、Change Archive 和 Closure 门禁；本节**不降低正式仓库 CI 门禁**，也不扩大任何 Git/merge/release/deploy 权限。
 
 ### Mutation 开发侧 Evidence Profile
 
@@ -209,7 +216,7 @@ Figma READY / READY_WITH_NOTES
 - Runtime / Project Payload 本地安装副本、Reference Stub、Release / 缓存或历史构建产物；
 - MCP 返回结果的旧缓存、历史聊天、摘要、Custom Instructions / Project instructions。
 
-这些内容只能提供背景或证据；不得创建或修改替代 Skill。canonical 源不可读/写或 required 门禁不可执行时，按依赖边界失败关闭并报告未同步/未交付；不能改本地副本冒充 canonical，也不能把一个局部工具缺口无条件解释成所有只读分析都停止。
+这些内容只能提供背景或证据；不得创建或修改替代 Skill。canonical 源不可读时按依赖边界失败关闭；canonical 写权限或 required 写入门禁不可用时，只阻塞 `Mutation Apply` 对应写入/交付并报告未同步/未交付，**不能把该写能力缺口无条件解释成只读 Audit / Proposal 也停止**。不能改本地副本冒充 canonical。
 
 ### 7.1.1 Skill Mutation 与外部项目 Change Ownership
 
@@ -356,7 +363,7 @@ Router 当前 Catalog / Handoff
 
 ### 7.9 Mutation 完成验证
 
-Skill Mutation 完成前先按第 0 节确定 `Semantic Local / Contract / Routing / Runtime / Package` 实际影响，然后形成最小充分且可升级的证据链：
+Skill Mutation Apply 完成前先按第 0 节确定 `Semantic Local / Contract / Routing / Runtime / Package` 实际影响，然后形成最小充分且可升级的证据链：
 
 ```text
 用户 Mutation 意图

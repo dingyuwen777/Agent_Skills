@@ -150,6 +150,8 @@ Docs Skill 仍然是目标项目技术文档工作流；“本仓库不保留 do
 
 ## 6. Change 与完成门禁
 
+以下是 **Agent_Skills 源仓库专属 Overlay**，**有意覆盖通用 Coding** 中“普通轻量 L2 不一定需要持久 Change”的默认规则；仅维护本仓库时，`L2/L3 必须有正式可审计 Change`。这个 Overlay 不反向要求其他目标项目照搬 Agent_Skills 的 Change 机制。
+
 当前 Change schema：
 
 ```text

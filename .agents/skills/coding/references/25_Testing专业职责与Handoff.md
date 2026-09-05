@@ -82,10 +82,14 @@ Coding
 ### 用户可见 L2/L3 Feature
 
 ```text
-Coding 实现 + 开发期测试
-→ Testing 用户 Journey / 黑盒 / 必要分层验证
+Coding 实现 + 开发期验证
+→ 如果本次真实改变用户工作流，或 Validation Matrix / Review 暴露独立 Workflow 风险 / 真实 Testing 意图
+   → Testing User Journey / 黑盒 / 必要分层验证
+→ 否则由当前最低充分 Evidence 闭环，不机械重复完整 Journey
 → Review（项目门禁或显式要求时）
 ```
+
+用户可见和 `L2/L3` 本身不是 Testing 配额。已有绑定当前 revision/Contract、仍有效的公开入口 Evidence 足以证明当前结论时可以复用；只有证据失效、targeted failure、新的独立 Workflow 风险或正式 gate 才增加下一层专业测试。
 
 ### 用户可见 Bug
 
@@ -111,5 +115,6 @@ Review
 
 - Testing Skill 或 required Reference 无法取得时，不能用 Coding 中的旧摘要/记忆冒充独立 Testing；
 - Testing 发现缺陷不自动获得生产代码修改、commit、push、merge、release 或 deploy 权限；
+- 已经明确授予且仍处于同目标、同范围、同副作用等级的授权可以按 Router 的 Authorization Continuity 跨 Handoff 沿用，不重复确认；任何更高副作用等级都不得继承升级；
 - Coding 也不能因为 Validation Matrix 要求某层证据，就把未运行的 Mock/Fake 结果冒充该真实边界；
 - 项目没有独立测试工程价值时，不为了“每个 Skill 都走一遍”机械叠加 Testing。

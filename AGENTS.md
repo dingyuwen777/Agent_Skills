@@ -43,7 +43,7 @@
 4. 在任何写入前重新读取 Agent_Skills **当前目标分支**的本 `AGENTS.md`、[`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md) 和 [`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)，再由 Router 进入 Coding 的规则内容守恒与受影响 Skill；
 5. 当前目标项目只继续提供本次变更的事实背景、失败证据和项目约束；项目特定技术栈、业务字段、Provider、Schema、部署、品牌或设计业务事实不得直接升级成通用 Skill 默认事实；
 6. 如果用户明确说“只改当前项目规则”或明确指向项目自有 Skill，则保持当前项目 Ownership，不跨仓库同步；
-7. 如果无法从当前仓库事实安全判断 Skill Ownership，或当前宿主没有 Agent_Skills 所需读取/写入权限、无法执行仓库要求的 Change/PR/CI 门禁，必须失败关闭并明确报告未同步/未交付；不得通过修改本地安装副本或口头声称“已同步”来绕过；
+7. 先区分 `Mutation Audit / Proposal` 与 `Mutation Apply`：**Mutation Audit / Proposal 只要求 canonical read** 能力；只要当前 canonical Source 可读，就可以完成审计、影响分析和修改建议，缺少写入/PR/CI 权限本身不阻塞只读结论。真正进入 **Mutation Apply** 后，才要求与当前动作匹配的 **write / Change / PR / CI / delivery** 能力；某一能力或权限缺失时，只阻塞依赖该能力的写入/交付并明确报告未同步/未交付，不得通过修改本地安装副本或口头声称“已同步”绕过。若连 canonical Ownership 或只读事实都无法安全恢复，则对应 Audit/Apply 都按依赖边界失败关闭；
 8. Custom Instructions、Project instructions 或其他宿主提示可以作为进入本入口的薄触发器，但不是 canonical Skill 正文，也不会自动授予 GitHub 写入、PR、merge 或 Release 权限。
 
 本节是 **Skill Mutation 意图与 canonical Ownership 的源仓库唯一 Bootstrap Owner**。Mutation 的详细内容守恒、Skill/Reference 新增删除重命名与跨仓库同步细则由 [`coding/references/15_规则内容守恒与Skill维护.md`](.agents/skills/coding/references/15_规则内容守恒与Skill维护.md) 负责；进入 Agent_Skills 后的 Change、Review、CI、PR、main 验证与当前 Change 清理继续由 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md) / Coding 现有交付规则负责。普通 Runtime 安装给目标项目的 Router 和 managed block 不复制这套源仓库维护治理；Custom Instructions 只需要把相应意图引导回当前根 `AGENTS.md`，再以当前源码事实继续执行。
