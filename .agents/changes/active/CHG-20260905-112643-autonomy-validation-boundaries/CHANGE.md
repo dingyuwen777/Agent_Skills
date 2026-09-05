@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260905-112643-autonomy-validation-boundaries
 title: 收敛自主执行、审批与验证边界
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: agent/autonomy-validation-boundaries-216
 created: 2026-09-05
@@ -43,7 +43,7 @@ data_changes: []
 
 # 成功标准
 
-- [ ] 专业 Owner 只由真实专业对象/意图稳定命中，不由通用执行模式、阶段、审查/验证/capability 机械叠加无关 Skill。
+- [x] 专业 Owner 只由真实专业对象/意图稳定命中，不由通用执行模式、阶段、审查/验证/capability 机械叠加无关 Skill。
 - [x] “事实恢复/核验”与“提请用户/Owner 决策”语义明确，已确认决定不重复询问，审批要求与权限边界不降低。
 - [x] 阻塞只沿真实依赖传播；三次失败假设触发回到诊断而不是无条件停止整个任务。
 - [x] 小改动验证有明确下限、上限和单调升级条件；未知先有界调查；无关重构和邻近技术债不进入当前 Scope。
@@ -51,7 +51,7 @@ data_changes: []
 - [x] 受影响规则不再使用与 Stable ID 混淆的裸 `refNN` 表述。
 - [x] Figma 普通设计审查与正式 baseline-ready 意图分离，现有写权限/Design-to-Code 门禁保持。
 - [x] 端到端交付增加分轴状态表达，但整体完成硬门禁保持不变。
-- [ ] 当前 head 的 routing/preservation/minimal-governance/Figma/Review/Mutation 相关回归与完整 Skill Tests 通过；实际 diff 保持 `content` scope，不触发三平台 package。
+- [x] 当前实现 head 的 routing/preservation/minimal-governance/Figma/Review/Mutation 相关回归与完整 Skill Tests 通过；实际 diff 保持 `content` scope，不触发三平台 package。
 
 # 范围
 
@@ -85,41 +85,41 @@ data_changes: []
 - 验证采用 targeted-first：低影响可逆变更先复用最相关现有测试；只有失败、新行为/Contract/依赖、新独立失败边界、正式门禁或具体剩余风险才逐层扩大。
 - 本次修改 routing/core governance content，属于 Contract/Routing 影响；Runtime executable/package/platform boundary 不受影响，因此开发侧不运行三平台 package，仓库既有 content CI 保持。
 - #216 / AC9 的验收范围是“当前 head 相关测试 + 仓库 Skill Tests + package scope 不扩大”；Ready、独立 Review、merge、main-fresh、Change Archive 和 Closure 继续作为 Maintenance 的后续交付门禁，不混入 Ready 前的 Requirement Traceability 形成循环前置条件。
-- Owner 隔离按专业意图统一收口：Testing-only、Figma-only、独立 `文档审查/编写/更新/同步` 出现时，Coding 的通用内容动作与阶段只能作为任务事实，不能反向制造 Coding Owner；`Git/发布/运维` 仍属于 Coding 的真实交付/运行职责，Review 专业意图继续组合 Coding，`Docs targeted/full` 继续表示 Coding→Docs Handoff，`设计转代码/代码实现/技术方案` 等显式 Coding 意图继续稳定命中 Coding。
+- Owner 隔离按专业意图统一收口：Testing-only、Figma-only、独立 `文档审查/编写/更新/同步` 出现时，Coding 的通用内容动作与阶段不能反向制造 Coding Owner；真实 `诊断` 与 `实现 + 测试专业意图` 继续按 Testing Handoff 组合 Coding+Testing；`Git/发布/运维` 仍属于 Coding 的真实交付/运行职责，Review 专业意图继续组合 Coding，`Docs targeted/full` 继续表示 Coding→Docs Handoff，`设计转代码/代码实现/技术方案` 等显式 Coding 意图继续稳定命中 Coding。
 
 # 需求追溯
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 专业 Owner 不被通用执行模式、阶段、审查/验证/capability 机械叠加 | #216 / AC1 | not_satisfied | 首轮 Review 已证明 Figma-only `方案/实现` 误叠加并完成一次 Red→Fix→Green；独立 re-review 进一步发现同构绕过：Runtime evaluator 的 Owner refinement 不包含 `阶段`，Coding Core 又直接以研发阶段和 `只读分析/诊断/方案/实现` 等通用内容动作选择 Owner，因此 Figma-only 携带阶段、Testing-only 的测试方案/测试实现、独立 Docs 分析/编写仍会反向增加 Coding。当前提交只新增系统矩阵回归并退回开发态，待取得精确 Red 后统一修复。 |
-| R2 | 核验/决策分离，审批保持且无权限扩大 | #216 / AC2 | satisfied | Router/Coding/Review/Figma 已明确事实核验默认自行完成、只有重大未决边界才提请决策且不重复确认；run #1238 的完整 Skill Tests 与授权/Review/Figma 回归通过，PR diff 未新增 Git/merge/release/deploy 权限。 |
-| R3 | blocked 依赖传播；三次失败返回诊断 | #216 / AC3 | satisfied | Router/Coding/Diagnosis/Delivery 明确 blocker 只沿依赖传播，三次失败只停止同类补丁并返回事实恢复/根因诊断；run #1238 的相关回归通过。 |
-| R4 | 小改动 targeted-first，按具体风险逐层扩大且禁止无关重构 | #216 / AC4 | satisfied | Validation 定义验证下限/默认上限/单调升级，Cleanup 明确旧技术债默认只记录 Finding；run #1238 的 validation/minimal-governance/context-budget 回归通过。 |
-| R5 | Mutation Audit/Apply + 影响分档，不降低正式 CI | #216 / AC5 | satisfied | Mutation Reference 明确 `Mutation Audit / Proposal`、`Mutation Apply`、`Semantic Local`、`Contract / Routing`、`Runtime / Package`，正式 CI 不被 targeted-first 替代；run #1238 的 preservation/Mutation 回归通过。 |
-| R6 | 受影响规则消除裸 refNN 歧义 | #216 / AC6 | satisfied | 受影响 Router/Coding/route/Mutation 使用明确文件链接和 Stable ID；run #1238 的 ambiguous-ref、Reference numbering 与 runtime handoff preservation 回归通过。 |
-| R7 | Figma 普通审查与 baseline-ready 意图分离 | #216 / AC7 | satisfied | Figma Core 仅由专业意图触发；普通“全面检查/审查/找问题”默认 review-only，明确开发交付/READY 才 baseline-ready；run #1238 的 Figma 模式回归通过。当前 R1 的系统 Owner Finding 不改变该模式 Contract，只说明 Coding fallback 仍可旁路误叠加。 |
-| R8 | 端到端分轴状态 + overall completion gate 不降低 | #216 / AC8 | satisfied | Delivery 已增加分轴状态并保持所有 required 轴完成后才能 `end_to_end: complete`；run #1238 的 delivery governance 回归通过。 |
-| R9 | 当前 head 相关回归与完整 Skill Tests 通过且不触发 package | #216 / AC9 | not_satisfied | Review 前 head `ee4c7ae6cb7edc3641432c12c14d6244f9dabd3a` / run #1238 为 469/469 Green、Ready/Runtime Package Gate PASS、classifier=`content`、Windows/macOS package skipped；但 re-review 发现 R1 新漏测。本次新增系统矩阵回归后必须先取得新的 Red，再修复并由新的 current-head 完整 Skill Tests 重新证明。 |
+| R1 | 专业 Owner 不被通用执行模式、阶段、审查/验证/capability 机械叠加 | #216 / AC1 | satisfied | 首轮 Review 的 Figma-only Finding 由 commit `362a7675712a9dba8e98fe358fa189b455a757bb` / run #1236 精确 Red；第二轮系统矩阵 commit `e66cc6fbd462721c0a57cf740719480a71fa1702` / run #1239 取得 5 个专业 Owner 隔离失败。系统修复后 run #1242 只剩 2 个 Coding+Testing Handoff 误伤，commit `6f8c45314f6db0fe5a1ab4bb5084e5ec8c4a7a6c` 恢复 canonical 条件式 Handoff；最终 head `09fad9d55894c9ccdad7731d8ec70fdde5c7b44c` / run #1244 中 `test_testing_and_standalone_docs_intents_block_generic_coding_fallbacks`、`test_figma_only_plan_and_fix_modes_do_not_create_coding_owner`、`test_explicit_coding_handoffs_survive_specialized_owner_isolation`、Owner isolation、Routing Conformance 与 Source/Runtime parity 全部通过。 |
+| R2 | 核验/决策分离，审批保持且无权限扩大 | #216 / AC2 | satisfied | Router/Coding/Review/Figma 已明确事实核验默认自行完成、只有重大未决边界才提请决策且不重复确认；run #1244 的完整 Skill Tests 与 authorization/Review/Figma 回归通过，PR diff 未新增 Git/merge/release/deploy 权限。 |
+| R3 | blocked 依赖传播；三次失败返回诊断 | #216 / AC3 | satisfied | Router/Coding/Diagnosis/Delivery 明确 blocker 只沿依赖传播，三次失败只停止同类补丁并返回事实恢复/根因诊断；run #1244 的 diagnosis/delivery/fail-closed 回归通过。 |
+| R4 | 小改动 targeted-first，按具体风险逐层扩大且禁止无关重构 | #216 / AC4 | satisfied | Validation 定义验证下限/默认上限/单调升级，Cleanup 明确旧技术债默认只记录 Finding；run #1244 的 validation/minimal-governance/context-budget 回归通过。预算修复未提高阈值，只对共享 ENTRY 做等价去重。 |
+| R5 | Mutation Audit/Apply + 影响分档，不降低正式 CI | #216 / AC5 | satisfied | Mutation Reference 明确 `Mutation Audit / Proposal`、`Mutation Apply`、`Semantic Local`、`Contract / Routing`、`Runtime / Package`，正式 CI 不被 targeted-first 替代；run #1244 的 preservation/Mutation/Runtime parity 回归通过。 |
+| R6 | 受影响规则消除裸 refNN 歧义 | #216 / AC6 | satisfied | 受影响 Router/Coding/route/Mutation 使用明确文件链接和 Stable ID；run #1244 的 ambiguous-ref、Reference numbering 与 runtime handoff preservation 回归通过。 |
+| R7 | Figma 普通审查与 baseline-ready 意图分离 | #216 / AC7 | satisfied | Figma Core 仅由专业意图触发；普通“全面检查/审查/找问题”默认 review-only，明确开发交付/READY 才 baseline-ready；run #1244 的 Figma review-only、baseline-ready、Design-to-Code 与 Owner 隔离回归通过。 |
+| R8 | 端到端分轴状态 + overall completion gate 不降低 | #216 / AC8 | satisfied | Delivery 已增加分轴状态并保持所有 required 轴完成后才能 `end_to_end: complete`；run #1244 的 delivery governance 回归通过。 |
+| R9 | 当前 head 相关回归与完整 Skill Tests 通过且不触发 package | #216 / AC9 | satisfied | 实现 head `09fad9d55894c9ccdad7731d8ec70fdde5c7b44c` / run #1244：Requirement Source、编译、CLI smoke 通过；`Ran 471 tests in 6.628s` / `OK`；Routing Conformance、Source/Runtime exact-context、minimal-governance、Figma、Review、Mutation、context-budget 全部 Green。classifier=`content`，Linux onefile/MCP/install steps skipped，Windows/macOS package jobs skipped；run 唯一失败是 Changed Change 仍为 `in_progress`，不属于 AC9 行为/内容证据。当前 carrier-only Ready 提交后仍必须取得新的 current-head CI。 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | 已有初始 Red、首轮 Figma Finding Red→Green 与 run #1238 469/469 Green；本轮新增 Testing/Figma/Standalone Docs 通用内容动作+阶段 Owner 隔离反例，并保留 Design-to-Code、Docs targeted、Code Review 正例，待 CI 取得精确 Red。 |
-| 接口 / 契约 | required | `Agent Skills Skill路由/v1` Core trigger/Owner 语义继续调整；修复后必须通过 metadata compiler、Routing Conformance、Source/Runtime manifest 同值、dependency closure、owner-gated routing 与 exact-context。 |
-| 集成 / 持久化 / 运行依赖 | not_applicable | 不改变数据库、文件运行语义、MCP 执行机制或 Runtime service；不修改 Runtime Python/Installer/Bundle executable 实现。 |
-| 用户 / 工作流验收 | required | 必须证明 Testing-only、Figma-only、Standalone Docs 在真实内容动作/阶段 facts 下仍只命中专业 Owner；Design-to-Code、Docs targeted/full、Code Review 等真实 Coding Handoff 仍命中 Coding。 |
-| 跨组件关键路径 | not_applicable | 不改变 Runtime/Installer/Project Payload/Release 接线；Source/Runtime 路由一致性继续由平台无关 Skill Tests 证明。 |
+| 行为 / 单元 / 组件 | required | 初始 run #1214 Red；首轮 Figma Finding run #1236 Red；第二轮系统 Owner run #1239 为 5 failures；run #1242 收敛到 2 个合法 Handoff 误伤；run #1243 语义矩阵全绿但暴露 100 B / 7 B 预算超限；run #1244 最终 471/471 Green。 |
+| 接口 / 契约 | required | `Agent Skills Skill路由/v1` Core trigger/Owner 语义改变；run #1244 的 metadata compiler、Routing Conformance、Source/Runtime manifest 同值、dependency closure、owner-gated routing 与 exact-context 全部通过。 |
+| 集成 / 持久化 / 运行依赖 | not_applicable | 不改变数据库、文件运行语义、MCP 执行机制或 Runtime service；未修改 Runtime Python/Installer/Bundle executable 实现。 |
+| 用户 / 工作流验收 | required | run #1244 证明 Testing-only、Figma-only、Standalone Docs 在内容动作/阶段 facts 下不误叠加 Coding，同时真实诊断/实现+Testing、Design-to-Code、Docs targeted/full、Code Review Handoff 保持。 |
+| 跨组件关键路径 | not_applicable | 不改变 Runtime/Installer/Project Payload/Release 接线；Source/Runtime 路由一致性由 run #1244 平台无关 Skill Tests 证明。 |
 | 外部依赖 / 供应方探测 | not_applicable | 不需要第三方服务、生产环境或外部 Provider 当前事实。 |
-| 构建 / 打包 / 运行 | not_applicable | 计划仍只改 canonical content/metadata/tests；未触及 executable/package/platform boundary，正式 scope 应保持 `content`。 |
-| 文档 / 治理 / 其他 | required | Router/Coding/测试/Change 的 Owner 语义与内容守恒必须同步；不修改预算阈值、CI Workflow 或 Runtime evaluator 来制造 Green。 |
+| 构建 / 打包 / 运行 | not_applicable | diff 未触及 executable/package/platform boundary；run #1244 classifier=`content`，Linux binary steps及 Windows/macOS package jobs 均 skipped。 |
+| 文档 / 治理 / 其他 | required | canonical Rule/trigger/Stable ID/引用、内容守恒与 context budget 已由 run #1244 证明；Ready、独立 re-review、merge/main-fresh/Archive/Closure 继续作为后续交付门禁。 |
 
 # 完成审计
 
-- [x] upstream_re_read：独立 re-review 后已重新读取 live #216、当前 main `3135d58e1fe2b011ebfcf4c1a40845e66e54d235`、当前分支根 `AGENTS.md`、Maintenance、ENTRY、Router、Coding 与完整 Mutation Reference；上游 AC1-AC9 未漂移。
-- [x] change_coverage：#216 / AC1-AC9 仍映射 R1-R9；第二轮 Review Finding 已并入 R1 和系统 Owner 矩阵，而不是新建平行规则或留作未追踪 Finding。
-- [x] reverse_audit：从 Coding 的所有通用 Owner 入口反查 Testing/Figma/Docs/Review 专业 Core 后，确认 `阶段` 与内容动作 fallback 存在同类旁路；Review、Docs targeted/full、Design-to-Code 等真实 Coding Handoff 被列为必须保持的正例。
-- [ ] unresolved_cleared：R1、R9 当前未满足；必须先取得新增回归 Red、完成系统性最小修复、current-head Green，再重新 Completion Audit 与 re-review。
+- [x] upstream_re_read：最终 Green 后重新读取 live #216、current main `3135d58e1fe2b011ebfcf4c1a40845e66e54d235`、当前 head 根 `AGENTS.md` 与 ENTRY；此前已按当前 Mutation 链完整读取 Maintenance、Router、Coding、Validation、Review、Runtime 与 Mutation Owner，上游 AC1-AC9 未漂移。
+- [x] change_coverage：#216 / AC1-AC9 全部映射 R1-R9；两轮独立 Review Finding 均并入 R1 并由失败→修复→Green Evidence 闭环，没有新建平行规则或未追踪延期。
+- [x] reverse_audit：从 Coding 通用 Owner 入口反查 Testing/Figma/Docs/Review 专业 Core 与 Handoff，确认专业-only 不再被内容动作/阶段旁路激活，同时诊断、实现+Testing、Design-to-Code、Docs targeted/full、Code Review 等合法组合继续可达；没有权限扩大、Runtime evaluator/CI/阈值放宽或无关重构。
+- [x] unresolved_cleared：R1-R9 全部为 `satisfied` 且有直接 Evidence；Validation Matrix required 项已有 run #1244 当前实现证据，N/A 与实际 diff 边界一致，无 `not_satisfied`。
 
 # 任务
 
@@ -130,10 +130,12 @@ data_changes: []
 - [x] 首轮独立 Review 发现 Figma-only `方案/实现` HIGH Finding；commit `362a7675712a9dba8e98fe358fa189b455a757bb` / run #1236 精确 Red。
 - [x] commit `56165527f9767e8387c64ad8989e6612356ef0bc` 修复首轮 Finding，run #1237 取得 469/469 Green；carrier-only Ready 后 run #1238 取得 469/469、Ready 与 Runtime Package Gate 全绿。
 - [x] 第二轮独立 re-review 系统审计发现 `阶段` 与 Testing/Standalone Docs 内容动作仍可绕过 Owner 隔离，Review 继续 `CHANGES_REQUIRED`。
-- [ ] 新增系统 Owner 矩阵回归，取得精确 Red；本提交不修改生产 metadata。
-- [ ] 统一修复 Coding 通用内容动作/阶段 fallback，同时保持普通 Coding、Design-to-Code、Docs targeted/full、Code Review 正例。
-- [ ] 取得 current-head 完整 Skill Tests Green、预算/conformance/parity Green，并保持 `content` scope。
-- [ ] 重新完成 Completion Audit、恢复 `ready_for_review` 并执行独立 re-review。
+- [x] commit `e66cc6fbd462721c0a57cf740719480a71fa1702` 新增系统 Owner 矩阵，run #1239 取得 5 个精确 Red。
+- [x] 系统修复后 run #1242 将问题收敛为 2 个 Coding+Testing Handoff 误伤；commit `6f8c45314f6db0fe5a1ab4bb5084e5ec8c4a7a6c` 恢复条件式 Handoff。
+- [x] run #1243 语义回归 Green 后只剩 backend-l2-feature 超 100 B、Skill Mutation 超 7 B；未提高阈值，commit `09fad9d55894c9ccdad7731d8ec70fdde5c7b44c` 等价压缩共享 ENTRY，run #1244 取得 471/471 Green。
+- [x] 完成最终 Completion Audit，并将 Change 恢复为 `ready_for_review`。
+- [ ] 取得 carrier-only Ready 提交的 current-head CI，确认 Changed Change Ready 与 Runtime Package Gate Green。
+- [ ] 执行独立 re-review；只有 PASS 才进入 merge preflight。
 - [ ] re-review PASS 后更新 PR 真实状态，merge 前重新核对 live Requirement Source/head/base/权限/Ruleset。
 - [ ] guarded merge 后取得 implementation main-fresh CI、repository-native Change Archive、Closure Audit、Issue Acceptance 写回/关闭与分支清理。
 
@@ -142,7 +144,7 @@ data_changes: []
 ## 计划
 
 - Targeted routing：`test_autonomy_validation_boundaries.py`、`test_skill_owner_isolation.py`、`test_owner_gated_routing.py`、`test_routing_conformance.py`、`test_runtime_routing.py`、`test_source_runtime_context_conformance.py`。
-- Targeted owner matrix：Testing-only + `方案/实现/阶段`、Figma-only + `方案/实现/阶段`、Standalone Docs + `只读分析/实现/阶段`；正例覆盖 `设计转代码`、`Docs targeted`、`代码审查`。
+- Targeted owner matrix：Testing-only / Figma-only / Standalone Docs 反例；`诊断 + Testing`、`实现 + 用户场景验收`、Design-to-Code、Docs targeted/full、Code Review 正例。
 - 正式 PR/main：仓库当前 `content` scope 的完整 Skill Tests + Changed Change Ready Gate；不运行 package scope，除非实际 diff 扩大。
 
 ## 新鲜证据
@@ -150,9 +152,12 @@ data_changes: []
 - 当前 `main` HEAD：`3135d58e1fe2b011ebfcf4c1a40845e66e54d235`。
 - 初始 Red：commit `bc59363ab2840fb0f3e453612ef47581d288661f` / run #1214。
 - 首轮 Finding Red：commit `362a7675712a9dba8e98fe358fa189b455a757bb` / run #1236。
-- 首轮 Finding Fix：commit `56165527f9767e8387c64ad8989e6612356ef0bc`；run #1237 为 `Ran 469 tests` / `OK`。
-- Review 前 Ready Green：head `ee4c7ae6cb7edc3641432c12c14d6244f9dabd3a` / run #1238，469/469、Changed Change Ready、Runtime Package Gate 全部 PASS；classifier=`content`；Windows/macOS package skipped。
-- 第二轮 re-review 证据：`runtime/agent_skills_runtime/routing.py` 的 `_OWNER_REFINEMENT_DIMENSIONS` 仅含项目形态/风险/工具链/范围/治理/授权，不含 `阶段`；Coding Core 仍以阶段和多个通用内容动作直接触发 Owner。Testing/Docs/Figma Core 均由专业 `意图` 触发，因此专业任务附带阶段/内容动作时存在可触发的 Coding 误叠加路径。
+- 首轮 Finding Fix：commit `56165527f9767e8387c64ad8989e6612356ef0bc`；run #1237 为 469/469 Green；run #1238 Ready 亦 Green。
+- 系统 Owner Red：commit `e66cc6fbd462721c0a57cf740719480a71fa1702` / run #1239，新增矩阵暴露 5 failures。
+- 系统中间态：head `93ea3bcfbca545814e494e32b31d6c94e579f6a4` / run #1242，专业-only 反例已 Green，但两个合法 Coding+Testing Handoff 被误伤。
+- 条件式 Handoff 修复：commit `6f8c45314f6db0fe5a1ab4bb5084e5ec8c4a7a6c`；run #1243 语义矩阵全部 Green，只剩 context budget：backend-l2-feature 195100 > 195000、Skill Mutation 213247 > 213240。
+- 最终实现 Green：head `09fad9d55894c9ccdad7731d8ec70fdde5c7b44c` / run #1244；Requirement Source、编译、CLI smoke 通过；`Ran 471 tests in 6.628s` / `OK`；context budget、Routing Conformance、Source/Runtime parity、Owner/Handoff 全绿；classifier=`content`，Linux binary steps和 Windows/macOS package skipped。唯一失败是 Changed Change 当时仍为 `in_progress`。
+- 预算修复没有调整阈值：只等价压缩共享 ENTRY 的重复描述；永久隐私、Source/Runtime、宿主 UI、required Context 守恒测试在 run #1244 全部通过。
 
 # 文档影响
 
@@ -163,6 +168,6 @@ data_changes: []
 - Requirement Source：#216。
 - 分支：`agent/autonomy-validation-boundaries-216`。
 - PR：#217。
-- 当前独立 Review：`CHANGES_REQUIRED`；不得合并。
-- merge：仅在系统 Owner Finding 修复、re-review PASS、Review 后 current-head CI、live Requirement Source、当前 main/base、Ruleset/权限和 expected head guard 满足后执行。
+- 当前阶段：实现与 Completion Audit 已 Green，Change=`ready_for_review`；独立 re-review 待执行，尚不得合并。
+- merge：仅在 re-review PASS、Review 后 current-head CI、live Requirement Source、当前 main/base、Ruleset/权限和 expected head guard 满足后执行。
 - post-merge：repository-native Change Archive + implementation main-fresh + Closure Audit；Agent 不手工归档 Change，也不把 archive/done 冒充 Issue Closure。
