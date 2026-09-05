@@ -211,10 +211,12 @@ class RepositoryChangeArchiveAutomationTest(unittest.TestCase):
                     source_relative=relative,
                 )
 
-    def test_workflow_uses_narrow_app_identity_and_serial_archive(self) -> None:
+    def test_workflow_uses_narrow_app_identity_serial_archive_and_path_filter(self) -> None:
+        """自动触发只服务携带 Active Change 的 PR；手工 dispatch 仍可重跑历史 merged PR。"""
         workflow = WORKFLOW.read_text(encoding="utf-8")
         required = [
             "types: [closed]",
+            'paths: [".agents/changes/active/**"]',
             "workflow_dispatch:",
             "group: change-archive-main",
             "cancel-in-progress: false",
