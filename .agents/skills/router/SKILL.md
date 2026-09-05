@@ -64,7 +64,7 @@ Owner 选择时 `项目形态 / 风险 / 工具链 / 范围 / 治理 / 授权` �
 任务事实
 → Skill Core Owner 投影取并集
 → Owner 内 Reference 匹配
-→ dependency closure（可跨 Skill）
+→ dependency closure
 → 风险/Owner 扩展后重复至稳定
 ```
 
