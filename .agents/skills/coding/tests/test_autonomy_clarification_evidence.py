@@ -119,6 +119,12 @@ class AutonomyClarificationEvidenceTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
 
+    def test_testing_uses_router_as_fresh_evidence_contract_owner(self) -> None:
+        """Testing 只能引用 Router 的跨 Skill Fresh Evidence Contract，不能建立第二 Owner。"""
+        testing = self._read(TESTING)
+        self.assertIn("Fresh Evidence 的复用与失效条件由 Router 的 Fresh Evidence Contract 统一定义", testing)
+        self.assertNotIn("Fresh Evidence 的复用与失效条件由 Coding", testing)
+
     def test_l3_decision_gate_batches_only_independent_material_decisions(self) -> None:
         """重大审批不减少，但彼此独立的必决项不人为拆成多轮确认。"""
         text = self._read(PLANNING)
