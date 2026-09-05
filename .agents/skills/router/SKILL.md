@@ -21,16 +21,12 @@ Router 只输出 Skill 选择、必需 References、最低风险、Handoff 和�
 
 项目自己的事实优先于通用示例。语言、Runtime、框架、数据库、模块 Owner、API/ABI/CLI、Schema、Migration、Provider、部署、设计 Token/组件/业务字段等都必须来自当前事实或 Owner 决定；**不能单凭文件名推出 React、FastAPI、PostgreSQL**。Greenfield 则以已确认目标、硬约束和运行环境建立最小基线。
 
-### 1.1 跨模型一致的核验、决策与阻塞语义
+### 1.1 核验、决策与阻塞
 
-为避免不同能力模型把同一句“确认”解释成不同流程，跨 Skill 统一使用以下确定性语义：
-
-- **事实恢复 / 核验**：默认由 Agent 自行从用户当前请求、目标项目、工具结果、运行结果和正式事实源完成；能自行取得的事实不向用户重复询问。除非条款明确要求“提请用户 / Owner 决策”“批准”或等价审批，否则规则中的“确认、明确、确定、恢复、核对”都表示先自行核验，不表示必须向用户提问。
-- **提请用户 / Owner 决策**：只有经过有界事实恢复仍无法确定，而且不同答案会实质改变业务语义、public Contract、Schema/数据、安全/权限、不可逆动作、重大技术路线或其他高成本难逆边界时才触发。已经由当前用户请求、正式 Requirement/ADR/Spec 或 Owner 固化的同一决定**不重复确认**；新事实使原决定失效时才重新提请。
-- **授权**：只描述已经确认的副作用权限，不能由 Skill、Capability、风险等级或宿主“能够做到”自行推导。审批要求继续由其正式 Owner 承担。
-- **阻塞按依赖边界传播**：缺失事实、必需 Context、工具、环境或权限时，只停止依赖该条件的动作以及对应完成声明；其他不依赖该 blocker、且已经授权的事实恢复、分析、诊断、targeted validation、建议或交付步骤继续执行。只有用户目标已经不存在合法剩余交付物，或最终 required gate 本身依赖该 blocker 时，整个相应完成状态才为 `blocked/incomplete`。
-
-因此“更谨慎”不是扩大流程的独立理由；Agent 必须同时知道默认动作、最低要求、默认上限、升级条件和停止扩大条件。专业 Skill 可以增加更具体门禁，但不能把普通核验重新解释成重复审批，也不能把局部 blocker 无条件升级成整个任务停止。
+- **事实恢复 / 核验**默认由 Agent 自行从当前请求、项目、工具/运行结果和正式事实源完成；能查出的事实不重复询问。**只有条款明确要求**“提请用户 / Owner 决策”“批准”或等价审批时，“确认/明确/确定/恢复/核对”才不是普通自行核验。
+- **提请用户 / Owner 决策**只在有界调查仍无法确定，且不同答案会实质改变业务/public Contract、Schema/数据、安全/权限、不可逆动作或重大技术路线时触发；已由当前请求或正式事实源固化的决定**不重复确认**。
+- **授权**只记录已确认副作用权限，不能由 Skill、Capability、风险或宿主能力自行推导；既有审批强度不降低。
+- **阻塞按依赖边界传播**：只停止依赖缺失事实/Context/工具/环境/权限的动作和对应完成声明；其他不依赖 blocker、已授权工作继续。最终 required gate 依赖 blocker 时，对应整体状态才是 `blocked/incomplete`。
 
 ## 2. 正式 Skill Catalog 与动态发现
 
@@ -56,27 +52,11 @@ Router 只输出 Skill 选择、必需 References、最低风险、Handoff 和�
 ## 3. 每个研发任务的固定入口
 
 1. 恢复当前目标项目最少充分事实；
-2. **先按任务对象与各 Skill Core 的专业 Owner 选择语义选 Owner**；项目形态、风险、工具链、范围、治理、授权，以及“宿主具备某能力”这类可用性事实，只用于细化已命中的 Owner，不能仅凭自身把不相关专业 Skill 拉入任务；
-3. 实现/调试/TDD/CI/Git/Release 等真实研发意图进入 Coding；测试策略、功能/黑盒/User Journey、探索式、系统性 Regression 或独立验证进入 Testing；代码/PR/diff 审查等真实 Code Review 意图进入 Review，并按研发规范需要组合 Coding；Figma 设计对象进入 Figma；技术文档对象进入 Docs。通用 `执行模式=审查/验证` 或 `能力=测试/Figma/Git` 只描述任务动作/宿主能力，不自行制造无关专业 Owner；
+2. **先按任务对象与各 Skill Core 的专业 Owner 选择语义选 Owner**；项目形态、风险、工具链、范围、治理、授权和宿主能力只细化已命中的 Owner，不能仅凭自身拉入无关专业 Skill；
+3. 实现/调试/TDD/CI/Git/Release 等研发意图进入 Coding；测试策略、功能/黑盒/User Journey、探索式、系统性 Regression 或独立验证进入 Testing；代码/PR/diff 审查进入 Review 并按研发规范组合 Coding；Figma 对象进入 Figma；技术文档对象进入 Docs。`执行模式=审查` 不等于 Code Review；`执行模式=验证` 在没有 Testing 专业意图时保留 Coding 的普通研发验证，有 Testing 专业意图时由 Testing 承担方法；`能力=测试/Figma/Git` 不自行制造 Owner；
 4. Skill Owner 命中后，才在该 Owner 内按 Reference metadata 直接细化 required Context；显式 Reference dependency 可以跨 Skill 扩展，并把被依赖 Reference 的 Owner 加入组合；
 5. 命中 Reference 时必须在执行前取得其完整正式原文；
 6. 不机械读取全部 Skills/References，也不从历史聊天猜当前实现。
-
-低歧义对象映射作为跨模型默认：
-
-```text
-源码实现 / PR / diff / commit / 调试 / Git 交付
-→ Coding；真实代码审查意图再叠加 Review
-
-测试策略 / 黑盒 / User Journey / 探索式 / 独立 Regression
-→ Testing；只有同时存在生产实现动作才叠加 Coding
-
-README / Guide / 技术文档审查或编写
-→ Docs；发现实现问题再 Handoff Coding
-
-Figma file / node / frame / prototype / design system
-→ Figma；进入生产实现才 Handoff Coding
-```
 
 ## 4. 双模式同源路由与 Reference 加载
 
@@ -97,7 +77,7 @@ Owner 选择阶段把以下维度视为 refinement，仅保留在公共 Task Rou
 项目形态 / 风险 / 工具链 / 范围 / 治理 / 授权
 ```
 
-因此正式 Skill Core metadata 中即使历史上存在这些 refinement 分支，它们也**不直接选择专业 Owner**；Owner 选择只使用其余可表达真实专业意图的维度。`执行模式` 只有在 Core trigger 本身表达该专业职责时才可命中；通用 `审查/验证` 不应被多个专业 Core 重复认领。`能力` 表示宿主可用能力时也不能替代专业意图；当前 Core 不应以“能力存在”作为单独 Owner 选择理由。Router 是始终存在的控制面，不受该专业 Owner gate 限制。
+因此正式 Skill Core metadata 中即使保留这些 refinement 分支，它们也**不直接选择专业 Owner**。`执行模式` 只有在 Core trigger 表达该专业职责时才命中；共享 `审查/验证` 不应被多个专业 Core 重复认领，`能力` 也不能替代专业意图。Router 始终存在，不受专业 Owner gate 限制。
 
 路由按固定点求值：
 
@@ -110,9 +90,9 @@ Owner 选择阶段把以下维度视为 refinement，仅保留在公共 Task Rou
 → 风险下限或 Owner 扩展后重复求值，直到稳定
 ```
 
-这意味着 Reference 的 `项目形态 / 风险 / 工具链 / 范围 / 治理 / 授权` 等信号是**Owner 内 refinement**，不能独立制造它自己的专业 Owner；真正需要跨 Skill 的场景必须由 Skill Core Owner 选择或显式 Reference dependency/Handoff 表达。多个真实 Owner 仍然取并集，不是单选分类。
+Reference 的 `项目形态 / 风险 / 工具链 / 范围 / 治理 / 授权` 是**Owner 内 refinement**，不能独立制造专业 Owner；跨 Skill 只能由 Core Owner 选择或显式 dependency/Handoff 表达。多个真实 Owner 取并集，不是单选分类。
 
-未知项使用三值逻辑保守扩大与未知维度真实相关的候选 Context，但仍遵守 Owner gate；未知 refinement 不能成为导出全部规则或机械激活无关 Skill 的理由。`授权` 只是已确认事实，不能自行授予权限。
+未知项用三值逻辑只保守扩大相关候选 Context，并继续遵守 Owner gate；未知 refinement 不能成为导出全部规则或机械激活无关 Skill 的理由。`授权` 只是已确认事实，不能自行授予权限。
 
 ### 4.2 Source Mode：直接读取 canonical 原文
 
