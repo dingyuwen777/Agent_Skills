@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260904-225800-delivery-archive-lifecycle
 title: 简化多人协作交付授权与 Change 自动归档生命周期
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: chg/20260905-repository-change-archive
 created: 2026-09-04
