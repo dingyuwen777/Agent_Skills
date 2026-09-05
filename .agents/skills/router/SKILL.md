@@ -28,6 +28,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - `完整验证证据 / 完整命令 / 完整输出` 只表示完整执行并检查**已选择的风险匹配 Evidence**，**不表示运行全仓测试、全部测试层或所有平台验证**；仍按 targeted-first 单调升级。
 - **阻塞按依赖边界传播**：只停止依赖缺失事实/Context/工具/环境/权限的动作和声明；其他已授权且无依赖工作继续。required gate 受阻时整体才 `blocked/incomplete`。
 - **Requested Outcome = Completion Scope**：用户请求决定终点，**能力存在不等于继续追求更远阶段**。`review-only` 到 Findings/Evidence；`test-only` 到 Test Target/Evidence/Gaps；`develop-and-submit` 到 PR Ready；`develop-and-deliver` 才进入 post-merge；`Mutation Audit / Proposal` 到建议/影响面/验证方案。
+- **Task-owned Cleanup**：结束当前 Completion Scope 前，删除本次任务创建且无后续用途的临时/scratch/debug 产物；不得删除预存在/用户所有或仍需作为证据、交付物、输入的内容。纯临时清理未改变交付状态/运行输入时不使既有 Green Evidence 失效。
 
 ## 2. 正式 Skill Catalog
 
@@ -98,12 +99,12 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 | --- | --- | --- | --- |
 | L1 机械修改 | — | Coding | `执行模式=实现；风险=L1` |
 | L2 Feature | 最小充分任务契约 | Coding | `执行模式=实现；阶段=功能开发；风险=L2` |
-| L3 public API | Contract | Coding | `执行模式=方案,实现；风险=L3；范围=公共契约/API` |
-| Schema Migration | Schema | Coding | `执行模式=方案,实现；风险=L3；范围=Schema/Migration` |
+| L3 public API | Contract | Coding | `执行模式=方案,实现；风险=L3；范围=公共契约,API` |
+| Schema Migration | Schema | Coding | `执行模式=方案,实现；风险=L3；范围=Schema,Migration` |
 | Bug / Failure / Incident | 根因 | Coding | `执行模式=诊断,实现；阶段=缺陷修复` |
 | Refactor / Performance | — | Coding | `执行模式=诊断,实现；阶段=重构/性能优化` |
 | Frontend | UI | Coding | `执行模式=实现；项目形态=前端Web；范围=前端；风险=L2` |
-| Testing only | — | Testing | `意图=黑盒/功能/探索/独立验证` |
+| Testing only | — | Testing | `意图=黑盒测试/功能测试/探索式测试/独立验证；能力=测试` |
 | Figma review-only | — | Figma | `执行模式=审查；意图=Figma review-only；授权=允许只读` |
 | Figma review-and-fix | — | Figma | `执行模式=实现；意图=Figma review-and-fix；授权=允许修改项目` |
 | Figma baseline-ready | — | Figma | `执行模式=方案；意图=Figma baseline-ready；风险=L2/L3` |
@@ -113,9 +114,9 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 | Docs full | — | Coding + Docs | `执行模式=实现；意图=Docs full；风险=L2/L3` |
 | 文档 Review | — | Docs | `执行模式=审查；意图=文档审查` |
 | Code Review / Audit | — | Coding + Review | `执行模式=审查；意图=代码审查` |
-| Dependency / Runtime Upgrade | — | Coding | `执行模式=实现；意图=依赖/Runtime 升级` |
+| Dependency / Runtime Upgrade | — | Coding | `执行模式=实现；意图=依赖升级/Runtime 升级` |
 | Git / PR / Release | — | Coding | `执行模式=Git,验证；阶段=交付；意图=Git 交付` |
-| Runtime / Project Payload | — | Coding | `执行模式=实现；风险=L3；范围=Runtime/MCP` |
+| Runtime / Project Payload | — | Coding | `执行模式=实现；风险=L3；范围=Runtime,MCP` |
 | Skill Mutation Audit / Proposal | 只读 | 根 AGENTS + Mutation | `执行模式=只读分析；意图=Skill Mutation Audit；授权=允许只读`；宽泛 `Skill Mutation` 无写入事实时按 Audit-compatible |
 | Skill Mutation Apply | 写入 | Maintenance + Mutation | `执行模式=实现；意图=Skill Mutation Apply；治理=要求完成门禁；风险=L2/L3` |
 | Greenfield | — | Coding | `执行模式=方案；项目形态=Greenfield；阶段=仓库初始化；风险=L2` |
