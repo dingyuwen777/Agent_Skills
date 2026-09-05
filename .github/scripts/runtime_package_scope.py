@@ -7,9 +7,10 @@ from collections.abc import Iterable
 
 
 _SCOPE_RANK = {
-    "governance": 0,
-    "content": 1,
-    "package": 2,
+    "change_only": 0,
+    "governance": 1,
+    "content": 2,
+    "package": 3,
 }
 
 _PACKAGE_EXACT_PATHS = {
@@ -27,6 +28,8 @@ _CONTENT_EXACT_PATHS = {
     "USAGE.md",
 }
 
+_CHANGE_ONLY_PREFIX = ".agents/changes/"
+
 
 def classify_path(path: str) -> str:
     """按仓库职责判断单个变更路径需要的 Runtime CI 证据档位。"""
@@ -39,25 +42,31 @@ def classify_path(path: str) -> str:
         return "package"
     if normalized in _CONTENT_EXACT_PATHS or normalized.startswith(".agents/skills/"):
         return "content"
+    if normalized.startswith(_CHANGE_ONLY_PREFIX):
+        return "change_only"
     return "governance"
 
 
 def classify_paths(paths: Iterable[str]) -> str:
-    """对一组 changed paths 取最高证据责任；任一 package 变化都会强制三平台验证。"""
-    scope = "governance"
+    """对 changed paths 取最高证据责任；Change-only 只在 carrier 独占变更时成立。"""
+    scope = "change_only"
+    found_path = False
     for path in paths:
+        if not path.strip():
+            continue
+        found_path = True
         candidate = classify_path(path)
         if _SCOPE_RANK[candidate] > _SCOPE_RANK[scope]:
             scope = candidate
         if scope == "package":
             return scope
-    return scope
+    return scope if found_path else "governance"
 
 
 def _build_parser() -> argparse.ArgumentParser:
     """创建命令行解析器；changed paths 默认从标准输入逐行读取。"""
     parser = argparse.ArgumentParser(
-        description="按 governance/content/package 判断 Runtime Package CI 证据责任。"
+        description="按 change_only/governance/content/package 判断 Runtime Package CI 证据责任。"
     )
     parser.add_argument("--json", action="store_true", help="以 JSON 输出 scope")
     return parser

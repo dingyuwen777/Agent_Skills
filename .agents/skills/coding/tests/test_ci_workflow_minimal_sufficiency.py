@@ -143,6 +143,7 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         for marker in (
             "name: Change Archive",
             "types: [closed]",
+            'paths: [".agents/changes/active/**"]',
             "workflow_dispatch:",
             "group: change-archive-main",
             "environment: change-archive-main",
@@ -161,8 +162,8 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertNotIn("\n  push:", workflow)
         self.assertNotIn("contents: write", workflow)
 
-    def test_unified_ci_keeps_both_required_checks_and_runner_budget(self) -> None:
-        """统一 CI 必须保持两个 required context，并锁定普通/Package runner Job 上界。"""
+    def test_unified_ci_keeps_required_checks_and_draft_package_fail_closed(self) -> None:
+        """统一 CI 保持 required context；Draft package 只延后昂贵 binary，不制造假绿色。"""
         workflow = self._read(WORKFLOW_DIR / "skill-tests.yml")
         self.assertEqual(workflow.count("runs-on:"), 4)
         self.assertIn("name: Agent Skills Gate", workflow)
@@ -171,9 +172,20 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertIn("name: Runtime macOS Package", workflow)
         self.assertNotIn("name: Runtime Linux Package", workflow)
         self.assertIn("Build and self-test Linux onefile Runtime", workflow)
-        self.assertIn("if: steps.runtime-scope.outputs.runtime_scope == 'package'", workflow)
-        self.assertIn("if: needs.agent-skills-core.outputs.runtime_scope == 'package'", workflow)
+        self.assertIn("ready_for_review", workflow)
+        self.assertIn("package_evidence_required", workflow)
+        self.assertIn("Package evidence is deferred while the PR is Draft", workflow)
         self.assertIn("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", workflow)
+
+    def test_change_only_fast_path_preserves_governance_gate(self) -> None:
+        """Change-only 只跳过 Runtime semantic/setup，Ready/Active gate 与 required gate 仍存在。"""
+        workflow = self._read(WORKFLOW_DIR / "skill-tests.yml")
+        self.assertIn("change_only", workflow)
+        self.assertIn("Verify active Coding Change", workflow)
+        self.assertIn("Verify changed Coding Change", workflow)
+        self.assertIn("change_only|governance|content)", workflow)
+        self.assertIn("cache: 'pip'", workflow)
+        self.assertNotIn("actions/cache", workflow)
 
 
 if __name__ == "__main__":

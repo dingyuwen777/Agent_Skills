@@ -2,6 +2,11 @@ name: Skill Tests
 
 on:
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   push:
     branches:
       - main
@@ -21,6 +26,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       runtime_scope: ${{ steps.runtime-scope.outputs.runtime_scope }}
+      package_evidence_required: ${{ steps.runtime-scope.outputs.package_evidence_required }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -32,6 +38,10 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14.7"
+          cache: 'pip'
+          cache-dependency-path: |
+            runtime/requirements.txt
+            runtime/requirements-build.txt
 
       - name: Verify PR Requirement Source
         if: github.event_name == 'pull_request'
@@ -58,16 +68,29 @@ jobs:
             runtime_scope="$(git diff --name-only --no-renames "${BASE_SHA}" "${HEAD_SHA}" | python .github/scripts/runtime_package_scope.py)"
           fi
 
+          package_evidence_required=true
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && "${{ github.event.pull_request.draft }}" == "true" ]]; then
+            package_evidence_required=false
+          fi
+
           echo "runtime_scope=${runtime_scope}" >> "${GITHUB_OUTPUT}"
+          echo "package_evidence_required=${package_evidence_required}" >> "${GITHUB_OUTPUT}"
           case "${runtime_scope}" in
+            change_only)
+              echo "Change carrier only; Ready/Active governance evidence is required while Runtime semantic/package evidence is not applicable."
+              ;;
             governance)
-              echo "Governance-only changes detected; binary package evidence is not applicable."
+              echo "Governance-only changes detected; semantic Skill Tests remain required and binary package evidence is not applicable."
               ;;
             content)
               echo "Runtime content changed; semantic Skill Tests are required and binary package evidence is not applicable."
               ;;
             package)
-              echo "Runtime executable/package/platform risk detected; Linux/Windows/macOS package evidence is required."
+              if [[ "${package_evidence_required}" == "true" ]]; then
+                echo "Runtime executable/package/platform risk detected; Linux/Windows/macOS package evidence is required."
+              else
+                echo "Runtime package risk detected on a Draft PR; semantic tests run now, while package evidence is deferred until Ready for review."
+              fi
               ;;
             *)
               echo "Unknown Runtime package scope: ${runtime_scope}" >&2
@@ -79,9 +102,11 @@ jobs:
         run: python --version
 
       - name: Install Runtime dependencies
+        if: steps.runtime-scope.outputs.runtime_scope != 'change_only'
         run: python -m pip install -r runtime/requirements.txt
 
       - name: Compile maintained scripts and Runtime
+        if: steps.runtime-scope.outputs.runtime_scope != 'change_only'
         run: >-
           python -m py_compile
           .agents/skills/coding/scripts/coding.py
@@ -102,6 +127,7 @@ jobs:
           runtime/agent_skills_runtime/server.py
 
       - name: Smoke maintained CLI entrypoints
+        if: steps.runtime-scope.outputs.runtime_scope != 'change_only'
         run: |
           python .agents/skills/coding/scripts/coding.py bootstrap --help
           python .github/scripts/check_pr_requirement_source.py --help
@@ -110,6 +136,7 @@ jobs:
           python scripts/runtime_mcp_smoke.py --help
 
       - name: Run self-contained tests
+        if: steps.runtime-scope.outputs.runtime_scope != 'change_only'
         shell: bash
         run: |
           set +e
@@ -146,11 +173,11 @@ jobs:
           --changed-since ${{ github.event.pull_request.base.sha }}
 
       - name: Install Runtime build dependencies
-        if: steps.runtime-scope.outputs.runtime_scope == 'package'
+        if: steps.runtime-scope.outputs.runtime_scope == 'package' && steps.runtime-scope.outputs.package_evidence_required == 'true'
         run: python -m pip install -r runtime/requirements-build.txt
 
       - name: Build and self-test Linux onefile Runtime
-        if: steps.runtime-scope.outputs.runtime_scope == 'package'
+        if: steps.runtime-scope.outputs.runtime_scope == 'package' && steps.runtime-scope.outputs.package_evidence_required == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -178,14 +205,14 @@ jobs:
           test -z "$(find .runtime-dist -maxdepth 1 -name '*.manifest.json' -print -quit)"
 
       - name: Verify Linux real stdio MCP contract
-        if: steps.runtime-scope.outputs.runtime_scope == 'package'
+        if: steps.runtime-scope.outputs.runtime_scope == 'package' && steps.runtime-scope.outputs.package_evidence_required == 'true'
         run: >-
           python scripts/runtime_mcp_smoke.py
           --artifact .runtime-dist/agent-skills
           --json
 
       - name: Verify Linux project-only single-binary installation
-        if: steps.runtime-scope.outputs.runtime_scope == 'package'
+        if: steps.runtime-scope.outputs.runtime_scope == 'package' && steps.runtime-scope.outputs.package_evidence_required == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -253,7 +280,7 @@ jobs:
   runtime-windows-package:
     name: Runtime Windows Package
     needs: agent-skills-core
-    if: needs.agent-skills-core.outputs.runtime_scope == 'package'
+    if: needs.agent-skills-core.outputs.runtime_scope == 'package' && needs.agent-skills-core.outputs.package_evidence_required == 'true'
     runs-on: windows-2025
     steps:
       - name: Checkout
@@ -265,6 +292,8 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14.7"
+          cache: 'pip'
+          cache-dependency-path: runtime/requirements-build.txt
 
       - name: Python version
         run: python --version
@@ -376,7 +405,7 @@ jobs:
   runtime-macos-package:
     name: Runtime macOS Package
     needs: agent-skills-core
-    if: needs.agent-skills-core.outputs.runtime_scope == 'package'
+    if: needs.agent-skills-core.outputs.runtime_scope == 'package' && needs.agent-skills-core.outputs.package_evidence_required == 'true'
     runs-on: macos-15
     steps:
       - name: Checkout
@@ -388,6 +417,8 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14.7"
+          cache: 'pip'
+          cache-dependency-path: runtime/requirements-build.txt
 
       - name: Python version
         run: python --version
@@ -507,17 +538,22 @@ jobs:
         env:
           CORE_RESULT: ${{ needs.agent-skills-core.result }}
           RUNTIME_SCOPE: ${{ needs.agent-skills-core.outputs.runtime_scope }}
+          PACKAGE_EVIDENCE_REQUIRED: ${{ needs.agent-skills-core.outputs.package_evidence_required }}
           WINDOWS_RESULT: ${{ needs.runtime-windows-package.result }}
           MACOS_RESULT: ${{ needs.runtime-macos-package.result }}
         run: |
           set -euo pipefail
           test "${CORE_RESULT}" = "success"
           case "${RUNTIME_SCOPE}" in
-            governance|content)
+            change_only|governance|content)
               test "${WINDOWS_RESULT}" = "skipped"
               test "${MACOS_RESULT}" = "skipped"
               ;;
             package)
+              if [[ "${PACKAGE_EVIDENCE_REQUIRED}" != "true" ]]; then
+                echo "Package evidence is deferred while the PR is Draft; mark the PR Ready for review to run Linux/Windows/macOS package evidence." >&2
+                exit 1
+              fi
               test "${WINDOWS_RESULT}" = "success"
               test "${MACOS_RESULT}" = "success"
               ;;
