@@ -100,7 +100,7 @@ Testing 自身不维护生产修复流程。发现确定生产缺陷后：
 → 需要独立判断时返回 Review
 ```
 
-只有用户明确授权完整修复链时才允许跨 Skill 继续；权限不会因为 Testing 发现 Bug 自动扩大。
+只有用户明确授权完整修复链时才允许跨 Skill 继续；权限不会因为 Testing 发现 Bug 自动扩大。已经在同一任务中明确授予、且目标/范围/副作用等级没有变化的授权按 Router 的 Authorization Continuity 沿 Handoff 继续有效，不要求重复索要同一批准；进入更高副作用等级仍必须已有对应授权。
 
 ## 3. Test Target 必须明确
 
@@ -116,11 +116,15 @@ Requirement Source / 预期可观察行为
 允许执行哪些真实依赖/外部 Probe
 ```
 
+这些是事实恢复项，不是逐项向用户提问。能从当前 Requirement、实现、测试、配置、环境和已确认授权恢复的事实先自行取得；未达到 Router 决策门槛的局部歧义按其 Non-material Ambiguity Default 继续。
+
 不能只看测试文件名称推断测试对象，也不能从 Mock 反向发明生产 Contract。
 
 ## 4. 先从用户/调用者行为出发
 
-对用户可见 L2/L3 Feature 或 Bug，只要存在真实公开入口且没有明确不适用依据，应优先建立至少一个从真实入口出发的 Workflow/Black-box 证据。
+对用户可见 L2/L3 Feature 或 Bug，当**本次变化真实改变用户工作流、当前交付结论需要证明公开入口，或存在独立 Workflow 风险**时，只要存在真实公开入口且没有明确不适用依据，应优先建立至少一个从真实入口出发的 Workflow/Black-box 证据。
+
+如果用户工作流没有改变，并且已有绑定当前 revision / Contract、**仍有效的公开入口 Evidence** 足以支持当前结论，则**不机械重复**完整 User Journey；先复用该 Evidence，并只在失败、证据失效、Validation Matrix / Review 暴露新的独立 Workflow 风险或正式 gate 要求时增加下一层测试。Fresh Evidence 的复用与失效条件由 Coding 的通用验证策略统一定义。
 
 Testing 先问：
 
@@ -132,6 +136,8 @@ Testing 先问：
 最终能观察到什么？
 失败、空状态、重试、返回、刷新、重复操作时应怎样？
 ```
+
+这里的“先问”表示先从 Requirement、项目和当前 Evidence 建立问题模型，不是默认把这些问题逐项抛给用户；只有 Router 的用户/Owner 决策门槛真实命中时才提请决定。
 
 不要先从内部 class/function 调用顺序生成所谓“用户测试”。
 
@@ -153,7 +159,7 @@ External Dependency Probe
 Build / Package / Runtime
 ```
 
-不是每个任务都必须具备所有层；任一层只允许声明它实际运行过的边界。
+不是每个任务都必须具备所有层；任一层只允许声明它实际运行过的边界。测试层、场景或工具已经足够证明当前 Test Target 后，不因为宿主还有更强能力就继续追求更远 Completion Scope。
 
 ## 6. 缺陷、回归与回程
 
@@ -168,6 +174,8 @@ Testing 的高价值结果不是“跑了很多 case”，而是：
 - Evidence 不夸大。
 
 ## 7. 完成输出
+
+`test-only` 的 Requested Outcome / Completion Scope 是当前 Test Target 的证据、缺陷、风险和未验证边界；没有生产修复/交付授权时，到这里结束，不因为已经发现下一步可能工作就自动进入 Coding、Git 或交付。
 
 至少说明：
 

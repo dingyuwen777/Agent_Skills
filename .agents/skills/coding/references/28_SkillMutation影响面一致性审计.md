@@ -1,10 +1,12 @@
 <!-- agent-routing:v1
-{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.29","触发":{"包含":{"维度":"意图","取值":["Skill Mutation","新增 Skill","修改 Skill","删除 Skill","重命名 Skill","新增 Reference","修改 Reference","删除 Reference","重命名 Reference"]}},"依赖":["coding.reference.16"],"最低风险":"L2"}
+{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.29","触发":{"包含":{"维度":"意图","取值":["Skill Mutation Apply","新增 Skill","修改 Skill","删除 Skill","重命名 Skill","新增 Reference","修改 Reference","删除 Reference","重命名 Reference"]}},"依赖":["coding.reference.16","coding.reference.04","coding.reference.07","coding.reference.11"],"最低风险":"L2"}
 -->
 
 # Skill Mutation 影响面一致性审计
 
 本 Reference 只拥有 **Skill/Reference Contract 发生变化时，对关联机器资产和分发边界做反向影响审计** 的专项规则。内容迁移、canonical Ownership、跨仓 Mutation、语义守恒等通用规则仍由 `coding.reference.16` 负责；这里不复制第二套 Skill Mutation 方法。
+
+本 Reference **只属于 canonical Mutation Apply**。只读 `Skill Mutation Audit` / Proposal 不因为“正在讨论怎么改规则”就预加载本影响面审计；只有当前任务已经明确进入 canonical 写入，或使用新增/修改/删除/重命名 Skill/Reference 等具体写入意图时才命中。
 
 ## 1. 为什么必须做跨资产反查
 
@@ -21,7 +23,7 @@ CI 继续 Green
 
 ## 2. 固定 Impact Audit
 
-每次 Skill Mutation 都必须逐层判断：
+每次 canonical Mutation Apply 都必须逐层判断：
 
 ```text
 Rule / Contract changed?
@@ -52,7 +54,7 @@ Rule / Contract changed?
 如果任一 `affected` 层仍未同步，或者无法证明 `not_applicable`：
 
 ```text
-Skill Mutation
+Skill Mutation Apply
 → NOT_READY / blocked
 ```
 
