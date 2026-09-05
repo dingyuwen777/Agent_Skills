@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260905-064500-maintenance-archive-owner-drift
 title: 修复自动归档维护规则漂移
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: fix/20260905-maintenance-archive-owner
 created: 2026-09-05
