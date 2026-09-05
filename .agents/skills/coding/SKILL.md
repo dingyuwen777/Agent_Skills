@@ -66,7 +66,7 @@ description: 面向不同项目形态、研发阶段和编程语言的可靠软�
 → 本次 Change / Review / Git 门禁
 ```
 
-至少内部核验执行模式、项目形态/阶段、真实工具链版本与入口、L1-L3 风险、影响边界、required/not_applicable 验证维度和 Git/PR/Release 授权。能从请求、仓库、锁文件、代码、CI、工具和正式事实源取得的答案必须自行恢复；只有命中**提请用户 / Owner 决策**时才提问，且已固化决定**不重复确认**。
+至少内部核验执行模式、项目形态/阶段、真实工具链版本与入口、L1-L3 风险、影响边界、required/not_applicable 验证维度。**用户授权了哪些 Git / PR / Release 动作？** 能从请求、仓库、锁文件、代码、CI、工具和正式事实源取得的答案必须自行恢复；只有命中**提请用户 / Owner 决策**时才提问，且已固化决定**不重复确认**。
 
 不要先根据文件扩展名、经验或“最佳实践”假设技术栈。例如：
 
@@ -176,7 +176,7 @@ CMakeLists.txt ≠ Linux-only
 
 实现/Git 任务还要检查当前 branch/worktree/HEAD、未提交或未跟踪修改以及 nested repo/worktree/submodule；不是 Git repo 就记录事实。绝不覆盖、回滚、格式化或混入无关用户修改。
 
-Greenfield 也先核验仓库根、Git 状态、运行/交付环境和已确认约束。目标项目**首次接入** Agent_Skills、治理状态待校准或长期**治理事实**疑似漂移时，按 [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) + [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md) 在**任何实质性生产代码修改之前**完成 `Project Governance Bootstrap`；写授权下校准 Overlay 并重读最终 `AGENTS.md`，只读授权下只做会话内调查。普通后续任务没有长期治理变化时不重复全量校准。
+Greenfield 也先核验仓库根、Git 状态、运行/交付环境和已确认约束。目标项目**首次接入** Agent_Skills、治理状态待校准或长期**治理事实**疑似漂移时，按 [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) + [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md) 在**任何实质性生产代码修改之前**完成 `Project Governance Bootstrap`；写授权下校准 Overlay 并重读最终 `AGENTS.md` 后**继续原始研发任务**，只读授权下只做会话内调查并**继续原始只读任务**。普通后续任务没有长期治理变化时不重复全量校准。
 
 ### 4.3 恢复项目和工具链事实
 
@@ -327,7 +327,7 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 6. Git、依赖、安全、交付与宿主能力边界
 
-只要任务涉及 Git / PR / Release / Delivery、依赖变化、安全边界、最终交付报告，或当前宿主能力不足需要降级，必须读取 [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md)。原主文件中 Git、依赖、安全、最终报告和能力边界的详细规则已完整迁入该 reference；不能因为本节变短而把它们视为可选建议。
+`Git/PR/Release/Delivery`、依赖变化、安全边界、最终交付报告或宿主能力降级命中时，必须读取 [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md)。原主文件中 Git、依赖、安全、最终报告和能力边界的详细规则已完整迁入该 reference；不能因为本节变短而把它们视为可选建议。
 
 ## 7. 规则内容守恒与 Skill 维护
 
