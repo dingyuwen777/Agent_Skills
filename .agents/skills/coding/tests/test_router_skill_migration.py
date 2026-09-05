@@ -50,6 +50,12 @@ RUNTIME_V3_UNKNOWN_REQUIRED = {
     "coding.reference.17",
 }
 RUNTIME_V3_UNKNOWN_SKILLS = {"coding", "router"}
+FIGMA_REVIEW_ONLY_REQUIRED = {
+    "figma.reference.00",
+    "figma.reference.01",
+    "figma.reference.06",
+    "figma.reference.07",
+}
 
 
 def _routing_block(skill: str, intent: str) -> str:
@@ -98,7 +104,7 @@ class RouterSkillMigrationTest(unittest.TestCase):
             self.assertEqual(actual["命中Skill"], ["coding", "router"])
 
     def test_legacy_routes_preserve_safety_except_explicit_progressive_disclosure_changes(self) -> None:
-        """历史基线继续防欠披露；只允许已批准的 L1/L2 渐进披露与 Runtime v3 unknown 收窄。"""
+        """历史基线继续防欠披露；只允许已批准的渐进披露、Owner 去重与 Runtime v3 unknown 收窄。"""
         baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
         bundle = build_bundle(ROOT)
         manifest = bundle["路由清单"]
@@ -112,6 +118,14 @@ class RouterSkillMigrationTest(unittest.TestCase):
                 if case["name"] == "Unknown facts":
                     self.assertEqual(actual_skills, RUNTIME_V3_UNKNOWN_SKILLS)
                     self.assertEqual(actual_references, RUNTIME_V3_UNKNOWN_REQUIRED)
+                    self.assertEqual(actual["最低风险"], "L2")
+                    current_bytes = int(budget["entry_bytes"]) + sum(int(budget["skill_core_bytes"][skill]) for skill in actual_skills) + sum(reference_sizes[reference] for reference in actual_references)
+                    self.assertLess(current_bytes, int(case["context_bytes"]))
+                    continue
+                if case["name"] == "Figma review-only":
+                    self.assertEqual(actual_skills, {"router", "figma"})
+                    self.assertTrue(FIGMA_REVIEW_ONLY_REQUIRED.issubset(actual_references))
+                    self.assertFalse({ref for ref in actual_references if ref.startswith("coding.reference.") or ref.startswith("review.reference.")})
                     self.assertEqual(actual["最低风险"], "L2")
                     current_bytes = int(budget["entry_bytes"]) + sum(int(budget["skill_core_bytes"][skill]) for skill in actual_skills) + sum(reference_sizes[reference] for reference in actual_references)
                     self.assertLess(current_bytes, int(case["context_bytes"]))
@@ -169,12 +183,15 @@ class RouterSkillMigrationTest(unittest.TestCase):
             self.assertIn(preserved, coding)
 
     def test_runtime_handoff_uses_current_reference_owners(self) -> None:
-        """Router 的 Runtime Handoff 必须指向当前 ref12/ref13，不得保留已漂移的 ref14 编号。"""
+        """Router 的 Runtime Handoff 必须使用当前文件链接和 Stable ID，不使用裸 ref 编号。"""
         router = ROUTER_SKILL_PATH.read_text(encoding="utf-8")
-        self.assertIn("Bootstrap/managed block 进入 Coding ref12", router)
-        self.assertIn("Runtime/分发边界在此基础上进入 Coding ref13", router)
-        self.assertIn("Coding ref12/ref13 + Runtime 实现", router)
-        self.assertNotIn("Coding ref13/ref14", router)
+        self.assertIn("12_目标项目安装与AGENTS_Bootstrap.md", router)
+        self.assertIn("coding.reference.13", router)
+        self.assertIn("13_本地MCP_Runtime分发与原文上下文加载.md", router)
+        self.assertIn("coding.reference.14", router)
+        self.assertNotIn("Coding ref12", router)
+        self.assertNotIn("Coding ref13", router)
+        self.assertNotIn("Coding ref14", router)
 
 
 if __name__ == "__main__":
