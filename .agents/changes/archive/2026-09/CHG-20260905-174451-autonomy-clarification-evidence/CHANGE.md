@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260905-174451-autonomy-clarification-evidence
 title: 进一步收敛自主执行、澄清与验证边界
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: agent/autonomy-clarification-evidence-218
 created: 2026-09-05
