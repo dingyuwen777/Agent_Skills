@@ -94,7 +94,7 @@ Reference 的 refinement 不能独立制造 Owner；跨 Skill 只由 Core Owner 
 → 读取当前完整原文
 ```
 
-不得用历史聊天、摘要、旧缓存替代 canonical Source；目标项目安装副本（含 managed block）不作为当前通用治理语义来源，项目自有规则仍必须读取。Source Mode 不调用本地 Runtime MCP。
+不得用历史聊天、摘要、旧缓存替代 canonical Source；**目标项目中的安装副本**（含 managed block）不作为当前通用治理语义来源，项目自有规则仍必须读取。Source Mode 不调用本地 Runtime MCP。
 
 ### 4.3 Runtime Mode：Task Route → required Context
 

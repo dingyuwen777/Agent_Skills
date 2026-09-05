@@ -114,11 +114,13 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
             "Dependency / Runtime Upgrade",
             "Git / PR / Release",
             "Runtime / Project Payload",
-            "Skill Mutation",
+            "Skill Mutation Audit / Proposal",
+            "Skill Mutation Apply",
             "Greenfield",
             "复杂多 Skill 叠加",
         ):
             self.assertIn(f"| {example} |", router, f"Router 缺少低歧义示例：{example}")
+        self.assertNotIn("| Skill Mutation |", router)
 
     def test_router_cross_skill_handoffs_have_explicit_closure_fields(self) -> None:
         """Runtime/Figma/Review/Docs 路由必须显式说明完整交接闭环。"""

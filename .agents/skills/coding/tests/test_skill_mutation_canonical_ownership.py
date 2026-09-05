@@ -84,7 +84,9 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         )
         for marker in required:
             self.assertIn(marker, router, f"Runtime Router 丢失普通研发路由：{marker}")
-        self.assertIn("| Skill Mutation |", router)
+        self.assertIn("| Skill Mutation Audit / Proposal |", router)
+        self.assertIn("| Skill Mutation Apply |", router)
+        self.assertNotIn("| Skill Mutation |", router)
         for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + ("15_规则内容守恒与Skill维护.md",):
             self.assertNotIn(forbidden, router, f"Runtime Router 暴露源仓库 Mutation 治理：{forbidden}")
 
