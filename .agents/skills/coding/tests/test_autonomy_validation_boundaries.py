@@ -67,6 +67,28 @@ class AutonomyValidationBoundariesTest(unittest.TestCase):
         self.assertEqual(figma, {"router", "figma"})
         self.assertEqual(docs, {"router", "docs"})
 
+    def test_figma_only_plan_and_fix_modes_do_not_create_coding_owner(self) -> None:
+        """Figma-only 方案/修改动作不能仅因通用执行模式机械增加 Coding Owner。"""
+        baseline = self._evaluate(
+            {
+                "执行模式": ["方案"],
+                "意图": ["Figma baseline-ready"],
+                "能力": ["Figma"],
+                "风险": ["L2"],
+            }
+        )
+        review_and_fix = self._evaluate(
+            {
+                "执行模式": ["实现"],
+                "意图": ["Figma review-and-fix"],
+                "能力": ["Figma"],
+                "授权": ["允许修改项目"],
+                "风险": ["L2"],
+            }
+        )
+        self.assertEqual(baseline, {"router", "figma"})
+        self.assertEqual(review_and_fix, {"router", "figma"})
+
     def test_generic_validation_and_capability_do_not_create_unrelated_owner(self) -> None:
         """验证模式与 Figma capability 只描述当前事实，不自行制造 Coding/Figma Owner。"""
         testing = self._evaluate(
