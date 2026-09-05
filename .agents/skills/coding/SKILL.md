@@ -101,11 +101,11 @@ CMakeLists.txt ≠ Linux-only
 16. **日志前缀统一且可定位。** 除非更高优先级的外部日志 wire-format Contract 强制其他序列化形式，所有人类可读日志记录统一使用 `[YYYY-MM-DD HH:mm:ss.SSS source.ext L<line>] [LEVEL] message`；时间必须是北京时间，毫秒固定三位，`source.ext` 与 `L<line>` 来自真实调用点，`LEVEL` 使用大写。结构化日志若因平台 Contract 必须采用 JSON 等形式，仍必须提供等价的北京时间、source、line、level 字段。
 17. **系统级分析先于局部实现，但不扩大修改范围。** 恢复任务相关能力边界后再决定局部修复、复用或抽象；相邻技术债不自动入 Scope。详见 [21_系统级分析与代码整洁收口.md](references/21_系统级分析与代码整洁收口.md)。
 18. **受影响代码域必须整洁收口，但只清本次直接责任。** 清理本次直接新增、修改或因此失效的实现；旧技术债默认只记录 Finding。详见 [21_系统级分析与代码整洁收口.md](references/21_系统级分析与代码整洁收口.md)。
-19. **Skill Mutation 先做 Mutation 目标解析。** 只改 canonical Owner；本地安装副本不得成为替代 Skill；Audit/Proposal 与 Apply 分开，局部 blocker 只阻塞依赖动作。详见 [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md)。
+19. **Skill Mutation 先做 Mutation 目标解析。** 只改 canonical Owner；本地安装副本不得成为替代 Skill；Audit/Proposal 与 Apply 分开；局部 blocker 只阻塞依赖动作，required canonical Source/门禁不可得时按依赖边界**失败关闭**。详见 [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md)。
 
 ### 1.1 自主执行、澄清和阻塞边界
 
-**事实恢复 / 核验**默认自行完成；只有有界调查后仍无法确定且答案会实质改变业务/public Contract/数据/安全/不可逆动作/重大技术路线时，才**提请用户 / Owner 决策**；已固化决定**不重复确认**。除非条款明确要求审批，否则“确认/明确/确定/恢复/核对”均表示自行核验。
+**事实恢复 / 核验默认由 Agent 自行完成**；只有有界调查后仍无法确定且答案会实质改变业务/public Contract/数据/安全/不可逆动作/重大技术路线时，才**提请用户 / Owner 决策**；已固化决定**不重复确认**。除非条款明确要求审批，否则“确认/明确/确定/恢复/核对”均表示自行核验。
 
 **阻塞按依赖边界传播**：只停止依赖 blocker 的动作和完成声明；其他已授权工作继续。最终 `complete / mergeable / releasable / deployable` 仍必须满足各自全部 required gate。
 
@@ -335,126 +335,126 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 8. 不可延迟 Core 核对清单
 
-本节保留进入 References 前仍需直接可见的执行核对项；只列边界，不复制专项方法。
+本节仅保留进入 References 前必须直接可见的检查名；详细方法由前文和 References 承担。
 
 ### 8.1 事实与需求
 
-- 读取适用项目规则。
-- 确认真实仓库根。
-- 确认当前 HEAD。
-- 确认当前 branch。
-- 检查用户未提交修改。
-- 定位当前 Requirement Source。
-- 区分目标与非目标。
-- 写清可观察成功标准。
-- 写清必须保持不变项。
-- 标记暂时未知项。
-- 区分事实与推断。
-- 不从历史聊天猜当前实现。
-- 不从文件名猜框架。
-- 不从语言猜项目形态。
-- 不从项目形态猜数据库。
+- 项目规则。
+- 仓库根。
+- 当前 HEAD。
+- 当前 branch。
+- 用户未提交修改。
+- Requirement Source。
+- 目标 / 非目标。
+- 成功标准。
+- 不变项。
+- 未知项。
+- 事实 / 推断。
+- 不猜历史实现。
+- 不猜框架。
+- 不猜项目形态。
+- 不猜数据库。
 - Greenfield 不伪造现状。
-- 缓存只作导航。
-- 当前代码/Contract 优先。
-- 当前工具输出优先。
-- 需要时核验一手资料。
+- 缓存仅导航。
+- 代码 / Contract 优先。
+- 工具结果优先。
+- 必要一手资料。
 
 ### 8.2 范围与风险
 
-- 确认 affected paths。
-- 确认模块 Owner。
-- 检查 public API/ABI。
-- 检查 CLI public flags。
-- 检查配置字段。
-- 检查 serialization/file format。
-- 检查 Schema/Migration。
-- 检查认证授权。
-- 检查 Secret/隐私。
-- 检查依赖与 Runtime。
-- 检查 Build/CI。
-- 检查 deploy/release。
-- 检查外部 Provider。
-- 检查不可逆数据操作。
+- affected paths。
+- 模块 Owner。
+- public API/ABI。
+- CLI flags。
+- 配置字段。
+- serialization/file format。
+- Schema/Migration。
+- 认证授权。
+- Secret/隐私。
+- 依赖 / Runtime。
+- Build/CI。
+- deploy/release。
+- 外部 Provider。
+- 不可逆数据。
 - 行数少不等于 L1。
-- 发现隐藏复杂度就升级。
-- 不为省流程静默降级。
-- 不把相邻技术债纳入 Scope。
-- 不把能力存在当流程触发。
-- 不把局部 blocker 扩大为全局 blocker。
+- 隐藏复杂度升级。
+- 不静默降级。
+- 不吸收相邻技术债。
+- 能力不等于触发。
+- blocker 只沿依赖传播。
 
 ### 8.3 实现
 
-- 优先复用现有正确实现。
-- 不制造第二套事实源。
-- 不制造第二套 Contract。
-- 不制造第二套 Schema。
+- 复用正确实现。
+- 单一事实源。
+- 单一 Contract。
+- 单一 Schema。
 - 不为抽象而抽象。
 - 不顺手升级依赖。
-- 不顺手更换框架。
-- 不顺手切包管理器。
-- 不顺手格式化无关文件。
+- 不顺手换框架。
+- 不顺手换包管理器。
+- 不格式化无关文件。
 - 不覆盖用户修改。
-- 每处 diff 可追溯。
-- public/exported 函数写中文说明。
-- internal/private/helper 也写函数级中文说明。
-- 复杂逻辑解释 why/invariant/risk。
-- 日志复用现有体系。
-- 日志不输出 Secret/PII。
-- 关键副作用保持可观测。
-- Breaking change 先设计 Migration。
-- Breaking change 先设计 rollback。
-- 修复以根因为目标。
+- diff 可追溯。
+- public/exported 中文说明。
+- internal/private/helper 中文说明。
+- why/invariant/risk。
+- 复用日志体系。
+- 不记录 Secret/PII。
+- 关键副作用可观测。
+- Breaking change：Migration。
+- Breaking change：rollback。
+- 修根因。
 
 ### 8.4 验证
 
-- 新鲜证据优先。
-- 先复用现有测试。
-- 低影响修改 targeted-first。
-- Red 必须因正确目标失败。
-- Green 后运行目标回归。
-- Refactor 后再次验证。
-- Unit 不冒充 Contract。
-- Mock 不冒充真实 persistence。
-- Browser Mock 不冒充 Backend。
-- Golden Path 不冒充全状态空间。
-- Provider Probe 不冒充稳定回归。
-- 源码测试不冒充 package 可用。
-- 每层只声明实际运行边界。
-- `required` 要有 Scope。
-- `not_applicable` 要有依据。
-- 失败先判断根因类别。
-- 测试错误先证明测试错误。
-- 不删失败测试制造 Green。
-- 不降低断言制造 Green。
-- 不提高预算制造 Green。
-- 只有新风险才扩大 Evidence。
-- 正式 CI gate 不被 targeted-first 替代。
+- 新鲜证据。
+- 复用现有测试。
+- targeted-first。
+- Red 因目标失败。
+- Green 后回归。
+- Refactor 后复验。
+- Unit ≠ Contract。
+- Mock ≠ persistence。
+- Browser Mock ≠ Backend。
+- Golden Path ≠ 全状态。
+- Provider Probe ≠ 稳定回归。
+- 源码测试 ≠ package。
+- 只声明实跑边界。
+- required：Scope。
+- not_applicable：依据。
+- 失败先分类。
+- 测试错先证明。
+- 不删测试造 Green。
+- 不降断言造 Green。
+- 不抬预算造 Green。
+- 新风险才扩 Evidence。
+- targeted-first 不替代 CI gate。
 
 ### 8.5 文档、Review 与交付
 
-- 先判断 Docs Impact。
-- 文档只写当前系统事实。
-- 未实现功能不写成已支持。
-- Contract 变化同步消费者事实。
-- 配置变化同步正式示例。
-- Schema 变化同步 Migration 事实。
-- Build/启动变化同步运维事实。
-- 文档未闭环不宣称 Ready。
-- 显式 Code Review 才进入代码审查语义。
-- Figma/Docs 审查不机械叠加 Code Review。
-- Review Findings 先分严重度。
-- 修复 Finding 后重新验证。
-- 独立 Review required 时不能作者自证替代。
-- PR Ready 前重读 Requirement Source。
-- Completion Gate required 时完成 Audit。
-- CI Green 不替代需求完整性。
-- Git 动作必须有授权。
+- Docs Impact。
+- 文档写当前事实。
+- 未实现不写已支持。
+- Contract 同步消费者。
+- 配置同步示例。
+- Schema 同步 Migration。
+- Build/启动同步运维。
+- Docs 未闭环不 Ready。
+- Code Review 需真实意图。
+- Figma/Docs 审查不叠加 Review。
+- Findings 分严重度。
+- 修复后复验。
+- required Review 不作者自证。
+- PR Ready 重读 Requirement Source。
+- Completion Gate 执行 Audit。
+- CI Green ≠ 需求完整。
+- Git 需授权。
 - 不绕过 Branch Protection。
-- merge 前确认当前 head。
-- release 前确认 artifact 证据。
-- main 合并后使用新鲜验证。
-- 最终报告列出未验证内容与风险。
+- merge 前核 head。
+- release 核 artifact。
+- main 后新鲜验证。
+- 报告未验证风险。
 
 ## 10. Review Skill 集成
 
