@@ -244,6 +244,45 @@ class AutonomyValidationBoundariesTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)
 
+    def test_validation_stops_after_sufficient_evidence_and_ignores_non_semantic_carrier_churn(self) -> None:
+        """相称证据已通过后停止重复；不相关载体变化不使开发侧证据失效。"""
+        router = self._read(ROUTER)
+        validation = self._read(VALIDATION)
+        self.assertIn("Validation Stop Rule", validation)
+        self.assertIn("继续完成任务", validation)
+        self.assertIn("新改动", validation)
+        self.assertIn("新失败", validation)
+        self.assertIn("未解决疑点", validation)
+        self.assertIn("不影响已验证边界的载体变化", router)
+        self.assertIn("required gate", router)
+
+    def test_low_impact_restatement_does_not_create_permanent_tests(self) -> None:
+        """可逆、低影响、行为/Contract 不变的澄清或复述不新增永久测试。"""
+        validation = self._read(VALIDATION)
+        mutation = self._read(MUTATION)
+        for text in (validation, mutation):
+            self.assertIn("行为 / Contract 不变", text)
+            self.assertIn("不新增永久测试", text)
+            self.assertIn("复述既有实现", text)
+        self.assertIn("behavior-preserving refactor", validation)
+        self.assertIn("优先复用已有直接回归", validation)
+
+    def test_mutation_apply_does_not_upgrade_delivery_scope(self) -> None:
+        """Mutation Apply 不能自行升级成 PR/merge/main-fresh/Closure。"""
+        text = self._read(MUTATION)
+        self.assertIn("Requested Outcome", text)
+        self.assertIn("Mutation Apply 本身不自动授予", text)
+        self.assertIn("develop-and-submit", text)
+        self.assertIn("develop-and-deliver", text)
+
+    def test_task_owned_temporary_artifacts_are_cleaned_without_automatic_retest(self) -> None:
+        """收尾只清本次临时产物；纯临时清理不机械使 Green Evidence 失效。"""
+        text = self._read(CLEANUP)
+        self.assertIn("本次 Agent 创建", text)
+        self.assertIn("临时 / scratch / debug", text)
+        self.assertIn("不得删除预存在或用户所有", text)
+        self.assertIn("不使既有 Green Evidence 失效", text)
+
     def test_mutation_separates_read_only_audit_from_apply_and_scales_evidence(self) -> None:
         """只读 Mutation 审计不预付写门禁；真正 Apply 再按影响面进入完整交付。"""
         text = self._read(MUTATION)
