@@ -126,7 +126,7 @@ Requirement Source / 预期可观察行为
 
 如果用户工作流没有改变，并且已有绑定当前 revision / Contract、**仍有效的公开入口 Evidence** 足以支持当前结论，则**不机械重复**完整 User Journey；先复用该 Evidence，并只在失败、证据失效、Validation Matrix / Review 暴露新的独立 Workflow 风险或正式 gate 要求时增加下一层测试。Fresh Evidence 的复用与失效条件由 Router 的 Fresh Evidence Contract 统一定义；具体测试层、场景与测试工程方法仍由 Testing 按当前风险选择。
 
-Testing 先问：
+Testing 先建立以下问题模型：
 
 ```text
 谁在使用？
@@ -137,7 +137,7 @@ Testing 先问：
 失败、空状态、重试、返回、刷新、重复操作时应怎样？
 ```
 
-这里的“先问”表示先从 Requirement、项目和当前 Evidence 建立问题模型，不是默认把这些问题逐项抛给用户；只有 Router 的用户/Owner 决策门槛真实命中时才提请决定。
+上述问题模型先从 Requirement、项目和当前 Evidence 恢复，不默认逐项抛给用户；只有 Router 的用户/Owner 决策门槛真实命中时才提请决定。
 
 不要先从内部 class/function 调用顺序生成所谓“用户测试”。
 
@@ -159,7 +159,7 @@ External Dependency Probe
 Build / Package / Runtime
 ```
 
-不是每个任务都必须具备所有层；任一层只允许声明它实际运行过的边界。测试层、场景或工具已经足够证明当前 Test Target 后，不因为宿主还有更强能力就继续追求更远 Completion Scope。
+不是每个任务都必须具备所有层；任一层只允许声明它实际运行过的边界。测试层、场景或工具已经足够证明当前 Test Target 后，不因为宿主还有更强能力就继续追求更远 Completion Scope；没有新改动、新失败、新独立风险或未解决疑点时，遵守通用 Validation Stop Rule，不重复同一 Journey/Regression。
 
 ## 6. 缺陷、回归与回程
 
