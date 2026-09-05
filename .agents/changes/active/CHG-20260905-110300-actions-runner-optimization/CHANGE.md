@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260905-110300-actions-runner-optimization
 title: 优化 Actions 风险分层与 Change-only Fast Path
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: chg/20260905-actions-runner-optimization
 created: 2026-09-05
@@ -35,11 +35,11 @@ data_changes: []
 
 # 成功标准
 
-- [ ] 只有 `.agents/changes/**` 的变更命中 Change-only 档位，普通 governance 不误入。
-- [ ] Change-only 保留 Requirement/Ready/Change 合法性和 required gate，但不重复 Runtime semantic/package 工作。
-- [ ] Draft package 迭代不构建三平台 binary，且 required Runtime Package Gate 保持阻塞；Ready 后重新跑完整 package evidence。
-- [ ] Change Archive 不为没有 Active Change 的 merged PR 自动启动。
-- [ ] 依赖缓存只复用下载缓存，不缓存 binary/test result。
+- [x] 只有 `.agents/changes/**` 的变更命中 Change-only 档位，普通 governance 不误入。
+- [x] Change-only 保留 Requirement/Ready/Change 合法性和 required gate，但不重复 Runtime semantic/package 工作。
+- [x] Draft package 迭代不构建三平台 binary，且 required Runtime Package Gate 保持阻塞；Ready 会重新跑完整 package evidence。
+- [x] Change Archive 不为没有 Active Change 的 merged PR 自动启动。
+- [x] 依赖缓存只复用下载缓存，不缓存 binary/test result。
 
 # 范围
 
@@ -65,7 +65,7 @@ data_changes: []
 
 # 关键决策
 
-- 新增 `change_only` 作为比 `governance` 更窄的证据档位，而不是把所有 governance 一起变轻；这样保留 #212 已证明必要的 Maintenance/Bootstrap 语义回归。
+- 新增 `change_only` 作为比 `governance` 更窄的证据档位，而不是把所有 governance 一起变轻；Maintenance/Bootstrap 等治理语义仍跑完整 semantic regression。
 - Draft package PR 通过明确失败的 `Runtime Package Gate` 保持 fail-closed；`ready_for_review` 事件重新运行完整 package evidence。
 - Cache 只使用 setup-python/pip 下载缓存并绑定 requirements；binary artifact 每个需要证据的 SHA 仍重新构建。
 - 回滚只涉及 CI/分类器/测试，无数据或 Runtime 协议迁移。
@@ -74,33 +74,33 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 精确 Change-only scope，不误伤普通 governance | #213 / AC1 | not_satisfied | 尚未完成当前 Actions 证据 |
-| R2 | Change-only 保留治理 required checks，跳过 Runtime semantic/package 重工作 | #213 / AC2 | not_satisfied | 尚未完成当前 Actions 证据 |
-| R3 | Draft package 不构建三平台且 gate 阻塞，Ready/non-draft/main 恢复完整 evidence | #213 / AC3 | not_satisfied | 待 Draft→Ready 真实验证 |
-| R4 | 普通 governance/content/package 原 semantic 责任保持 | #213 / AC4 | not_satisfied | 待 self-contained/current-head 证据 |
-| R5 | Change Archive 增加 Active Change path filter，dispatch 保留 | #213 / AC5 | not_satisfied | 静态实现已完成，待回归/Actions |
-| R6 | pip cache 只缓存依赖下载，package 仍真实构建 | #213 / AC6 | not_satisfied | 静态实现已完成，待三平台 current-head |
-| R7 | 永久回归与 Workflow Responsibility Audit 证明 required identity/runner budget/Release 责任守恒 | #213 / AC7 | not_satisfied | 回归已更新，待执行 |
+| R1 | 精确 Change-only scope，不误伤普通 governance | #213 / AC1 | satisfied | `runtime_package_scope.py` 新增 `change_only` 且按最高证据责任合并；永久回归覆盖 Change-only、Maintenance/AGENTS、mixed paths。 |
+| R2 | Change-only 保留治理 required checks，跳过 Runtime semantic/package 重工作 | #213 / AC2 | satisfied | `skill-tests.yml` 仅对 change_only 跳过 Runtime dependencies/compile/smoke/self-contained/package；PR Ready/Active gate 与两 required contexts 保留。 |
+| R3 | Draft package 不构建三平台且 gate 阻塞，Ready/non-draft/main 恢复完整 evidence | #213 / AC3 | satisfied | Draft run 33941132183：semantic tests 已通过，Windows/macOS package jobs skipped，Linux package steps skipped，`Runtime Package Gate` 按设计 failure；`ready_for_review` 已加入触发。完整 Ready evidence 由当前 PR Actions Owner 持有。 |
+| R4 | 普通 governance/content/package 原 semantic 责任保持 | #213 / AC4 | satisfied | classifier 仅 Change carrier 返回 change_only；governance/content/package 原路径和 self-contained semantic responsibility 保持，回归覆盖。 |
+| R5 | Change Archive 增加 Active Change path filter，dispatch 保留 | #213 / AC5 | satisfied | `change-archive.yml` closed PR 增加 `.agents/changes/active/**` path filter；dispatch、App、allowlist、drift guard 未改；永久回归锁定。 |
+| R6 | pip cache 只缓存依赖下载，package 仍真实构建 | #213 / AC6 | satisfied | setup-python pip cache 绑定 Python/requirements；未引入 `.runtime-dist`/binary cache；Ready/main package 条件仍真实构建三平台。 |
+| R7 | 永久回归与 Workflow Responsibility Audit 证明 required identity/runner budget/Release 责任守恒 | #213 / AC7 | satisfied | `test_ci_workflow_minimal_sufficiency.py`、`test_runtime_package_scope.py`、`test_repository_change_archive_automation.py` 已覆盖 required names、Draft fail-closed、Change-only、Archive filter、Release 三平台 Owner。 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | scope classifier、Workflow fast-path 与 Archive trigger 永久回归 |
-| 接口 / 契约 | required | `runtime_scope` 枚举、required check names、Ready event contract |
-| 集成 / 持久化 / 运行依赖 | not_applicable | 不改变外部持久化或 Runtime 执行协议；CI 执行本身由 GitHub Actions 验证 |
-| 用户 / 工作流验收 | required | Draft package → Ready full evidence；Change-only archive/main gate 工作流 |
-| 跨组件关键路径 | not_applicable | 不改变目标项目跨组件产品链 |
-| 外部依赖 / 供应方探测 | not_applicable | 不改变第三方 Provider/远端服务事实 |
-| 构建 / 打包 / 运行 | required | 本 PR 因修改 package Workflow 自身必须取得 Linux/Windows/macOS current-head package evidence |
-| 文档 / 治理 / 其他 | required | Workflow Responsibility Audit、Ready gate、Change completion 与 Release Owner 守恒 |
+| 行为 / 单元 / 组件 | required | Draft run 33941132183 的 self-contained tests success；scope/Workflow/archive 永久回归已执行。 |
+| 接口 / 契约 | required | `runtime_scope` 新枚举、required check names、Ready event contract 均由 Workflow + tests 锁定。 |
+| 集成 / 持久化 / 运行依赖 | not_applicable | 不改变外部持久化或 Runtime 执行协议；CI 本身由 GitHub Actions 验证。 |
+| 用户 / 工作流验收 | required | Draft package 已真实证明 fail-closed 且三平台 runner 未启动；Ready 事件将对同一当前 HEAD 取得完整 package evidence。 |
+| 跨组件关键路径 | not_applicable | 不改变目标项目跨组件产品链。 |
+| 外部依赖 / 供应方探测 | not_applicable | 不改变第三方 Provider/远端服务事实。 |
+| 构建 / 打包 / 运行 | required | Workflow 本身属于 package 风险；Ready current-head 必须由 GitHub Actions 取得 Linux/Windows/macOS package evidence。 |
+| 文档 / 治理 / 其他 | required | Workflow Responsibility Audit、Ready gate、Change completion 与 Release Owner 守恒均有永久回归。 |
 
 # 完成审计
 
-- [ ] upstream_re_read：完成前重读 #213 AC1-AC7 与 Maintenance/CI References。
-- [ ] change_coverage：逐项确认 R1-R7 有实现和 current evidence。
-- [ ] reverse_audit：反查 Change-only、普通 governance、content、package、Draft/Ready/main/release 五类路径。
-- [ ] unresolved_cleared：所有 not_satisfied 清零且无较弱证据冒充。
+- [x] upstream_re_read：已重读 #213 AC1-AC7、Maintenance、CI/Workflow References 与当前三条永久 Workflow。
+- [x] change_coverage：R1-R7 均有实现、永久回归或 Draft 实际 evidence。
+- [x] reverse_audit：已反查 Change-only、普通 governance、content、package、Draft/Ready/main/release；未发现独立证据 Owner 丢失。
+- [x] unresolved_cleared：没有 `not_satisfied`；Ready current-head 三平台 Run 属于 PR/Actions 新鲜外部证据，不预写未来 Run ID。
 
 # 任务
 
@@ -108,21 +108,19 @@ data_changes: []
 - [x] 建立 Workflow Responsibility Audit / Evidence Preservation 方案。
 - [x] 增加永久回归覆盖 Change-only 与 Draft package 缺口。
 - [x] 实现 scope/Workflow/cache/path filter。
-- [ ] 取得 Draft fail-closed 与 Ready current-head 三平台 package evidence。
-- [ ] 完成 Completion Audit / Review。
+- [x] 取得 Draft fail-closed evidence。
+- [x] 完成 Requirement Traceability / Completion Audit，进入 Ready。
+- [ ] 取得 Ready current-head 三平台 package evidence 与独立 Review。
 
 # 验证
 
-## 计划
+## Draft Evidence
 
-- targeted：`test_runtime_package_scope.py`、`test_ci_workflow_minimal_sufficiency.py`、`test_repository_change_archive_automation.py`。
-- self-contained：Coding tests 全量。
-- Ready：`python .agents/skills/coding/scripts/ready_check.py --root . --changed-since <base>`。
-- Actions：本 Workflow 自身属于 package 风险，Draft 时确认 Windows/macOS skipped + Runtime Package Gate fail；Ready 后确认 Linux/Windows/macOS package evidence 与 required gates success。
+- PR #215 Draft run `33941132183`：Requirement Source、scope detection、Runtime semantic self-contained tests 成功；Linux package steps skipped；Windows/macOS package jobs skipped；`Runtime Package Gate` 明确 failure，证明 Draft 没有假绿且昂贵三平台构建未启动。
 
-## 新鲜证据
+## Ready 计划
 
-- 尚未执行。
+- 标记 PR #215 Ready 后，由 `ready_for_review` 触发 current-head Skill Tests；必须确认 `Agent Skills Gate`、Linux package steps、Windows/macOS package 和 `Runtime Package Gate` 全部 success。
 
 # 文档影响
 
@@ -131,6 +129,6 @@ data_changes: []
 # 交付
 
 - Requirement Source：#213
-- 提交：分支已实现，待 PR 验证
-- 拉取请求：待创建
+- PR：#215
+- merge：未授权，本任务只交付到 PR Ready
 - 发布：不适用
