@@ -333,6 +333,129 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 当任务会精简、重组、拆分、合并、改名、迁移或通用化 [`SKILL.md`](SKILL.md)、reference、模板或项目 Overlay 时，必须在修改之前读取 [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md)。内容守恒仍是硬门禁：只有逐项证明完全等价时才允许消除重复，无法证明时保留原细节。
 
+## 8. 不可延迟 Core 核对清单
+
+本节保留进入 References 前仍需直接可见的执行核对项；只列边界，不复制专项方法。
+
+### 8.1 事实与需求
+
+- 读取适用项目规则。
+- 确认真实仓库根。
+- 确认当前 HEAD。
+- 确认当前 branch。
+- 检查用户未提交修改。
+- 定位当前 Requirement Source。
+- 区分目标与非目标。
+- 写清可观察成功标准。
+- 写清必须保持不变项。
+- 标记暂时未知项。
+- 区分事实与推断。
+- 不从历史聊天猜当前实现。
+- 不从文件名猜框架。
+- 不从语言猜项目形态。
+- 不从项目形态猜数据库。
+- Greenfield 不伪造现状。
+- 缓存只作导航。
+- 当前代码/Contract 优先。
+- 当前工具输出优先。
+- 需要时核验一手资料。
+
+### 8.2 范围与风险
+
+- 确认 affected paths。
+- 确认模块 Owner。
+- 检查 public API/ABI。
+- 检查 CLI public flags。
+- 检查配置字段。
+- 检查 serialization/file format。
+- 检查 Schema/Migration。
+- 检查认证授权。
+- 检查 Secret/隐私。
+- 检查依赖与 Runtime。
+- 检查 Build/CI。
+- 检查 deploy/release。
+- 检查外部 Provider。
+- 检查不可逆数据操作。
+- 行数少不等于 L1。
+- 发现隐藏复杂度就升级。
+- 不为省流程静默降级。
+- 不把相邻技术债纳入 Scope。
+- 不把能力存在当流程触发。
+- 不把局部 blocker 扩大为全局 blocker。
+
+### 8.3 实现
+
+- 优先复用现有正确实现。
+- 不制造第二套事实源。
+- 不制造第二套 Contract。
+- 不制造第二套 Schema。
+- 不为抽象而抽象。
+- 不顺手升级依赖。
+- 不顺手更换框架。
+- 不顺手切包管理器。
+- 不顺手格式化无关文件。
+- 不覆盖用户修改。
+- 每处 diff 可追溯。
+- public/exported 函数写中文说明。
+- internal/private/helper 也写函数级中文说明。
+- 复杂逻辑解释 why/invariant/risk。
+- 日志复用现有体系。
+- 日志不输出 Secret/PII。
+- 关键副作用保持可观测。
+- Breaking change 先设计 Migration。
+- Breaking change 先设计 rollback。
+- 修复以根因为目标。
+
+### 8.4 验证
+
+- 新鲜证据优先。
+- 先复用现有测试。
+- 低影响修改 targeted-first。
+- Red 必须因正确目标失败。
+- Green 后运行目标回归。
+- Refactor 后再次验证。
+- Unit 不冒充 Contract。
+- Mock 不冒充真实 persistence。
+- Browser Mock 不冒充 Backend。
+- Golden Path 不冒充全状态空间。
+- Provider Probe 不冒充稳定回归。
+- 源码测试不冒充 package 可用。
+- 每层只声明实际运行边界。
+- `required` 要有 Scope。
+- `not_applicable` 要有依据。
+- 失败先判断根因类别。
+- 测试错误先证明测试错误。
+- 不删失败测试制造 Green。
+- 不降低断言制造 Green。
+- 不提高预算制造 Green。
+- 只有新风险才扩大 Evidence。
+- 正式 CI gate 不被 targeted-first 替代。
+
+### 8.5 文档、Review 与交付
+
+- 先判断 Docs Impact。
+- 文档只写当前系统事实。
+- 未实现功能不写成已支持。
+- Contract 变化同步消费者事实。
+- 配置变化同步正式示例。
+- Schema 变化同步 Migration 事实。
+- Build/启动变化同步运维事实。
+- 文档未闭环不宣称 Ready。
+- 显式 Code Review 才进入代码审查语义。
+- Figma/Docs 审查不机械叠加 Code Review。
+- Review Findings 先分严重度。
+- 修复 Finding 后重新验证。
+- 独立 Review required 时不能作者自证替代。
+- PR Ready 前重读 Requirement Source。
+- Completion Gate required 时完成 Audit。
+- CI Green 不替代需求完整性。
+- Git 动作必须有授权。
+- 不绕过 Branch Protection。
+- merge 前确认当前 head。
+- release 前确认 artifact 证据。
+- main 合并后使用新鲜验证。
+- 最终报告列出未验证内容与风险。
+
 ## 10. Review Skill 集成
 
 #### Review Skill 按实际门禁协作（仓库存在时）
