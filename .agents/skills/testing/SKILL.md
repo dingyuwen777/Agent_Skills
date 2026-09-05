@@ -124,7 +124,7 @@ Requirement Source / 预期可观察行为
 
 对用户可见 L2/L3 Feature 或 Bug，当**本次变化真实改变用户工作流、当前交付结论需要证明公开入口，或存在独立 Workflow 风险**时，只要存在真实公开入口且没有明确不适用依据，应优先建立至少一个从真实入口出发的 Workflow/Black-box 证据。
 
-如果用户工作流没有改变，并且已有绑定当前 revision / Contract、**仍有效的公开入口 Evidence** 足以支持当前结论，则**不机械重复**完整 User Journey；先复用该 Evidence，并只在失败、证据失效、Validation Matrix / Review 暴露新的独立 Workflow 风险或正式 gate 要求时增加下一层测试。Fresh Evidence 的复用与失效条件由 Coding 的通用验证策略统一定义。
+如果用户工作流没有改变，并且已有绑定当前 revision / Contract、**仍有效的公开入口 Evidence** 足以支持当前结论，则**不机械重复**完整 User Journey；先复用该 Evidence，并只在失败、证据失效、Validation Matrix / Review 暴露新的独立 Workflow 风险或正式 gate 要求时增加下一层测试。Fresh Evidence 的复用与失效条件由 Router 的 Fresh Evidence Contract 统一定义；具体测试层、场景与测试工程方法仍由 Testing 按当前风险选择。
 
 Testing 先问：
 
