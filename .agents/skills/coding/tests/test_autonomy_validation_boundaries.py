@@ -106,9 +106,9 @@ class AutonomyValidationBoundariesTest(unittest.TestCase):
                 {"router", "testing"},
             ),
             (
-                "testing-implementation",
+                "testing-validation",
                 {
-                    "执行模式": ["实现"],
+                    "执行模式": ["验证"],
                     "阶段": ["功能开发"],
                     "意图": ["黑盒测试"],
                     "能力": ["测试"],
@@ -142,7 +142,7 @@ class AutonomyValidationBoundariesTest(unittest.TestCase):
                 self.assertEqual(self._evaluate(signals), expected)
 
     def test_explicit_coding_handoffs_survive_specialized_owner_isolation(self) -> None:
-        """隔离专业任务不能误伤真正 Design-to-Code、Docs handoff 或 Code Review。"""
+        """隔离专业任务不能误伤 Testing/Figma/Docs/Review 的真实 Coding Handoff。"""
         design_to_code = self._evaluate(
             {
                 "执行模式": ["实现"],
@@ -168,9 +168,29 @@ class AutonomyValidationBoundariesTest(unittest.TestCase):
                 "风险": ["L2"],
             }
         )
+        coding_testing_implementation = self._evaluate(
+            {
+                "执行模式": ["实现"],
+                "阶段": ["功能开发"],
+                "意图": ["用户场景验收"],
+                "能力": ["测试"],
+                "风险": ["L2"],
+            }
+        )
+        coding_testing_diagnosis = self._evaluate(
+            {
+                "执行模式": ["诊断"],
+                "阶段": ["缺陷修复"],
+                "意图": ["探索式测试"],
+                "能力": ["测试"],
+                "风险": ["L2"],
+            }
+        )
         self.assertEqual(design_to_code, {"router", "coding", "figma"})
         self.assertEqual(docs_targeted, {"router", "coding", "docs"})
         self.assertEqual(code_review, {"router", "coding", "review"})
+        self.assertEqual(coding_testing_implementation, {"router", "coding", "testing"})
+        self.assertEqual(coding_testing_diagnosis, {"router", "coding", "testing"})
 
     def test_generic_validation_and_capability_do_not_create_unrelated_owner(self) -> None:
         """验证模式与 Figma capability 只描述当前事实，不自行制造 Coding/Figma Owner。"""
