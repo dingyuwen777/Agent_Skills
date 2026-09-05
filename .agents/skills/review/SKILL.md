@@ -4,7 +4,7 @@ description: 面向不同项目形态、编程语言和工具链的独立代码�
 ---
 
 <!-- agent-routing:v1
-{"协议":"Agent Skills Skill路由/v1","Skill":"review","触发":{"包含":{"维度":"意图","取值":["代码审查","Review-only","Review-and-test","Review-and-fix","独立复核"]}}}
+{"协议":"Agent Skills Skill路由/v1","Skill":"review","触发":{"包含":{"维度":"意图","取值":["代码审查","测试充分性审查","Review-only","Review-and-test","Review-and-fix","独立复核"]}}}
 -->
 
 # Review
