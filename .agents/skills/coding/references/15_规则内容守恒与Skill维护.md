@@ -6,18 +6,66 @@
 
 本规则处理 Skill/reference/模板/项目 Overlay 的重组、精简、拆分、合并、改名、迁移和通用化；内容守恒优先于篇幅精简。Mutation 前必须读取本文件，并保证原有可执行规则完整、可达、可验证。
 
+## 0. Mutation Audit / Proposal 与 Mutation Apply
+
+Skill Mutation 必须先区分**只读分析/建议**和**真正 canonical 写入**，不能因为用户在讨论“怎么改 Skill”就预付完整写入流程。
+
+### Mutation Audit / Proposal
+
+用户只要求检查、审计、给方案、比较做法，或明确“先不要改”时，进入 `Mutation Audit / Proposal`：
+
+```text
+读取当前 canonical Source
+→ 恢复 Ownership / trigger / dependency / validation / Runtime 影响
+→ 找出问题、冲突和建议
+→ 给出影响面与验证方案
+→ STOP，不执行 canonical 写入
+```
+
+规则：
+
+- 不因为潜在修改意图创建 Change、分支、PR、commit 或运行写入型交付门禁；
+- 可以读取完整 canonical Skill/Reference、当前测试和 CI 事实，必要时做只读语义/路由影响分析；
+- 如果用户随后明确要求实际修改，再切换 `Mutation Apply`，并在任何写入前重新读取当前目标分支根 `AGENTS.md`、Maintenance、ENTRY、Router、Coding 与本 Reference；
+- 只读 Audit 的结论不是“已同步/已交付”，也不能把历史缓存或 Runtime 安装副本冒充 canonical Source。
+
+### Mutation Apply
+
+用户明确要求新增、修改、删除、重命名、同步或实际写入 canonical Skill/Reference 时，进入 `Mutation Apply`。Agent_Skills 源仓库本身的 Apply 继续遵守当前 Maintenance 的 L2/L3、Change、Completion、独立 Review、PR、CI、main-fresh、Change Archive 和 Closure 门禁；本节**不降低正式仓库 CI 门禁**，也不扩大任何 Git/merge/release/deploy 权限。
+
+### Mutation 开发侧 Evidence Profile
+
+在 Apply 中，开发侧验证先按真实影响面选择最小充分 profile；失败或发现新边界后再单调升级：
+
+```text
+Semantic Local
+→ 只澄清自然语言、消除歧义或收敛重复
+→ trigger / dependency / Stable ID / executable contract 不变
+→ 优先复用最相关现有规则/内容守恒检查 + targeted 语义 Review
+
+Contract / Routing
+→ trigger / Owner / dependency / Stable ID / 模板 / parser / validator / route contract 变化
+→ metadata compiler + routing conformance + 受影响 preservation / Source-Runtime parity
+
+Runtime / Package
+→ Runtime / Bundle / Installer / MCP / executable / platform / package boundary 变化
+→ 在 Contract / Routing 证据上继续增加 Runtime/package/platform 对应证据
+```
+
+这些 profile 是**开发侧 Evidence 选择**，不是新的仓库 CI 模式。Agent_Skills 当前正式 `governance/content/package` classifier、required Skill Tests、PR/main/Release 门禁继续由 Maintenance/Workflow 事实决定；不能为了“targeted-first”删除或绕过既有 required check。
+
 ## 1. 规则完整性维护
 
 后续如果要再次“精简”“拆分”“合并”本 Skill：
 
 1. 先检查当前 `SKILL.md`、命中 references、agent metadata、Change/CI/README 对规则和路径的实时引用；
 2. 在 Change/Review 记录将移动、删除、条件化或改名的高价值规则，不另建“规则保留映射”；
-3. 建立会因规则丢失而失败的 portability / preservation 回归；
+3. **优先复用现有** portability / preservation 回归；只有现有测试无法直接保护本次被改变的高价值规则、触发或路径可达性时，才新增最小回归。不要因为“做了 Mutation”就机械增加一整套新测试；
 4. 摘要 / 精简 / 压缩不是删除约束的授权。保留 `触发条件 / 适用范围 / 前置条件`、强度/例外、`失败 / 停止处理`、`Owner / Contract / 数据与 Migration 边界`、`验证责任 / Evidence / 完成判据`、安全/兼容/回滚和`跨 Skill / Reference 的触发与回程路径`；不能用一条抽象原则替代多条带条件、例外或失败处理的可执行规则；
 5. `context budget 超限时`只消除等价重复、复用 canonical Owner 或调整渐进披露/路由；不得删除约束、抬高预算阈值或放宽测试来制造 Green；
 6. 替换 canonical 前做 old → new `逐项语义对照`；只有逐项证明完全等价时才允许删除重复，无法证明语义等价时，保留原文细节；
 7. 项目特定规则迁回项目 Overlay 前，先证明已有新的正式承载；
-8. 完成后从旧入口反向检查每条高价值规则是否仍可达，并执行 portability / preservation 回归与人工内容守恒 Review。
+8. 完成后从旧入口反向检查每条高价值规则是否仍可达，并执行与本次 Evidence Profile 匹配的 portability / preservation 回归与人工内容守恒 Review。
 
 ## 2. 允许移动，不允许语义降级
 
@@ -57,19 +105,20 @@
 → Source Mode 直接读取完整原文，或 Runtime Mode 按路由令牌加载完整原文 + SHA256
 ```
 
-必需原文或 MCP 路由链失败时不得把“以前读过这条规则”作为继续执行的依据。
+必需原文或 MCP 路由链失败时不得把“以前读过这条规则”作为继续执行的依据。该缺口按依赖边界阻塞：不能宣称相关治理已执行，但不依赖缺失 Context 的只读事实恢复或建议仍可继续。
 
 ## 4. 测试和人工语义对照都需要
 
-关键词回归只能证明某些文本仍存在，不能单独证明完整语义守恒。因此规则重组至少结合：
+关键词回归只能证明某些文本仍存在，不能单独证明完整语义守恒。验证按第 0 节 Evidence Profile 组合，不机械扩大：
 
-- preservation / portability 自动化测试，覆盖关键不可变规则与路径可达性；
-- live 引用反向检查，防止文件改名后留下旧链接；
-- 当前 Change 的 A1/A2 Requirement Review；
-- 人工逐段比较被移动规则的触发条件、例外、失败处理、验证责任和安全/兼容边界；
-- Runtime 模式存在时的 canonical Reference exact-text/hash 回归。
+- `Semantic Local`：复用最相关 preservation / portability / 文本契约检查，并人工对照**本次改变的段落及直接引用**；不为了“更完整”全量重写测试；
+- `Contract / Routing`：增加 metadata compiler、trigger/dependency/Stable ID、Routing Conformance、必要正反例与 Source/Runtime 同源验证；
+- `Runtime / Package`：只有可执行/分发边界真实改变时才进入 Runtime exact-text/hash、bundle/install/package/platform 证据；
+- live 引用反向检查只覆盖当前改变的 Owner、链接、Stable ID 和直接消费者；发现新的真实引用后再扩大；
+- 当前 Change 的 A1/A2 Requirement Review 与人工内容守恒 Review 仍是 Apply 完成门禁；
+- Agent_Skills 源仓库正式 CI 仍按 Maintenance 当前 classifier 执行，开发侧 targeted-first 不代替 required CI。
 
-测试失败时修复规则迁移本身，不通过删除测试、放宽关键词或把要求改成更抽象的句子来制造 Green。
+测试失败时修复规则迁移本身，不通过删除测试、放宽关键词或把要求改成更抽象的句子来制造 Green。失败也不自动意味着“多跑一切”；先判断失败是否暴露新的独立 Contract/Runtime 风险，再增加下一层 Evidence。
 
 ## 5. 结束条件
 
@@ -81,12 +130,12 @@
 + 原例外/失败/停止处理仍存在
 + 验证责任没有降低
 + 安全/兼容边界没有降低
-+ live 引用无残留
-+ preservation / portability 回归通过
++ 当前受影响 live 引用无残留
++ 与 Evidence Profile 匹配的 preservation / portability / routing / runtime 证据通过
 + 人工内容守恒 Review 无 blocker
 ```
 
-文件变短、重复减少或 CI 绿色本身都不能代替上述结论。
+文件变短、重复减少、开发侧 targeted test 绿色或 CI 绿色本身都不能代替上述结论；反过来，也不能仅因“还可以更全面”而在这些条件已由当前风险匹配 Evidence 满足后继续无边界扩大开发侧验证。
 
 ## 6. 跨 Skill 规则 Ownership 也必须守恒
 
@@ -107,7 +156,7 @@ Router
 
 Coding
 → 负责仓库事实、Change、代码实现、验证、Review、CI、Git 与交付
-→ READY 后的真实前端 / Design-to-Code 实施继续由 Coding reference 17 承担
+→ READY 后的真实前端 / Design-to-Code 实施继续由 [16_前端与Design-to-Code实施规则.md](16_前端与Design-to-Code实施规则.md) 承担
 ```
 
 硬规则：
@@ -130,7 +179,7 @@ Figma 审查 / 修改 / Ready 用户意图
 
 Figma READY / READY_WITH_NOTES
 → Coding Handoff
-→ Coding reference 17 / 目标项目现有实现边界
+→ [16_前端与Design-to-Code实施规则.md](16_前端与Design-to-Code实施规则.md) / 目标项目现有实现边界
 → 测试 / Review / CI / Git / 交付
 ```
 
@@ -160,7 +209,7 @@ Figma READY / READY_WITH_NOTES
 - Runtime / Project Payload 本地安装副本、Reference Stub、Release / 缓存或历史构建产物；
 - MCP 返回结果的旧缓存、历史聊天、摘要、Custom Instructions / Project instructions。
 
-这些内容只能提供背景或证据；不得创建或修改替代 Skill。canonical 源不可读/写或门禁不可执行时必须**失败关闭**并报告未同步/未交付。
+这些内容只能提供背景或证据；不得创建或修改替代 Skill。canonical 源不可读/写或 required 门禁不可执行时，按依赖边界失败关闭并报告未同步/未交付；不能改本地副本冒充 canonical，也不能把一个局部工具缺口无条件解释成所有只读分析都停止。
 
 ### 7.1.1 Skill Mutation 与外部项目 Change Ownership
 
@@ -168,7 +217,7 @@ Mutation Target 只回答通用 Skill 的 canonical 写入仓库；Change 的 Re
 
 ### 7.2 Mutation 固定入口与条件路由
 
-进入 Agent_Skills Mutation 后，在任何 canonical 写入前至少执行：
+进入 `Mutation Apply` 后，在任何 canonical 写入前至少执行：
 
 ```text
 重新读取 Agent_Skills 当前目标分支根 AGENTS.md
@@ -180,9 +229,9 @@ Mutation Target 只回答通用 Skill 的 canonical 写入仓库；Change 的 Re
 → 本次真正受影响 Skill 的 SKILL.md / references
 ```
 
-如果 Mutation 会影响 managed block / Bootstrap，则再读 ref13；影响 Runtime、Project Payload、Bundle、路由 metadata/Stable ID、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性或 v3 安装 ownership 时，再读 ref14。随后按 Agent_Skills Maintenance/Coding 当前的 Change、TDD、独立 Review、CI、PR、main 新鲜 CI 和 Change 清理门禁执行，不建立一套 Mutation 专用平行交付流程。
+如果 Mutation 会影响 managed block / Bootstrap，则再读 [12_目标项目安装与AGENTS_Bootstrap.md](12_目标项目安装与AGENTS_Bootstrap.md)（Stable ID `coding.reference.13`）；影响 Runtime、Project Payload、Bundle、路由 metadata/Stable ID、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性或安装 ownership 时，再读 [13_本地MCP_Runtime分发与原文上下文加载.md](13_本地MCP_Runtime分发与原文上下文加载.md)（Stable ID `coding.reference.14`）。随后按 Agent_Skills Maintenance/Coding 当前的 Change、TDD、独立 Review、CI、PR、main 新鲜 CI 和 Change 清理门禁执行，不建立一套 Mutation 专用平行交付流程。
 
-普通 Runtime Router 不承担本节的源仓库维护触发。Custom Instructions、Project instructions 等宿主提示只可以把维护者的相应意图引导回 Agent_Skills 当前根 `AGENTS.md`，不能替代这里的 canonical 内容、权限和交付门禁。当前宿主只有只读 GitHub 能力、没有 Agent_Skills 源仓库权限、没有所需写权限或不能执行仓库要求的 PR/CI 门禁时，明确报告未同步/未交付，不得改本地安装副本冒充 canonical 写入，也不得口头声称“已同步”。
+普通 Runtime Router 不承担本节的源仓库维护触发。Custom Instructions、Project instructions 等宿主提示只可以把维护者的相应意图引导回 Agent_Skills 当前根 `AGENTS.md`，不能替代这里的 canonical 内容、权限和交付门禁。当前宿主只有只读 GitHub 能力、没有 Agent_Skills 源仓库写权限或不能执行 required PR/CI 门禁时，`Mutation Apply` 对应写入/交付保持未同步/未交付；不依赖写权限的 Audit/Proposal 仍可完成。
 
 ### 7.3 universal 与项目特定事实必须先分离
 
@@ -259,7 +308,7 @@ Router 当前 Catalog / Handoff
 - 删除前证明该 Skill 的仍有效规则已经迁入新的正式 Owner，或明确其能力确实整体退役；不能把“目录删了”当内容守恒证据；
 - 清除所有指向不存在 Skill 的 **live 引用** 和 Handoff；既有历史只由项目当前正式 Git/PR 或已批准历史载体承担，不为追求全文搜索零结果改写历史提交；
 - Runtime/Project Payload 必须通过动态发现自然停止分发该 Skill，不为删除操作新增反向静态黑名单；
-- 目标项目中同名但未被 Agent_Skills install manifest 认领的项目自有 Skill 仍受项目 Ownership 保护，不能因为 canonical Skill 删除而清理；
+- 目标项目中同名但未被 Agent_Skills install ownership 认领的项目自有 Skill 仍受项目 Ownership 保护，不能因为 canonical Skill 删除而清理；
 - 永久测试证明新 Catalog/Bundle/Payload 不再包含已删除 Skill，并保持其他 Skills 不受影响。
 
 ### 7.6 重命名 Skill
@@ -267,8 +316,8 @@ Router 当前 Catalog / Handoff
 **重命名 Skill** 按“旧 Skill 删除 + 新 Skill 建立 + Contract 迁移”处理，不是单纯 `git mv`：
 
 - 更新 `.agents/skills/<name>/SKILL.md` 路径、frontmatter `name`、Router 当前 Catalog 与所有 live 引用；
-- Stable ID 是 Reference metadata 中的显式身份，Skill 重命名**不得自动改 ID**；是否迁移 namespace 是独立 Runtime Contract 决策，必须读取 ref14 并明确兼容、迁移和回滚；
-- 同步审查 Bundle/私有 Routing Manifest、公共 route contract、Project Payload no-Stub、Installer/manifest ownership 和 Release 运行时可达性；
+- Stable ID 是 Reference metadata 中的显式身份，Skill 重命名**不得自动改 ID**；是否迁移 namespace 是独立 Runtime Contract 决策，必须读取 [13_本地MCP_Runtime分发与原文上下文加载.md](13_本地MCP_Runtime分发与原文上下文加载.md)（`coding.reference.14`）并明确兼容、迁移和回滚；
+- 同步审查 Bundle/私有 Routing Manifest、公共 route contract、Project Payload no-Stub、Installer/ownership 和 Release 运行时可达性；
 - 不保留没有明确兼容需求的影子目录、复制件或第二份 canonical Skill；
 - 旧名称若必须暂时兼容，必须把时限、Owner、删除条件和验证写进 Change，不能把兼容复制件无限期保留。
 
@@ -292,7 +341,7 @@ Router 当前 Catalog / Handoff
 
 - 同步更新所有 live 链接；
 - 默认保留 metadata 中原 Stable ID；文件名/编号变化不得自动改变身份；
-- 如果确需修改 Stable ID，按 Runtime Contract 变化读取 ref14，并同步依赖、conformance、Bundle identity 与迁移边界；
+- 如果确需修改 Stable ID，按 Runtime Contract 变化读取 [13_本地MCP_Runtime分发与原文上下文加载.md](13_本地MCP_Runtime分发与原文上下文加载.md)（`coding.reference.14`），并同步依赖、conformance、Bundle identity 与迁移边界；
 - 不能只改显示文件名却遗漏 live links、私有 provenance、测试或触发链。
 
 ### 7.8 修改、拆分、合并和通用化
@@ -307,7 +356,7 @@ Router 当前 Catalog / Handoff
 
 ### 7.9 Mutation 完成验证
 
-Skill Mutation 完成前至少形成：
+Skill Mutation 完成前先按第 0 节确定 `Semantic Local / Contract / Routing / Runtime / Package` 实际影响，然后形成最小充分且可升级的证据链：
 
 ```text
 用户 Mutation 意图
@@ -315,12 +364,12 @@ Skill Mutation 完成前至少形成：
 → universal / project-specific Ownership 判断
 → 受影响 Skill / Reference / Router / Contract
 → 内容守恒或明确退役依据
-→ live 引用反向检查
-→ 动态发现 / metadata compiler / Routing Conformance
-→ Bundle/private Routing roundtrip / no-Stub Project Payload（适用时）
-→ Runtime required Context exact-text/hash（适用时）
-→ targeted tests
-→ full self-contained tests
+→ 受影响 live 引用反向检查
+→ Semantic Local：targeted preservation / 人工语义对照
+→ Contract / Routing：metadata compiler / Routing Conformance / Source-Runtime parity（适用时）
+→ Runtime / Package：Bundle / required Context exact-text/hash / installer/package/platform（适用时）
 → 独立 Review
-→ CI / PR / main 新鲜 CI / 当前 Change 清理
+→ 正式仓库 CI 门禁 / PR / main 新鲜 CI / 当前 Change 清理
 ```
+
+`Mutation Apply` 不因为开发侧 profile 较轻就跳过 Agent_Skills 源仓库当前正式 required CI；同时，未触及 executable/package/platform boundary 时也不因为“Mutation 很重要”人为触发无关三平台 package。验证范围由当前真实影响面与 Maintenance classifier 共同决定。
