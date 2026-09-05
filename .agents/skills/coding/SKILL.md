@@ -1,10 +1,10 @@
 ---
 name: coding
-description: 面向不同项目形态、研发阶段和编程语言的可靠软件研发工作流。由 Router 选中后，先恢复仓库当前事实，再按项目形态、研发阶段/任务类型、编程语言/工具链和风险等级 L1-L3 细化研发流程；依据真实 Contract、Schema、数据、模块边界和项目规则执行需求设计、功能开发、Bug 修复、重构、Review、CI、Git 与交付验证。保留可失效项目导航、Git 可见 Change、Requirement Traceability、Completion Audit、Red-Green-Refactor、根因调试、分层验证、多人协作和新鲜证据门禁。Use for repository onboarding, greenfield bootstrap, planning, implementation, debugging, refactoring, review, verified delivery, release work, and parallel human or agent coding across languages and project types after Router selection.
+description: 面向不同项目形态、研发阶段和编程语言的可靠软件研发工作流。由 Router 选中后，先恢复仓库当前事实，再按项目形态、研发阶段/任务类型、编程语言/工具链和风险等级 L1-L3 细化研发流程；依据真实 Contract、Schema、数据、模块边界和项目规则执行需求设计、功能开发、Bug 修复、重构、Review、CI、Git 与交付验证。保留可失效项目导航、Git 可见 Change、Requirement Traceability、Completion Audit、Red-Green-Refactor、根因调试、分层验证、多人协作和新鲜证据门禁。Use after Router selection for development.
 ---
 
 <!-- agent-routing:v1
-{"协议":"Agent Skills Skill路由/v1","Skill":"coding","触发":{"任一":[{"包含":{"维度":"执行模式","取值":["只读分析","诊断","方案","实现","Git","发布","运维"]}},{"全部":[{"包含":{"维度":"执行模式","取值":["验证"]}},{"非":{"包含":{"维度":"意图","取值":["测试策略","功能测试","黑盒测试","用户场景验收","探索式测试","回归测试","测试充分性验证","独立验证"]}}}]},{"包含":{"维度":"阶段","取值":["仓库初始化","事实恢复","需求设计","功能开发","缺陷修复","重构","性能优化","故障处置","交付"]}},{"包含":{"维度":"意图","取值":["代码分析","技术方案","代码实现","代码审查","Review-only","Review-and-test","Review-and-fix","独立复核","设计转代码","Git 交付","依赖升级","Runtime 升级","Skill Mutation"]}},{"包含":{"维度":"项目形态","取值":["Greenfield","CLI","前端Web","后端服务","全栈应用","移动应用","桌面应用"]}},{"包含":{"维度":"风险","取值":["L1","L2","L3"]}},{"包含":{"维度":"授权","取值":["允许只读","允许修改项目","允许测试","允许 Git","允许发布"]}}]}}
+{"协议":"Agent Skills Skill路由/v1","Skill":"coding","触发":{"任一":[{"包含":{"维度":"执行模式","取值":["只读分析","诊断","Git","发布","运维"]}},{"全部":[{"包含":{"维度":"执行模式","取值":["方案","实现"]}},{"非":{"包含":{"维度":"意图","取值":["Figma review-and-fix","Figma baseline-ready"]}}}]},{"全部":[{"包含":{"维度":"执行模式","取值":["验证"]}},{"非":{"包含":{"维度":"意图","取值":["测试策略","功能测试","黑盒测试","用户场景验收","探索式测试","回归测试","测试充分性验证","独立验证"]}}}]},{"包含":{"维度":"阶段","取值":["仓库初始化","事实恢复","需求设计","功能开发","缺陷修复","重构","性能优化","故障处置","交付"]}},{"包含":{"维度":"意图","取值":["代码分析","技术方案","代码实现","代码审查","Review-only","Review-and-test","Review-and-fix","独立复核","设计转代码","Git 交付","依赖升级","Runtime 升级","Skill Mutation"]}},{"包含":{"维度":"项目形态","取值":["Greenfield","CLI","前端Web","后端服务","全栈应用","移动应用","桌面应用"]}},{"包含":{"维度":"风险","取值":["L1","L2","L3"]}},{"包含":{"维度":"授权","取值":["允许只读","允许修改项目","允许测试","允许 Git","允许发布"]}}]}}
 -->
 
 # Coding
