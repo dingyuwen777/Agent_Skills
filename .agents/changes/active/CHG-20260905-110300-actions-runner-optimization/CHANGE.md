@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260905-110300-actions-runner-optimization
 title: 优化 Actions 风险分层与 Change-only Fast Path
 level: L3
-status: proposed
+status: in_progress
 owner: dingyuwen777
 branch: chg/20260905-actions-runner-optimization
 created: 2026-09-05
@@ -74,13 +74,13 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 精确 Change-only scope，不误伤普通 governance | #213 / AC1 | not_satisfied | 尚未实现 |
-| R2 | Change-only 保留治理 required checks，跳过 Runtime semantic/package 重工作 | #213 / AC2 | not_satisfied | 尚未实现 |
-| R3 | Draft package 不构建三平台且 gate 阻塞，Ready/non-draft/main 恢复完整 evidence | #213 / AC3 | not_satisfied | 尚未实现 |
-| R4 | 普通 governance/content/package 原 semantic 责任保持 | #213 / AC4 | not_satisfied | 尚未实现 |
-| R5 | Change Archive 增加 Active Change path filter，dispatch 保留 | #213 / AC5 | not_satisfied | 尚未实现 |
-| R6 | pip cache 只缓存依赖下载，package 仍真实构建 | #213 / AC6 | not_satisfied | 尚未实现 |
-| R7 | 永久回归与 Workflow Responsibility Audit 证明 required identity/runner budget/Release 责任守恒 | #213 / AC7 | not_satisfied | 尚未实现 |
+| R1 | 精确 Change-only scope，不误伤普通 governance | #213 / AC1 | not_satisfied | 尚未完成当前 Actions 证据 |
+| R2 | Change-only 保留治理 required checks，跳过 Runtime semantic/package 重工作 | #213 / AC2 | not_satisfied | 尚未完成当前 Actions 证据 |
+| R3 | Draft package 不构建三平台且 gate 阻塞，Ready/non-draft/main 恢复完整 evidence | #213 / AC3 | not_satisfied | 待 Draft→Ready 真实验证 |
+| R4 | 普通 governance/content/package 原 semantic 责任保持 | #213 / AC4 | not_satisfied | 待 self-contained/current-head 证据 |
+| R5 | Change Archive 增加 Active Change path filter，dispatch 保留 | #213 / AC5 | not_satisfied | 静态实现已完成，待回归/Actions |
+| R6 | pip cache 只缓存依赖下载，package 仍真实构建 | #213 / AC6 | not_satisfied | 静态实现已完成，待三平台 current-head |
+| R7 | 永久回归与 Workflow Responsibility Audit 证明 required identity/runner budget/Release 责任守恒 | #213 / AC7 | not_satisfied | 回归已更新，待执行 |
 
 # 验证矩阵
 
@@ -106,9 +106,9 @@ data_changes: []
 
 - [x] 调查当前 Skill Tests、Scope、Release、Change Archive 与实际 Run 成本。
 - [x] 建立 Workflow Responsibility Audit / Evidence Preservation 方案。
-- [ ] 增加 Red 回归覆盖 Change-only 与 Draft package 缺口。
-- [ ] 实现 scope/Workflow/cache/path filter。
-- [ ] 取得 current-head 三平台 package evidence。
+- [x] 增加永久回归覆盖 Change-only 与 Draft package 缺口。
+- [x] 实现 scope/Workflow/cache/path filter。
+- [ ] 取得 Draft fail-closed 与 Ready current-head 三平台 package evidence。
 - [ ] 完成 Completion Audit / Review。
 
 # 验证
@@ -118,7 +118,7 @@ data_changes: []
 - targeted：`test_runtime_package_scope.py`、`test_ci_workflow_minimal_sufficiency.py`、`test_repository_change_archive_automation.py`。
 - self-contained：Coding tests 全量。
 - Ready：`python .agents/skills/coding/scripts/ready_check.py --root . --changed-since <base>`。
-- Actions：本 Workflow 自身属于 package 风险，current-head 必须验证 Linux/Windows/macOS package evidence 与 required gates。
+- Actions：本 Workflow 自身属于 package 风险，Draft 时确认 Windows/macOS skipped + Runtime Package Gate fail；Ready 后确认 Linux/Windows/macOS package evidence 与 required gates success。
 
 ## 新鲜证据
 
@@ -131,6 +131,6 @@ data_changes: []
 # 交付
 
 - Requirement Source：#213
-- 提交：待实现
+- 提交：分支已实现，待 PR 验证
 - 拉取请求：待创建
 - 发布：不适用
