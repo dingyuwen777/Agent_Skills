@@ -146,7 +146,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         self.assertNotIn("“更新 Skill”“修改 Skill”“新增 Skill”", maintenance)
 
     def test_bootstrap_and_runtime_references_define_source_governance_exclusion(self) -> None:
-        """ref13/ref14 必须明确普通 Runtime 分发面不承载源仓库 Mutation 维护链。"""
+        """Bootstrap/Runtime References 必须明确普通 Runtime 分发面不承载源仓库 Mutation 维护链。"""
         ref13 = self._read(REF13_PATH)
         ref14 = self._read(REF14_PATH)
         for marker in (
@@ -156,7 +156,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "源仓库 Mutation",
             "普通 Runtime",
         ):
-            self.assertIn(marker, ref13, f"ref13 缺少 Runtime 用户面边界：{marker}")
+            self.assertIn(marker, ref13, f"Bootstrap Reference 缺少 Runtime 用户面边界：{marker}")
         for marker in (
             "Agent_Skills 源仓库 .agents/skills/*/SKILL.md",
             "canonical references/*.md",
@@ -165,10 +165,10 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "源仓库 Mutation",
             "根 `AGENTS.md`",
         ):
-            self.assertIn(marker, ref14, f"ref14 缺少 Source/Runtime Ownership 边界：{marker}")
+            self.assertIn(marker, ref14, f"Runtime Reference 缺少 Source/Runtime Ownership 边界：{marker}")
 
     def test_ref16_owns_mutation_details_from_source_root_agents_entry(self) -> None:
-        """ref16 继续完整承担 Mutation 内容守恒，并由源仓库根 AGENTS 而非 Runtime Router 触发。"""
+        """Mutation Reference 继续完整承担内容守恒，并由源仓库根 AGENTS 而非 Runtime Router 触发。"""
         ref16 = self._read(REF16_PATH)
         for marker in (
             "Skill Mutation",
@@ -187,14 +187,14 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "项目特定",
             "内容守恒",
         ):
-            self.assertIn(marker, ref16, f"ref16 缺少 Mutation 内容守恒规则：{marker}")
+            self.assertIn(marker, ref16, f"Mutation Reference 缺少内容守恒规则：{marker}")
         self.assertIn("显式、全局唯一 Stable ID", ref16)
         self.assertIn("文件编号只服务可读排序，不生成身份", ref16)
         self.assertIn("Runtime Contract", ref16)
         self.assertNotIn("通过 Router 命中的 **Skill Mutation**", ref16)
 
     def test_ref16_preserves_canonical_sources_and_conditional_runtime_routing(self) -> None:
-        """从 Runtime Router 移出的 canonical 来源与 ref13/ref14 条件路由必须完整迁入源仓库维护规则。"""
+        """canonical 来源与 Bootstrap/Runtime 条件路由必须完整迁入源仓库维护规则。"""
         ref16 = self._read(REF16_PATH)
         for marker in (
             ".agents/skills/<skill>/SKILL.md",
@@ -207,10 +207,12 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "MCP 返回结果的旧缓存",
             "历史聊天",
             "Custom Instructions",
-            "如果 Mutation 会影响 managed block / Bootstrap，则再读 ref13",
-            "影响 Runtime、Project Payload、Bundle、路由 metadata/Stable ID、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性或 v3 安装 ownership 时，再读 ref14",
+            "如果 Mutation 会影响 managed block / Bootstrap，则再读 [12_目标项目安装与AGENTS_Bootstrap.md]",
+            "Stable ID `coding.reference.13`",
+            "影响 Runtime、Project Payload、Bundle、路由 metadata/Stable ID、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性或安装 ownership 时，再读 [13_本地MCP_Runtime分发与原文上下文加载.md]",
+            "Stable ID `coding.reference.14`",
         ):
-            self.assertIn(marker, ref16, f"ref16 未守恒旧 Router 的源仓库维护规则：{marker}")
+            self.assertIn(marker, ref16, f"Mutation Reference 未守恒源仓库维护规则：{marker}")
 
     def test_skill_mutation_resolves_canonical_target_without_local_substitute(self) -> None:
         """Mutation 必须写 canonical checkout，不能在宿主或目标项目另建替代 Skill。"""
