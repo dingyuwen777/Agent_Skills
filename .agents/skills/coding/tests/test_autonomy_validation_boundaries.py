@@ -68,10 +68,11 @@ class AutonomyValidationBoundariesTest(unittest.TestCase):
         self.assertEqual(docs, {"router", "docs"})
 
     def test_figma_only_plan_and_fix_modes_do_not_create_coding_owner(self) -> None:
-        """Figma-only 方案/修改动作不能仅因通用执行模式机械增加 Coding Owner。"""
+        """Figma-only 方案/修改即使携带真实阶段，也不能由通用 fallback 增加 Coding Owner。"""
         baseline = self._evaluate(
             {
                 "执行模式": ["方案"],
+                "阶段": ["需求设计"],
                 "意图": ["Figma baseline-ready"],
                 "能力": ["Figma"],
                 "风险": ["L2"],
@@ -80,6 +81,7 @@ class AutonomyValidationBoundariesTest(unittest.TestCase):
         review_and_fix = self._evaluate(
             {
                 "执行模式": ["实现"],
+                "阶段": ["功能开发"],
                 "意图": ["Figma review-and-fix"],
                 "能力": ["Figma"],
                 "授权": ["允许修改项目"],
@@ -88,6 +90,87 @@ class AutonomyValidationBoundariesTest(unittest.TestCase):
         )
         self.assertEqual(baseline, {"router", "figma"})
         self.assertEqual(review_and_fix, {"router", "figma"})
+
+    def test_testing_and_standalone_docs_intents_block_generic_coding_fallbacks(self) -> None:
+        """Testing-only 与独立 Docs 专业任务不能被内容动作或阶段事实反向激活 Coding。"""
+        cases = (
+            (
+                "testing-plan",
+                {
+                    "执行模式": ["方案"],
+                    "阶段": ["需求设计"],
+                    "意图": ["测试策略"],
+                    "能力": ["测试"],
+                    "风险": ["L2"],
+                },
+                {"router", "testing"},
+            ),
+            (
+                "testing-implementation",
+                {
+                    "执行模式": ["实现"],
+                    "阶段": ["功能开发"],
+                    "意图": ["黑盒测试"],
+                    "能力": ["测试"],
+                    "风险": ["L2"],
+                },
+                {"router", "testing"},
+            ),
+            (
+                "docs-analysis",
+                {
+                    "执行模式": ["只读分析"],
+                    "阶段": ["事实恢复"],
+                    "意图": ["文档审查"],
+                    "风险": ["L2"],
+                },
+                {"router", "docs"},
+            ),
+            (
+                "docs-writing",
+                {
+                    "执行模式": ["实现"],
+                    "阶段": ["需求设计"],
+                    "意图": ["文档编写"],
+                    "风险": ["L2"],
+                },
+                {"router", "docs"},
+            ),
+        )
+        for name, signals, expected in cases:
+            with self.subTest(name=name):
+                self.assertEqual(self._evaluate(signals), expected)
+
+    def test_explicit_coding_handoffs_survive_specialized_owner_isolation(self) -> None:
+        """隔离专业任务不能误伤真正 Design-to-Code、Docs handoff 或 Code Review。"""
+        design_to_code = self._evaluate(
+            {
+                "执行模式": ["实现"],
+                "阶段": ["功能开发"],
+                "意图": ["设计转代码"],
+                "能力": ["Figma"],
+                "风险": ["L2"],
+            }
+        )
+        docs_targeted = self._evaluate(
+            {
+                "执行模式": ["实现"],
+                "阶段": ["功能开发"],
+                "意图": ["Docs targeted"],
+                "风险": ["L2"],
+            }
+        )
+        code_review = self._evaluate(
+            {
+                "执行模式": ["审查"],
+                "阶段": ["交付"],
+                "意图": ["代码审查"],
+                "风险": ["L2"],
+            }
+        )
+        self.assertEqual(design_to_code, {"router", "coding", "figma"})
+        self.assertEqual(docs_targeted, {"router", "coding", "docs"})
+        self.assertEqual(code_review, {"router", "coding", "review"})
 
     def test_generic_validation_and_capability_do_not_create_unrelated_owner(self) -> None:
         """验证模式与 Figma capability 只描述当前事实，不自行制造 Coding/Figma Owner。"""
