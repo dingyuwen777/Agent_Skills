@@ -39,13 +39,24 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
         self.assertIn('python-version: "3.14.7"', core_section)
         self.assertIn('git diff --name-only --no-renames "${BASE_SHA}" "${HEAD_SHA}"', core_section)
 
-    def test_governance_paths_skip_three_platform_binary(self) -> None:
+    def test_change_carrier_alone_uses_change_only_scope(self) -> None:
+        """只有 Change carrier 自身变化才能跳过 Runtime semantic/package 证据。"""
+        classify_paths = _load_classifier().classify_paths
+        for path in (
+            ".agents/changes/active/CHG-example/CHANGE.md",
+            ".agents/changes/archive/2026-09/CHG-example/CHANGE.md",
+        ):
+            with self.subTest(path=path):
+                self.assertEqual(classify_paths([path]), "change_only")
+
+    def test_governance_paths_keep_semantic_regression(self) -> None:
+        """Bootstrap/Maintenance 等治理规则不能被 Change-only fast-path 误伤。"""
         classify_paths = _load_classifier().classify_paths
         for path in (
             "README.md",
             "runtime/README.md",
+            "AGENTS.md",
             ".agents/MAINTENANCE.md",
-            ".agents/changes/active/CHG-example/CHANGE.md",
         ):
             with self.subTest(path=path):
                 self.assertEqual(classify_paths([path]), "governance")
@@ -86,6 +97,15 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
         self.assertEqual(
             classify_paths(
                 [
+                    ".agents/changes/active/CHG-example/CHANGE.md",
+                    ".agents/MAINTENANCE.md",
+                ]
+            ),
+            "governance",
+        )
+        self.assertEqual(
+            classify_paths(
+                [
                     "README.md",
                     ".agents/skills/coding/SKILL.md",
                     "runtime/agent_skills_runtime/server.py",
@@ -99,17 +119,44 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
         )
         self.assertEqual(classify_paths([]), "governance")
 
-    def test_package_jobs_only_run_for_package_scope(self) -> None:
+    def test_package_jobs_require_ready_evidence_signal(self) -> None:
+        """Package runner 除 scope 外还必须由 Ready/non-draft/main 证据信号控制。"""
         workflow = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("package_evidence_required", workflow)
+        self.assertIn("ready_for_review", workflow)
+        self.assertIn("github.event.pull_request.draft", workflow)
         self.assertGreaterEqual(
             workflow.count("steps.runtime-scope.outputs.runtime_scope == 'package'"), 4
         )
         self.assertGreaterEqual(
             workflow.count("needs.agent-skills-core.outputs.runtime_scope == 'package'"), 2
         )
-        self.assertIn('RUNTIME_SCOPE: ${{ needs.agent-skills-core.outputs.runtime_scope }}', workflow)
-        for marker in ("governance|content)", "package)"):
-            self.assertIn(marker, workflow)
+        self.assertIn(
+            'PACKAGE_EVIDENCE_REQUIRED: ${{ needs.agent-skills-core.outputs.package_evidence_required }}',
+            workflow,
+        )
+
+    def test_change_only_skips_runtime_semantic_work_but_keeps_ready_gate(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        for step in (
+            "Install Runtime dependencies",
+            "Compile maintained scripts and Runtime",
+            "Smoke maintained CLI entrypoints",
+            "Run self-contained tests",
+        ):
+            section = workflow.split(f"- name: {step}", 1)[1].split("\n      - name:", 1)[0]
+            self.assertIn("change_only", section)
+        self.assertIn("Verify active Coding Change", workflow)
+        self.assertIn("Verify changed Coding Change", workflow)
+        self.assertIn("change_only|governance|content)", workflow)
+
+    def test_setup_python_uses_dependency_cache_not_binary_cache(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("cache: 'pip'", workflow)
+        self.assertIn("runtime/requirements.txt", workflow)
+        self.assertIn("runtime/requirements-build.txt", workflow)
+        self.assertNotIn("cache-path: .runtime-dist", workflow)
+        self.assertNotIn("actions/cache", workflow)
 
     def test_skill_ci_compiles_and_smokes_classifier(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
