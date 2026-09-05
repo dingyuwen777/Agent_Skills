@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260905-112643-autonomy-validation-boundaries
 title: 收敛自主执行、审批与验证边界
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: agent/autonomy-validation-boundaries-216
 created: 2026-09-05
@@ -43,7 +43,7 @@ data_changes: []
 
 # 成功标准
 
-- [ ] 专业 Owner 只由真实专业对象/意图稳定命中，不由通用执行模式/审查/验证/capability 机械叠加无关 Skill。
+- [x] 专业 Owner 只由真实专业对象/意图稳定命中，不由通用执行模式/审查/验证/capability 机械叠加无关 Skill。
 - [x] “事实恢复/核验”与“提请用户/Owner 决策”语义明确，已确认决定不重复询问，审批要求与权限边界不降低。
 - [x] 阻塞只沿真实依赖传播；三次失败假设触发回到诊断而不是无条件停止整个任务。
 - [x] 小改动验证有明确下限、上限和单调升级条件；未知先有界调查；无关重构和邻近技术债不进入当前 Scope。
@@ -51,7 +51,7 @@ data_changes: []
 - [x] 受影响规则不再使用与 Stable ID 混淆的裸 `refNN` 表述。
 - [x] Figma 普通设计审查与正式 baseline-ready 意图分离，现有写权限/Design-to-Code 门禁保持。
 - [x] 端到端交付增加分轴状态表达，但整体完成硬门禁保持不变。
-- [x] 当前 head 的相关 routing/preservation/minimal-governance/Figma/Review/Mutation 回归与完整 Skill Tests 通过；实际 diff 保持 `content` scope，不触发三平台 package。
+- [x] 当前实现 head 的 routing/preservation/minimal-governance/Figma/Review/Mutation 回归与完整 Skill Tests 通过；实际 diff 保持 `content` scope，不触发三平台 package。
 
 # 范围
 
@@ -85,55 +85,57 @@ data_changes: []
 - 验证采用 targeted-first：低影响可逆变更先复用最相关现有测试；只有失败、新行为/Contract/依赖、新独立失败边界、正式门禁或具体剩余风险才逐层扩大。
 - 本次修改 routing/core governance content，属于 Contract/Routing 影响；Runtime executable/package/platform boundary 不受影响，因此开发侧不运行三平台 package，仓库既有 content CI 保持。
 - #216 / AC9 的验收范围是“当前 head 相关测试 + 仓库 Skill Tests + package scope 不扩大”；Ready、独立 Review、merge、main-fresh、Change Archive 和 Closure 继续作为 Maintenance 的后续交付门禁，不混入 Ready 前的 Requirement Traceability 形成循环前置条件。
+- Figma-only `review-and-fix / baseline-ready` 的 `方案/实现` 只是 Figma 专业动作，不得单独制造 Coding Owner；普通非 Figma `方案/实现` 继续作为 Coding 默认入口，真实 `代码实现/技术方案/设计转代码` 等专业 Coding 意图仍能稳定命中 Coding。
 
 # 需求追溯
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 专业 Owner 不被通用执行模式/审查/验证/capability 机械叠加 | #216 / AC1 | not_satisfied | 独立 Review 在 head `f02a00e28c420eb52283e092fc79985b2712fcbe` 发现 HIGH：Router 示例把 `Figma baseline-ready` 标为 Figma-only、`Figma review-and-fix` 标为“存在生产实现再 Coding”，但 Runtime Task Route 分别提交 `执行模式=方案/实现`；evaluator 不投影 `执行模式`，Coding Core 又以 `方案/实现` 选 Owner，因此 Figma-only 场景会机械增加 Coding。已加入回归，待取得 Red 后修复。 |
-| R2 | 核验/决策分离，审批保持且无权限扩大 | #216 / AC2 | satisfied | Router/Coding/Review/Figma 明确事实核验默认自行完成、只有重大未决边界才提请决策且不重复确认；run #1234 的 `test_router_and_coding_distinguish_self_verification_decision_and_blocked_scope` 及既有 authorization/review/Figma 权限回归通过；PR diff 未新增任何 Git/merge/release/deploy 权限。 |
-| R3 | blocked 依赖传播；三次失败返回诊断 | #216 / AC3 | satisfied | Router/Coding/Diagnosis/Delivery 明确 blocker 只沿依赖传播，三次失败只停止同类补丁并返回事实恢复/根因诊断；run #1234 的 `test_three_failed_fix_hypotheses_return_to_diagnosis_not_whole_task_stop`、delivery axis 回归及现有 fail-closed 回归通过。 |
-| R4 | 小改动 targeted-first，按具体风险逐层扩大且禁止无关重构 | #216 / AC4 | satisfied | Validation 定义验证下限/默认上限/单调升级，Cleanup 明确旧技术债默认只记录 Finding；run #1234 的 `test_validation_has_lower_upper_bound_and_monotonic_escalation`、`test_cleanup_does_not_absorb_preexisting_adjacent_technical_debt`、minimal-governance 与 context-budget 回归全部通过。 |
-| R5 | Mutation Audit/Apply + 影响分档，不降低正式 CI | #216 / AC5 | satisfied | Mutation Reference 明确 `Mutation Audit / Proposal`、`Mutation Apply`、`Semantic Local`、`Contract / Routing`、`Runtime / Package`，并声明开发侧 profile 不替代正式 CI；run #1234 的 Mutation canonical ownership/preservation/delivery governance 回归全部通过。 |
-| R6 | 受影响规则消除裸 refNN 歧义 | #216 / AC6 | satisfied | 受影响 Router/Coding/route/Mutation 使用明确文件链接和 Stable ID；run #1234 的 `test_affected_rules_do_not_use_ambiguous_bare_ref_numbers`、Reference numbering 与 runtime handoff preservation 回归通过。 |
-| R7 | Figma 普通审查与 baseline-ready 意图分离 | #216 / AC7 | satisfied | Figma Core 仅由专业意图触发；普通“全面检查/审查/找问题”默认 review-only，明确开发交付/READY 才 baseline-ready；run #1234 的 `test_figma_plain_audit_defaults_to_review_only_not_baseline_ready`、Figma review-only owner/budget、完整 Figma Skill 回归全部通过。 |
-| R8 | 端到端分轴状态 + overall completion gate 不降低 | #216 / AC8 | satisfied | Delivery 增加 implementation/validation/delivery/main_fresh/change_archive/requirement_closure/cleanup/end_to_end 分轴，同时规定所有 applicable + required 轴完成后才能 `end_to_end: complete`；run #1234 的 `test_delivery_reports_axis_status_without_weakening_overall_completion` 及现有 delivery governance 回归通过。 |
-| R9 | 当前 head 相关回归与完整 Skill Tests 通过且不触发 package | #216 / AC9 | satisfied | 回归先行 commit `bc59363ab2840fb0f3e453612ef47581d288661f` 的 run #1214 在 self-contained tests 真实 Red；head `f02a00e28c420eb52283e092fc79985b2712fcbe` 的 run #1235 执行 468 项 self-contained tests，结果 `OK`，Changed Change Ready 与 Runtime Package Gate 通过；scope classifier 为 `content`，Windows/macOS package jobs skipped。当前 Review Finding 修复后需要重新取得 current-head Green。 |
+| R1 | 专业 Owner 不被通用执行模式/审查/验证/capability 机械叠加 | #216 / AC1 | satisfied | 首轮独立 Review 在 head `f02a00e28c420eb52283e092fc79985b2712fcbe` 发现 HIGH：Figma-only baseline/fix 的 `方案/实现` 会机械增加 Coding。回归提交 `362a7675712a9dba8e98fe358fa189b455a757bb` 对应 run #1236 精确 Red：`test_figma_only_plan_and_fix_modes_do_not_create_coding_owner` 显示 baseline actual 多出 `coding`。修复 commit `56165527f9767e8387c64ad8989e6612356ef0bc` 将 Coding 的通用 `方案/实现` 入口条件化排除 `Figma review-and-fix / Figma baseline-ready`，但保留显式 Coding 意图；run #1237 中该回归、Figma→Code 正例、Ad-hoc/L1 Coding 正例、Owner isolation、Routing Conformance 全部通过。 |
+| R2 | 核验/决策分离，审批保持且无权限扩大 | #216 / AC2 | satisfied | Router/Coding/Review/Figma 明确事实核验默认自行完成、只有重大未决边界才提请决策且不重复确认；run #1237 的 `test_router_and_coding_distinguish_self_verification_decision_and_blocked_scope` 及既有 authorization/review/Figma 权限回归通过；PR diff 未新增任何 Git/merge/release/deploy 权限。 |
+| R3 | blocked 依赖传播；三次失败返回诊断 | #216 / AC3 | satisfied | Router/Coding/Diagnosis/Delivery 明确 blocker 只沿依赖传播，三次失败只停止同类补丁并返回事实恢复/根因诊断；run #1237 的 `test_three_failed_fix_hypotheses_return_to_diagnosis_not_whole_task_stop`、delivery axis 回归及现有 fail-closed 回归通过。 |
+| R4 | 小改动 targeted-first，按具体风险逐层扩大且禁止无关重构 | #216 / AC4 | satisfied | Validation 定义验证下限/默认上限/单调升级，Cleanup 明确旧技术债默认只记录 Finding；run #1237 的 `test_validation_has_lower_upper_bound_and_monotonic_escalation`、`test_cleanup_does_not_absorb_preexisting_adjacent_technical_debt`、minimal-governance 与 context-budget 回归全部通过。 |
+| R5 | Mutation Audit/Apply + 影响分档，不降低正式 CI | #216 / AC5 | satisfied | Mutation Reference 明确 `Mutation Audit / Proposal`、`Mutation Apply`、`Semantic Local`、`Contract / Routing`、`Runtime / Package`，并声明开发侧 profile 不替代正式 CI；run #1237 的 Mutation canonical ownership/preservation/delivery governance 回归全部通过。 |
+| R6 | 受影响规则消除裸 refNN 歧义 | #216 / AC6 | satisfied | 受影响 Router/Coding/route/Mutation 使用明确文件链接和 Stable ID；run #1237 的 `test_affected_rules_do_not_use_ambiguous_bare_ref_numbers`、Reference numbering 与 runtime handoff preservation 回归通过。 |
+| R7 | Figma 普通审查与 baseline-ready 意图分离 | #216 / AC7 | satisfied | Figma Core 仅由专业意图触发；普通“全面检查/审查/找问题”默认 review-only，明确开发交付/READY 才 baseline-ready；run #1237 的 `test_figma_plain_audit_defaults_to_review_only_not_baseline_ready`、Figma-only `review-and-fix/baseline-ready` Owner 隔离、Figma→Code 正例与完整 Figma Skill 回归全部通过。 |
+| R8 | 端到端分轴状态 + overall completion gate 不降低 | #216 / AC8 | satisfied | Delivery 增加 implementation/validation/delivery/main_fresh/change_archive/requirement_closure/cleanup/end_to_end 分轴，同时规定所有 applicable + required 轴完成后才能 `end_to_end: complete`；run #1237 的 `test_delivery_reports_axis_status_without_weakening_overall_completion` 及现有 delivery governance 回归通过。 |
+| R9 | 当前 head 相关回归与完整 Skill Tests 通过且不触发 package | #216 / AC9 | satisfied | 初始需求回归先行 commit `bc59363ab2840fb0f3e453612ef47581d288661f` / run #1214 为真实 Red；首轮 Review Finding 回归 commit `362a7675712a9dba8e98fe358fa189b455a757bb` / run #1236 为精确 Red；修复 head `56165527f9767e8387c64ad8989e6612356ef0bc` 的 run #1237 执行 469 项 self-contained tests，结果 `OK`，Requirement Source、编译、CLI smoke 通过，context budget、legacy preservation、Routing Conformance、Source/Runtime manifest 同值全部 Green；scope classifier=`content`，Windows/macOS package jobs skipped。当前 Change-only Ready 写入后由新一轮 PR CI 再验证 Ready Gate。 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | run #1214 证明初始回归先行时存在 Red；run #1235 的 468 项自包含测试全部通过。独立 Review 新发现 Figma-only `方案/实现` Owner 漏测，已新增直接回归，待 Red/Green。 |
-| 接口 / 契约 | required | `Agent Skills Skill路由/v1` Core trigger/Owner 语义改变；metadata compiler、Routing Conformance、Source/Runtime manifest 同值与 dependency closure 必须继续通过，并新增 Figma-only 通用执行模式 owner-isolation 断言。 |
+| 行为 / 单元 / 组件 | required | 初始 run #1214 为 Red；Review Finding run #1236 为精确 Red；fix run #1237 为 469/469 Green，包含新增 Figma-only Owner 隔离、已有 Coding/Figma 正例、minimal governance、Review、Mutation、diagnosis、delivery 与 context budget。 |
+| 接口 / 契约 | required | `Agent Skills Skill路由/v1` Core trigger/Owner 语义改变；run #1237 的 metadata compiler、Routing Conformance、Source/Runtime manifest 同值、dependency closure、owner-gated routing 与 exact-context 回归通过。 |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 不改变数据库、文件运行语义、MCP 执行机制或 Runtime service；changed files 无 Runtime Python/Installer/Bundle executable 实现。 |
-| 用户 / 工作流验收 | required | 典型路由必须证明 Figma/Docs/Testing/Review 不机械叠加无关 Owner，尤其 Figma review-only / review-and-fix / baseline-ready 的 Owner 与 Router 表一致。 |
-| 跨组件关键路径 | not_applicable | 不改变 Runtime/Installer/Project Payload/Release 接线；Source/Runtime 路由一致性由平台无关 Skill Tests 证明。 |
+| 用户 / 工作流验收 | required | 典型路由证明 Figma/Docs/Testing/Review 不机械叠加无关 Owner；Figma review-only/review-and-fix/baseline-ready 与 Router 表一致，真实 Figma→Code 仍命中 Coding+Figma。 |
+| 跨组件关键路径 | not_applicable | 不改变 Runtime/Installer/Project Payload/Release 接线；Source/Runtime 路由一致性由 run #1237 的平台无关 Skill Tests 证明。 |
 | 外部依赖 / 供应方探测 | not_applicable | 不需要第三方服务、生产环境或外部 Provider 当前事实。 |
-| 构建 / 打包 / 运行 | not_applicable | diff 未触及 executable/package/platform boundary；保持 `content` scope，三平台 package 不应执行。 |
-| 文档 / 治理 / 其他 | required | canonical Rule/trigger/Stable ID/引用、内容守恒与 context budget 继续由完整 Skill Tests 证明；Change 必须重新完成 unresolved/Review/Ready 门禁。 |
+| 构建 / 打包 / 运行 | not_applicable | diff 未触及 executable/package/platform boundary；run #1237 classifier 为 `content`，三平台 package 不应执行且 Windows/macOS jobs skipped。 |
+| 文档 / 治理 / 其他 | required | canonical Rule/trigger/Stable ID/引用、内容守恒、context budget 与路由迁移守恒已由 run #1237 的 469 项 Skill Tests 证明；Change-only Ready 写入后继续由 Changed Change Ready Gate 验证。 |
 
 # 完成审计
 
-- [x] upstream_re_read：已重新读取 live #216、当前 main `3135d58e1fe2b011ebfcf4c1a40845e66e54d235` 的根 `AGENTS.md` / Maintenance，以及当前分支 ENTRY、Router、Coding、Mutation 与受影响专业 Owner；上游 AC1-AC9 未发生漂移。
-- [x] change_coverage：已逐项将 #216 / AC1-AC9 绑定为 R1-R9，并在独立 Review 中补充 Figma-only `方案/实现` Owner 漏测。
-- [x] reverse_audit：独立 Review 从 Router 表、Coding Core metadata 与 Runtime evaluator 反向证明了一个可触发 HIGH Finding；该审计本身完成，但 Finding 尚未修复。
-- [ ] unresolved_cleared：R1 当前为 `not_satisfied`；必须先取得新增回归的 Red、完成最小修复和新鲜 Green，再恢复 Ready。
+- [x] upstream_re_read：已重新读取 live #216、当前 main `3135d58e1fe2b011ebfcf4c1a40845e66e54d235` 的根治理/Maintenance 事实以及当前分支 ENTRY；上游 AC1-AC9 与 main 均未发生影响本 Change 的漂移。
+- [x] change_coverage：#216 / AC1-AC9 均绑定为 R1-R9；首轮独立 Review 发现的 Figma-only `方案/实现` Owner 漏测已纳入 R1、Regression 与当前 conformance，而不是留作未追踪 Finding。
+- [x] reverse_audit：已从 Router 表、Coding Core metadata、Runtime evaluator、Figma Core、Validation、Mutation、Cleanup、Diagnosis、Delivery、Review 和测试反向审计；首轮 HIGH Finding 已通过 Red→Fix→Green 闭环，未发现权限扩大、CI/预算阈值放宽、无关 Runtime/package 变更或第二套 Owner/规则体系。
+- [x] unresolved_cleared：R1-R9 全部为 `satisfied` 且有直接 Evidence；Validation Matrix required 项已有新鲜实现 head 证据，N/A 项与实际 diff 职责一致，无 `not_satisfied`。独立 re-review 属于 Ready 后交付门禁，不作为 Requirement Traceability 的循环前置条件。
 
 # 任务
 
 - [x] 恢复当前 main、Maintenance、ENTRY、Router、Coding 与命中 References。
 - [x] 确认当前无 Active Change，建立并 live re-read Requirement Source #216。
 - [x] 建立专用分支与本 Change。
-- [x] 先扩展最小现有回归，取得 Red/current-old-behavior 证据：commit `bc59363ab2840fb0f3e453612ef47581d288661f` / run #1214 self-contained tests failure。
+- [x] 先扩展最小现有回归，取得初始 Red/current-old-behavior 证据：commit `bc59363ab2840fb0f3e453612ef47581d288661f` / run #1214 self-contained tests failure。
 - [x] 最小修改 Router/Coding/Review/Figma 与直接 Owner References。
-- [x] 执行 targeted-first 开发验证并按实际失败收敛；run #1235 在 Review 前为 468/468 Green 且 Ready Check 通过。
+- [x] 执行 targeted-first 开发验证并按实际失败收敛；首轮 Ready 前 run #1235 为 468/468 Green。
 - [x] 完成 Rule→metadata/tests/runtime parity 影响审计与裸 refNN 检查。
 - [x] 首轮 Completion Audit 与 Ready 已完成。
-- [ ] 独立 Review：当前 `CHANGES_REQUIRED`，HIGH Finding 为 Figma-only `方案/实现` 会机械增加 Coding Owner。
-- [ ] 为 Review Finding 取得新增回归 Red，最小修复 Coding Owner trigger，并取得 current-head Green。
-- [ ] 重新完成 Completion Audit / Ready 和独立 re-review。
-- [ ] 取得 Review 后 current-head PR CI，merge 前重新核对 live Requirement Source/head/base/权限/Ruleset。
+- [x] 首轮独立 Review 发现 HIGH Finding：Figma-only `方案/实现` 会机械增加 Coding Owner，并返回开发态。
+- [x] 为 Review Finding 取得 run #1236 精确 Red，使用 commit `56165527f9767e8387c64ad8989e6612356ef0bc` 最小修复 Coding Owner trigger，并由 run #1237 取得 469/469 Green、预算与 conformance Green。
+- [x] 重新完成 Completion Audit，并恢复 `ready_for_review`。
+- [ ] 对新的 Ready head 执行独立 re-review；如再有 Finding，继续修复→验证→re-review。
+- [ ] 取得 re-review 后 current-head PR CI，merge 前重新核对 live Requirement Source/head/base/权限/Ruleset。
 - [ ] guarded merge 后取得 implementation main-fresh CI、repository-native archive、Closure Audit、Issue Acceptance 写回/关闭与分支清理。
 
 # 验证
@@ -148,10 +150,14 @@ data_changes: []
 ## 新鲜证据
 
 - 当前 `main` HEAD：`3135d58e1fe2b011ebfcf4c1a40845e66e54d235`；该变化来自其他已归档 Change，不属于本 PR 范围。
-- Review 前 head：`f02a00e28c420eb52283e092fc79985b2712fcbe`；run #1235 在 merge ref `e93477121b8008df06c832f0d5d137eb5255babd` 上执行并全绿。
-- Red（初始需求）：回归先行 commit `bc59363ab2840fb0f3e453612ef47581d288661f` / run #1214 self-contained tests failure。
-- Green（Review 前）：run #1235 Requirement Source、编译、CLI smoke、468 项 self-contained tests、Changed Change Ready、Runtime Package Gate 均通过；classifier=`content`，Windows/macOS package skipped。
-- 独立 Review HIGH Finding：Router `Figma baseline-ready` / `Figma review-and-fix` 的 Source Mode 读取语义与其 Runtime signals 不一致；`routing.py::_OWNER_REFINEMENT_DIMENSIONS` 不含 `执行模式`，`_matches_owner_projection` 会用 `执行模式=方案/实现` 命中 Coding Core。当前需新增回归取得 Red。
+- 初始 Red：回归先行 commit `bc59363ab2840fb0f3e453612ef47581d288661f` / run #1214 self-contained tests failure。
+- Review 前 Green：head `f02a00e28c420eb52283e092fc79985b2712fcbe` / run #1235 为 468/468 Green 且 Changed Change Ready PASS。
+- 首轮独立 Review HIGH Finding：Figma-only baseline/fix 的 `执行模式=方案/实现` 会通过 Coding Core 的通用模式 trigger 机械增加 Coding Owner。
+- Finding Red：commit `362a7675712a9dba8e98fe358fa189b455a757bb` / run #1236，469 tests 中仅新增 `test_figma_only_plan_and_fix_modes_do_not_create_coding_owner` 失败；baseline actual 多出 `coding`，context budget 等既有回归保持通过。
+- Finding Fix：commit `56165527f9767e8387c64ad8989e6612356ef0bc`；Coding 通用 `方案/实现` trigger 只在不存在 `Figma review-and-fix / Figma baseline-ready` 专业意图时生效；显式 `代码实现/技术方案/设计转代码` 等 Coding intent 保持。
+- Finding Green：run #1237 / merge ref `c88d447abbf0ad15f6e12af1beb68c8f8ac797e8`，Requirement Source、编译、CLI smoke 通过；`Ran 469 tests in 5.810s`、`OK`；新增 Figma-only 回归、Figma→Code、Ad-hoc/L1 Coding、context budget、legacy route preservation、Routing Conformance、Source/Runtime manifest 同值全部通过。
+- Scope：run #1237 classifier=`content`；Windows/macOS Runtime Package jobs skipped；本 PR 未改变 executable/package/platform boundary。
+- run #1237 Agent Skills Gate 的唯一失败来自 Change 故意保持 `in_progress`，Ready Check 报“状态必须为 ready_for_review”；本次 carrier-only 提交即用于解除该预期门禁，并由下一轮 current-head CI 重新证明。
 
 # 文档影响
 
@@ -162,6 +168,6 @@ data_changes: []
 - Requirement Source：#216。
 - 分支：`agent/autonomy-validation-boundaries-216`。
 - PR：#217。
-- 当前 Review：`CHANGES_REQUIRED`，不得合并。
-- merge：仅在 Finding 修复、re-review PASS、Review 后 current-head CI、live Requirement Source、当前 main/base、Ruleset/权限和 expected head guard 满足后执行。
+- 首轮独立 Review：`CHANGES_REQUIRED`；HIGH Finding 已修复并有 Red→Green Evidence，当前等待独立 re-review。
+- merge：仅在 re-review PASS、re-review 后 current-head CI、live Requirement Source、当前 main/base、Ruleset/权限和 expected head guard 满足后执行。
 - post-merge：repository-native Change Archive + implementation main-fresh + Closure Audit；Agent 不手工归档 Change，也不把 archive/done 冒充 Issue Closure。
