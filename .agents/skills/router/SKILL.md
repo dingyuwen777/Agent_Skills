@@ -13,7 +13,7 @@ description: Agent_Skills 的唯一跨 Skill 控制面。每个任务先进入�
 
 ## Anti-Agent Boundary
 
-Router **不生成项目级执行计划**，不创建子 Agent、任务队列或 Worker，不接管代码/设计/文档/测试/Git/CI/发布/部署；多 Skill 只声明并集、顺序与交接。
+Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或调度开发任务**，不维护任务队列或 Worker，**不接管专业 Skill**，也不执行代码/设计/文档/测试/Git/CI/发布/部署；多 Skill 只声明并集、顺序与交接。
 
 ## 1. 项目事实与确定性执行边界
 
@@ -75,7 +75,7 @@ Owner 选择时 `项目形态 / 风险 / 工具链 / 范围 / 治理 / 授权` �
 任务事实 → canonical Owner → required References → 读取当前完整原文
 ```
 
-不得用历史聊天、摘要、旧缓存替代 canonical Source；**目标项目中的安装副本**（含 managed block）不作为通用治理来源，项目自有规则仍读取。Source Mode 不调用本地 Runtime MCP。
+不得用历史聊天、摘要、旧缓存替代 canonical Source；**目标项目中的安装副本**（含 managed block）**不作为当前通用治理语义来源**，项目自有规则仍读取。Source Mode 不调用本地 Runtime MCP。
 
 ### 4.2 Runtime Mode
 
@@ -94,10 +94,10 @@ Runtime evaluator 执行同一 fixed-point；`load_required_context` 只返回 r
 
 ## 5. 低歧义组合示例
 
-| 案例 | 命中/叠加 | Source Mode 读取 | Runtime Mode 任务信号 |
+| 案例 | 命中原因与叠加 | Source Mode 读取 | Runtime Mode 任务信号 |
 | --- | --- | --- | --- |
 | L1 机械修改 | 行为/接口/数据不变 | Coding + L1 | `执行模式=实现；风险=L1` |
-| L2 Feature | 新行为 | Coding；Journey 按需 Testing | `执行模式=实现；阶段=功能开发；风险=L2` |
+| L2 Feature | 新增可观察行为；先建立最小充分任务契约 | Coding；Journey 按需 Testing | `执行模式=实现；阶段=功能开发；风险=L2` |
 | L3 public API | public Contract | Coding + 完成；按门禁 Review | `执行模式=方案,实现；风险=L3；范围=公共契约,API` |
 | Schema Migration | Schema/历史数据 | Coding + Migration/回滚 | `执行模式=方案,实现；风险=L3；范围=Schema,Migration` |
 | Bug / Failure / Incident | 根因；独立回归按需 | Coding；按需 Testing | `执行模式=诊断,实现；阶段=缺陷修复` |
@@ -143,7 +143,7 @@ Runtime evaluator 执行同一 fixed-point；`load_required_context` 只返回 r
 
 - 触发：真实测试意图或独立 Test Gap。
 - 必须动作：读取 Testing。
-- 不适用：隔离 L1、普通开发期最小 TDD；不为“走全 Skill”机械叠加。
+- 不适用：隔离 L1、普通开发期最小 TDD；**不为了“走完所有 Skill”机械叠加 Testing**。
 - 交接：Coding/Review → Requirement、Test Target、Gap。
 - 返回：生产缺陷 → Coding；回归 → Testing；合并判断 → Review。
 - 失败关闭：缺 Testing Context 时不冒充测试证据，其他无依赖工作继续。
