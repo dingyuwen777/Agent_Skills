@@ -97,7 +97,7 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 | 案例 | 命中原因与叠加 | Source Mode 读取 | Runtime Mode 任务信号 |
 | --- | --- | --- | --- |
 | L1 机械修改 | — | Coding | `执行模式=实现；风险=L1` |
-| L2 Feature | — | Coding | `执行模式=实现；阶段=功能开发；风险=L2` |
+| L2 Feature | 最小充分任务契约 | Coding | `执行模式=实现；阶段=功能开发；风险=L2` |
 | L3 public API | Contract | Coding | `执行模式=方案,实现；风险=L3；范围=公共契约/API` |
 | Schema Migration | Schema | Coding | `执行模式=方案,实现；风险=L3；范围=Schema/Migration` |
 | Bug / Failure / Incident | 根因 | Coding | `执行模式=诊断,实现；阶段=缺陷修复` |
