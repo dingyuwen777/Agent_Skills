@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 import unittest
 from pathlib import Path
 
@@ -14,10 +15,14 @@ RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 
 def _load_selector():
     """从真实维护脚本加载 selector，避免在测试中复制第二份路径规则。"""
-    spec = importlib.util.spec_from_file_location("runtime_package_scope", CLASSIFIER)
+    module_name = "agent_skills_ci_evidence_selector_under_test"
+    spec = importlib.util.spec_from_file_location(module_name, CLASSIFIER)
     if spec is None or spec.loader is None:
         raise AssertionError("无法加载 CI Evidence Selector")
     module = importlib.util.module_from_spec(spec)
+    # Python 3.14 的 dataclass 在装饰阶段会通过 cls.__module__ 查询 sys.modules；
+    # 动态加载测试必须遵循正常 import 的注册顺序。
+    sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
 
