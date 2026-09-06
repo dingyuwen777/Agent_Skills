@@ -20,7 +20,9 @@ jobs:
         with:
           python-version: "3.14.7"
       - name: Apply corrective patch
-        run: python scripts/_tmp_fix238_ready.py
+        run: python scripts/_tmp_fix238_ready_v2.py
+      - name: Remove temporary workflow before canonical workflow-set regression
+        run: rm .github/workflows/tmp-fix238-ready.yml
       - name: Run focused regression
         run: |
           python -m unittest discover -s .agents/skills/coding/tests -p 'test_ci_ready_evidence_order.py' -v
@@ -28,7 +30,7 @@ jobs:
           git diff --check
       - name: Commit and attempt branch update
         run: |
-          rm scripts/_tmp_fix238_ready.py .github/workflows/tmp-fix238-ready.yml
+          rm -f scripts/_tmp_fix238_ready.py scripts/_tmp_fix238_ready_v2.py .github/workflows/tmp-fix238-ready.yml
           git config user.name "dingyuwen777"
           git config user.email "dingyuwen777@users.noreply.github.com"
           git add -A
