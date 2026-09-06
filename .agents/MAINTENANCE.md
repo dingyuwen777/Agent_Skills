@@ -109,8 +109,13 @@ GitHub Release
 目标项目中的运行边界：
 
 ```text
-Core SKILL.md / Router / 必要运行资产
-→ Project Payload 明文安装，用于宿主原生路由
+canonical Entry / Core / agent metadata
+→ 构建时生成 deterministic project-facing Runtime Projection
+→ Project Payload 明文安装，只保留宿主发现与真实项目工程语义
+
+canonical routing metadata / Stable ID / dependency / risk floor
+→ 编译进入 Runtime 私有 Routing Manifest / evaluator
+→ 不要求在安装明文 Core 中逐字保留
 
 canonical references/*.md
 → 源仓库唯一完整正文
@@ -124,6 +129,8 @@ canonical references/*.md
 → 升级 previous ownership 来自旧 Runtime install-state
 → 历史 agent-skills-install/v3 仅一次迁移，成功后删除
 ```
+
+Runtime 安装明文是**项目工程视图，不是 canonical Source 镜像**：`ENTRY.md`、各 Runtime `SKILL.md`、分发的 `agents/openai.yaml` 与 managed `AGENTS.md` 不写内部 Catalog/Router/Reference/Handoff、私有 routing metadata、加载组织或“为了隐藏这些内部身份”的防披露自说明；需要宿主发现时只保留最小机器身份（例如 Skill frontmatter `name`）。这些限制不允许通过少加载专业 Context、删 canonical metadata 或改 Reference 原文来实现。
 
 不能因为加密 onefile、Runtime Projection 或 sidecarless install-state 存在就宣称可抵御机器 Owner、调试器、内存转储、Hook、恶意替换项目内旧 Runtime 或专业逆向。
 
@@ -179,9 +186,16 @@ coding-change/v1
 - 原本由辅助 README、Bootstrap 或其他入口承担但仍属正式规则的内容，必须先证明已在唯一 Owner 中可达，才能删除或变薄；
 - 无法证明等价时保留细节，不用抽象口号代替可执行规则。
 
+Runtime 内容守恒必须**分两条独立证据轴**，不能把它们混成“明文逐字一致”：
+
+1. **Project-facing Plaintext**：安装明文只保留当前项目实际工程规则、风险、授权、验证和交付语义，不泄露内部组织身份、源码导航、私有 routing metadata 或防披露自说明；
+2. **Private Execution Parity**：canonical Skill/Reference metadata、Stable ID、dependency、risk floor、evaluator 结果、required Context 与 exact Reference bytes 保持同源同效。
+
+删除明文 routing metadata 不等于降低执行能力；反过来，为了追求 Source/Runtime byte equality 把内部 metadata/output guard 重新塞回 Runtime 明文，也属于内容守恒失败。
+
 Figma 尤其必须保留 Canvas/Section/Spacing/Annotation、Prototype、Owner、状态、`READY / READY_WITH_NOTES / NOT_READY`、失败处理、Fresh Screenshot/Machine Audit 和每次写后 Canvas-level Review。
 
-Router 尤其必须保持项目事实优先、动态 Skill 发现、专业 Skill 选择、Reference 两种加载模式、跨 Skill Handoff、失败停止和权限/CI 门禁；根 `AGENTS.md`、`ENTRY.md` 与 `AGENTS.managed.md` 只能做 Bootstrap，不能重新生长成第二套完整 Router。
+Router 尤其必须保持项目事实优先、动态 Skill 发现、专业 Skill 选择、Reference 两种加载模式、跨 Skill Handoff、失败停止和权限/CI 门禁；根 `AGENTS.md`、`ENTRY.md` 与 `AGENTS.managed.md` 只能做 Bootstrap，不能重新生长成第二套完整 Router。Runtime 安装的 Entry/Router Core 是派生 project-facing 视图，不承担 Source 维护导航；完整 Router 语义仍由 canonical Source + private evaluator/context 链证明。
 
 ## 8. Runtime 维护不变量
 
@@ -189,8 +203,12 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、专业 Skill
 
 - 动态 Skill Catalog，不写固定全量名单；
 - canonical Reference 原始 UTF-8 bytes → SHA/size/source_digest → 加密 Bundle → 解密 `canonical_text` 逐字守恒；
+- canonical `ENTRY.md` / `SKILL.md` / `agents/openai.yaml` 是 Source Owner；Runtime Project Payload 中对应明文是 deterministic project-facing 派生视图，不要求与 Source byte-equal；
+- Runtime 明文 `SKILL.md` 只保留宿主发现所需最小身份与真实工程规则；`agent-routing:v1`、Stable ID、dependency、risk floor 和私有 trigger mapping 留在 compiled private routing/evaluator，不以“同效”为由写回明文；
+- Runtime 明文不得写“不要暴露 Router/Skill/Reference/Handoff”这类防披露自说明；防止主动转写内部实现属于 Runtime 公共输出/私有控制边界，普通分发文本本身保持正常项目工程语言；
+- Project-facing plaintext 与 private execution parity 必须分别验证：前者验证安装/Project Payload 泄露面与可读工程语义，后者验证 matched Skill、risk、dependency closure、required Context 与 canonical exact-text；任何一条失败都不能用另一条 Green 代替；
 - Project Payload 独立 `payload_digest`，不拿 Reference digest 冒充 Core/资产完整性；
-- Payload 排除 canonical Reference 正文、tests 和维护 README，同时保留 Router、Core 和其他必要运行资产；
+- Payload 排除 canonical Reference 正文、tests 和维护 README，同时保留 project-facing Entry/Router/Core 与其他必要运行资产；
 - 目标项目不安装 canonical Reference 或 Stub；required 原文只由当前 Runtime 路由令牌加载；
 - 新安装/升级不生成 `.agents/agent-skills-install.json` 或其他 ownership sidecar；当前 ownership 从内嵌 Project Payload 派生，previous ownership 只能来自合法 legacy v3 一次迁移或旧已安装 Runtime 的合法内部 install-state；
 - legacy `agent-skills-install/v3` 成功迁移后删除；v1/v2/未知/损坏 schema 或旧 Runtime install-state 不可验证时 fail closed，不猜 ownership；

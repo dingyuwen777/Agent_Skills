@@ -13,8 +13,11 @@ from runtime.agent_skills_runtime.runtime import RuntimeStore
 
 ROOT = Path(__file__).resolve().parents[4]
 SKILLS_ROOT = ROOT / ".agents" / "skills"
+MAINTENANCE = ROOT / ".agents" / "MAINTENANCE.md"
+RUNTIME_REFERENCE = SKILLS_ROOT / "coding" / "references" / "13_本地MCP_Runtime分发与原文上下文加载.md"
+MUTATION_REFERENCE = SKILLS_ROOT / "coding" / "references" / "15_规则内容守恒与Skill维护.md"
+RUNTIME_README = ROOT / "runtime" / "README.md"
 _FRONTMATTER = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
-_ROUTING_BLOCK = re.compile(r"<!--\s*agent-routing:v1\s*\r?\n.*?\r?\n\s*-->", re.DOTALL)
 _TEXT_SUFFIXES = {".md", ".yaml", ".yml", ".json", ".toml", ".txt"}
 
 
@@ -177,6 +180,27 @@ class RuntimeProjectFacingProjectionTest(unittest.TestCase):
                     "内部任务路由",
                 ):
                     self.assertNotIn(forbidden, checked)
+
+    def test_maintenance_rules_separate_plaintext_projection_from_private_execution_parity(self) -> None:
+        """长期维护规则必须把 Runtime 明文项目化与私有执行同效作为两条独立证据轴。"""
+        maintenance = MAINTENANCE.read_text(encoding="utf-8")
+        runtime_reference = RUNTIME_REFERENCE.read_text(encoding="utf-8")
+        mutation_reference = MUTATION_REFERENCE.read_text(encoding="utf-8")
+        runtime_readme = RUNTIME_README.read_text(encoding="utf-8")
+
+        for text in (maintenance, runtime_reference, mutation_reference, runtime_readme):
+            self.assertIn("project-facing", text)
+            self.assertIn("exact", text.lower())
+        for marker in (
+            "Project-facing Plaintext",
+            "Private Execution Parity",
+            "不得用 Source/Runtime 明文逐字一致替代 parity",
+        ):
+            self.assertIn(marker, maintenance)
+        self.assertIn("project-facing plaintext", mutation_reference)
+        self.assertIn("private execution parity", mutation_reference)
+        self.assertIn("不要求 Runtime 明文与 Source Core 逐字一致", runtime_reference)
+        self.assertIn("Source/Runtime 同效通过 routing/risk/dependency/context parity 证明", runtime_readme)
 
 
 if __name__ == "__main__":
