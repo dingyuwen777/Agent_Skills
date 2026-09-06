@@ -16,7 +16,7 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
     """验证首次接入项目时先做事实调查与 AGENTS 语义校准，再进入正常开发。"""
 
     def _read(self, relative: str) -> str:
-        """读取仓库中的正式 Skill、模板或最终用户说明。"""
+        """读取仓库中的正式 Skill、模板或人类说明。"""
         return (ROOT / relative).read_text(encoding="utf-8")
 
     def test_coding_requires_governance_bootstrap_before_first_code_change(self) -> None:
@@ -181,21 +181,33 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             self.assertNotIn("本项目使用 React", agents)
             self.assertNotIn("数据库：PostgreSQL", agents)
 
-    def test_usage_explains_first_bootstrap_and_normal_development(self) -> None:
-        """最终用户应知道安装后如何先校准 AGENTS，再进行代码修改。"""
-        usage = self._read("USAGE.md")
+    def test_readme_owns_first_bootstrap_while_usage_starts_after_governance(self) -> None:
+        """首次治理由维护者 README 承载，普通开发说明必须从已完成接入后的任务开始。"""
+        readme = self._read("README.md")
         for marker in (
-            "安装成功不等于项目治理已经完成",
-            "首次接入：先校准项目 `AGENTS.md`",
-            "首次接入任意项目时，当前大模型应先",
+            "安装到目标项目",
+            "首次项目治理",
+            "二进制安装成功不等于目标项目已经完成工程治理",
+            "Project Governance Bootstrap",
             "先不要修改业务代码",
             "规范性规则",
             "描述性事实",
-            "完成后重新读取最终 AGENTS.md",
-            "可以直接用自然语言提出开发任务",
-            "日常开发",
+            "完成后重新读取最终项目规则",
+            "普通功能开发不重复全量校准",
         ):
-            self.assertIn(marker, usage)
+            self.assertIn(marker, readme)
+
+        usage = self._read("USAGE.md")
+        self.assertIn("已经完成项目开发环境配置", usage)
+        self.assertIn("提交 PR 给维护者审核", usage)
+        for forbidden in (
+            "Project Governance Bootstrap",
+            "AGENTS.md",
+            "首次项目治理",
+            "先不要修改业务代码",
+            "安装成功不等于项目治理已经完成",
+        ):
+            self.assertNotIn(forbidden, usage)
 
 
 if __name__ == "__main__":

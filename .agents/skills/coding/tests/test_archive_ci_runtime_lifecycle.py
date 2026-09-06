@@ -124,7 +124,7 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
             self.assertNotIn(forbidden, managed)
 
     def test_project_runtime_is_host_connection_scoped_not_system_daemon(self) -> None:
-        """项目 MCP 使用宿主 stdio 子进程；允许会话级存活，但禁止系统服务/独立守护。"""
+        """Runtime 生命周期由安装实现与维护文档证明，不向普通开发者说明内部进程细节。"""
         installer = self._read("runtime/agent_skills_runtime/project_installer.py")
         self.assertIn('"type": "stdio"', installer)
         self.assertIn('"args": ["serve"]', installer)
@@ -138,10 +138,19 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertIn("systemd", runtime_readme)
         self.assertIn("launchd", runtime_readme)
 
+        readme = self._read("README.md")
+        self.assertIn("进程生命周期由宿主连接管理", readme)
+        self.assertIn("不是系统后台服务", readme)
+
         usage = self._read("USAGE.md")
-        self.assertIn("Codex 打开项目或会话期间", usage)
-        self.assertIn("不是系统后台服务", usage)
-        self.assertIn("关闭或重载项目", usage)
+        for internal_detail in (
+            "不是系统后台服务",
+            "Windows Service",
+            "systemd",
+            "launchd",
+            "stdio",
+        ):
+            self.assertNotIn(internal_detail, usage)
 
     def test_stdio_server_exits_after_host_closes_stdin(self) -> None:
         """宿主关闭 stdio 输入后，serve 进程必须结束而不是脱离宿主继续常驻。"""

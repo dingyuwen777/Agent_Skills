@@ -12,6 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
+README = ROOT / "README.md"
 USAGE = ROOT / "USAGE.md"
 
 
@@ -100,18 +101,26 @@ class ReleasePlatformZipsTest(unittest.TestCase):
                         if other_binary != binary:
                             self.assertNotIn(other_binary, names)
 
-    def test_usage_tells_user_to_download_current_platform_zip(self) -> None:
-        """最终用户说明应以当前平台 ZIP 作为获取、升级和回退入口。"""
+    def test_readme_tells_maintainer_about_current_platform_zips(self) -> None:
+        """平台 ZIP 获取和安装属于维护者 README，普通开发者 USAGE 不再暴露分发资产。"""
+        readme = README.read_text(encoding="utf-8")
+        for marker in (
+            "agent-skills-v<VERSION>-windows.zip",
+            "agent-skills-v<VERSION>-linux.zip",
+            "agent-skills-v<VERSION>-macos.zip",
+            "安装到目标项目",
+        ):
+            self.assertIn(marker, readme)
+
         usage = USAGE.read_text(encoding="utf-8")
         for marker in (
             "agent-skills-v<VERSION>-windows.zip",
             "agent-skills-v<VERSION>-linux.zip",
             "agent-skills-v<VERSION>-macos.zip",
             "下载与你操作系统匹配的 ZIP",
+            "SHA256SUMS",
         ):
-            self.assertIn(marker, usage)
-        self.assertNotIn("agent-skills-v<VERSION>.zip", usage)
-        self.assertNotIn("SHA256SUMS", usage)
+            self.assertNotIn(marker, usage)
 
 
 if __name__ == "__main__":
