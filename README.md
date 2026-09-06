@@ -201,6 +201,8 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 
 不同平台的正式 onefile 必须在 Linux / Windows / macOS 对应 Runner 上分别构建和验证，不能互相替代。
 
+[`.github/workflows/skill-tests.yml`](.github/workflows/skill-tests.yml) 先取得当前 scope 的语义和三平台 package 证据，再由已有 `Runtime Package Gate` 执行同一 revision 的 Ready/Change 检查。这样没有本地构建环境的宿主也能先取得真实证据，不必提前把未验证 Change 标为 Ready；未 Ready、Draft package 缺证据或任一 required 平台失败仍阻止合并。`Agent Skills Gate` 与 `Runtime Package Gate` 两个 required check 必须同时满足。Change-only 仍只检查治理，不安装 Runtime 依赖或构建 binary。
+
 ## 6. 正式 Release
 
 仓库不维护独立 `VERSION` 文件。**正式 Release 的唯一版本输入是手工 Release workflow 的 `tag`**：输入 `v<SemVer>` 后，workflow 去掉前缀 `v` 得到 `release_version`，并把同一个值显式传给 Linux / Windows / macOS 三个平台的 Runtime Builder。
@@ -228,7 +230,7 @@ Release workflow 不读取仓库管理设置，也不需要自定义 PAT 或 Act
 
 Draft→资产校验→Publish、发布后的 tag/资产核对和失败时只清理未发布 Draft 的边界保持不变。
 
-源仓库 Release 按平台分别提供 ZIP；每包只包含当前平台 binary 和同版本 [`USAGE.md`](USAGE.md)，不生成额外 identity sidecar。版本与必要运行状态通过 binary 的 `status --json` 读取。正式资产名称和结构以 [`USAGE.md`](USAGE.md) 与 [`.github/workflows/release.yml`](.github/workflows/release.yml) 为准，不另维护第二份资产清单。Release 页面说明直接使用 `USAGE.md`，不自动把维护 commit / PR 历史生成给最终使用者。给不具备源仓库权限的用户只分发对应平台 ZIP，不暴露源仓库访问权。
+源仓库 Release 按平台分别提供 ZIP；每包只包含当前平台 binary 和同版本 [`USAGE.md`](USAGE.md)，不生成额外 identity sidecar。版本与必要运行状态通过 binary 的 `status --json` 读取。正式资产名称和结构以 [`USAGE.md`](USAGE.md) 与 [`.github/workflows/release.yml`](.github/workflows/release.yml) 为准，不另维护第二份资产清单。Release 页面说明直接使用 [`USAGE.md`](USAGE.md)，不自动把维护 commit / PR 历史生成给最终使用者。给不具备源仓库权限的用户只分发对应平台 ZIP，不暴露源仓库访问权。
 
 ## 7. 继续阅读
 

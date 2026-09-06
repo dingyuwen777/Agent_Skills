@@ -26,7 +26,8 @@ class CiReadyEvidenceOrderTest(unittest.TestCase):
         """没有本地构建环境时，未 Ready Change 仍能通过正式 CI 取得真实三平台证据。"""
         workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
         core = _job_text(workflow, "agent-skills-core")
-        self.assertNotIn("ready_check.py", core)
+        # 编译检查可以保留该文件；这里只禁止实际执行 Ready 门禁成为 package 前置条件。
+        self.assertNotRegex(core, r"(?m)^\s+python \.agents/skills/coding/scripts/ready_check\.py(?:\s|$)")
         self.assertIn("Build and self-test Linux onefile Runtime", core)
         for job in ("runtime-windows-package", "runtime-macos-package"):
             with self.subTest(job=job):

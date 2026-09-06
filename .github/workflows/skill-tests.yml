@@ -158,20 +158,6 @@ jobs:
             exit "${exit_code}"
           fi
 
-      - name: Verify active Coding Change
-        if: github.event_name == 'push'
-        run: >-
-          python .agents/skills/coding/scripts/ready_check.py
-          --root .
-          --require-active-ready
-
-      - name: Verify changed Coding Change
-        if: github.event_name == 'pull_request'
-        run: >-
-          python .agents/skills/coding/scripts/ready_check.py
-          --root .
-          --changed-since ${{ github.event.pull_request.base.sha }}
-
       - name: Install Runtime build dependencies
         if: steps.runtime-scope.outputs.runtime_scope == 'package' && steps.runtime-scope.outputs.package_evidence_required == 'true'
         run: python -m pip install -r runtime/requirements-build.txt
@@ -562,3 +548,30 @@ jobs:
               exit 1
               ;;
           esac
+
+      # 先取得运行证据，再检查施工 Ready，避免只具备 Runner 的宿主陷入循环。
+      # 相同 revision 与原 PR/main 参数保持；检查失败仍使 required Gate 失败。
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14.7"
+
+      - name: Verify active Coding Change
+        if: github.event_name == 'push'
+        run: >-
+          python .agents/skills/coding/scripts/ready_check.py
+          --root .
+          --require-active-ready
+
+      - name: Verify changed Coding Change
+        if: github.event_name == 'pull_request'
+        run: >-
+          python .agents/skills/coding/scripts/ready_check.py
+          --root .
+          --changed-since ${{ github.event.pull_request.base.sha }}
