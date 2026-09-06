@@ -57,7 +57,11 @@ class CiReadyEvidenceOrderTest(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
         gate = _job_text(workflow, "runtime-package-gate")
         self.assertIn("name: Runtime Package Gate", gate)
-        self.assertIn("if: always()", gate)
+        self.assertIn(
+            "if: always() && needs.agent-skills-core.outputs.runtime_scope == 'package'", gate
+        )
+        self.assertNotIn("RUNTIME_SCOPE", gate)
+        self.assertNotIn("change_only|governance|content", gate)
         self.assertIn("CHANGE_GATE_READY", gate)
         self.assertIn('test "${CORE_RESULT}" = "success"', gate)
         self.assertIn("Runtime Package Gate remains fail-closed", gate)

@@ -563,7 +563,9 @@ jobs:
 
   runtime-package-gate:
     name: Runtime Package Gate
-    if: always()
+    # selector 已证明非 package 时，required job 直接 skipped，不分配 Runner；
+    # package 才启动真实聚合 Runner，并继续对 Ready/三平台 Evidence fail-closed。
+    if: always() && needs.agent-skills-core.outputs.runtime_scope == 'package'
     needs:
       - agent-skills-core
       - runtime-windows-package
@@ -574,7 +576,6 @@ jobs:
         shell: bash
         env:
           CORE_RESULT: ${{ needs.agent-skills-core.result }}
-          RUNTIME_SCOPE: ${{ needs.agent-skills-core.outputs.runtime_scope }}
           PACKAGE_EVIDENCE_REQUIRED: ${{ needs.agent-skills-core.outputs.package_evidence_required }}
           CHANGE_GATE_READY: ${{ needs.agent-skills-core.outputs.change_gate_ready }}
           WINDOWS_RESULT: ${{ needs.runtime-windows-package.result }}
@@ -586,21 +587,9 @@ jobs:
             echo "Current Coding Change is not Ready; Runtime Package Gate remains fail-closed." >&2
             exit 1
           fi
-          case "${RUNTIME_SCOPE}" in
-            change_only|governance|content)
-              test "${WINDOWS_RESULT}" = "skipped"
-              test "${MACOS_RESULT}" = "skipped"
-              ;;
-            package)
-              if [[ "${PACKAGE_EVIDENCE_REQUIRED}" != "true" ]]; then
-                echo "Package evidence is deferred while the PR is Draft; mark the PR Ready for review to run Linux/Windows/macOS package evidence." >&2
-                exit 1
-              fi
-              test "${WINDOWS_RESULT}" = "success"
-              test "${MACOS_RESULT}" = "success"
-              ;;
-            *)
-              echo "Unknown runtime_scope value: ${RUNTIME_SCOPE}" >&2
-              exit 1
-              ;;
-          esac
+          if [[ "${PACKAGE_EVIDENCE_REQUIRED}" != "true" ]]; then
+            echo "Package evidence is deferred while the PR is Draft; mark the PR Ready for review to run Linux/Windows/macOS package evidence." >&2
+            exit 1
+          fi
+          test "${WINDOWS_RESULT}" = "success"
+          test "${MACOS_RESULT}" = "success"
