@@ -31,33 +31,64 @@ _INTERNAL_PREFIX_WORDS = {
     "agent",
     "agents",
     "canonical",
+    "coding",
     "current",
+    "docs",
+    "figma",
+    "formal",
     "internal",
     "matched",
+    "new",
+    "project",
+    "reference",
+    "references",
     "required",
+    "review",
+    "router",
     "runtime",
     "selected",
+    "skill",
+    "skills",
     "source",
+    "testing",
 }
 _INTERNAL_SUFFIX_WORDS = {
     "catalog",
+    "change",
     "context",
+    "core",
     "dependency",
     "handoff",
     "id",
+    "ids",
     "identity",
     "mapping",
     "metadata",
     "mode",
+    "mutation",
     "owner",
+    "projection",
     "reference",
     "references",
+    "regression",
     "route",
     "routing",
     "skill",
     "skills",
+    "stub",
     "trigger",
     "workflow",
+}
+_INTERNAL_CONTEXT_WORDS = _INTERNAL_PREFIX_WORDS | _INTERNAL_SUFFIX_WORDS
+_PROJECT_REFERENCE_SUFFIX_WORDS = {
+    "architecture",
+    "data",
+    "design",
+    "implementation",
+    "library",
+    "model",
+    "type",
+    "value",
 }
 _INTERNAL_LABEL_REPLACEMENTS = {
     "router": "当前工程规则",
@@ -211,17 +242,24 @@ def _adjacent_ascii_words(text: str, start: int, end: int) -> tuple[str | None, 
     """读取标签左右紧邻的 ASCII 词，用于区分项目技术名与内部组织标签。"""
     before_match = _ASCII_WORD_BEFORE.search(text[:start])
     after_match = _ASCII_WORD_AFTER.match(text[end:])
-    before = before_match.group(1).lower() if before_match else None
-    after = after_match.group(1).lower() if after_match else None
+    before = before_match.group(1) if before_match else None
+    after = after_match.group(1) if after_match else None
     return before, after
 
 
 def _is_project_literal_label(text: str, match: re.Match[str]) -> bool:
-    """带明确项目技术上下文的同形词保留，例如 React Router / Testing Library。"""
+    """只在明确项目技术上下文中保留同形词；内部上下文任一侧命中时优先投影。"""
     before, after = _adjacent_ascii_words(text, match.start(), match.end())
-    if before and before not in _INTERNAL_PREFIX_WORDS:
+    before_lower = before.lower() if before else None
+    after_lower = after.lower() if after else None
+    if before_lower in _INTERNAL_CONTEXT_WORDS or after_lower in _INTERNAL_CONTEXT_WORDS:
+        return False
+    if before and before[0].isupper():
         return True
-    if after and after not in _INTERNAL_SUFFIX_WORDS:
+    token = match.group(0).lower()
+    if token in {"reference", "references"} and after_lower in _PROJECT_REFERENCE_SUFFIX_WORDS:
+        return True
+    if token == "testing" and after_lower == "library":
         return True
     return False
 
