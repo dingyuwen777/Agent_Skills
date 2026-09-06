@@ -212,49 +212,98 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、专业 Skill
 
 测试必须自包含，**不能依赖另一个业务仓库**、外部 Blueprint、业务源码或私有测试 fixture 才成立。
 
-普通 PR/main 的 CI 证据责任以当前 [`.github/scripts/runtime_package_scope.py`](../.github/scripts/runtime_package_scope.py) 与 [`.github/workflows/skill-tests.yml`](../.github/workflows/skill-tests.yml) 为机器事实源；当前 scope 为 `change_only / governance / content / package`。**L3 ≠ 必然三平台打包**：风险等级决定治理和证明强度，是否构建 binary 由真实 executable/package/platform 影响和 Workflow 事件/Draft/Ready 条件共同决定。
+普通 PR/main 的 CI 机器事实源是当前 [`.github/scripts/runtime_package_scope.py`](../.github/scripts/runtime_package_scope.py) 与 [`.github/workflows/skill-tests.yml`](../.github/workflows/skill-tests.yml)。前者虽然保留历史稳定文件名，但当前职责已经从“只判断 package scope”升级为**多轴 CI Evidence Selector**：同时给出 Runtime scope、semantic profile/test groups、Runtime dependency、compile/smoke 和 package Evidence 责任。**L3 ≠ 必然全测试或三平台打包**；风险等级决定治理强度，真正执行哪些测试/Runner 由 changed scope 的独立失败边界决定。
 
-- `change_only`：只有 `.agents/changes/` 下 carrier 文件独占变更时成立；保留适用 Requirement Source、Ready/Active 与 required gate，不安装 Runtime 依赖、不重复不受影响的语义测试或 binary package。它不等于免除治理验收；
-- `governance`：维护文档和不进入 Runtime 产品语义的仓库治理文本；运行 Skill Tests、Requirement/Ready/Review 等治理门禁，不运行三平台 binary package；
-- `content`：`.agents/skills/**` 下 canonical Skill/Reference/Entry、Project Payload 文本或运行资产，以及 [`USAGE.md`](../USAGE.md) 等会影响 Runtime/Release 内容但不改变 executable mechanism 的文件；必须继续运行完整 Skill Tests，用动态 Catalog、Bundle/Project Payload 构建、Routing Conformance、canonical exact-text、加密 round-trip、ownership 与内容守恒等平台无关证据证明，不运行三平台 binary package；
-- `package`：Runtime Python/source、加密/加载实现、安装器和平台逻辑、Runtime/build requirements、Builder、真实 MCP smoke、Runtime Package/Release workflow、scope classifier 与 `.gitattributes` 等会改变 executable/package/platform boundary 的文件；正式交付必须在 Linux、Windows、macOS 对应 Runner 完成 onefile、self-test、真实 stdio MCP 和项目安装验证。Draft 可按当前 Workflow 延后昂贵 package，但缺少该证据时 Runtime Package Gate 仍失败关闭，不能据此合并。
+### 9.1 每次维护都必须做 changed-scope Evidence Check
 
-混合修改取最高档；任一 `package` 路径存在时不能被 `content/governance` 文件掩盖。分类依据是文件在产品中的职责，不按 `.md`、`.py` 等扩展名粗暴判断：例如 [`runtime/README.md`](../runtime/README.md) 属于 `governance`，canonical Reference Markdown 属于 `content`。Agent 不用手工分类覆盖 Workflow 对无法恢复 base 等情形的安全回退。
-
-永久验证仍按独立证据分层：
+Agent_Skills 的默认长期策略不是“CI 越多越安全”，而是：
 
 ```text
-Skill Tests
-→ 规则/脚本可解析
-→ self-contained behavior/preservation/portability tests
-→ 动态 Skill Bundle + Project Payload
-→ metadata / routing / encryption / ownership / governance invariants
-→ Ready Check
-
-Runtime Package Tests（仅 scope=package）
-→ Linux onefile build/status/self-test
-→ real stdio MCP
-→ project-only install/upgrade/no-args install
-→ 无 install/build sidecar 验证
-→ Windows onefile + 项目安装
-→ macOS onefile + 项目安装
-
-Release
-→ 对目标 main SHA 重新执行完整 preflight
-→ 三平台正式 artifact 构建与 Builder JSON identity
-→ job outputs 公共 identity 比较 + 每个平台 binary SHA256 重算
-→ 组装并验证三个平台 ZIP
-→ Draft Release 精确核对三个平台 ZIP 后发布
+changed paths
+→ 恢复真实 Owner / consumer / failure boundary
+→ 选择最小充分 semantic test groups
+→ 只准备这些测试需要的依赖 / compile / smoke
+→ executable/package 风险存在时再升级平台 package Evidence
+→ required Gate 聚合
 ```
 
-普通 PR/main 的语义验证和按 scope 触发的 Runtime package 工作统一由 [`.github/workflows/skill-tests.yml`](../.github/workflows/skill-tests.yml) 承担；`change_only` 仅跳过不受影响的语义/package 工作，`governance/content` 继续执行完整自包含测试且跳过 binary package。只有 `package` 且当前事件/Ready 条件要求时才安装构建依赖并执行对应平台构建。`Agent Skills Gate` 与 `Runtime Package Gate` 保持正式 required check 身份；不能用语义绿色替代 package 证据，不能把一个平台 artifact 当作其他平台证据。
+每次新增或修改文件时都要主动判断：本次是否会机械拉起与变化无关的 test group、Runtime setup、compile/smoke、binary build、平台 Runner 或 Workflow。能由 selector 精确证明不相关的步骤必须跳过；**不能等用户再次发现 Actions 消耗过高才处理**。
 
-不再寻找或额外触发已经移除的独立 `.github/workflows/runtime-package-tests.yml`。classifier 保留旧路径是为了覆盖删除或意外恢复旧控制面的风险，不表示该 Workflow 当前存在。
+当前 Runtime scope 继续保持 `change_only / governance / content / package`，但它只是一条轴，不再等价于“运行整套 Skill Tests”：
 
-**正式 Release 不使用普通 PR/main 的 scope 快速路径；每次仍验证 Linux、Windows、macOS 最终 artifact。** Release workflow 必须重新验证当前目标 main，并完整承担构建、安装、MCP、identity、artifact SHA 和 ZIP 精确成员责任。
+- `change_only`：只有 `.agents/changes/` carrier 独占变化时成立；只保留 Requirement/Change/Ready/required gate，不安装 Runtime 依赖、不跑 semantic/package；repository-native Archivist 在完成门禁、exact two-path allowlist 和 main 防漂移全部成立后生成的纯归档 commit 可以使用 `[skip ci]`，**不再重复 parent implementation revision 的功能性 CI**；普通用户/PR commit 不得复用该能力；
+- `governance` / human docs：README、runtime README、Issue/PR template、Maintenance 和明确的仓库治理变化只运行 docs/governance/CI 直接 consumer Evidence；默认不安装 Runtime 依赖、不编译 Runtime、不跑 MCP、不构建 binary；
+- `content`：canonical Skill/Reference/Entry/USAGE 等内容变化按 semantic Owner 选择 Evidence。Docs/Figma/Testing/Review 等专业 Skill 运行本 Owner tests + Router/Source-Runtime 等真实共享 consumer closure；Coding/Router/ENTRY/shared control-plane 因影响面更广可升级为 broad/full semantic。**content 不再机械等于全 492+ self-contained tests**；
+- `package`：Runtime Python/source、加密/Bundle/Installer、MCP、Runtime/build requirements、Builder、核心 CI selector/workflow、Release workflow、`.gitattributes` 等 executable/package/platform boundary 变化；必须运行完整 semantic Evidence，并在 Linux、Windows、macOS 对应 Runner 完成 onefile、self-test、真实 stdio MCP 和项目安装验证。
 
-删除旧产品能力时，应删除只为该能力保活的测试；但不能借 CI 拆分删除现行 Runtime、内容守恒、安全或交付责任。修改 Workflow 时必须保持 Evidence Preservation Mapping：每个原独立证明责任都能指出新的唯一或等价承担位置。
+测试文件本身默认只运行被修改测试及其真实 consumer closure；但 selector、核心 CI/Workflow、共享 fixture、Router/ENTRY、Runtime/package 和无法安全分类的机器路径必须 **fail-closed** 到 broad/full。新增机器路径如果没有显式映射，不能得到空 Evidence；要么同步 selector，要么由 unknown→full 兜底。
 
+混合修改只允许向更强 Evidence **单调扩大**。分类依据是文件在产品/治理中的真实职责，不按 `.md`、`.py` 等扩展名粗暴判断：[`runtime/README.md`](../runtime/README.md) 是 human docs，canonical Reference Markdown 是可执行治理内容，Runtime Python 是 package。Agent 不手工覆盖 selector 的安全回退。
+
+### 9.2 Test Group 与 Runner 成本规则
+
+永久测试资产按独立证明责任组织为逻辑 test group；**优先减少“何时运行”，不是先删测试文件**。仍有长期回归价值的 test 不因本次 scope 未命中而删除。
+
+后续维护新增/修改测试时必须同步判断：
+
+- 它直接保护哪个 Owner / Contract / failure boundary；
+- 应属于哪个 semantic group，或为何必须进入 broad/full；
+- 对应生产/治理路径是否能触发它；
+- test-only 变化是否可以只运行该测试，而不是反向拉起全仓；
+- selector / group 映射自身变化是否已经 fail-closed full。
+
+CI 消重顺序固定为：
+
+```text
+无关 step
+→ 无关 test group
+→ 重复 setup/install/compile/build
+→ 无关 platform job
+→ 只重复治理检查的 runner job
+→ 重复 workflow
+```
+
+只把 checkout/setup 命令藏进 composite action、模板或 helper，但实际 Runner 时间/次数不下降，**不算 CI 性能优化**。除非它同时统一真正独立的高风险 Contract，否则不为了 YAML 变短引入新 Action 层。
+
+### 9.3 当前永久 Evidence 责任
+
+`Agent Skills Gate` Core 负责：Requirement Source、changed-scope selector、selected semantic tests、必要 compile/smoke、Linux package（仅 package）和当前 Change Ready 结果。`Runtime Package Gate` 只聚合 Core + Windows/macOS + Change Ready 结果，**不得再次 checkout/setup Python/重复 ready_check**。Windows/macOS package 仅在 package + Ready/non-draft/main 条件真实要求时启动。
+
+专业 Skill targeted Evidence 只能跳过已证明不相关的边界，不能用局部测试冒充 Runtime/package；反过来，纯人类文档也不能因为“同仓有 Runtime”就运行无关 binary Evidence。
+
+永久 Workflow 仍保持三个唯一 Owner：
+
+```text
+skill-tests.yml
+→ PR/main 的 changed-scope semantic + Runtime/package required Evidence
+
+change-archive.yml
+→ merge 后 Change carrier active→archive/status done
+→ 自身 completion/exact allowlist/main drift 证明通过后 archive commit [skip ci]
+
+release.yml
+→ 手工正式 Release
+→ 不使用日常 selector 快速路径
+→ 对最终版本重新构建和验证 Linux/Windows/macOS artifact
+```
+
+不再寻找或额外触发已经移除的独立 `.github/workflows/runtime-package-tests.yml`。selector 保留旧路径只用于删除/意外恢复控制面时 fail-closed，不表示 Workflow 当前存在。
+
+**正式 Release 不复用普通 CI binary，也不因为日常 CI targeted 就降低最终 artifact 证明。** 每次仍验证 Linux、Windows、macOS 最终 artifact、MCP/install、跨平台 identity、SHA256 和 ZIP 精确成员。
+
+### 9.4 后续修改 CI 的硬门禁
+
+修改 selector、test group、Workflow、required Gate 或 Archive skip 时必须：
+
+1. 先做 Workflow Responsibility Audit / Evidence Preservation Mapping；
+2. 为所有新降级路径补正反例永久回归；
+3. CI/selector 自身变化用 full current-head Evidence 验证；
+4. 从“哪些风险可能被漏跑”做反向 Review，而不是只看 Actions 绿色；
+5. required check identity / Ruleset consumer 不得因 path filter 或 silent skip 变成 Pending/假绿；
+6. unknown/shared/CI-self 无法证明安全时保持 full，不为节省分钟牺牲 fail-closed；
+7. Evidence 已足够后遵守 Validation Stop Rule，不因为阶段切换、metadata/Change/PR 文本更新或 archive carrier 变化重复同一功能性测试。
+
+删除旧产品能力时，可以删除只为该能力保活且已没有 consumer 的测试；但不能借 CI 精简删除现行 Runtime、内容守恒、安全或交付责任。每项删除/合并都必须能指出新的唯一 Evidence Owner，无法证明等价时保留。
 ## 10. Git 与 Release
 
 - 修改前确认当前 `main` HEAD；重要修改从最新 `main` 创建专用分支；
@@ -264,7 +313,7 @@ Release
 - 不绕过 Branch Protection、Ruleset、CI 或现有门禁；仓库当前未配置这些机制时也不能用“没有平台强制”替代本仓库自身 PR/CI 流程；
 - 合并后确认 main 指向预期 merge commit，并重新运行本次 changed scope 应触发的 main 新鲜 CI；纯 Skill/治理变化不人为触发无关三平台 Runtime package workflow；
 - L2/L3 Implementation PR 中的 Change 保持 `active/ready_for_review`；merge 后由 `.github/workflows/change-archive.yml` 的 repository-native **Change Archive** 基础设施使用专用归档身份完成 `active → archive/YYYY-MM` 与 `status → done`。**Agent 不执行归档 commit，Agent 不创建归档 PR**；自动归档失败时保持 `blocked/incomplete`，修复平台或基础设施后重跑并验证，不由 Agent 接管；
-- implementation main fresh CI 与 Change Archive 可以按真实 GitHub Actions 独立运行；完整 Closure 前必须同时取得当前 implementation merge revision 的 required main-fresh Evidence、同一 Change 的 archive/done 结果，以及项目要求的 archive revision governance fresh Evidence；archive/done **不等价于 Requirement** 已完成；
+- implementation main fresh CI 与 Change Archive 可以按真实 GitHub Actions 独立运行；完整 Closure 前必须同时取得当前 implementation merge revision 的 required main-fresh Evidence，以及同一 Change 的 repository-native archive/done 结果。Archivist 纯 carrier commit 在 Section 9 的 completion/exact allowlist/main drift 门禁成立后使用 `[skip ci]`，**不要求为了归档 revision 再重复功能性 CI**；archive/done 仍不等价于 Requirement 已完成；
 - Release 只从 main 手工运行 `.github/workflows/release.yml`，输入唯一正式版本来源 `v<SemVer>`；仓库不维护第二份根版本文件；
 - Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并拒绝覆盖已有 tag/Release；
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
@@ -297,7 +346,7 @@ Release
 - 真正合并前必须重新确认 `draft=false`、mergeable、required CI、当前 head SHA 与 reviewed head 一致；
 - GitHub merge 一律走 REST merge；宿主支持时必须传入 `expected_head_sha`，不使用无 head guard 的替代合并路径；
 - merge 后必须执行 implementation main fresh CI；
-- merge 后由 repository-native Change Archive 自动归档；Agent 等待/验证 archive/done 与 archive revision required governance fresh Evidence，再执行 Closure Audit、Acceptance 状态同步和 Requirement Closure。归档失败时保持 `blocked/incomplete`，不创建归档 PR、不手工 direct push main。
+- merge 后由 repository-native Change Archive 自动归档；Agent 等待/验证 archive Workflow 自检成功与 archive/done，并确认纯 carrier commit 没有越出允许路径后，再执行 Closure Audit、Acceptance 状态同步和 Requirement Closure。按 Section 9 合法使用 `[skip ci]` 的 archive revision 不再机械要求下游 CI；归档失败时保持 `blocked/incomplete`，不创建归档 PR、不手工 direct push main。
 
 ## 11. 完成报告
 

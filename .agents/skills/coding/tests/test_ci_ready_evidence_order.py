@@ -1,4 +1,4 @@
-"""验证真实 package 证据不被施工 Ready 阻塞，最终 required Gate 仍失败关闭。"""
+"""验证施工 Ready 先阻止无价值 package Runner，而 required Gate 仍失败关闭。"""
 
 from __future__ import annotations
 
@@ -20,37 +20,62 @@ def _job_text(workflow: str, name: str) -> str:
 
 
 class CiReadyEvidenceOrderTest(unittest.TestCase):
-    """锁定 Evidence-before-Ready 的依赖方向和最终拒绝未就绪 Change 的责任。"""
+    """锁定 Ready-before-package 的成本边界和最终 required Gate 责任。"""
 
-    def test_package_evidence_does_not_depend_on_change_ready(self) -> None:
-        """没有本地构建环境时，未 Ready Change 仍能通过正式 CI 取得真实三平台证据。"""
+    def test_core_collects_semantic_evidence_then_blocks_package_on_not_ready(self) -> None:
+        """targeted semantic 可以先跑，但昂贵 package 必须等当前 Change Ready。"""
         workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
         core = _job_text(workflow, "agent-skills-core")
-        # 编译检查可以保留该文件；这里只禁止实际执行 Ready 门禁成为 package 前置条件。
-        self.assertNotRegex(core, r"(?m)^\s+python \.agents/skills/coding/scripts/ready_check\.py(?:\s|$)")
-        self.assertIn("Build and self-test Linux onefile Runtime", core)
+        self.assertIn("Run selected self-contained tests", core)
+        self.assertIn("Verify current Coding Change readiness", core)
+        self.assertIn("continue-on-error: true", core)
+        self.assertIn("Capture Coding Change readiness", core)
+        self.assertIn("change_gate_ready", workflow)
+        self.assertLess(
+            core.index("Run selected self-contained tests"),
+            core.index("Verify current Coding Change readiness"),
+        )
+        self.assertLess(
+            core.index("Capture Coding Change readiness"),
+            core.index("Build and self-test Linux onefile Runtime"),
+        )
+        self.assertIn("steps.change-gate.outputs.ready == 'true'", core)
+
+    def test_platform_package_jobs_require_core_ready_signal(self) -> None:
+        """Windows/macOS Runner 不得在 current Change 未 Ready 时提前启动。"""
+        workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
         for job in ("runtime-windows-package", "runtime-macos-package"):
             with self.subTest(job=job):
-                self.assertIn("needs: agent-skills-core", _job_text(workflow, job))
+                section = _job_text(workflow, job)
+                self.assertIn("needs: agent-skills-core", section)
+                self.assertIn("needs.agent-skills-core.outputs.runtime_scope == 'package'", section)
+                self.assertIn("needs.agent-skills-core.outputs.package_evidence_required == 'true'", section)
+                self.assertIn("needs.agent-skills-core.outputs.change_gate_ready == 'true'", section)
 
-    def test_final_required_gate_keeps_pr_and_main_ready_validation(self) -> None:
-        """包验证完成不等于可合并；最终 required Gate 还必须检查同一 revision 的施工状态。"""
+    def test_final_required_gate_only_aggregates_and_fails_closed(self) -> None:
+        """Runtime Package Gate 保持 required identity，但不再重复 checkout/setup/ready_check。"""
         workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
         gate = _job_text(workflow, "runtime-package-gate")
         self.assertIn("name: Runtime Package Gate", gate)
         self.assertIn("if: always()", gate)
-        self.assertIn("fetch-depth: 0", gate)
-        for marker in (
-            "github.event_name == 'push'",
-            "github.event_name == 'pull_request'",
-            "--require-active-ready",
-            "--changed-since ${{ github.event.pull_request.base.sha }}",
-        ):
-            with self.subTest(marker=marker):
-                self.assertIn(marker, gate)
-        self.assertEqual(gate.count(".agents/skills/coding/scripts/ready_check.py"), 2)
-        self.assertLess(gate.index("Verify required Runtime package evidence"), gate.index("Verify active Coding Change"))
-        self.assertNotIn("continue-on-error", gate)
+        self.assertIn("CHANGE_GATE_READY", gate)
+        self.assertIn('test "${CORE_RESULT}" = "success"', gate)
+        self.assertIn("Runtime Package Gate remains fail-closed", gate)
+        self.assertNotIn("actions/checkout", gate)
+        self.assertNotIn("actions/setup-python", gate)
+        self.assertNotIn("ready_check.py", gate)
+        self.assertNotIn("--require-active-ready", gate)
+        self.assertNotIn("--changed-since", gate)
+
+    def test_draft_package_still_cannot_merge_without_platform_evidence(self) -> None:
+        """Draft 可省三平台 Runner，但 Ready 前 required Gate 不能假绿。"""
+        workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
+        core = _job_text(workflow, "agent-skills-core")
+        gate = _job_text(workflow, "runtime-package-gate")
+        self.assertIn("github.event.pull_request.draft", core)
+        self.assertIn("package_evidence_required=false", core)
+        self.assertIn("Package evidence is deferred while the PR is Draft", gate)
+        self.assertIn("exit 1", gate)
 
 
 if __name__ == "__main__":
