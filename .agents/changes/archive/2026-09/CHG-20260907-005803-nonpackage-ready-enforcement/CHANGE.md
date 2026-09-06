@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260907-005803-nonpackage-ready-enforcement
 title: 修复 non-package Gate 跳过后的 Change Ready 强制链
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: fix/238-nonpackage-ready-enforcement
 created: 2026-09-07
