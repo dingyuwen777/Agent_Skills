@@ -228,9 +228,18 @@ jobs:
           grep -Fq "当前真实文件" "${target}/AGENTS.md"
           grep -Fq "首次接入" "${target}/AGENTS.md"
           grep -Fq "完整性无法确认" "${target}/AGENTS.md"
-          grep -Fq ".agents/skills/router/SKILL.md" "${target}/.agents/skills/ENTRY.md"
-          grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/router/SKILL.md"
-          grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/router/SKILL.md"
+          for required in "当前项目" "真实文件" "工程约束" "最少充分" "无法可靠取得"; do
+            grep -Fq "${required}" "${target}/.agents/skills/ENTRY.md"
+          done
+          for forbidden in "Router" "Skill" "Reference" "Handoff" "Source Mode" "Runtime Mode" ".agents/skills/" "agent_skills_" "内部能力" "内部治理" "防披露"; do
+            ! grep -Fq "${forbidden}" "${target}/.agents/skills/ENTRY.md"
+          done
+          for required in "当前项目" "L1" "L2" "L3" "Fresh Evidence Contract"; do
+            grep -Fq "${required}" "${target}/.agents/skills/router/SKILL.md"
+          done
+          for forbidden in "agent-routing:v1" "Router" "Skill" "Reference" "Handoff" "Source Mode" "Runtime Mode" "Agent_Skills" ".agents/skills/" "agent_skills_" "内部能力" "内部控制面" "内部任务路由" "用户可见表达边界" "防披露"; do
+            ! grep -Fq "${forbidden}" "${target}/.agents/skills/router/SKILL.md"
+          done
           test ! -e "${target}/.agents/skills/coding/references"
           grep -Fq ".agents/project-context.json" "${target}/.gitignore"
           ! grep -Fq "/.agents/runtime/" "${target}/.gitignore"
@@ -354,9 +363,18 @@ jobs:
               throw "Windows 目标 AGENTS 缺少项目侧治理入口: $required"
             }
           }
-          if (-not (Select-String -Path $entry -Pattern ".agents/skills/router/SKILL.md" -SimpleMatch -Quiet)) { throw "Windows Entry 未指向 Router Skill" }
-          if (-not (Select-String -Path $router -Pattern ".agents/skills/coding/SKILL.md" -SimpleMatch -Quiet)) { throw "Windows Router 未指向 Coding Skill" }
-          if (-not (Select-String -Path $router -Pattern "agent_skills_load_required_context" -SimpleMatch -Quiet)) { throw "Windows Router 未保留 Runtime required Context 路由" }
+          foreach ($required in @("当前项目", "真实文件", "工程约束", "最少充分", "无法可靠取得")) {
+            if (-not (Select-String -Path $entry -Pattern $required -SimpleMatch -Quiet)) { throw "Windows Entry 缺少项目侧工程语义: $required" }
+          }
+          foreach ($forbidden in @("Router", "Skill", "Reference", "Handoff", "Source Mode", "Runtime Mode", ".agents/skills/", "agent_skills_", "内部能力", "内部治理", "防披露")) {
+            if (Select-String -Path $entry -Pattern $forbidden -SimpleMatch -Quiet) { throw "Windows Entry 暴露内部组织: $forbidden" }
+          }
+          foreach ($required in @("当前项目", "L1", "L2", "L3", "Fresh Evidence Contract")) {
+            if (-not (Select-String -Path $router -Pattern $required -SimpleMatch -Quiet)) { throw "Windows 项目工程入口缺少执行语义: $required" }
+          }
+          foreach ($forbidden in @("agent-routing:v1", "Router", "Skill", "Reference", "Handoff", "Source Mode", "Runtime Mode", "Agent_Skills", ".agents/skills/", "agent_skills_", "内部能力", "内部控制面", "内部任务路由", "用户可见表达边界", "防披露")) {
+            if (Select-String -Path $router -Pattern $forbidden -SimpleMatch -Quiet) { throw "Windows 项目工程入口暴露内部组织: $forbidden" }
+          }
           if (Test-Path (Join-Path $target ".agents\skills\coding\references")) { throw "Windows 目标项目不应安装 Reference 或 Stub" }
           & $installedRuntime status --json
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime status 失败" }
@@ -475,9 +493,18 @@ jobs:
           grep -Fq "当前真实文件" "${target}/AGENTS.md"
           grep -Fq "首次接入" "${target}/AGENTS.md"
           grep -Fq "完整性无法确认" "${target}/AGENTS.md"
-          grep -Fq ".agents/skills/router/SKILL.md" "${target}/.agents/skills/ENTRY.md"
-          grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/router/SKILL.md"
-          grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/router/SKILL.md"
+          for required in "当前项目" "真实文件" "工程约束" "最少充分" "无法可靠取得"; do
+            grep -Fq "${required}" "${target}/.agents/skills/ENTRY.md"
+          done
+          for forbidden in "Router" "Skill" "Reference" "Handoff" "Source Mode" "Runtime Mode" ".agents/skills/" "agent_skills_" "内部能力" "内部治理" "防披露"; do
+            ! grep -Fq "${forbidden}" "${target}/.agents/skills/ENTRY.md"
+          done
+          for required in "当前项目" "L1" "L2" "L3" "Fresh Evidence Contract"; do
+            grep -Fq "${required}" "${target}/.agents/skills/router/SKILL.md"
+          done
+          for forbidden in "agent-routing:v1" "Router" "Skill" "Reference" "Handoff" "Source Mode" "Runtime Mode" "Agent_Skills" ".agents/skills/" "agent_skills_" "内部能力" "内部控制面" "内部任务路由" "用户可见表达边界" "防披露"; do
+            ! grep -Fq "${forbidden}" "${target}/.agents/skills/router/SKILL.md"
+          done
           test ! -e "${target}/.agents/skills/coding/references"
           grep -Fq ".agents/project-context.json" "${target}/.gitignore"
           ! grep -Fq "/.agents/runtime/" "${target}/.gitignore"
