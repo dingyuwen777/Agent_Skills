@@ -238,7 +238,7 @@ changed paths
 
 测试文件本身默认只运行被修改测试及其真实 consumer closure；但 selector、核心 CI/Workflow、共享 fixture、Router/ENTRY、Runtime/package 和无法安全分类的机器路径必须 **fail-closed** 到 broad/full。新增机器路径如果没有显式映射，不能得到空 Evidence；要么同步 selector，要么由 unknown→full 兜底。
 
-混合修改只允许向更强 Evidence **单调扩大**。分类依据是文件在产品/治理中的真实职责，不按 `.md`、`.py` 等扩展名粗暴判断：`runtime/README.md` 是 human docs，canonical Reference Markdown 是可执行治理内容，Runtime Python 是 package。Agent 不手工覆盖 selector 的安全回退。
+混合修改只允许向更强 Evidence **单调扩大**。分类依据是文件在产品/治理中的真实职责，不按 `.md`、`.py` 等扩展名粗暴判断：[`runtime/README.md`](../runtime/README.md) 是 human docs，canonical Reference Markdown 是可执行治理内容，Runtime Python 是 package。Agent 不手工覆盖 selector 的安全回退。
 
 ### 9.2 Test Group 与 Runner 成本规则
 
