@@ -30,7 +30,7 @@ CODING = _load_coding()
 
 
 class ChangeTemplateChineseYamlTest(unittest.TestCase):
-    """验证 Change 模板中文表达、GitHub YAML 合法性和现有机器契约兼容性。"""
+    """验证 Change 模板中文表达、第一性原理结构、YAML 合法性和机器契约兼容性。"""
 
     def test_raw_frontmatter_has_no_standalone_template_keys(self) -> None:
         """原始模板 frontmatter 不能出现 GitHub YAML 无法解析的独立占位行。"""
@@ -85,8 +85,38 @@ class ChangeTemplateChineseYamlTest(unittest.TestCase):
         ):
             self.assertNotIn(obsolete, text)
 
+    def test_template_has_fixed_first_principles_structure(self) -> None:
+        """Change 模板必须固定事实、问题、方案、证据、验证和回滚的因果链。"""
+        text = TEMPLATE_PATH.read_text(encoding="utf-8")
+        headings = (
+            "# 变更摘要",
+            "# 背景、现状与问题",
+            "# 事实与证据",
+            "# 目标、成功标准与非目标",
+            "# 约束与意图决策",
+            "# 修改方案与决策依据",
+            "# 需求追溯",
+            "# 计划改动",
+            "# 验证矩阵",
+            "# 风险、兼容性、迁移与回滚",
+            "# 文档、依赖、部署与发布影响",
+            "# 完成审计",
+            "# 完成证据与状态",
+        )
+        positions = [text.index(heading) for heading in headings]
+        self.assertEqual(positions, sorted(positions), "第一性原理章节顺序发生漂移")
+        for required_phrase in (
+            "事实 → 问题或约束 → 目标 → 方案 → 验证",
+            "不适用",
+            "事实依据",
+            "已确认事实",
+            "推断与待确认",
+            "证据到决策",
+        ):
+            self.assertIn(required_phrase, text)
+
     def test_generated_change_keeps_current_machine_contract(self) -> None:
-        """中文化与 YAML 修复后，new-change 仍生成当前 schema 所需字段与列表。"""
+        """中文化与模板结构升级后，new-change 仍生成当前 schema 所需字段与列表。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             path = CODING.create_change(
