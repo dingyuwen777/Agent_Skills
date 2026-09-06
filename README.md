@@ -382,3 +382,5 @@ Release 页面说明继续使用 [`USAGE.md`](USAGE.md)，每个正式 ZIP 也�
 - Runtime 源码维护：[`runtime/README.md`](runtime/README.md)
 - Runtime 构建：[`scripts/build_runtime.py`](scripts/build_runtime.py)
 - 正式发布：[`.github/workflows/release.yml`](.github/workflows/release.yml)
+
+<!-- CI canary: Issue #238 ready-enforcement -->
