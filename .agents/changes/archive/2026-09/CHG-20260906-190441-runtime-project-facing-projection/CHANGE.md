@@ -3,11 +3,11 @@ schema: coding-change/v1
 id: CHG-20260906-190441-runtime-project-facing-projection
 title: Runtime 明文项目化投影并保持 Source/Runtime 同效
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: fix/runtime-project-facing-projection
 created: 2026-09-06T19:04:41+08:00
-updated: 2026-09-07T00:16:00+08:00
+updated: 2026-09-07
 completion_gate: required
 depends_on: []
 affected_areas:
