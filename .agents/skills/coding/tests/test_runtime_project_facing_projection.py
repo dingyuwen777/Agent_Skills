@@ -1,0 +1,183 @@
+"""验证 Runtime 暴露给普通项目的明文只表达项目工程语义，不暴露内部组织与防披露实现。"""
+
+from __future__ import annotations
+
+import re
+import unittest
+from pathlib import Path
+
+from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.project_payload import build_project_payload, decode_payload_file
+from runtime.agent_skills_runtime.runtime import RuntimeStore
+
+
+ROOT = Path(__file__).resolve().parents[4]
+SKILLS_ROOT = ROOT / ".agents" / "skills"
+_FRONTMATTER = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
+_ROUTING_BLOCK = re.compile(r"<!--\s*agent-routing:v1\s*\r?\n.*?\r?\n\s*-->", re.DOTALL)
+_TEXT_SUFFIXES = {".md", ".yaml", ".yml", ".json", ".toml", ".txt"}
+
+
+class RuntimeProjectFacingProjectionTest(unittest.TestCase):
+    """覆盖真实 Project Payload 明文、Runtime 公共进度与关键工程语义守恒。"""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """从当前 canonical Source 构建一次真实 Bundle 与 Project Payload。"""
+        cls.bundle = build_bundle(ROOT)
+        cls.payload = build_project_payload(ROOT, cls.bundle)
+        cls.files = {
+            str(entry["path"]): decode_payload_file(entry)
+            for entry in cls.payload["files"]
+            if isinstance(entry, dict)
+        }
+
+    def _text(self, path: str) -> str:
+        """读取一个 Runtime Project Payload UTF-8 文本文件。"""
+        return self.files[path].decode("utf-8")
+
+    def _project_facing_texts(self) -> dict[str, str]:
+        """收集普通项目可直接读取的文本运行资产，跳过脚本和二进制数据。"""
+        result: dict[str, str] = {}
+        for path, payload in self.files.items():
+            if Path(path).suffix.lower() not in _TEXT_SUFFIXES:
+                continue
+            result[path] = payload.decode("utf-8")
+        return result
+
+    def _without_skill_machine_name(self, text: str) -> str:
+        """仅忽略宿主发现必须保留的 frontmatter `name` 行，其余明文都纳入泄露检查。"""
+        match = _FRONTMATTER.match(text)
+        if match is None:
+            return text
+        frontmatter = "\n".join(
+            line for line in match.group(1).splitlines() if not line.strip().startswith("name:")
+        )
+        return frontmatter + text[match.end() :]
+
+    def test_runtime_entry_is_project_facing_projection_not_source_navigation_copy(self) -> None:
+        """Runtime Entry 不得复制 Source 内部导航，但必须保留项目事实与最少充分约束入口。"""
+        source = (SKILLS_ROOT / "ENTRY.md").read_text(encoding="utf-8")
+        runtime = self._text("ENTRY.md")
+        self.assertNotEqual(runtime, source)
+        for marker in ("当前项目", "真实文件", "工程约束", "最少充分", "无法可靠取得"):
+            self.assertIn(marker, runtime)
+        for forbidden in (
+            "Router",
+            "Skill",
+            "Reference",
+            "Handoff",
+            "Source Mode",
+            "Runtime Mode",
+            ".agents/skills/",
+            "agent_skills_",
+            "内部能力",
+            "内部治理",
+            "防披露",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, runtime)
+
+    def test_runtime_skill_plaintext_does_not_expose_internal_navigation_or_disclosure_policy(self) -> None:
+        """Runtime Skill Core 只保留宿主发现所需 name 与工程语义，不暴露自定义路由元数据/内部组织说明。"""
+        skill_paths = [f"{skill}/SKILL.md" for skill in self.bundle["skills"]]
+        for path in skill_paths:
+            runtime = self._text(path)
+            checked = self._without_skill_machine_name(runtime)
+            with self.subTest(path=path):
+                self.assertNotIn("agent-routing:v1", checked)
+                for forbidden in (
+                    "Router",
+                    "Skill",
+                    "Reference",
+                    "Handoff",
+                    "Source Mode",
+                    "Runtime Mode",
+                    "Agent_Skills",
+                    ".agents/skills/",
+                    "agent_skills_",
+                    "内部能力",
+                    "内部控制面",
+                    "内部任务路由",
+                    "用户可见表达边界",
+                    "防披露",
+                ):
+                    self.assertNotIn(forbidden, checked)
+
+    def test_runtime_agent_prompts_are_project_facing_without_named_internal_assignment(self) -> None:
+        """分发给宿主的 agent prompt 不再要求 `Use $...` 或播报内部能力交接，但保留工程执行要求。"""
+        prompt_paths = sorted(path for path in self.files if path.endswith("/agents/openai.yaml"))
+        self.assertTrue(prompt_paths)
+        for path in prompt_paths:
+            text = self._text(path)
+            with self.subTest(path=path):
+                for forbidden in (
+                    "Use $",
+                    "Router",
+                    " Skill",
+                    "Reference",
+                    "Handoff",
+                    ".agents/skills/",
+                    "Coding workflow",
+                    "Skills exist",
+                ):
+                    self.assertNotIn(forbidden, text)
+                for required in ("current", "validation"):
+                    self.assertIn(required, text.lower())
+
+    def test_runtime_progress_rule_describes_project_actions_without_internal_control_plane_vocabulary(self) -> None:
+        """MCP 公共进度规则只描述项目动作，不通过枚举内部身份来解释“不要泄露”。"""
+        store = RuntimeStore(self.bundle, release_version="project-facing-test")
+        rule = str(store.status()["用户可见进度规则"])
+        for required in ("项目", "代码", "测试", "文档", "Git/CI", "交付"):
+            self.assertIn(required, rule)
+        for forbidden in (
+            "Router",
+            "Skill",
+            "Reference",
+            "Handoff",
+            "内部能力",
+            "内部控制面",
+            "内部 Owner",
+            "内部任务路由",
+            "内部规则解析",
+            "必需上下文组织",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, rule)
+
+    def test_project_facing_projection_preserves_high_value_engineering_semantics(self) -> None:
+        """隐藏内部组织不能把 Runtime Core 变空壳；真实工程风险、验证与专业语义仍可直接触达。"""
+        required_by_path = {
+            "coding/SKILL.md": ("L1", "L2", "L3", "Red", "Completion Audit", "Git", "CI"),
+            "testing/SKILL.md": ("测试", "回归", "用户", "验证"),
+            "review/SKILL.md": ("Findings", "review-only", "re-review"),
+            "docs/SKILL.md": ("Docs Impact", "targeted", "full"),
+            "figma/SKILL.md": ("READY", "NOT_READY", "Canvas"),
+            "router/SKILL.md": ("当前项目", "L1", "L2", "L3", "Fresh Evidence Contract"),
+        }
+        for path, markers in required_by_path.items():
+            text = self._text(path)
+            for marker in markers:
+                with self.subTest(path=path, marker=marker):
+                    self.assertIn(marker, text)
+
+    def test_all_project_facing_text_assets_avoid_disclosure_self_description(self) -> None:
+        """普通用户能直接打开的文本资产不出现“为了隐藏内部机制”这一类自我说明。"""
+        for path, text in self._project_facing_texts().items():
+            checked = self._without_skill_machine_name(text)
+            with self.subTest(path=path):
+                for forbidden in (
+                    "用户可见表达边界",
+                    "用户可见进度规则",
+                    "防披露",
+                    "内部能力身份",
+                    "内部控制面不得",
+                    "不得把内部能力",
+                    "内部任务路由",
+                ):
+                    self.assertNotIn(forbidden, checked)
+
+
+if __name__ == "__main__":
+    unittest.main()
