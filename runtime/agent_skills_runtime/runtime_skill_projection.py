@@ -19,13 +19,55 @@ _SKILL_PATH = re.compile(
     r"(?i)(?<![\w-])(?:\.\.?/)*(?:\.agents/skills/)?[a-z0-9*<>-]+/SKILL\.md|(?<![\w-])SKILL\.md"
 )
 _AGENTS_SKILLS_PATH = re.compile(r"(?i)\.agents/skills/[^\s`)\]}>，。；;,|]+")
-_REFERENCE_WORD = re.compile(r"(?i)\breferences?\b")
 _REFERENCE_SHORTHAND = re.compile(r"(?i)\bref\d+(?:\s*/\s*ref\d+)*\b")
 _REFERENCE_NUMBER_PHRASE = re.compile(r"(?i)\breferences?\s+\d+(?:\s*[/,+]\s*\d+)*\b")
 _RUNTIME_TOOL_NAME = re.compile(r"\bagent_skills_[a-z0-9_]+(?:\([^\n)]*\))?", re.IGNORECASE)
-_DOLLAR_WORKFLOW = re.compile(r"\$[A-Za-z0-9_-]+")
 _USE_WORKFLOW_PREFIX = re.compile(r"\bUse\s+\$[A-Za-z0-9_-]+(?:\s+and\s+)?", re.IGNORECASE)
 _DEFAULT_PROMPT_LINE = re.compile(r'(?m)^(\s*default_prompt:\s*")(.+?)("\s*)$')
+_INTERNAL_LABEL = re.compile(r"\b(?:Router|Coding|Testing|Skills?|References?)\b", re.IGNORECASE)
+_ASCII_WORD_BEFORE = re.compile(r"([A-Za-z][A-Za-z0-9_.+-]*)\s+$")
+_ASCII_WORD_AFTER = re.compile(r"^\s+([A-Za-z][A-Za-z0-9_.+-]*)")
+_INTERNAL_PREFIX_WORDS = {
+    "agent",
+    "agents",
+    "canonical",
+    "current",
+    "internal",
+    "matched",
+    "required",
+    "runtime",
+    "selected",
+    "source",
+}
+_INTERNAL_SUFFIX_WORDS = {
+    "catalog",
+    "context",
+    "dependency",
+    "handoff",
+    "id",
+    "identity",
+    "mapping",
+    "metadata",
+    "mode",
+    "owner",
+    "reference",
+    "references",
+    "route",
+    "routing",
+    "skill",
+    "skills",
+    "trigger",
+    "workflow",
+}
+_INTERNAL_LABEL_REPLACEMENTS = {
+    "router": "当前工程规则",
+    "coding": "开发",
+    "testing": "测试",
+    "skill": "规则",
+    "skills": "规则",
+    "reference": _RUNTIME_CONSTRAINT_TERM,
+    "references": _RUNTIME_CONSTRAINT_TERM,
+}
 _ROUTER_FRONTMATTER_DESCRIPTION = (
     "description: 处理当前项目任务前恢复真实事实、风险、权限、验证与交付边界，"
     "确保工程动作与当前目标和证据相称。"
@@ -165,12 +207,51 @@ def _collapse_projection_labels(text: str) -> str:
     return text
 
 
+def _adjacent_ascii_words(text: str, start: int, end: int) -> tuple[str | None, str | None]:
+    """读取标签左右紧邻的 ASCII 词，用于区分项目技术名与内部组织标签。"""
+    before_match = _ASCII_WORD_BEFORE.search(text[:start])
+    after_match = _ASCII_WORD_AFTER.match(text[end:])
+    before = before_match.group(1).lower() if before_match else None
+    after = after_match.group(1).lower() if after_match else None
+    return before, after
+
+
+def _is_project_literal_label(text: str, match: re.Match[str]) -> bool:
+    """带明确项目技术上下文的同形词保留，例如 React Router / Testing Library。"""
+    before, after = _adjacent_ascii_words(text, match.start(), match.end())
+    if before and before not in _INTERNAL_PREFIX_WORDS:
+        return True
+    if after and after not in _INTERNAL_SUFFIX_WORDS:
+        return True
+    return False
+
+
+def _replace_internal_labels(text: str) -> str:
+    """只投影内部组织语义；项目技术名中的同形词保持原文。"""
+    pieces: list[str] = []
+    cursor = 0
+    for match in _INTERNAL_LABEL.finditer(text):
+        pieces.append(text[cursor : match.start()])
+        token = match.group(0)
+        if _is_project_literal_label(text, match):
+            pieces.append(token)
+        else:
+            pieces.append(_INTERNAL_LABEL_REPLACEMENTS[token.lower()])
+        cursor = match.end()
+    pieces.append(text[cursor:])
+    return "".join(pieces)
+
+
+def _contains_internal_label(text: str) -> bool:
+    """判断投影结果是否仍有可确认的内部组织标签，而不误报项目技术名。"""
+    return any(not _is_project_literal_label(text, match) for match in _INTERNAL_LABEL.finditer(text))
+
+
 def _project_internal_vocabulary(text: str) -> str:
-    """把源码组织术语转换为普通项目工程表达，不改真实工程 Contract。"""
+    """把可确认的源码组织术语转换为项目工程表达，不改项目技术字面量。"""
     docs_impact_placeholder = "__AGENT_SKILLS_DOCS_IMPACT__"
     text = text.replace("Docs Impact", docs_impact_placeholder)
     text = _RUNTIME_TOOL_NAME.sub("工程约束接口", text)
-    text = _DOLLAR_WORKFLOW.sub("当前规则", text)
     replacements = (
         ("Agent_Skills", "工程约束"),
         ("Agent Skills", "工程约束"),
@@ -179,24 +260,17 @@ def _project_internal_vocabulary(text: str) -> str:
         ("Runtime Mode", "本地项目环境"),
         ("Coding workflow", "开发流程"),
         ("Coding's", "开发流程的"),
-        ("Coding", "开发"),
-        ("Testing", "测试"),
-        ("Router", "当前工程规则"),
-        ("Skills", "规则"),
-        ("Skill", "规则"),
-        ("References", "完整约束"),
-        ("Reference", "完整约束"),
         ("Handoff", "衔接"),
-        ("控制面", "工程流程"),
+        ("内部控制面", "工程流程"),
         ("内部能力", "执行机制"),
         ("内部治理", "工程治理"),
         ("内部任务路由", "任务判断"),
         ("内部规则解析", "规则处理"),
-        ("路由", "适用判断"),
-        ("交接", "衔接"),
+        ("内部路由", "适用判断"),
     )
     for source, target in replacements:
         text = text.replace(source, target)
+    text = _replace_internal_labels(text)
     text = text.replace(docs_impact_placeholder, "Docs Impact")
     return text
 
@@ -211,7 +285,6 @@ def _project_runtime_text(text: str, identities: tuple[str, ...]) -> str:
     text = _REFERENCE_PATH.sub(RUNTIME_CONTEXT_LABEL, text)
     text = _SKILL_PATH.sub("相关工程规则", text)
     text = _AGENTS_SKILLS_PATH.sub("相关工程规则", text)
-    text = _REFERENCE_WORD.sub(_RUNTIME_CONSTRAINT_TERM, text)
     text = _project_internal_vocabulary(text)
     text = _collapse_projection_labels(text)
     return text
@@ -235,7 +308,7 @@ def _project_frontmatter_line(line: str, identities: tuple[str, ...], skill_name
 
 
 def _assert_project_facing_plaintext(text: str, identities: tuple[str, ...]) -> None:
-    """发现 canonical 身份或源码组织术语残留时失败关闭，避免静默重新暴露。"""
+    """发现 canonical 身份或可确认的源码组织语义残留时失败关闭。"""
     for identity in identities:
         if identity in text:
             raise ValueError("Runtime 明文投影仍残留 canonical Reference 身份")
@@ -243,9 +316,6 @@ def _assert_project_facing_plaintext(text: str, identities: tuple[str, ...]) -> 
         "agent-routing:v1",
         "references/",
         "/references/",
-        "Router",
-        "Skill",
-        "Reference",
         "Handoff",
         "Source Mode",
         "Runtime Mode",
@@ -253,7 +323,6 @@ def _assert_project_facing_plaintext(text: str, identities: tuple[str, ...]) -> 
         "Agent Skills",
         ".agents/skills/",
         "agent_skills_",
-        "Coding",
         "用户可见表达边界",
         "内部能力",
         "内部控制面",
@@ -263,6 +332,8 @@ def _assert_project_facing_plaintext(text: str, identities: tuple[str, ...]) -> 
     for marker in forbidden:
         if marker in text:
             raise ValueError(f"Runtime 明文投影仍残留源码组织术语：{marker}")
+    if _contains_internal_label(text):
+        raise ValueError("Runtime 明文投影仍残留可确认的内部组织标签")
 
 
 def project_runtime_entry(canonical_payload: bytes) -> bytes:
