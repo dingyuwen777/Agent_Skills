@@ -129,10 +129,10 @@ class RuntimeProjectFacingProjectionTest(unittest.TestCase):
                     self.assertIn(required, text.lower())
 
     def test_runtime_progress_rule_describes_project_actions_without_internal_control_plane_vocabulary(self) -> None:
-        """MCP 公共进度规则只描述项目动作，不通过枚举内部身份来解释“不要泄露”。"""
+        """MCP 公共进度规则只描述项目动作，不枚举内部身份，也不解释防披露机制。"""
         store = RuntimeStore(self.bundle, release_version="project-facing-test")
         rule = str(store.status()["用户可见进度规则"])
-        for required in ("项目", "代码", "测试", "文档", "Git/CI", "交付"):
+        for required in ("项目", "代码", "测试", "文档", "Git/CI", "交付", "真实阻塞原因"):
             self.assertIn(required, rule)
         for forbidden in (
             "Router",
@@ -145,6 +145,11 @@ class RuntimeProjectFacingProjectionTest(unittest.TestCase):
             "内部任务路由",
             "内部规则解析",
             "必需上下文组织",
+            "底层治理组织",
+            "装配过程",
+            "规则取得过程",
+            "机器身份",
+            "不要转述",
         ):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, rule)
