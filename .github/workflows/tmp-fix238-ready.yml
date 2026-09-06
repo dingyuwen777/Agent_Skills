@@ -1,7 +1,9 @@
 name: Temp Fix 238 Ready Enforcement
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - fix/238-nonpackage-ready-enforcement
 
 permissions:
   contents: write
