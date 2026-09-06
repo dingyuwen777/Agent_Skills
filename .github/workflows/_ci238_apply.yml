@@ -1,0 +1,103 @@
+name: CI238 Apply
+
+on:
+  push:
+    branches:
+      - ci/238-runtime-package-gate-zero-runner
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout task branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ci/238-runtime-package-gate-zero-runner
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Apply exact scoped changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text(encoding="utf-8")
+              if text.count(old) != 1:
+                  raise SystemExit(f"{path}: expected exactly one replacement, got {text.count(old)}")
+              file.write_text(text.replace(old, new), encoding="utf-8")
+
+          workflow = ".github/workflows/skill-tests.yml"
+          old_gate = '''  runtime-package-gate:\n    name: Runtime Package Gate\n    if: always()\n    needs:\n      - agent-skills-core\n      - runtime-windows-package\n      - runtime-macos-package\n    runs-on: ubuntu-24.04\n    steps:\n      - name: Verify required Runtime package evidence\n        shell: bash\n        env:\n          CORE_RESULT: ${{ needs.agent-skills-core.result }}\n          RUNTIME_SCOPE: ${{ needs.agent-skills-core.outputs.runtime_scope }}\n          PACKAGE_EVIDENCE_REQUIRED: ${{ needs.agent-skills-core.outputs.package_evidence_required }}\n          CHANGE_GATE_READY: ${{ needs.agent-skills-core.outputs.change_gate_ready }}\n          WINDOWS_RESULT: ${{ needs.runtime-windows-package.result }}\n          MACOS_RESULT: ${{ needs.runtime-macos-package.result }}\n        run: |\n          set -euo pipefail\n          test "${CORE_RESULT}" = "success"\n          if [[ "${CHANGE_GATE_READY}" != "true" ]]; then\n            echo "Current Coding Change is not Ready; Runtime Package Gate remains fail-closed." >&2\n            exit 1\n          fi\n          case "${RUNTIME_SCOPE}" in\n            change_only|governance|content)\n              test "${WINDOWS_RESULT}" = "skipped"\n              test "${MACOS_RESULT}" = "skipped"\n              ;;\n            package)\n              if [[ "${PACKAGE_EVIDENCE_REQUIRED}" != "true" ]]; then\n                echo "Package evidence is deferred while the PR is Draft; mark the PR Ready for review to run Linux/Windows/macOS package evidence." >&2\n                exit 1\n              fi\n              test "${WINDOWS_RESULT}" = "success"\n              test "${MACOS_RESULT}" = "success"\n              ;;\n            *)\n              echo "Unknown runtime_scope value: ${RUNTIME_SCOPE}" >&2\n              exit 1\n              ;;\n          esac\n'''
+          new_gate = '''  runtime-package-gate:\n    name: Runtime Package Gate\n    # selector 已证明非 package 时，required job 直接 skipped，不分配 Runner；\n    # package 才启动真实聚合 Runner，并继续对 Ready/三平台 Evidence fail-closed。\n    if: always() && needs.agent-skills-core.outputs.runtime_scope == 'package'\n    needs:\n      - agent-skills-core\n      - runtime-windows-package\n      - runtime-macos-package\n    runs-on: ubuntu-24.04\n    steps:\n      - name: Verify required Runtime package evidence\n        shell: bash\n        env:\n          CORE_RESULT: ${{ needs.agent-skills-core.result }}\n          PACKAGE_EVIDENCE_REQUIRED: ${{ needs.agent-skills-core.outputs.package_evidence_required }}\n          CHANGE_GATE_READY: ${{ needs.agent-skills-core.outputs.change_gate_ready }}\n          WINDOWS_RESULT: ${{ needs.runtime-windows-package.result }}\n          MACOS_RESULT: ${{ needs.runtime-macos-package.result }}\n        run: |\n          set -euo pipefail\n          test "${CORE_RESULT}" = "success"\n          if [[ "${CHANGE_GATE_READY}" != "true" ]]; then\n            echo "Current Coding Change is not Ready; Runtime Package Gate remains fail-closed." >&2\n            exit 1\n          fi\n          if [[ "${PACKAGE_EVIDENCE_REQUIRED}" != "true" ]]; then\n            echo "Package evidence is deferred while the PR is Draft; mark the PR Ready for review to run Linux/Windows/macOS package evidence." >&2\n            exit 1\n          fi\n          test "${WINDOWS_RESULT}" = "success"\n          test "${MACOS_RESULT}" = "success"\n'''
+          replace_once(workflow, old_gate, new_gate)
+
+          path = ".agents/skills/coding/tests/test_ci_ready_evidence_order.py"
+          replace_once(
+              path,
+              '        self.assertIn("if: always()", gate)\n',
+              '        self.assertIn(\n            "if: always() && needs.agent-skills-core.outputs.runtime_scope == \'package\'", gate\n        )\n        self.assertNotIn("RUNTIME_SCOPE", gate)\n        self.assertNotIn("change_only|governance|content", gate)\n',
+          )
+
+          path = ".agents/skills/coding/tests/test_ci_workflow_minimal_sufficiency.py"
+          replace_once(
+              path,
+              '        self.assertIn("name: Runtime Package Gate", workflow)\n',
+              '        self.assertIn("name: Runtime Package Gate", workflow)\n        gate = _job_text(workflow, "runtime-package-gate")\n        self.assertIn(\n            "if: always() && needs.agent-skills-core.outputs.runtime_scope == \'package\'", gate\n        )\n        self.assertNotIn("change_only|governance|content", gate)\n',
+          )
+          replace_once(
+              path,
+              '        gate = _job_text(workflow, "runtime-package-gate")\n        self.assertIn("CHANGE_GATE_READY", gate)\n',
+              '        self.assertIn("CHANGE_GATE_READY", gate)\n',
+          )
+          replace_once(
+              path,
+              '            "仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化",\n',
+              '            "仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化",\n            "job-level condition",\n            "0 Runner",\n',
+          )
+
+          path = ".agents/skills/coding/tests/test_archive_ci_runtime_lifecycle.py"
+          replace_once(
+              path,
+              '        self.assertIn(\'test "${WINDOWS_RESULT}" = "skipped"\', workflow)\n        self.assertIn(\'test "${MACOS_RESULT}" = "skipped"\', workflow)\n',
+              '        self.assertIn(\n            "if: always() && needs.agent-skills-core.outputs.runtime_scope == \'package\'",\n            workflow,\n        )\n        self.assertNotIn(\'test "${WINDOWS_RESULT}" = "skipped"\', workflow)\n        self.assertNotIn(\'test "${MACOS_RESULT}" = "skipped"\', workflow)\n',
+          )
+
+          path = ".agents/skills/coding/references/27_CI_Workflow健康检查与Actions清理.md"
+          replace_once(
+              path,
+              '- 保持 required check identity，不靠 skip/path filter 假绿。\n',
+              '- 保持 required check identity；selector 已证明某 required job 不适用时，优先用 **job-level condition** 直接 `skipped`，让该 check 保持成功语义但分配 **0 Runner**；禁止用 workflow-level path/branch skip 造成 Pending。\n- package/unknown/CI-self 不得借 job-level skip 降级；package 聚合 Gate 只在 package scope 启动，并继续用 `always()` + `needs` 对 Ready/平台 Evidence fail-closed。\n',
+          )
+
+          path = ".agents/MAINTENANCE.md"
+          replace_once(
+              path,
+              '`Agent Skills Gate` Core 负责：Requirement Source、changed-scope selector、selected semantic tests、必要 compile/smoke、Linux package（仅 package）和当前 Change Ready 结果。`Runtime Package Gate` 只聚合 Core + Windows/macOS + Change Ready 结果，**不得再次 checkout/setup Python/重复 ready_check**。Windows/macOS package 仅在 package + Ready/non-draft/main 条件真实要求时启动。\n',
+              '`Agent Skills Gate` Core 负责：Requirement Source、changed-scope selector、selected semantic tests、必要 compile/smoke、Linux package（仅 package）和当前 Change Ready 结果。`Runtime Package Gate` 保留 required check identity，但 selector 已证明 `change_only/governance/content` 时必须通过 **job-level condition 直接 skipped，分配 0 Runner**；只有 `package` 才启动真实聚合 Runner，并对 Core + Windows/macOS + Change Ready 结果 fail-closed，**不得再次 checkout/setup Python/重复 ready_check**。Windows/macOS package 仅在 package + Ready/non-draft/main 条件真实要求时启动。\n',
+          )
+          replace_once(
+              path,
+              '5. required check identity / Ruleset consumer 不得因 path filter 或 silent skip 变成 Pending/假绿；\n',
+              '5. required check identity / Ruleset consumer 不得因 workflow-level path/branch filter 变成 Pending；只有 selector 已直接证明“不适用”的 job 才能使用 job-level condition skipped/0 Runner，package/unknown/CI-self 不得借 skip 假绿；\n',
+          )
+
+          change = Path(".agents/changes/active/CHG-20260906-232451-runtime-package-gate-zero-runner/CHANGE.md")
+          change.parent.mkdir(parents=True, exist_ok=True)
+          change.write_text('''---\nschema: coding-change/v1\nid: CHG-20260906-232451-runtime-package-gate-zero-runner\ntitle: 让非 Package 变更零 Runner 满足 Runtime Package Gate\nlevel: L3\nstatus: in_progress\nowner: dingyuwen777\nbranch: ci/238-runtime-package-gate-zero-runner\ncreated: 2026-09-06\nupdated: 2026-09-06\ncompletion_gate: required\ndepends_on: []\naffected_areas:\n  - ci\n  - github-actions\n  - maintenance-governance\naffected_paths:\n  - .github/workflows/skill-tests.yml\n  - .agents/MAINTENANCE.md\n  - .agents/skills/coding/references/27_CI_Workflow健康检查与Actions清理.md\n  - .agents/skills/coding/tests/\ncontracts:\n  - Runtime Package Gate required-check identity\n  - Agent Skills changed-scope Evidence Contract\ndata_changes: []\n---\n\n# 背景与目标\n\nRequirement Source：Issue #238。\n\n目标是在保持当前 Ruleset required context identity 和 package 三平台 fail-closed 的前提下，让 selector 已证明非 package 的 `Runtime Package Gate` 通过 job-level condition 直接 skipped，从而不分配无证明价值的 Ubuntu Runner。\n\n# Requirement Traceability\n\n| Requirement | Acceptance | 状态 | Evidence |\n| --- | --- | --- | --- |\n| R1 | #238 / AC1 | not_satisfied | 待 Workflow 与真实非-package PR 证明 |\n| R2 | #238 / AC2 | not_satisfied | 待 package current-head CI 证明 |\n| R3 | #238 / AC3 | not_satisfied | 待 Ruleset/fresh PR 复核 |\n| R4 | #238 / AC4 | not_satisfied | 待永久回归与 Maintenance 证明 |\n| R5 | #238 / AC5 | not_satisfied | 待 canary PR 平台证据 |\n| R6 | #238 / AC6 | not_satisfied | 待 L3/merge/main-fresh/archive/closure |\n\n# Validation Matrix\n\n| 层 | 验证 | 预期 |\n| --- | --- | --- |\n| V1 | Workflow/static regression | 非 package gate job-level skip；package gate fail-closed |\n| V2 | 当前 PR full/package CI | Linux/Windows/macOS + 两 required contexts 满足 |\n| V3 | 非 package canary PR | Runtime Package Gate=skipped 且无 gate Runner |\n| V4 | L3 Deep Review | 无 selector/skip/required-check 漏洞 |\n| V5 | main-fresh + Change Archive | implementation main 绿；archive SHA 0 下游 CI |\n\n# Completion Audit\n\n- [ ] Requirement Traceability 全部 satisfied。\n- [ ] Workflow / 测试 / Maintenance / Reference 一致。\n- [ ] current-head full/package Evidence 完成。\n- [ ] 非 package canary Evidence 完成。\n- [ ] L3 Deep Review 无未解决重要 Finding。\n- [ ] guarded merge、main-fresh、repository-native archive、Issue Closure 与分支清理完成。\n''', encoding="utf-8")
+          PY
+
+          git rm .github/workflows/_ci238_apply.yml
+          git diff --check
+          git status --short
+          git config user.name "yuwen.ding"
+          git config user.email "dingyuwen777@gmail.com"
+          git add -A
+          git commit -m "优化非 Package required Gate Runner"
+          git push origin HEAD:ci/238-runtime-package-gate-zero-runner
