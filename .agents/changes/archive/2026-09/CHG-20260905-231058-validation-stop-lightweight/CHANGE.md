@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260905-231058-validation-stop-lightweight
 title: 收敛测试停止条件与轻量变更执行边界
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: agent/validation-stop-lightweight-223
 created: 2026-09-05
