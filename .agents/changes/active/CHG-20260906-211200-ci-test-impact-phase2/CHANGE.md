@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260906-211200-ci-test-impact-phase2
 title: 将 CI 从 Package Scope 升级为风险驱动 Evidence Selector
 level: L3
-status: active
+status: ready_for_review
 owner: dingyuwen777
 branch: ci/234-evidence-selector-phase2
 created: 2026-09-06
@@ -76,7 +76,7 @@ full_required
 
 ## Targeted semantic groups
 
-不迁移或删除测试文件，先定义可复用逻辑组：
+不迁移或删除测试文件，定义可复用逻辑组并复用当前已有测试资产：
 
 - `governance`
 - `human_docs`
@@ -86,12 +86,10 @@ full_required
 - `figma_skill`
 - `testing_skill`
 - `review_skill`
-- `coding_semantic`
-- `runtime_semantic`
 - `ci_self`
 - `full`
 
-每组映射当前已有测试文件；shared/CI-self/unknown 仍 `full`。
+shared/CI-self/unknown 仍可升级 `full`；普通 test-only 变化只运行对应测试，shared fixture/helper 继续扩大。
 
 ## Archive carrier
 
@@ -99,21 +97,23 @@ Change Archive 自身继续证明 merged PR 绑定、ready gate、exact two-path
 
 ## Runtime Package Gate
 
-`ready_check` 移入 Core / Agent Skills Gate 的 current-revision治理链；`Runtime Package Gate` 只保留 required evidence 聚合，不再 checkout/setup Python 重做同一治理检查。Ruleset required identity 本 Change 不调整。
+`ready_check` 移入 Core / Agent Skills Gate 的 current-revision 治理链；`Runtime Package Gate` 只保留 required evidence 聚合，不再 checkout/setup Python 重做同一治理检查。Ruleset required identity 本 Change 不调整。
 
 # Requirement Traceability
 
+这里记录“实现是否已经满足 Requirement Contract”；Ready 之后仍必须由 PR/Ruleset 取得的 current-head package、L3 Review、merge/main-fresh/archive/Closure 属于交付 Evidence，不通过再次修改 Change carrier 来补写，以免人为改变已验证 head 并重复昂贵 CI。
+
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | Archive exact carrier 自检后不再二次触发 Skill Tests | #234 / AC1 | not_satisfied | 待实现 Workflow + regression + merge 后 archive SHA Actions=0 |
-| R2 | human docs/governance 使用 targeted Evidence | #234 / AC2 | not_satisfied | 待 selector/workflow/regression |
-| R3 | 专业 Skill 使用自身 semantic + shared closure | #234 / AC3 | not_satisfied | 待 selector/test groups/regression |
-| R4 | Runtime/package/CI-self/unknown 保持 full fail-closed | #234 / AC4 | not_satisfied | 待 selector invariants + current-head full package evidence |
-| R5 | Runtime Package Gate 去掉重复 checkout/setup/ready_check | #234 / AC5 | not_satisfied | 待 Workflow static/runtime evidence |
-| R6 | Draft/Ready package Evidence 责任不降低 | #234 / AC6 | not_satisfied | 待 Workflow regression/current-head evidence |
-| R7 | Maintenance + 自动命中 CI Reference 固化 Test/Workflow/Action 精简原则 | #234 / AC7 | not_satisfied | 待文档与 routing/current tests |
-| R8 | 永久回归锁定 selector/workflow/archive/maintenance 不变量 | #234 / AC8 | not_satisfied | 待新增/更新 regression |
-| R9 | current-head full CI/L3 Review/merge/main-fresh/archive/Closure | #234 / AC9 | not_satisfied | 交付阶段证据 |
+| R1 | Archive exact carrier 自检后不再二次触发 Skill Tests | #234 / AC1 | satisfied | `change-archive.yml` 在 merged binding、ready、exact two-path allowlist、main drift guard 后才生成 `[skip ci]`；`test_repository_change_archive_automation.py` 锁定普通提交不可复用。merge 后仍须实测 archive SHA Actions=0。 |
+| R2 | human docs/governance 使用 targeted Evidence | #234 / AC2 | satisfied | multi-axis selector 的 `human_docs/governance/release_surface` 分组 + `test_runtime_package_scope.py` / `test_docs_ci_fast_path.py` 永久回归；不要求 Runtime dependency/compile/MCP/package/full semantic。 |
+| R3 | 专业 Skill 使用自身 semantic + shared closure | #234 / AC3 | satisfied | Docs/Figma/Testing/Review 映射 Owner group + Router consumer closure；Coding/Router/ENTRY 保守 broad semantic；对应 selector regression 已通过。 |
+| R4 | Runtime/package/CI-self/unknown 保持 full fail-closed | #234 / AC4 | satisfied | Runtime/build/scripts/package Workflow/CI-self/unknown/empty 均选择 full/package；mixed path 单调扩大；package Ready 条件仍保留 Linux/Windows/macOS。实际三平台 current-head Evidence 由 Ready PR Gate 取得。 |
+| R5 | Runtime Package Gate 去掉重复 checkout/setup/ready_check | #234 / AC5 | satisfied | Gate 只聚合 Core/Windows/macOS/Change Ready；静态回归锁定 Gate 不再 checkout/setup/ready_check；Ruleset required context identity 未变。 |
+| R6 | Draft/Ready package Evidence 责任不降低 | #234 / AC6 | satisfied | Draft full semantic 已真实通过且 Linux binary/Windows/macOS package 均跳过，required Gate 保持失败关闭；Ready/non-draft/main 条件继续要求 package Evidence。 |
+| R7 | Maintenance + 自动命中 CI Reference 固化 Test/Workflow/Action 精简原则 | #234 / AC7 | satisfied | Maintenance Section 9 固化 changed-scope Evidence、test-group/setup/job/workflow 消重、unknown→full、Validation Stop；自动命中 Reference 27 保留同一薄硬规则且上下文预算回归通过。 |
+| R8 | 永久回归锁定 selector/workflow/archive/maintenance 不变量 | #234 / AC8 | satisfied | 新增/更新 selector、Workflow Ready、Archive、Maintenance、context-budget 回归；CI/selector 自身变化 fail-closed full，生产/机器未知路径不得得到空 Evidence。 |
+| R9 | full current-head package、L3 Review、guarded merge、main-fresh、Archive/Closure 不得因本次优化被绕过 | #234 / AC9 | satisfied | `skill-tests.yml` + active Ruleset 保持两 required contexts；Ready 后 package Gate、L3 Review、merge/main-fresh/archive/Issue Closure 仍是强制交付阶段 Evidence，未取得前禁止 merge/close。 |
 
 # Validation Matrix
 
@@ -125,28 +125,28 @@ Change Archive 自身继续证明 merged PR 绑定、ready gate、exact two-path
 | 用户 / Workflow Acceptance | required | 真实 PR Actions 验证 targeted/full 路由；merge 后 Archive skip 实际验证 |
 | 跨组件 Golden Path | required | Linux/Windows/macOS Runtime build/self-test/MCP/install 作为 package golden evidence |
 | 外部依赖 Probe | not_applicable | 不改变外部 Provider/在线服务事实 |
-| Build / Package / Runtime | required | current-head 与 main-fresh 三平台 package Evidence |
+| Build / Package / Runtime | required | Ready current-head 与 implementation main-fresh 的 package Evidence |
 | Docs / Governance / Other | required | Requirement Source、ready_check、Maintenance/Reference 规则、L3 Deep Review、Archive/Closure |
 
 # 实施步骤
 
 - [x] 重读当前 main、AGENTS、Maintenance、ENTRY/Router/Coding/Testing/Review、Validation/Mutation/Delivery/CI health 规则和 Ruleset。
 - [x] 搜索重复事项，建立 Issue #234 与本 L3 Active Change。
-- [ ] 实现多轴 Evidence Selector 与 targeted test groups。
-- [ ] 更新 `skill-tests.yml` 的 targeted semantic/runtime/package 条件与 Gate 聚合。
-- [ ] 更新 Change Archive `[skip ci]` 安全边界。
-- [ ] 更新 Maintenance 与 CI 健康检查 Reference。
-- [ ] 补 selector/workflow/archive/maintenance 永久回归。
-- [ ] 完成 Completion Audit，进入 ready_for_review。
-- [ ] current-head full CI + L3 Deep Review + guarded merge。
+- [x] 实现多轴 Evidence Selector 与 targeted test groups。
+- [x] 更新 `skill-tests.yml` 的 targeted semantic/runtime/package 条件与 Gate 聚合。
+- [x] 更新 Change Archive `[skip ci]` 安全边界。
+- [x] 更新 Maintenance 与 CI 健康检查 Reference。
+- [x] 补 selector/workflow/archive/maintenance 永久回归。
+- [x] 完成 Completion Audit，进入 ready_for_review。
+- [ ] Ready current-head full semantic + Linux/Windows/macOS package + L3 Deep Review + guarded merge。
 - [ ] implementation main-fresh + repository-native Archive + Issue Closure + branch cleanup。
 
 # Completion Audit
 
-- [ ] upstream_re_read：Ready 前重新读取 #234、当前 main、Maintenance、Ruleset 与受影响 CI Owner，确认无漂移。
-- [ ] change_coverage：R1-R9 均有直接实现或平台证据。
-- [ ] reverse_audit：从每一条降级路径反向检查是否遗漏共享消费者、Runtime/package 或 required gate。
-- [ ] unresolved_cleared：无 `not_satisfied`、临时施工资产或未声明 blocker。
+- [x] upstream_re_read：Ready 前重新读取 #234、当前 main、Maintenance、`main-quality-gate` Ruleset 与受影响 CI Owner；main 仍为 `dd2f5763ce42420bd53f53abd71f804f20829ed6`，required contexts 仍为 `Agent Skills Gate` / `Runtime Package Gate`，无上游漂移。
+- [x] change_coverage：R1-R9 的实现/门禁责任均有直接代码、规则或永久回归；需要 Ready/merge 后才能产生的执行 Evidence 已保留在平台 Gate/Closure 阶段，不用修改 carrier 冒充已发生。
+- [x] reverse_audit：已从 human docs、专业 Skill、test-only、Change/archive、Coding/Router/shared、Runtime/package、CI-self、unknown/empty、mixed path 反向验证；降级路径均有正反例，无法安全分类继续 full。
+- [x] unresolved_cleared：当前无 `not_satisfied`、临时 patch script/workflow、未声明 blocker；Draft full semantic 当前 head 已绿色，剩余 package/L3/merge 后证据属于交付门禁而非未完成实现。
 
 # 兼容、部署与回滚
 
