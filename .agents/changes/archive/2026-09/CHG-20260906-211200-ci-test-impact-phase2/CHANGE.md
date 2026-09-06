@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260906-211200-ci-test-impact-phase2
 title: 将 CI 从 Package Scope 升级为风险驱动 Evidence Selector
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: ci/234-evidence-selector-phase2
 created: 2026-09-06
