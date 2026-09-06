@@ -1,32 +1,22 @@
 # Agent_Skills
 
-`Agent_Skills` 是通用 Agent Skill 的**源仓库与维护仓库**。本 README 面向仓库维护者、项目管理员和负责把治理能力接入目标项目的人；普通项目开发者不需要阅读本仓库，也不需要理解 Runtime、MCP、Router、Skill、Reference 或源码维护过程。
+`Agent_Skills` 是通用 Agent Skill 的**源仓库与维护仓库**。本 README 面向仓库维护者、项目管理员，以及负责把治理能力接入目标项目的人；普通项目开发者不需要阅读本仓库，也不需要理解 Runtime、MCP、Router、Skill、Reference 或源码维护过程。
 
-面向已经完成安装与首次治理的普通项目开发者，只下发 [`USAGE.md`](USAGE.md) 中的**桌面 AI Agent 日常开发说明**。`USAGE.md` 不承担二进制安装、首次治理、升级/回退、源码直读或网页端维护说明。
+已经完成安装与首次治理的普通项目开发者，只需要阅读 [`USAGE.md`](USAGE.md) 中的桌面 AI Agent 日常开发说明。普通开发说明不承担二进制安装、首次治理、升级/回退、源码直读或网页端维护说明。
 
 ## 1. 人类文档职责
 
-本仓库只保留三个人类入口：
+本仓库的人类入口分为三类：
 
-```text
-README.md
-→ 维护者 / 项目管理员
-→ 源仓库结构、分发、安装、首次治理、升级/回退、Source Mode、验证与 Release
-
-USAGE.md
-→ 已完成接入和首次治理后的普通项目开发者
-→ 只说明如何在 Codex、Cursor、Claude Code 等桌面 AI Agent 中开展日常研发
-
-runtime/README.md
-→ Runtime 源码子系统维护者
-→ Runtime 内部实现、构建和维护细节
-```
+- [`README.md`](README.md)：维护者 / 项目管理员入口。说明源仓库结构、分发、安装、首次治理、升级/回退、网页端 Source Mode、验证与 Release。
+- [`USAGE.md`](USAGE.md)：已完成接入和首次治理后的普通项目开发者说明。只讲如何在 Codex、Cursor、Claude Code 等桌面 AI Agent 中开展日常研发。
+- [`runtime/README.md`](runtime/README.md)：Runtime 源码子系统维护说明。保存 Runtime 内部实现、构建和维护细节。
 
 普通项目开发者不需要知道 Agent_Skills 如何安装、如何路由规则或如何维护源码；他们只需要在已经配置好的目标项目里使用团队允许的桌面 AI Agent，并遵守目标项目自身的权限、Review、CI 和交付门禁。
 
 ## 2. 正式分发资产与源码可见性
 
-正式构建产物按平台拆分：
+正式 Release 按平台拆分：
 
 ```text
 GitHub Release
@@ -41,11 +31,11 @@ GitHub Release
     └── USAGE.md
 ```
 
-每个 ZIP 只包含当前平台 Runtime binary 和同版本 `USAGE.md`。`USAGE.md` 即使随 Release 打包，也只描述**项目已经接入后的日常开发使用方式**；binary 的部署、安装、升级和首次治理由维护者按本 README 执行，不交给普通开发者处理。
+每个 ZIP 只包含当前平台 Runtime binary 和同版本 [`USAGE.md`](USAGE.md)。该说明即使随 Release 打包，也只描述**项目已经接入后的日常开发使用方式**；binary 的部署、安装、升级和首次治理由维护者按本 README 执行，不交给普通开发者处理。
 
 > **源码可见性边界**：如果完整 `SKILL.md` / canonical `references/*.md` 只允许维护者查看，本 GitHub 仓库必须设置为 **Private**。Runtime 的加密与按任务渐进式披露不能替代仓库访问控制。
 >
-> 私有仓库的 Release 仍受该仓库 read 权限控制。如果接收者不应获得源码权限，不要为了让他下载 Release 而授予本源仓库 read 权限。维护者应从私有源仓库取得并校验 Release 资产后，通过内部制品库、文件服务或独立的 release-only 仓库/渠道分发项目所需资产。
+> 私有仓库的 Release 仍受该仓库 read 权限控制。如果接收者不应获得源码权限，不要为了让他下载 Release 而授予本源仓库 read 权限。维护者应从私有源仓库取得并校验 Release 资产后，通过内部制品库、文件服务或独立的 release-only 仓库 / 渠道分发项目所需资产。
 
 ## 3. 当前正式 Skills
 
@@ -60,7 +50,7 @@ GitHub Release
 | `docs` | 技术文档事实同步、审查、编写与更新 | [`.agents/skills/docs/SKILL.md`](.agents/skills/docs/SKILL.md) |
 | `figma` | Figma 设计事实、Canvas/Prototype、Ready 与 Design-to-Code 交接 | [`.agents/skills/figma/SKILL.md`](.agents/skills/figma/SKILL.md) |
 
-其中 Coding / Testing / Review 的长期边界是：
+Coding / Testing / Review 的长期边界是：
 
 ```text
 Coding
@@ -77,22 +67,12 @@ Review
 
 ## 4. 规则事实源与 Runtime
 
-跨 Skill 入口分成薄 Bootstrap 和唯一正式 Router：
+跨 Skill 入口由薄 Bootstrap 和唯一正式 Router 组成：
 
-```text
-.agents/skills/ENTRY.md
-→ Skills 根级唯一共享运行资产
-→ 只恢复项目事实、无条件进入 Router、失败关闭
+- [`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)：Skills 根级共享入口，只负责恢复项目事实、无条件进入 Router 和失败关闭。
+- [`.agents/skills/router/SKILL.md`](.agents/skills/router/SKILL.md)：唯一跨 Skill Catalog / Router，负责项目事实优先、Skill 发现、Reference 加载方式和跨 Skill Handoff。
 
-.agents/skills/router/SKILL.md
-→ 动态 Catalog 中的正式 Router Skill
-→ 唯一跨 Skill Catalog / Router
-→ 负责项目事实优先、Skill 发现、Reference 加载方式和跨 Skill Handoff
-```
-
-[`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md) 不复制 Catalog、路由矩阵或专业规则；[`.agents/skills/router/SKILL.md`](.agents/skills/router/SKILL.md) 只负责选择和交接，不生成项目执行计划、不创建子 Agent，也不接管专业工作流。
-
-各专业 Skill 的正式规则边界：
+各专业 Skill 的正式规则边界是：
 
 ```text
 SKILL.md
@@ -104,7 +84,7 @@ references/*.md
 → 唯一完整 Reference 正文
 ```
 
-两种使用模式共享同一 canonical Markdown 和 committed 路由元数据：
+Source Mode 与 Runtime Mode 共享同一 canonical Markdown 和 committed 路由元数据：
 
 ```text
 Source Mode
@@ -130,7 +110,7 @@ Source / Runtime 是治理规则的取得方式，不是 Git 执行能力。实�
 
 ## 5. AI 与维护入口职责
 
-### 根 `AGENTS.md`
+### 根入口
 
 根 [`AGENTS.md`](AGENTS.md) 是 Agent 进入本仓库时的薄 Bootstrap：
 
@@ -139,7 +119,7 @@ Source / Runtime 是治理规则的取得方式，不是 Git 执行能力。实�
 
 它不保存第二套完整 Router 或完整源仓库维护规则，也不得复制到目标项目。
 
-### `.agents/MAINTENANCE.md`
+### 源仓库维护规范
 
 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md) 是 Agent_Skills 源仓库自身的开发、Review、测试、CI、Git、Release、内容守恒和 Runtime 维护规则。普通目标项目开发不读取它。
 
@@ -153,7 +133,7 @@ Runtime 安装后，[`.agents/skills/coding/assets/AGENTS.managed.md`](.agents/s
 
 ### 6.1 获取对应平台资产
 
-从正式 Release 或内部受控分发渠道取得与目标开发环境匹配的平台 ZIP，并先核对来源和完整性。三个正式平台包分别为：
+从正式 Release 或内部受控分发渠道取得与目标开发环境匹配的平台 ZIP，并先核对来源和完整性：
 
 ```text
 agent-skills-v<VERSION>-windows.zip
@@ -164,8 +144,6 @@ agent-skills-v<VERSION>-macos.zip
 不要从不同版本手工混合 binary、说明或安装后的受管文件。
 
 ### 6.2 Windows
-
-在目标项目根目录运行当前版本：
 
 ```powershell
 cd D:\work\MyProject
@@ -255,7 +233,9 @@ agent-skills self-test --json
 2. 检查宿主是否存在待确认的 Trust / Approval；
 3. 运行 `status --json` 和 `self-test --json`；
 4. 如当前版本安装状态可安全恢复，在项目根重新执行同版本安装；
-5. 仍失败时按当前错误和 Runtime 维护文档调查，不让普通项目开发者手工改内部受管文件。
+5. 仍失败时按当前错误和 [`runtime/README.md`](runtime/README.md) 调查，不让普通项目开发者手工改内部受管文件。
+
+项目 MCP 使用宿主 stdio 子进程，进程生命周期由宿主连接管理，不是系统后台服务；详细的生命周期和异常排查继续由 [`runtime/README.md`](runtime/README.md) 维护，不下发给普通项目开发者。
 
 ## 9. 升级与回退
 
@@ -268,7 +248,7 @@ Agent_Skills 默认不承诺不同版本之间的原地升级兼容。切换版�
 3. 在可恢复的项目副本或满足目标版本要求的项目边界中运行目标版本 binary；
 4. 运行 `status --json` 与 `self-test --json`；
 5. 重新打开项目或新建 Agent 会话；
-6. 如果新版本报告当前项目状态不受支持，停止并按目标版本迁移/安装说明处理，不强制覆盖或猜 ownership。
+6. 如果新版本报告当前项目状态不受支持，停止并按目标版本迁移 / 安装说明处理，不强制覆盖或猜 ownership。
 
 ### 回退
 
@@ -296,7 +276,7 @@ Agent_Skills 默认不承诺不同版本之间的原地升级兼容。切换版�
 
 网页端 Source Mode 不调用用户电脑的本地 Runtime，也不能把目标项目旧安装副本当作 canonical Source。网页连接器是否能提交、创建 PR、查询 CI 或合并，取决于当前连接器实际能力、授权身份和仓库保护规则；本地 Git 网络失败不等于这些托管能力也失效。
 
-需要 Source 与 Runtime 严格一致时，Source Mode 必须读取 Runtime identity 对应的 Release tag/source commit；不能把旧 Runtime 与更新后的 `main` 声称为同一版本。
+需要 Source 与 Runtime 严格一致时，Source Mode 必须读取 Runtime identity 对应的 Release tag / source commit；不能把旧 Runtime 与更新后的 `main` 声称为同一版本。
 
 ## 11. 仓库结构
 
@@ -333,9 +313,9 @@ Agent_Skills/
 
 ## 12. 维护者常用验证
 
-开始维护前先读根 [`AGENTS.md`](AGENTS.md)，再按它进入 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md)、[`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)、唯一 Router 和任务命中的正式 Skill/Reference。
+开始维护前先读根 [`AGENTS.md`](AGENTS.md)，再按它进入 [`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md)、[`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)、唯一 Router 和任务命中的正式 Skill / Reference。
 
-永久 CI 固定使用 Python `3.14.7` 构建 Runtime；本地维护者可以使用当前兼容 Python 执行源码测试，但正式三平台 artifact 必须以 CI/Release 固定版本为准。
+永久 CI 固定使用 Python `3.14.7` 构建 Runtime；本地维护者可以使用当前兼容 Python 执行源码测试，但正式三平台 artifact 必须以 CI / Release 固定版本为准。
 
 自包含回归：
 
@@ -388,9 +368,9 @@ main
 
 每个平台构建都会把真实 source commit、构建 Python、Bundle/Task Route/Routing/MCP/Project Payload/install 协议、`source_digest`、`routing_digest` 和 `payload_digest` 纳入 Runtime / Release identity。正式 GitHub build 要求 source commit 与 `GITHUB_SHA`、checkout HEAD 一致。
 
-Release workflow 不依赖自定义 PAT；发布使用 GitHub Actions 自动提供的 `github.token` 和最小 `contents: write`。workflow 拒绝覆盖已有 tag/Release，但这不等价于底层存储不可变。
+Release workflow 不依赖自定义 PAT；发布使用 GitHub Actions 自动提供的 `github.token` 和最小 `contents: write`。workflow 拒绝覆盖已有 tag / Release，但这不等价于底层存储不可变。
 
-Release 页面说明继续使用 [`USAGE.md`](USAGE.md)，每个正式 ZIP 也继续包含该文件；但 `USAGE.md` 只解释项目已经接入后的日常桌面 AI Agent 使用方式，安装和首次治理由本 README 承担。
+Release 页面说明继续使用 [`USAGE.md`](USAGE.md)，每个正式 ZIP 也继续包含该文件；该说明只解释项目已经接入后的日常桌面 AI Agent 使用方式，安装和首次治理由本 README 承担。
 
 ## 14. 继续阅读
 
