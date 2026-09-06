@@ -30,6 +30,9 @@ class CiReadyEvidenceOrderTest(unittest.TestCase):
         self.assertIn("Verify current Coding Change readiness", core)
         self.assertIn("continue-on-error: true", core)
         self.assertIn("Capture Coding Change readiness", core)
+        self.assertIn("Enforce current Coding Change readiness", core)
+        self.assertIn("steps.change-gate.outputs.ready != 'true'", core)
+        self.assertIn("Agent Skills Gate remains fail-closed", core)
         self.assertIn("change_gate_ready", workflow)
         self.assertLess(
             core.index("Run selected self-contained tests"),
@@ -37,6 +40,10 @@ class CiReadyEvidenceOrderTest(unittest.TestCase):
         )
         self.assertLess(
             core.index("Capture Coding Change readiness"),
+            core.index("Enforce current Coding Change readiness"),
+        )
+        self.assertLess(
+            core.index("Enforce current Coding Change readiness"),
             core.index("Build and self-test Linux onefile Runtime"),
         )
         self.assertIn("steps.change-gate.outputs.ready == 'true'", core)

@@ -6,7 +6,7 @@
 - **只测试与修改相关的边界**：human docs→docs/governance；专业 Skill/Reference→Owner+consumer；Change/metadata/archive→carrier；共享边界扩闭包。
 - 去掉**无关 test group**、**重复 setup/install/build**及无关 step/job/workflow。
 - selector / path filter / scoped skip：**永久回归和 fail-safe**；unknown/shared/CI-self fail-closed；CI/selector 自身变化使用 full current-head Evidence。
-- required check identity：仅已证不适用→**job-level condition**、`skipped`、**0 Runner**；禁 workflow-level skip（Pending）；package/unknown/CI-self 不降级，Gate `always()`+`needs` fail-closed。
+- required check identity / Change Ready：仅已证不适用→**job-level condition**、`skipped`、**0 Runner**；禁 workflow-level skip(Pending)；package/unknown/CI-self 不降级。
 - **仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化**；guarded archive 可复用 parent Evidence，普通提交不得借 `[skip ci]` 绕准入。
 CI/build/package/release 变更→Responsibility Audit。
 ## Actions Control-Plane Cleanup
