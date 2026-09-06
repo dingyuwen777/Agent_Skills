@@ -35,11 +35,11 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 固定 Change 模板，并以第一性原理组织背景、当前事实、问题、目标、方案和证据链 | `user:当前会话#AC1` | satisfied | canonical 模板已固定 `变更摘要 → 背景、现状与问题 → 事实与证据 → 目标、成功标准与非目标 → 约束与意图决策 → 修改方案与决策依据 → 需求追溯 → 计划改动 → 验证矩阵 → 风险/兼容/迁移/回滚 → 文档/依赖/部署/发布影响 → 完成审计 → 完成证据与状态`。 |
-| R2 | 除仓库事实、专有名词和机器契约外，人类可读模板正文统一使用中文 | `user:当前会话#AC2` | satisfied | 新增标题、说明、表头和检查项均为中文；`coding-change/v1`、机器字段、状态枚举及 GitHub、API/ABI/CLI 等不可替代标识保持原样。独立复核发现的可翻译 `frontmatter`、`rollout`、`revision`、`Review` 等正文词已收回中文。 |
-| R3 | 模板必须覆盖成功标准、范围/非目标/不变项、需求追溯、验证矩阵、风险/回滚、文档与交付影响等完成所需最小信息 | `user:当前会话#AC3` | satisfied | 模板已逐项固定这些章节，并允许低复杂度任务使用“不适用 + 事实依据”而不是机械扩写；旧模板的验证层映射示例在复核后已保留，避免内容守恒退化。 |
-| R4 | 不改变现有测试、validator、CI、状态机和 `coding-change/v1` 机器契约行为 | `user:当前会话#AC4` | satisfied | 分支只修改当前 Change、模板和现有模板回归；未修改 parser/validator/CLI/CI。旧模板与新模板文档头部字段及占位符保持一致；当前 `ready_check.py` 已原生兼容中文 `# 需求追溯`、中文表头和 `# 完成审计`。 |
-| R5 | Agent_Skills canonical 模板与 AIMA_UGC 受管投影保持同源内容，并分别按仓库门禁合并到 `main` | `user:当前会话#AC5` | satisfied | 两仓模板当前 content blob SHA 均为 `9f1b224c189383d7b785e66dfd6e7475a05538c0`；后续 PR 当前 head CI、受保护合并、main 新鲜验证与 repository-native Change Archive 继续作为交付门禁。 |
+| R1 | 固定“事实 → 问题或约束 → 目标 → 方案 → 验证”的因果链，并明确背景、当前现状、问题/根因或约束、不修改后果、目标、成功标准、范围、非目标和必须保持不变 | `#245 / AC1` | satisfied | canonical 模板已固定对应章节与因果顺序。 |
+| R2 | 明确记录已确认事实及来源，区分推断/待确认，并提供“证据到决策”的方案依据结构 | `#245 / AC2` | satisfied | 模板新增 `事实与证据`、`推断与待确认`、`证据到决策`，明确事实不能由结论反推。 |
+| R3 | 固定修改方案、需求追溯、计划改动、验证矩阵、风险/兼容/迁移/回滚、文档/依赖/部署/发布影响、完成审计和完成证据，并允许简单任务使用“不适用 + 事实依据” | `#245 / AC3` | satisfied | 模板已逐项固定这些章节；旧模板的验证层映射示例在独立复核后继续保留，避免内容守恒退化。 |
+| R4 | 除仓库事实、专有名词、代码标识和机器 Contract 外，人类可读正文使用中文，同时保持 `coding-change/v1` 机器字段和状态枚举兼容 | `#245 / AC4` | satisfied | 标题、说明、表头和检查项均为中文；独立复核发现的可翻译 `frontmatter`、`rollout`、`revision`、`Review` 等正文词已收回中文；机器字段与枚举未改。 |
+| R5 | 不降低 parser、validator、CLI、CI、Runtime/Release 语义，并通过相关永久回归与当前 PR required CI 后按仓库门禁合并 | `#245 / AC5` | satisfied | parser/validator/CLI/CI/Runtime/Release 文件未修改；现有模板回归增加第一性原理结构断言。当前 PR required CI、合并、main 新鲜验证和自动归档仍是交付门禁。 |
 
 # 验证矩阵
 
@@ -56,17 +56,17 @@ data_changes: []
 
 # 完成审计
 
-- [x] upstream_re_read: 写入前已重新读取当前分支根 `AGENTS.md`、Maintenance、ENTRY、Router、Coding、Mutation 内容守恒与影响面规则，并读取 AIMA 当前项目 Overlay 和用户本轮 AC。
-- [x] change_coverage: 已从用户 AC 独立重建完成定义；当前 Change 只承载施工证据，没有把自身作为上游需求来源。
+- [x] upstream_re_read: 已重新读取 Issue #245、当前分支根 `AGENTS.md`、Maintenance、ENTRY、Router、Coding、Mutation 内容守恒与影响面规则，并读取 AIMA 当前项目 Overlay。
+- [x] change_coverage: 已从 Issue #245 的 AC1—AC5 独立重建完成定义；当前 Change 只承载施工证据，没有把自身作为上游需求来源。
 - [x] reverse_audit: 已反查 Template → parser/validator → CLI → CI → tests → Source/Project Payload parity；parser/validator/CLI/CI 无代码修改，现有 validator 明确兼容中文机器章节，AIMA 投影与 canonical blob 完全一致；复核中发现的正文中文化与验证映射守恒问题已修正。
 - [x] unresolved_cleared: 实现层所有要求已满足；PR 当前 head required CI、受保护合并、main 新鲜验证和自动归档仍作为后续交付门禁，不通过修改 Change 预先冒充已完成。
 
 # 新鲜证据
 
-- `GitHub compare main...chore/change-template-first-principles`：此前分支差异只包含本 Change、`CHANGE.template.md` 与既有模板回归；最终 PR diff 还需在当前 head 再复核。
-- `CHANGE.template.md` 当前 blob：`9f1b224c189383d7b785e66dfd6e7475a05538c0`；AIMA 同步投影 blob 相同。
-- 当前 `ready_check.py`：`TRACEABILITY_HEADINGS` 同时接受 `# 需求追溯`，`TRACEABILITY_COLUMN_VARIANTS` 接受中文表头，`COMPLETION_AUDIT_HEADINGS` 接受 `# 完成审计`；该文件未修改。
-- 独立静态复核曾发现两项非机器兼容问题：可翻译英文正文残留，以及重排时删除了旧验证层映射示例；均已在当前模板修正。
+- 当前 canonical `CHANGE.template.md` 与 AIMA 待合并受管投影 content blob SHA 均为 `9f1b224c189383d7b785e66dfd6e7475a05538c0`。
+- 当前 `ready_check.py` 同时接受中文 `# 需求追溯`、中文表头和 `# 完成审计`；该文件未修改。
+- 独立静态复核曾发现两项问题：可翻译英文正文残留，以及重排时删除了旧验证层映射示例；均已在当前模板修正。
+- 第一次 PR CI 在 `Verify PR Requirement Source` 失败，证明确实执行了仓库现有追溯门禁；已建立 Issue #245 并将 PR body 改为 `Requirement-Source: #245`，未修改 CI 代码。后续当前 head CI 仍需重新取得。
 - 本会话容器无法解析 `github.com`，因此未把匿名本地 clone 冒充测试证据；实际测试结果以后续 PR 当前 head GitHub Actions 为准。
 
 # 回滚
