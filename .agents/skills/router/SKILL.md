@@ -26,7 +26,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - **Authorization Continuity**：已明确且未撤销的授权仅在**同目标、同范围、同副作用等级**跨 Handoff 延续，不重复确认。只读 < 测试资产写 < 生产代码写 < commit/push/PR < merge < Release < Deploy/生产变更；更高等级**不得继承升级**，必须已有对应 Requested Action + Effective Authorization。
 - **Fresh Evidence Contract**：Evidence 绑定当前 **environment / Contract / Scope 与被验证的相关实现 revision**，未发生影响结论的变化即可复用；**不是由当前 Agent 启动**本身**不构成重新执行理由**。只有相关实现/Contract/输入/依赖/配置/环境/外部事实变化、现有证据不覆盖结论，或 **required gate** 明确要求 current-head/current-revision 时才重跑对应层；Change/Issue/PR 描述、Evidence 记录、排版等**不影响已验证边界的载体变化**不使开发侧 Evidence 失效。
 - `完整验证证据 / 完整命令 / 完整输出` 只表示完整执行并检查**已选择的风险匹配 Evidence**，**不表示运行全仓测试、全部测试层或所有平台验证**；仍按 targeted-first 单调升级。
-- **阻塞按依赖边界传播**：只停止依赖缺失事实/Context/工具/环境/权限的动作和声明；其他已授权且无依赖工作继续。required gate 受阻时整体才 `blocked/incomplete`。
+- **阻塞按依赖边界传播**：单一路径失败先回读结果并核验宿主等价能力，不直接判定仓库不可写；Git 细则归 Coding 交付 Reference。仅阻塞确实缺少事实/Context/工具/环境/权限的依赖动作及声明，其他已授权工作继续；不绕过权限或质量门禁。required gate 受阻时整体才 `blocked/incomplete`。
 - **Requested Outcome = Completion Scope**：用户请求决定终点，**能力存在不等于继续追求更远阶段**。`review-only` 到 Findings/Evidence；`test-only` 到 Test Target/Evidence/Gaps；`develop-and-submit` 到 PR Ready；`develop-and-deliver` 才进入 post-merge；`Mutation Audit / Proposal` 到建议/影响面/验证方案。
 - **Task-owned Cleanup**：Completion Scope 结束前删除本任务创建且无后续用途的临时/scratch/debug 产物；保留预存在/用户所有/仍作证据、交付物或输入的内容。未改变交付状态/运行输入时，不使既有 Green Evidence 失效。
 

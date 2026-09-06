@@ -60,7 +60,7 @@ Runtime / Package
 → 在 Contract / Routing 证据上继续增加 Runtime/package/platform 对应证据
 ```
 
-这些 profile 是**开发侧 Evidence 选择**，不是新的仓库 CI 模式。Agent_Skills 当前正式 `governance/content/package` classifier、required Skill Tests、PR/main/Release 门禁继续由 Maintenance/Workflow 事实决定；不能为了“targeted-first”删除或绕过既有 required check。
+这些 profile 是**开发侧 Evidence 选择**，不是新的仓库 CI 模式。正式 classifier、required checks 与 PR/main/Release 门禁由当前目标仓库的正式 CI Owner 决定；维护 Agent_Skills 时按 [`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md) 及其指向的当前 Workflow/classifier 恢复责任，不在本 Reference 维护第二份 scope 列表。targeted-first 不删除或绕过 required check，也不授权无关昂贵验证。
 
 ## 1. 规则完整性维护
 
