@@ -368,6 +368,12 @@ def _run_selected_tests(*, root: Path, selection_path: Path) -> int:
         raise SystemExit("selection 没有可执行 test_files")
 
     test_dir = root / ".agents/skills/coding/tests"
+    root_text = str(root)
+    if root_text not in sys.path:
+        # unittest discover 会把 test_dir 放到 sys.path 前部；显式保留仓库根目录，
+        # 让既有 self-contained tests 继续按 `runtime.*` 等真实包路径导入。
+        sys.path.insert(0, root_text)
+
     loader = unittest.TestLoader()
     if test_files == ["*"]:
         suite = loader.discover(str(test_dir), pattern="test_*.py")
