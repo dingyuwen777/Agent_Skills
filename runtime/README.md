@@ -1,6 +1,6 @@
 # Runtime 源码维护说明
 
-`runtime/` 实现 Agent_Skills 当前唯一正式对外分发形态：**项目级 onefile Runtime + Shared Entry + Native Router/专业 Runtime Skill Projection + Encrypted Canonical References + local stdio MCP**。
+`runtime/` 实现 Agent_Skills 当前唯一正式对外分发形态：**项目级 onefile Runtime + Project-facing Entry/Skill Projection + Encrypted Canonical References + local stdio MCP**。
 
 最终使用者不需要阅读本文件；下载、安装、升级、回滚和排障见根 [`USAGE.md`](../USAGE.md)。
 
@@ -23,10 +23,10 @@ agent_skills_runtime/encrypted_bundle.py
 → 把逻辑 Bundle 构建为 encrypted private manifest + per-reference authenticated records；Runtime 启动只恢复私有索引，正文按 required Context lazy decrypt
 
 agent_skills_runtime/runtime_skill_projection.py
-→ 从唯一 canonical SKILL.md 自动生成 Runtime Core 视图，去除 Reference 文件名、路径、Stable ID 和直接导航映射；残留身份时 fail closed
+→ 从唯一 canonical Entry/SKILL/agent prompt 自动生成面向目标项目的 Runtime 明文视图；保留宿主发现与真实工程语义，去除源码导航、私有 routing metadata、Reference 身份和内部组织自说明；残留身份时 fail closed
 
 agent_skills_runtime/project_payload.py
-→ 构建 Skills 根级共享运行资产、各 Skill Runtime Projection 与其他运行资产；显式禁止 Reference/Stub
+→ 构建 Skills 根级 project-facing shared Entry、各 Skill Runtime Projection 与其他运行资产；显式禁止 Reference/Stub
 
 agent_skills_runtime/install_state.py
 → 从已验证 Project Payload 确定性派生 Runtime 内嵌 installation ownership；严格校验 legacy v3 migration 与安全 managed path
@@ -35,15 +35,15 @@ agent_skills_runtime/project_installer.py
 → 无 sidecar 项目安装/升级、previous ownership、宿主配置与回滚；legacy v3 仅作为一次迁移输入
 
 agent_skills_runtime/runtime.py
-→ 维护 task-bound route capability、单调 required Context、按需原文加载、用户可见进度/防披露边界与 checkpoint
+→ 维护 task-bound route capability、单调 required Context、按需原文加载、project-facing 用户进度边界与 checkpoint
 
 agent_skills_runtime/server.py
 → CLI + stdio MCP Server；另有不进入普通 help/MCP 的内部 install-state 自描述入口供下一版安装器升级使用
 ```
 
-Runtime 不负责重新解释专业 Skill 规则；跨 Skill 发现与 Handoff 由 [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md) 唯一负责，各 Skill 完整专业语义仍由自己的 canonical `SKILL.md` 和 canonical `references/*.md` 定义。[`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 只做无条件进入 Router 的共享薄 Bootstrap。
+Runtime 不重新解释专业 Skill 规则；跨 Skill 发现、trigger、dependency、risk floor 与 required Context 仍由 canonical [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md)、各 Skill canonical `SKILL.md` / `references/*.md` 以及编译后的私有 Routing Manifest 共同决定。[`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 仍是 Source Mode 的共享入口，但写入目标项目的是其确定性 project-facing Runtime Projection，不是源码导航原样副本。
 
-这里需要区分**规则事实源**与**Runtime 明文视图**：Source Mode 直接使用源码仓库时，维护者先读 Entry，再显式读取 Router、Skill、Reference、路径和路由过程；Runtime Mode 仍安装 Entry 与动态发现的 Router/专业 Skill Core 以维持宿主原生发现和 ownership，但这些 `SKILL.md` 不是第二份人工规则，而是构建时从同一 canonical Core 自动生成的 deterministic Runtime Projection。Projection 只去除 Reference 身份和导航映射，不参与 canonical Routing Manifest 编译，也不改 required Context 原文。Runtime 日常任务统一通过项目级 MCP 取得所需完整规则正文。
+这里必须把**规则事实源、Runtime 明文视图、私有执行面**分开：Source Mode 直接使用源码仓库时，维护者可以读取 Entry、Router、Skill、Reference、路径和 routing metadata；Runtime Mode 安装 project-facing Entry、Router/专业 Core 与 agent prompt，以维持宿主原生发现和工程执行入口，但这些明文文件不是第二份人工规则。私有 Routing Manifest/evaluator 继续从 canonical metadata 编译，required Context 继续从 canonical References exact-text 加载。**Source/Runtime 同效通过 routing/risk/dependency/context parity 证明，而不是要求 Runtime 明文与 Source Core 逐字一致。**
 
 ## 2. 三个独立完整性域
 
@@ -77,14 +77,15 @@ Runtime 打开 encrypted container 时只解密和验证 private Manifest，不�
 Project Payload：
 
 ```text
-shared_files（当前 ENTRY.md）
-+ canonical SKILL.md → deterministic Runtime Skill Projection
+canonical ENTRY.md → deterministic project-facing Entry Projection
+canonical SKILL.md → deterministic project-facing Runtime Skill Projection
+canonical agents/openai.yaml → deterministic project-facing agent prompt Projection
 + assets / scripts / metadata
 → path / sha256 / size / mode
 → payload_digest
 ```
 
-`source_digest`、`routing_digest` 和 `payload_digest` 证明不同事实，不能互相替代。`shared_files` 是显式 Contract，不代表 Skills 根目录任意文件都会自动进入 Payload。Runtime Skill Projection 改变的是 Project Payload 中受管 Core bytes，因此只应体现在 `payload_digest`；不能反向改变 canonical Reference 的 `source_digest` 或 Routing Manifest 的 `routing_digest`。
+`source_digest`、`routing_digest` 和 `payload_digest` 证明不同事实，不能互相替代。`shared_files` 是显式 Contract，不代表 Skills 根目录任意文件都会自动进入 Payload。Projection 改变的是 Project Payload 中受管明文 bytes，因此只应体现在 `payload_digest`；不能反向改变 canonical Reference 的 `source_digest` 或 Routing Manifest 的 `routing_digest`。
 
 Project Payload 的 `mode` 以 Git index 的 executable bit 为 canonical 来源：普通文件固定为 `0644`，Git 标记 executable 的文件固定为 `0755`；非 Git 源仅按宿主是否具有任一执行位回退到同一组可移植权限。不能直接把 Windows `0666` 或其他宿主 `stat` mode 写进 `payload_digest`，否则同一 commit 会产生跨平台 identity 漂移。
 
@@ -96,11 +97,11 @@ Project Payload 明确排除：
 - tests；
 - Python cache/编译产物。
 
-Runtime Skill Projection 必须由当前 Bundle 中实际 canonical Reference 的 `filename` / `source_path` / Stable ID 动态驱动，不维护固定 Skill/Reference 白名单，也不要求新增、删除或改名 Reference 时同步第二份 Runtime 文件。构建会整体去除指向 canonical Reference 的 Markdown 导航，再处理裸身份和内部编号缩写；最终扫描仍发现当前 canonical Reference 身份或 `references/` 路径时直接失败关闭。维护者始终只改 canonical `SKILL.md`，不能新增 `SKILL.runtime.md` 等人工镜像。
+Runtime Skill Projection 必须由当前 Bundle 中实际 canonical Reference identity 与当前 canonical Core 动态驱动，不维护固定 Skill/Reference 白名单，也不要求新增、删除或改名 Reference 时同步第二份 Runtime 文件。构建会去除源码维护导航、`agent-routing:v1` 明文块、具体 Reference 文件名/路径/Stable ID、`Use $...` 等内部组织表达，并保留宿主发现所需最小 `name`、当前项目工程语义、风险/权限/验证/完成门禁；最终扫描仍发现禁止身份时直接失败关闭。维护者始终只改 canonical Source，不能新增 `SKILL.runtime.md` 等人工镜像。
 
-因此像 [`coding/scripts/tzdata/README.md`](../.agents/skills/coding/scripts/tzdata/README.md) 这种源码维护说明可以留在私有源仓库，但不会安装到目标项目；真正运行需要的 `coding/scripts/tzdata/zoneinfo/Asia/Shanghai` 和共享 [`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 会原样进入 Payload，动态发现的 [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md) 与其他正式 Skill Core 则以 Runtime Projection 进入 Payload。
+因此像 [`coding/scripts/tzdata/README.md`](../.agents/skills/coding/scripts/tzdata/README.md) 这种源码维护说明可以留在私有源仓库，但不会安装到目标项目；真正运行需要的 `coding/scripts/tzdata/zoneinfo/Asia/Shanghai` 会进入 Payload。canonical [`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md)、[`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md)、其他正式 Skill Core 与 agent prompt 则以 project-facing Runtime Projection 进入 Payload，而不是原样复制 Source 导航或 routing metadata。
 
-目标项目没有 Agent_Skills `references/`。Source Mode 直接读取源仓库 required References；Runtime Mode 通过中文 Task Route 和当前不透明 task-bound route capability 取得 required 完整原文。完整原文继续逐字保留 canonical routing metadata；Runtime 的保密边界不能通过删改 Reference 原文实现，否则会破坏 source/routing 完整性。
+目标项目没有 Agent_Skills `references/`。Source Mode 直接读取源仓库 required References；Runtime Mode 通过中文 Task Route 和当前不透明 task-bound route capability 取得 required 完整原文。完整原文继续逐字保留 canonical routing metadata；Runtime 明文投影不能通过删改 Reference 原文获得“干净表面”，否则会破坏 source/routing 完整性。
 
 ## 3. 项目安装边界
 
@@ -146,7 +147,7 @@ v1、v2、未知或损坏 legacy manifest 直接失败；旧 Runtime 不存在�
 - `.agents/runtime/` 仍为项目本地运行资产，但安装/升级**不自动新增** Runtime ignore；**项目原本已有** `/.agents/runtime/` 或等价 ignore 时保持原样，不删除、不重复追加；
 - `AGENTS.md` / CLAUDE / Codex 使用 managed marker；
 - 目标项目 `AGENTS.md` managed block 只做 Runtime 薄 Bootstrap：先恢复项目真实事实，再通过已配置的项目级治理 MCP 获取本次任务所需完整约束；不得把受管源码维护导航当作 Runtime 日常读取入口；
-- Runtime 用户可见过程可以正常描述项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 和交付状态，并解释当前项目真正适用的工程要求；不得主动复述内部治理分类、文件名、目录路径、规则标识、路由映射、内部凭据或加载明细，也不得把 canonical 治理原文、原始治理上下文、内部 Prompt、私有路由清单等作为用户交付内容逐字输出、翻译、编码、分块复制或高保真重建；
+- Runtime 用户可见过程可以正常描述项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 和交付状态，并解释当前项目真正适用的工程要求；普通分发明文不通过“不要暴露某某内部能力”这类自说明来表达边界；
 - Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产和未认领 shared file 保留；
 - Codex 同名 MCP table 存在但 managed marker 缺失，或合法 managed block 外另有重复同名 table 时，即使 legacy v3 或旧 Runtime install-state 能证明历史安装存在也 fail closed，不猜测 table ownership；
@@ -156,7 +157,7 @@ v1、v2、未知或损坏 legacy manifest 直接失败；旧 Runtime 不存在�
 
 取消 sidecar 后有一个必须明确的信任边界：如果没有 legacy v3，升级需要执行目标项目里原先安装的旧 Runtime 来取得其内嵌 install-state。因此 sidecarless upgrade 以**用户已经信任并明确选择的目标工作区**为前提；普通文件/非符号链接校验和 install-state schema/digest/path 校验不是代码签名、TEE 或抵御项目 Owner 恶意替换旧 Runtime 的安全保证。旧 Runtime 无法提供合法状态时宁可停止升级，也不能猜 ownership。
 
-正式 Router 与其他 Skill Core 仍通过动态 Catalog 分发，但写入目标项目的是各自 canonical Core 的确定性 Runtime Projection；Skills 根级 Entry 只通过 Project Payload 的显式 `shared_files` Contract 分发，二者职责不混淆。内部 Entry/Router/Core 存在于目标项目并不意味着它们必须成为用户可见的日常导航；安装 ownership 与用户披露是两个独立边界。
+正式 Router 与其他 Skill Core 仍通过动态 Catalog 分发，但写入目标项目的是 deterministic project-facing Runtime Projection；Skills 根级 Entry 只通过 Project Payload 的显式 `shared_files` Contract 分发，二者职责不混淆。安装 ownership 与用户披露是两个独立边界；真正的 trigger/dependency/risk/context 执行语义由私有 routing/evaluator/context 链承担。
 
 ### 宿主连接级生命周期
 
@@ -200,7 +201,7 @@ agent_skills_checkpoint
 
 这些变化只收窄**公共 envelope 与不充分事实的过宽导出路径**，不改变事实充分任务的 canonical 路由语义、加密 Bundle 内部 provenance、hash/size、依赖图、风险下限或 canonical exact-text。`checkpoint` 仍不能替代 Requirement Traceability、Completion Audit、Review、Docs Impact 或真实测试。Task Route 的授权字段只是数据，不能产生 Git、发布或部署权限。
 
-内部 `__install-state --json` 不是第七个 MCP Tool，也不加入普通 CLI help；它只服务后续 Runtime 安装器恢复 previous ownership。Runtime 给宿主的每个关键 MCP 返回仍携带同一用户可见进度规则：允许说明真实工程活动及其原因；不得把 MCP 内部调用、治理资产身份、分类、路由和加载明细作为用户可见过程复述，也不得把内部治理原文作为用户交付内容。这里是输出层约束，不是禁止模型执行这些治理步骤，更不是对本机 Owner 的密码学访问控制。
+内部 `__install-state --json` 不是第七个 MCP Tool，也不加入普通 CLI help；它只服务后续 Runtime 安装器恢复 previous ownership。Runtime 给宿主的每个关键 MCP 返回仍携带同一 project-facing 用户进度规则：允许说明真实工程活动及其原因，并在约束不可可靠取得时阻止依赖动作和完成结论。内部组织、routing 和加载身份继续只用于执行，不需要在这段公共规则里枚举或解释。
 
 ## 5. 本地构建
 
@@ -224,7 +225,7 @@ python scripts/build_runtime.py --output-dir dist --json
 scripts/build_runtime.py ... --release-version <SemVer> --json
 ```
 
-构建器读取显式版本和真实 source commit，动态发现 Skill/Reference，编译 canonical metadata，构建逻辑 Bundle v3 / source identity，从 canonical exact-text 生成 encrypted private manifest + per-reference authenticated records，并从同一 canonical Skill Core 自动生成 no-Stub Project Payload 中的 Runtime Projection，再生成当前平台 artifact 并执行 `status` / `self-test` 校验。由于公共 `status/self-test` 不再暴露详细内部摘要，Builder 会在维护侧用同一份 Bundle、Payload、release/source 身份计算一个不可逆整体完整性指纹，并要求 artifact `self-test` 返回完全一致的指纹；这样仍能证明 artifact 与当前构建材料一致，同时不把内部身份字段重新开放给 Runtime 日常调用。
+构建器读取显式版本和真实 source commit，动态发现 Skill/Reference，编译 canonical metadata，构建逻辑 Bundle v3 / source identity，从 canonical exact-text 生成 encrypted private manifest + per-reference authenticated records，并从同一 canonical Source 自动生成 no-Stub Project Payload 中的 project-facing Entry/Skill/agent prompt Projection，再生成当前平台 artifact 并执行 `status` / `self-test` 校验。由于公共 `status/self-test` 不暴露详细内部摘要，Builder 会在维护侧用同一份 Bundle、Payload、release/source 身份计算一个不可逆整体完整性指纹，并要求 artifact `self-test` 返回完全一致的指纹；这样仍能证明 artifact 与当前构建材料一致，同时不把内部身份字段重新开放给 Runtime 日常调用。
 
 Build 每次生成新的高熵 root material 与 bundle salt。完全本地、离线、零额外用户配置的 Runtime binary 必然包含或能够恢复执行解密所需的根材料；当前实现将其与 v3 encrypted container 一同嵌入 onefile 临时构建副本。该事实只能描述为 reverse-engineering hardening，不得宣称 binary 内存在本机 Owner 无法恢复的秘密。root material、派生 key、route capability 和 plaintext corpus 都不得写入日志、Release asset 或 sidecar。
 
@@ -276,45 +277,43 @@ dist/agent-skills.exe
 python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 ```
 
-该 smoke 使用真实 stdio MCP client 验证六个 Tool、中文 input schema、去标识化公共 envelope、route contract、submit、required Context exact-text、stale/伪造/跨 task capability、unknown-induced full-corpus fail-closed 和 checkpoint，不用内部 Python 函数调用冒充 MCP 边界。hash/size/source/routing 等完整性仍在维护侧 Bundle/Builder 验证，不要求通过公共 context envelope 暴露。
+该 smoke 使用真实 stdio MCP client 验证六个 Tool、中文 input schema、project-facing 公共进度 Contract、去标识化公共 envelope、route contract、submit、required Context exact-text、stale/伪造/跨 task capability、unknown-induced full-corpus fail-closed 和 checkpoint，不用内部 Python 函数调用冒充 MCP 边界。**Smoke 不要求公共进度文本重复“不得暴露/不得复述/高保真重建”等防披露措辞；它同时验证 project-facing 文本和私有执行 parity，防止为满足输出检查损害 exact Context。** hash/size/source/routing 等完整性仍在维护侧 Bundle/Builder 验证，不要求通过公共 context envelope 暴露。
 
 ## 7. 永久 CI
 
 永久 CI 按证明责任拆分，不再让每次纯 Skill/Reference/治理变化都重复构建三平台 binary。
 
-### Skill Tests
+### Skill Tests / Runtime Package jobs
 
-`.github/workflows/skill-tests.yml` 使用 Python `3.14.7`，安装 Runtime 的运行依赖而不是 PyInstaller 构建依赖，并持续验证：
+当前普通 PR/main 的统一入口是 `.github/workflows/skill-tests.yml`。它始终承担 self-contained Skill Tests；当 classifier 判定 `scope=package` 且事件/Ready 条件要求真实 package 证据时，同一 Workflow 继续触发 Linux、Windows、macOS 对应 Runtime Package jobs 与稳定 `Runtime Package Gate`。不要恢复已移除的独立 `runtime-package-tests.yml` 作为第二控制面。
+
+平台无关测试持续验证：
 
 - self-contained unit/preservation/portability tests；
 - Source Mode 唯一 Skills 根级 Router 与 Maintenance 职责、Runtime 薄 Bootstrap 可见性边界，以及 Project Payload shared-file 分发；
 - metadata compiler/evaluator、Routing Conformance、tri-state unknown semantics、private manifest/per-reference encryption 与 exact-text parity；
-- Runtime Projection 不暴露当前 canonical Reference 文件名、路径、Stable ID 或直接导航映射，同时保留 frontmatter、路由 metadata、核心工程语义并由动态 Reference 身份自动驱动；
-- Runtime 公共返回面不暴露内部治理身份，同时 required canonical Context exact-text 不被删改；
+- Runtime Projection 不暴露当前 canonical Reference 文件名、路径、Stable ID、`agent-routing:v1`、内部组织或防披露自说明，同时保留宿主 `name`、核心项目工程语义与交付授权；
+- Runtime 公共返回面保持 project-facing，required canonical Context exact-text 不被删改；
 - v3 Manifest/record tamper、record swap、locator mismatch、lazy decrypt、自检全库与 task capability 安全回归；
 - sidecarless install-state、legacy v3 一次迁移、v1/v2/未知 schema 拒绝、项目自有 Reference 保留、同名冲突、Codex marker/重复 table fail-closed 和失败/回滚诊断；
 - Builder JSON identity 与 no-sidecar Release preservation；
 - 动态 Skill Bundle + Project Payload 的源码级构建、投影确定性与内容守恒；
 - Active/changed Change Ready Check。
 
-这条 Workflow 不运行 PyInstaller，不构建 onefile，也不创建 Windows/macOS package job。规则正文会进入下一次正式 Runtime，但它的内容、路由、Bundle/Payload 和治理正确性由上述源码级自动化证明。
+`scope=package` 的平台 jobs 继续真实验证：
 
-### Runtime Package Tests
-
-`.github/workflows/runtime-package-tests.yml` 只在 Runtime/Builder/MCP 安装/Release 工作流相关路径变化时触发，并使用 Linux、Windows、macOS 对应 Runner 真实验证：
-
-- onefile build/status/self-test；
+- Linux/Windows/macOS onefile build/status/self-test；
 - development `release_version=0.0.0-dev` 与固定 Python identity；
 - Builder JSON 的 `integrity_fingerprint` 和实际 binary `artifact_sha256`；
 - 构建目录不存在 `*.manifest.json`；
-- real stdio MCP，包括 stable Tool Contract、exact-text、capability 与 unknown full-corpus anti-export；
+- real stdio MCP，包括 stable Tool Contract、project-facing progress、exact-text、capability 与 unknown full-corpus anti-export；
 - project-only single-binary 首次安装、重复安装/升级和无参数安装；
 - 安装项目不存在 `.agents/agent-skills-install.json`，也不存在 canonical Reference/Stub/Private Routing Manifest；
 - 已安装 Runtime 的内部 install-state 能认领当前 Entry/Router，但不进入 MCP；
 - 项目内 Runtime status/MCP smoke；
 - Windows/macOS 对应平台 package/install。
 
-不同平台必须使用对应 Runner，不能把一个平台的 PyInstaller artifact 当跨平台二进制。Skill Tests 的绿色不能替代这一层；反过来，Runtime package 绿色也不能替代规则/内容守恒/Ready 的广覆盖测试。
+不同平台必须使用对应 Runner，不能把一个平台的 PyInstaller artifact 当跨平台二进制。平台无关 Skill Tests 的绿色不能替代 package 证据；反过来，Runtime package 绿色也不能替代规则/内容守恒/Ready 的广覆盖测试。
 
 ## 8. 正式 Release
 
@@ -345,8 +344,8 @@ v3 使用 encrypted private manifest、opaque record locator、HKDF-SHA256 用�
 
 MCP anti-export 同样是应用层边界：公共协议不提供按 ID/filename/path/Catalog/glob/dump 的任意读取接口；未知事实只保守扩大相关候选，unknown-induced full corpus fail closed；task-bound capability 阻止 stale、cross-task 与伪造 token。它不能阻止控制本机的用户观察合法 MCP plaintext、反复构造真实任务或 Hook Runtime。
 
-Runtime Mode 的 disclosure policy 约束正常 Agent/Prompt/Skill/Runtime 可控制输出：内部治理原文、原始治理上下文、内部 Prompt、私有 Routing Manifest 等不能因用户要求而被逐字输出、翻译、编码、分块复制或高保真重建；但 Agent 必须继续直接解释当前目标项目实际适用的工程要求、风险、测试、Review、Docs、Git/CI 和交付理由。Source Mode 维护者在拥有 canonical 仓库访问权时仍可正常查看和讨论内部源文件。
+Runtime Mode 的普通分发明文和公共进度输出保持 project-facing，不通过枚举内部能力名称来解释自身。Source Mode 维护者在拥有 canonical 仓库访问权时仍可正常查看和讨论内部源文件。这个产品边界减少的是正常安装面与对话中的主动暴露，不是对本机 Owner 的密码学隔离。
 
 sidecarless installation ownership 同样不是新的安全隔离层。它减少的是目标项目和构建目录中的状态副本：当前 ownership 已经存在于 Runtime 内嵌 Project Payload，Builder identity 已经存在于构建结果与 CI。升级通过旧 Runtime 的内部 install-state 读取 previous ownership，以用户已经信任并明确选择的目标工作区为前提；普通文件/路径/schema/digest 校验不能抵御项目 Owner 主动替换旧 Runtime，也不能宣称等价于代码签名、TEE 或可信远程证明。旧 Runtime 不可验证时必须停止升级而不是猜 ownership。
 
-模式感知披露只能减少正常 Agent 对话中主动复述内部治理结构和治理原文的产品表面，不等于阻止拥有机器控制权的用户查看受管明文 Runtime Core/Router、MCP 通信或进程内解密后的完整规则。不能宣称能够抵御机器 Owner、调试器、内存转储、进程 Hook、MCP 通信观测或专业逆向。真正限制谁能读取 canonical 源文件，必须依赖源仓库访问控制；如果未来要求恶意本机 Owner 也不能取得 canonical 原文，需要迁移到受控 Remote Governance 架构，并作为独立架构 Change 处理。
+模式感知披露只能减少正常 Agent 对话中主动复述内部治理结构和治理原文的产品表面，不等于阻止拥有机器控制权的用户查看受管明文 Runtime Core、MCP 通信或进程内解密后的完整规则。不能宣称能够抵御机器 Owner、调试器、内存转储、进程 Hook、MCP 通信观测或专业逆向。真正限制谁能读取 canonical 源文件，必须依赖源仓库访问控制；如果未来要求恶意本机 Owner 也不能取得 canonical 原文，需要迁移到受控 Remote Governance 架构，并作为独立架构 Change 处理。
