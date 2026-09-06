@@ -37,8 +37,8 @@ Requirement Source：Issue #238。
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | non-package Gate skipped 后，未 Ready 的 Change 仍必须被 required check 阻断 | `#238 / AC1, AC3` | satisfied | `Agent Skills Gate` 新增统一 Ready enforcement step；结构回归锁定 `ready != true` 时 Core 失败。 |
-| R2 | package Draft/not-ready 与 Ready 三平台行为不得降低 | `#238 / AC2, AC6` | satisfied | package 平台条件未改；本 corrective PR 作为 CI-self 仍要求 full/package current-head Evidence。 |
+| R1 | non-package Gate skipped 后，未 Ready 的 Change 仍必须被 required check 阻断 | `#238 / AC3` | satisfied | `Agent Skills Gate` 新增统一 Ready enforcement step；结构回归锁定 `ready != true` 时 Core 失败。 |
+| R2 | package Draft/not-ready 与 Ready 三平台行为不得降低 | `#238 / AC2` | satisfied | package 平台条件未改；本 corrective PR 作为 CI-self 仍要求 full/package current-head Evidence。 |
 | R3 | Maintenance 永久说明 Change Ready 不得依赖可被 scope skip 的聚合 Gate | `#238 / AC4` | satisfied | Maintenance 9.3 与永久回归同步固化 Core Ready enforcement。 |
 
 # Validation Matrix
