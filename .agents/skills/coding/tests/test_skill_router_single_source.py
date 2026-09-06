@@ -16,7 +16,7 @@ RUNTIME_REFERENCE_PATH = ".agents/skills/coding/references/13_本地MCP_Runtime�
 
 
 class SkillRouterSingleSourceTest(unittest.TestCase):
-    """验证 Skill Router 只有一个正式正文，并区分源码直读与 Runtime 用户可见入口。"""
+    """验证源码路由只有一个正式正文，并区分源码直读与 Runtime 项目侧入口。"""
 
     def _read(self, relative: str) -> str:
         """读取仓库 UTF-8 文本，供入口职责和内容守恒断言使用。"""
@@ -62,7 +62,7 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
             self.assertIn(required, managed)
 
     def test_router_preserves_high_value_routing_and_failure_semantics(self) -> None:
-        """旧 managed block 的高价值触发、失败和权限规则必须完整迁入唯一 Router。"""
+        """源码 Router 必须完整保留高价值任务判断、失败和权限规则。"""
         router = self._read(ROUTER_PATH)
         required_markers = (
             ".agents/skills/*/SKILL.md",
@@ -91,7 +91,7 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertIn("不是分发白名单", router)
 
     def test_router_covers_required_low_ambiguity_dual_mode_examples(self) -> None:
-        """Router 必须逐类给出命中/叠加、Source 读取和 Runtime 信号示例。"""
+        """源码 Router 必须逐类给出命中/叠加、Source 读取和 Runtime 信号示例。"""
         router = self._read(ROUTER_PATH)
         for header in ("命中原因与叠加", "Source Mode 读取", "Runtime Mode 任务信号"):
             self.assertIn(header, router)
@@ -123,7 +123,7 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertNotIn("| Skill Mutation |", router)
 
     def test_router_cross_skill_handoffs_have_explicit_closure_fields(self) -> None:
-        """Runtime/Figma/Review/Docs 路由必须显式说明完整交接闭环。"""
+        """源码 Runtime/Figma/Review/Docs 路由必须显式说明完整交接闭环。"""
         router = self._read(ROUTER_PATH)
         for field in ("触发：", "必须动作：", "不适用：", "交接：", "返回：", "失败关闭："):
             self.assertGreaterEqual(router.count(field), 4, f"跨 Skill 路由缺少字段：{field}")
@@ -150,29 +150,41 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertIn(ROUTER_PATH, maintenance)
         self.assertNotIn("当前正式 Skill：", maintenance)
 
-    def test_project_payload_distributes_entry_and_projected_router_from_canonical_owner(self) -> None:
-        """Entry 保持原文；Router 只维护一份 canonical Core，并在 Runtime 构建时自动投影。"""
+    def test_project_payload_distributes_project_facing_entry_and_router_from_canonical_owner(self) -> None:
+        """Runtime Entry/Router 是 deterministic project-facing 派生视图，canonical Source 仍是唯一维护 Owner。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         self.assertEqual(payload["shared_files"], ["ENTRY.md"])
-        entry = next(
-            (item for item in payload["files"] if item["path"] == "ENTRY.md"),
-            None,
-        )
-        router = next(
-            (item for item in payload["files"] if item["path"] == "router/SKILL.md"),
-            None,
-        )
+        entry = next((item for item in payload["files"] if item["path"] == "ENTRY.md"), None)
+        router = next((item for item in payload["files"] if item["path"] == "router/SKILL.md"), None)
         self.assertIsNotNone(entry, "Project Payload 没有分发共享 Entry")
         self.assertIsNotNone(router, "Project Payload 没有分发正式 Router Skill")
-        self.assertEqual(decode_payload_file(entry), (ROOT / ENTRY_PATH).read_bytes())
+
+        runtime_entry = decode_payload_file(entry)
+        source_entry = (ROOT / ENTRY_PATH).read_bytes()
+        self.assertNotEqual(runtime_entry, source_entry)
+        entry_text = runtime_entry.decode("utf-8")
+        for marker in ("当前项目", "真实文件", "工程约束", "无法可靠取得"):
+            self.assertIn(marker, entry_text)
 
         source_router = (ROOT / ROUTER_PATH).read_bytes()
         runtime_router = decode_payload_file(router)
         self.assertNotEqual(runtime_router, source_router)
         runtime_text = runtime_router.decode("utf-8")
-        for marker in ("name: router", "agent-routing:v1", "Anti-Agent Boundary", "Runtime Mode", "完整约束"):
+        for marker in ("name: router", "当前项目", "L1", "L2", "L3", "Fresh Evidence Contract"):
             self.assertIn(marker, runtime_text)
+        for forbidden in (
+            "agent-routing:v1",
+            "Router",
+            "Skill",
+            "Reference",
+            "Handoff",
+            "Source Mode",
+            "Runtime Mode",
+            ".agents/skills/",
+            "agent_skills_",
+        ):
+            self.assertNotIn(forbidden, runtime_text)
         self.assertNotIn("references/", runtime_text)
         for reference in bundle["references"]:
             self.assertNotIn(str(reference["filename"]), runtime_text)

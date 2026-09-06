@@ -16,7 +16,7 @@ RUNTIME_REFERENCE = ROOT / ".agents/skills/coding/references/13_本地MCP_Runtim
 
 
 class RuntimeProgressPrivacyTest(unittest.TestCase):
-    """验证用户可见文本不暴露内部身份，同时保留真实专业执行与正常项目问答能力。"""
+    """验证 Runtime project-facing 输出不暴露内部组织，同时保留完整专业执行与正常项目问答。"""
 
     def _read(self, path: Path) -> str:
         """读取一个当前仓库 UTF-8 规则文件。"""
@@ -82,56 +82,60 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, template)
 
-    def test_entry_blocks_internal_identity_restatement_without_hiding_execution_context(self) -> None:
-        """共享入口必须禁止身份转写，同时允许内部身份继续服务路由和专业执行。"""
+    def test_source_entry_is_thin_and_keeps_execution_boundary(self) -> None:
+        """Source Entry 只承担项目事实与 Router 导航，详细披露边界留给唯一 Runtime Owner。"""
         entry = self._read(ENTRY)
         for marker in (
-            "普通目标项目任务中，内部能力身份只用于执行",
-            "不得用“用、调用、交给或由某个内部能力”解释分工",
-            "Skill/Reference/Router identity",
-            "Handoff 与 required Context 必须完整用于专业执行",
-            "不得为隐藏名称而删减或少加载",
-        ):
-            self.assertIn(marker, entry)
-
-    def test_entry_keeps_normal_project_answers_visible(self) -> None:
-        """隐私只约束内部身份转写，不得把正常项目事实、解释和建议限制成只报告动作。"""
-        entry = self._read(ENTRY)
-        for marker in (
-            "项目事实、解释、建议、风险、验证和交付照常向用户呈现",
-            "涉及 Agent 自身的进度、分工或执行过程时",
-            "限制只针对内部身份转写",
-        ):
-            self.assertIn(marker, entry)
-
-    def test_entry_preserves_source_maintenance_and_host_ui_boundary(self) -> None:
-        """薄入口保留 Source 维护例外，并承认宿主 UI 不是 Prompt 可控制表面。"""
-        entry = self._read(ENTRY)
-        for marker in (
+            ".agents/skills/router/SKILL.md",
+            "最少充分事实",
+            "项目事实和上位指令优先",
+            "无法读取或验证",
+            "专业执行完整",
+            "项目事实、解释、建议、风险、验证和交付照常呈现",
             "Source Mode",
-            "维护/审计 Agent_Skills 自身",
-            "可讨论内部导航",
-            "宿主 UI",
-            "不受 Prompt / Skill / Runtime 文本规则直接控制",
-            "不能宣称可以隐藏",
+            "Runtime 详细边界由其 canonical Owner 负责",
         ):
             self.assertIn(marker, entry)
+        self.assertLess(len(entry.encode("utf-8")), 1_000)
+        for forbidden in (
+            "agent_skills_",
+            "宿主 UI",
+            "高保真重建",
+            "内部控制面",
+            "用户可见进度规则",
+        ):
+            self.assertNotIn(forbidden, entry)
 
-    def test_source_and_runtime_share_entry_without_reducing_professional_context(self) -> None:
-        """共享 Entry 在 Source/Runtime 逐字一致，且不得靠少加载专业 Context 获得隐私。"""
+    def test_runtime_entry_is_project_facing_without_reducing_professional_context(self) -> None:
+        """Runtime Entry 使用项目侧投影；专业 Context 完整性继续由 canonical 路由链证明。"""
         source_entry = self._read(ENTRY)
         runtime_entry = self._payload_text("ENTRY.md")
-        self.assertEqual(runtime_entry, source_entry)
-        self.assertIn("required Context 必须完整用于专业执行", source_entry)
-        self.assertIn("不得为隐藏名称而删减或少加载", source_entry)
+        self.assertNotEqual(runtime_entry, source_entry)
+        for marker in ("当前项目", "真实文件", "工程约束", "最少充分", "无法可靠取得"):
+            self.assertIn(marker, runtime_entry)
+        for forbidden in (
+            "Router",
+            "Skill",
+            "Reference",
+            "Handoff",
+            "Source Mode",
+            "Runtime Mode",
+            ".agents/skills/",
+            "内部能力",
+            "内部治理",
+        ):
+            self.assertNotIn(forbidden, runtime_entry)
+        self.assertIn("专业执行完整", source_entry)
+        self.assertIn("Runtime 详细边界由其 canonical Owner 负责", source_entry)
 
     def test_existing_canonical_runtime_rule_remains_mode_aware(self) -> None:
-        """详细 Runtime Owner 必须继续保留 Source/Runtime 两种披露边界，不能被薄入口反向削弱。"""
+        """详细 Runtime Owner 必须继续保留 Source/Runtime 两种披露边界。"""
         reference = self._read(RUNTIME_REFERENCE)
         for marker in (
             "Source Mode",
             "Runtime Mode 允许正常展示项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 与交付状态",
-            "用户可见过程",
+            "普通 Runtime 安装明文与公共进度文本应直接使用项目工程语言",
+            "内部身份、routing metadata、加载过程和 exact canonical Context 继续只服务执行",
         ):
             self.assertIn(marker, reference)
 
@@ -156,48 +160,65 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, managed)
 
-    def test_runtime_public_progress_rule_forbids_named_internal_work_assignment(self) -> None:
-        """每次 MCP 公共返回都必须禁止把内部能力身份写成用户可见任务分工。"""
+    def test_runtime_public_progress_rule_describes_project_work_without_internal_vocabulary(self) -> None:
+        """每次 MCP 公共返回都使用同一 project-facing 进度 Contract。"""
         store = RuntimeStore(build_bundle(ROOT), release_version="9.9.9-test")
         payloads = [store.status(), store.route_contract(), store.start_task("T-progress")]
         for payload in payloads:
             rule = str(payload["用户可见进度规则"])
             for marker in (
-                "所有 Agent 可控制的用户可见文本",
-                "内部控制面不得主动复述",
-                "任何内部能力名称或标签",
-                "不得使用“用、调用、交给或由某个内部能力”",
-                "项目工程动作",
-                "项目调查",
+                "当前项目",
                 "代码修改",
                 "测试",
                 "文档同步",
                 "复核",
                 "Git/CI",
                 "交付状态",
+                "不限制正常工程解释",
+                "工程约束必须完整用于执行",
             ):
                 self.assertIn(marker, rule)
+            for forbidden in (
+                "Router",
+                "Skill",
+                "Reference",
+                "Handoff",
+                "内部能力",
+                "内部控制面",
+                "内部 Owner",
+                "内部任务路由",
+                "内部规则解析",
+                "必需上下文组织",
+            ):
+                self.assertNotIn(forbidden, rule)
 
     def test_runtime_public_progress_rule_keeps_normal_project_answers(self) -> None:
-        """Runtime 隐私 Contract 不得阻止正常项目事实、解释、建议、状态和交付问答。"""
+        """Runtime 进度 Contract 不得阻止正常项目事实、解释、建议、状态和交付问答。"""
         store = RuntimeStore(build_bundle(ROOT), release_version="9.9.9-test")
         rule = str(store.status()["用户可见进度规则"])
         for marker in (
-            "用户关于目标项目的正常事实、解释、建议、风险、验证、状态和交付照常回答",
-            "描述 Agent 自身的进度、分工、工具调用前说明、中间总结或执行过程时",
+            "用户关于当前项目的正常事实、解释、建议、风险、验证、状态和交付照常回答",
             "不限制正常工程解释",
+            "当前任务适用的工程约束必须完整用于执行",
         ):
             self.assertIn(marker, rule)
 
-    def test_runtime_public_progress_rule_keeps_internal_identity_for_execution_only(self) -> None:
-        """披露边界必须明确只限制转写，不能要求删掉模型内部路由身份。"""
+    def test_runtime_public_progress_rule_does_not_encode_execution_identity(self) -> None:
+        """内部执行完整性由路由/context conformance 证明，不在公共进度文本枚举实现身份。"""
         store = RuntimeStore(build_bundle(ROOT), release_version="9.9.9-test")
         rule = str(store.status()["用户可见进度规则"])
-        for marker in (
-            "内部身份继续用于路由、约束加载和专业执行",
-            "不得为了用户可见隐藏而删除内部执行上下文",
+        self.assertIn("工程约束必须完整用于执行", rule)
+        self.assertIn("无法可靠取得本次必需约束时", rule)
+        for forbidden in (
+            "内部身份继续用于路由",
+            "约束加载和专业执行",
+            "为了用户可见隐藏",
+            "Router",
+            "Skill",
+            "Reference",
+            "Handoff",
         ):
-            self.assertIn(marker, rule)
+            self.assertNotIn(forbidden, rule)
 
 
 if __name__ == "__main__":

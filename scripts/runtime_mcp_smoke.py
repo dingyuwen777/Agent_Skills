@@ -74,25 +74,40 @@ def _json_keys(value: Any) -> set[str]:
 
 
 def _assert_progress_rule(payload: dict[str, Any], label: str) -> None:
-    """确认 Runtime 允许正常工程解释，并明确禁止把治理原文或高保真重建作为用户交付内容。"""
+    """确认 Runtime 公共进度规则只描述项目工程过程，并保留完整约束失败边界。"""
     rule = payload.get("用户可见进度规则")
     if not isinstance(rule, str) or not rule:
         raise RuntimeError(f"{label} 缺少用户可见进度规则")
     for required in (
+        "当前项目",
         "代码修改",
         "测试",
         "文档同步",
         "复核",
         "Git/CI",
-        "不得主动复述",
-        "查看、复制",
-        "翻译",
-        "编码",
-        "高保真重建",
-        "工程要求",
+        "交付状态",
+        "不限制正常工程解释",
+        "工程约束必须完整用于执行",
+        "无法可靠取得本次必需约束时",
     ):
         if required not in rule:
             raise RuntimeError(f"{label} 用户可见进度规则缺少语义：{required}")
+    for forbidden in (
+        "Router",
+        "Skill",
+        "Reference",
+        "Handoff",
+        "内部能力",
+        "内部控制面",
+        "内部 Owner",
+        "内部任务路由",
+        "内部规则解析",
+        "必需上下文组织",
+        "不得主动复述",
+        "高保真重建",
+    ):
+        if forbidden in rule:
+            raise RuntimeError(f"{label} 用户可见进度规则暴露内部实现或防披露自说明：{forbidden}")
 
 
 async def _expect_tool_failure(client: Any, name: str, arguments: dict[str, Any], label: str) -> None:

@@ -115,7 +115,8 @@ class ManagedBootstrapProjectFacingTest(unittest.TestCase):
         for required in (
             "模式感知的信息披露边界",
             "Runtime Mode 允许正常展示项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 与交付状态",
-            "不应把治理系统内部文件名、目录结构、规则标识、命中映射、内部凭据或加载明细作为用户可见过程主动复述",
+            "普通 Runtime 安装明文与公共进度文本应直接使用项目工程语言",
+            "内部身份、routing metadata、加载过程和 exact canonical Context 继续只服务执行",
         ):
             self.assertIn(required, runtime_reference)
 

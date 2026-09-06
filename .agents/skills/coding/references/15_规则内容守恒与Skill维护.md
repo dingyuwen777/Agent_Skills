@@ -285,9 +285,10 @@ Mutation Target 只回答通用 Skill 的 canonical 写入仓库；Change 的 Re
 5. Reference 文件 rename 默认保留原显式 Stable ID；只有用户/Owner 明确批准 Contract 变化时才能改 ID；
 6. 删除 Reference 前先处理所有依赖和 required case；悬空依赖必须让构建失败，而不是静默忽略；
 7. 用户说“调整某类任务的规则”时，先确定是正文、触发、依赖/风险还是多者同时变化，再修改最小必要层；
-8. Build 不调用 LLM 生成 metadata。无法确定路由时必须回到需求/Owner 决策，不能用关键词猜测提交。
+8. Build 不调用 LLM 生成 metadata。无法确定路由时必须回到需求/Owner 决策，不能用关键词猜测提交；
+9. 如果 Mutation 会进入 Runtime/Project Payload，必须把 **project-facing plaintext** 与 **private execution parity** 分开审计：安装明文 Entry/Core/agent prompt 只保留宿主发现和真实项目工程语义，不保留私有 routing metadata、内部组织说明或“不要暴露内部能力”的自我说明；同时用 canonical metadata/evaluator、最低风险、依赖闭包、required Context 与 exact Reference bytes 证明 Source/Runtime 同效。**不得用 Source/Runtime 明文逐字一致替代 parity，也不得为通过明文测试删减 canonical Context。**
 
-公共 route contract 由当前 metadata 动态生成；私有 Reference mapping 只进入加密 Bundle。Authoring 完成证据至少包含：正文内容守恒、metadata 编译、同一 evaluator parity、必要 conformance 和受影响文档同步。
+公共 route contract 由当前 metadata 动态生成；私有 Reference mapping 只进入加密 Bundle。Authoring 完成证据至少包含：正文内容守恒、metadata 编译、同一 evaluator parity、必要 conformance 和受影响文档同步；涉及 Runtime 分发时还必须同时证明 project-facing plaintext 与 private execution parity 两条证据轴。
 
 ### 7.4 新增 Skill
 
@@ -368,6 +369,19 @@ Router 当前 Catalog / Handoff
 → 内容守恒或退役依据 → live 引用反向检查
 → 适用 profile 的 preservation / 语义、routing / parity、Runtime / package 证据
 → 当前 Requested Outcome / 仓库 gate 要求的独立 Review、CI / PR / delivery
+```
+
+如果 Runtime/Project Payload 受影响，完成证据必须同时包含：
+
+```text
+真实安装/Project Payload 明文
+→ project-facing，且无内部组织身份、私有 routing metadata、防披露自说明
+
+同一任务事实
+→ canonical metadata/evaluator
+→ matched Skill / required risk / dependency closure
+→ required canonical Context exact bytes
+→ Source 与 Runtime 同效
 ```
 
 真实影响面与 Maintenance classifier 决定验证，轻 profile 不跳过**当前交付阶段真正适用**的 required CI；无 executable/package/platform 变化不触发无关三平台 package。证据充分且无新改动/失败/风险/疑点后遵守 Validation Stop Rule，不自动进入 merge/main-fresh/Archive/Closure。

@@ -204,8 +204,12 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
         self.assertEqual(set(contexts[0]), {"完整原文"})
         self.assertIn("coding.reference.01", contexts[0]["完整原文"])
         self.assertIn("执行代码修改、补测试、同步文档并完成复核", contexts[0]["完整原文"])
-        self.assertIn("任何内部能力名称或标签", loaded["用户可见进度规则"])
-        self.assertIn("内部身份继续用于路由、约束加载和专业执行", loaded["用户可见进度规则"])
+
+        progress_rule = str(loaded["用户可见进度规则"])
+        for marker in ("当前项目", "代码修改", "测试", "文档同步", "Git/CI", "交付状态"):
+            self.assertIn(marker, progress_rule)
+        for forbidden in ("Router", "Skill", "Reference", "Handoff", "内部能力", "内部控制面"):
+            self.assertNotIn(forbidden, progress_rule)
 
         checkpoint = self.store.checkpoint(route["路由令牌"])
         for forbidden in ("最低风险", "缺失上下文数量", "已加载上下文数量"):
