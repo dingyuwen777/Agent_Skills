@@ -5,8 +5,8 @@
 ## 每次实现默认执行的 Cost / Evidence Check
 - **只测试与修改相关的边界**：human docs→docs/governance；专业 Skill/Reference→Owner+consumer；Change/metadata/archive→carrier；共享边界扩闭包。
 - 去掉**无关 test group**、**重复 setup/install/build**及无关 step/job/workflow。
-- selector / path filter / scoped skip 要有**永久回归和 fail-safe**；unknown/shared/CI-self **fail-closed**；CI/selector 自身变化使用 full current-head Evidence。
-- required check：仅 selector 已证明不适用时可用 **job-level condition** → `skipped` / **0 Runner**；禁止 workflow-level path/branch skip（会 Pending）；package/unknown/CI-self 不得降级，package Gate 仍 `always()` + `needs` fail-closed。
+- selector / path filter / scoped skip：**永久回归和 fail-safe**；unknown/shared/CI-self fail-closed；CI/selector 自身变化使用 full current-head Evidence。
+- required check identity：仅已证不适用→**job-level condition**、`skipped`、**0 Runner**；禁 workflow-level skip（Pending）；package/unknown/CI-self 不降级，Gate `always()`+`needs` fail-closed。
 - **仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化**；guarded archive 可复用 parent Evidence，普通提交不得借 `[skip ci]` 绕准入。
 CI/required/build/package/release 变更或重复成本→Responsibility Audit；unknown 不删。
 ## Actions Control-Plane Cleanup
