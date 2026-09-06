@@ -63,7 +63,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             self.assertIn(marker, root_agents, f"根 AGENTS 缺少源仓库 Mutation Contract：{marker}")
 
     def test_runtime_router_keeps_mutation_signal_but_excludes_detailed_source_governance(self) -> None:
-        """Runtime Router 可导航 Mutation，但详细 canonical 治理仍只属于源仓库 Owner。"""
+        """canonical Router 可导航 Mutation，但详细 canonical 治理仍只属于源仓库 Owner。"""
         router = self._read(ROUTER_PATH)
         required = (
             ".agents/skills/*/SKILL.md",
@@ -246,7 +246,7 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             self.assertIn(marker, coding, f"Coding Core 缺少 Mutation 硬门禁：{marker}")
 
     def test_project_payload_plaintext_surface_excludes_source_mutation_governance(self) -> None:
-        """真实 Project Payload 的可读正文不得携带源仓库 Mutation 治理或 Reference/Stub。"""
+        """真实 Project Payload 可读正文保持 project-facing，不携带源仓库 Mutation 治理或 Reference/Stub。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         entries = {item["path"]: item for item in payload["files"]}
@@ -255,15 +255,31 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
         managed_entry = entries.get("coding/assets/AGENTS.managed.md")
         self.assertIsNotNone(entry_asset)
         self.assertIsNotNone(router_entry)
-        self.assertEqual(decode_payload_file(entry_asset), (ROOT / ENTRY_PATH).read_bytes())
         self.assertIsNotNone(managed_entry)
+
+        runtime_entry = decode_payload_file(entry_asset)
+        self.assertNotEqual(runtime_entry, (ROOT / ENTRY_PATH).read_bytes())
+        runtime_entry_text = runtime_entry.decode("utf-8")
+        self.assertIn("当前项目", runtime_entry_text)
+        self.assertIn("工程约束", runtime_entry_text)
 
         runtime_router = decode_payload_file(router_entry)
         self.assertNotEqual(runtime_router, (ROOT / ROUTER_PATH).read_bytes())
         runtime_router_text = runtime_router.decode("utf-8")
-        self.assertIn("name: router", runtime_router_text)
-        self.assertIn("agent-routing:v1", runtime_router_text)
-        self.assertIn("完整约束", runtime_router_text)
+        for marker in ("name: router", "当前项目", "L1", "L2", "L3", "Fresh Evidence Contract"):
+            self.assertIn(marker, runtime_router_text)
+        for forbidden in (
+            "agent-routing:v1",
+            "Router",
+            "Skill",
+            "Reference",
+            "Handoff",
+            "Source Mode",
+            "Runtime Mode",
+            ".agents/skills/",
+            "agent_skills_",
+        ):
+            self.assertNotIn(forbidden, runtime_router_text)
         self.assertNotIn("references/", runtime_router_text)
         for reference in bundle["references"]:
             self.assertNotIn(str(reference["filename"]), runtime_router_text)
