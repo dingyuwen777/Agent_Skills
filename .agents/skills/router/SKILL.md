@@ -30,6 +30,12 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - **Requested Outcome = Completion Scope**：用户请求决定终点，**能力存在不等于继续追求更远阶段**。`review-only` 到 Findings/Evidence；`test-only` 到 Test Target/Evidence/Gaps；`develop-and-submit` 到 PR Ready；`develop-and-deliver` 才进入 post-merge；`Mutation Audit / Proposal` 到建议/影响面/验证方案。
 - **Task-owned Cleanup**：Completion Scope 结束前删除本任务创建且无后续用途的临时/scratch/debug 产物；保留预存在/用户所有/仍作证据、交付物或输入的内容。未改变交付状态/运行输入时，不使既有 Green Evidence 失效。
 
+### 1.2 交付意图归一化入口
+
+先按当前用户请求的完整语义恢复 Requested Outcome，再选择 References；不要等待已经加载交付正文才识别交付授权。用户明确要求“合并到主分支 / 合入 main / 同步到主分支”时，开发任务映射为 `授权=允许端到端交付`；已有 PR 的“审查通过后合并”映射为 `授权=允许审查后交付`；“提 PR 给我审”映射为 `授权=允许开发并提交PR`。仅 commit/push 不升级为 merge；引述、询问“如何合并”、否定或明确缩小终点不构成写入授权。“继续”仅继承同一任务已确认且未撤销的目标和范围，不重新索要同一批准。
+
+这是任务事实归一化，不增加平台权限。具体权限、完整收尾和未完成判据统一由 [端到端交付 Owner](../coding/references/23_端到端交付与合并后收尾.md) 承担。Source 直读与 Runtime submit 使用同一正式信号，不按模型名称、新旧或宿主品牌另设规则。
+
 ## 2. 正式 Skill Catalog
 
 正式 Skill 从 `.agents/skills/*/SKILL.md` 动态发现；下表只作导航，**不是分发白名单**。

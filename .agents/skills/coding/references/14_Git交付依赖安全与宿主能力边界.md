@@ -47,6 +47,20 @@ API 基于核验的 base tree/parent，保留未改文件/mode，先建真实改
 
 相关候选均由实际错误、当前 schema/权限或缺失前提证明不满足目标/门禁后，才报告 **capability blocker**：最小受阻动作、候选/排除依据、已完成结果、剩余条件；继续无依赖已授权工作；不做已被事实排除的危险/无效尝试。
 
+### 模式与宿主无关的能力判据
+
+治理读取通道与仓库执行通道分别核验：Source Mode 可通过已授权仓库连接器读取完整 canonical 源码，不要求本地 clone；Runtime 的本地 MCP 只加载同版本规则，不提供或授予 Git 写入。网页、CLI、模型厂商/新旧和工具名称均不能代替当前 schema、实际权限与操作结果。没有本地 shell 只排除依赖该 shell 的路径。
+
+| 已确认事实 | 下一步与停止边界 |
+| --- | --- |
+| 本地 clone/push 因 DNS 或 transport 失败，App 的 read/commit/ref/PR 可满足同一保障 | 继续核验并使用托管路径；不得要求先恢复本地 Git 才开始 |
+| 只有逐文件 Contents 写入，但任务要求多文件原子提交 | 查找同基线 Git Data / 其他原子能力；没有则只阻塞该原子写入，不放宽保障 |
+| 写调用超时、响应解析失败或查询失败 | 先读真实 ref/PR/run 判定是否已生效；不得盲重试制造重复提交/PR |
+| 当前 PR/push 已能触发正式 CI，宿主没有手动 dispatch | 读取对应 revision 的既有 Run/Job/日志；不把 dispatch 缺失等同于无法验证 |
+| 权限/保护拒绝，或缺少当前动作必需的 revision guard | 保持相应 blocker；不改身份、force 或绕过 required gate |
+
+能力发现记录只保留本任务必要的目标、实际能力、所选路径、保障和排除依据，不造新协议或永久工具清单。测试/Runner 只使用目标仓库正式允许的执行入口；不得为弥补宿主缺口擅自新增临时 Workflow、泄露凭据或扩大外部副作用。
+
 ### GitHub PR 零人工交付兼容策略
 
 Draft 是平台状态，不是用户必须手工点击的质量门禁；真正门禁仍是项目 Change/需求追溯、Red / Green / Review / CI、PR/head、Branch Protection/Ruleset 与 merge 前复核。

@@ -109,8 +109,27 @@ async def _expect_tool_failure(client: Any, name: str, arguments: dict[str, Any]
     raise RuntimeError(f"{label} 本应失败关闭，但 MCP Tool 返回成功")
 
 
+def _assert_exact_contexts(payload: dict[str, Any], expected_texts: list[str], label: str) -> None:
+    """核对完整 Context envelope、原文字节与加载终态；不输出私有正文。"""
+    contexts = payload.get("上下文")
+    if not isinstance(contexts, list) or len(contexts) != len(expected_texts):
+        raise RuntimeError(f"{label} 未返回完整 required Context")
+    actual_texts: list[str] = []
+    for context in contexts:
+        if not isinstance(context, dict) or set(context) != {"完整原文"}:
+            raise RuntimeError(f"{label} Context envelope 必须只含完整原文")
+        text = context["完整原文"]
+        if not isinstance(text, str):
+            raise RuntimeError(f"{label} 完整原文必须是字符串")
+        actual_texts.append(text)
+    if actual_texts != expected_texts:
+        raise RuntimeError(f"{label} 完整原文与 canonical source 不一致")
+    if payload.get("加载完成") is not True:
+        raise RuntimeError(f"{label} 当前任务规则尚未完整加载")
+
+
 async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
-    """启动真实 stdio MCP 子进程，验证稳定 Tool Contract、exact-text、capability 与 anti-export。"""
+    """启动真实 stdio MCP 子进程，验证稳定 Tool Contract、交付规则 exact-text、capability 与 anti-export。"""
     try:
         from mcp import Client, StdioServerParameters
         from mcp.client.stdio import stdio_client
@@ -221,25 +240,11 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
             await client.call_tool("agent_skills_load_required_context", {"路由令牌": route_token})
         )
         _assert_progress_rule(loaded, "MCP load_required_context")
-        contexts = loaded.get("上下文")
-        if not isinstance(contexts, list) or len(contexts) != len(expected_route["必需Reference"]):
-            raise RuntimeError("MCP load_required_context 未返回完整 required Context")
         expected_texts = [
             expected_by_id[reference_id]["content"]
             for reference_id in expected_route["必需Reference"]
         ]
-        actual_texts: list[str] = []
-        for context in contexts:
-            if not isinstance(context, dict) or set(context) != {"完整原文"}:
-                raise RuntimeError("MCP required Context envelope 必须只含完整原文")
-            text = context.get("完整原文")
-            if not isinstance(text, str):
-                raise RuntimeError("MCP required Context 完整原文必须是字符串")
-            actual_texts.append(text)
-        if actual_texts != expected_texts:
-            raise RuntimeError("MCP required Context 完整原文与 canonical source 不一致")
-        if loaded.get("加载完成") is not True:
-            raise RuntimeError("MCP load_required_context 未识别当前任务规则已完整加载")
+        _assert_exact_contexts(loaded, expected_texts, "MCP load_required_context")
 
         repeated = _structured_result(
             await client.call_tool("agent_skills_load_required_context", {"路由令牌": route_token})
@@ -330,6 +335,45 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
             "unknown full-corpus route",
         )
 
+        # 输入是已归一化的任务事实，不模拟任何在线模型的自然语言推理。
+        fixture = source_root / ".agents/skills/coding/tests/fixtures/git_delivery_routes.json"
+        delivery_cases = json.loads(fixture.read_text(encoding="utf-8"))
+        if not isinstance(delivery_cases, list) or not delivery_cases:
+            raise RuntimeError("Git / Delivery conformance 场景必须是非空列表")
+        for case in delivery_cases:
+            task_id = f"git-delivery-{case['场景']}"
+            route = {
+                "协议": TASK_ROUTE_PROTOCOL,
+                "信号": case["信号"],
+                "未知项": [],
+                "依据": ["已归一化任务事实的真实 MCP conformance"],
+            }
+            expected = evaluate_route(expected_bundle["路由清单"], route)
+            required_ids = set(expected["必需Reference"])
+            if not set(case["必需包含"]).issubset(required_ids) or set(case["禁止包含"]) & required_ids:
+                raise RuntimeError(f"{task_id} canonical 路由不符合交付边界")
+            await client.call_tool("agent_skills_start_task", {"任务标识": task_id, "阶段": "验证"})
+            submitted_case = _structured_result(await client.call_tool(
+                "agent_skills_submit_route", {"任务标识": task_id, "任务路由": route}
+            ))
+            token = submitted_case.get("路由令牌")
+            if not isinstance(token, str) or not token:
+                raise RuntimeError(f"{task_id} 缺少有效加载凭据")
+            loaded_case = _structured_result(await client.call_tool(
+                "agent_skills_load_required_context", {"路由令牌": token}
+            ))
+            _assert_progress_rule(loaded_case, task_id)
+            _assert_exact_contexts(
+                loaded_case,
+                [expected_by_id[reference_id]["content"] for reference_id in expected["必需Reference"]],
+                task_id,
+            )
+            checked_case = _structured_result(await client.call_tool(
+                "agent_skills_checkpoint", {"路由令牌": token, "阶段": "验证"}
+            ))
+            if checked_case.get("通过") is not True:
+                raise RuntimeError(f"{task_id} required Context checkpoint 未通过")
+
     return {
         "ok": True,
         "artifact": str(artifact),
@@ -337,6 +381,7 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
         "routing_digest": expected_bundle["routing_digest"],
         "required_context_count": len(expected_route["必需Reference"]),
         "tool_count": len(EXPECTED_TOOLS),
+        "git_delivery_case_count": len(delivery_cases),
     }
 
 
