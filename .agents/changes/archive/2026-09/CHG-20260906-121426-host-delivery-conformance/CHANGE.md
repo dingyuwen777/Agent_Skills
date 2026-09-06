@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260906-121426-host-delivery-conformance
 title: 统一跨宿主 Git 能力选择与完整交付语义
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: agent/host-delivery-conformance-225
 created: 2026-09-06
