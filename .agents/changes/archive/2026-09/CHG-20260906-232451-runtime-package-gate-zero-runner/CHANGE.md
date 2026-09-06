@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260906-232451-runtime-package-gate-zero-runner
 title: 让非 Package 变更零 Runner 满足 Runtime Package Gate
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: ci/238-runtime-package-gate-zero-runner
 created: 2026-09-06
