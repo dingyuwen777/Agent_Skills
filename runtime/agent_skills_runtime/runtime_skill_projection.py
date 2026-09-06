@@ -22,64 +22,59 @@ _AGENTS_SKILLS_PATH = re.compile(r"(?i)\.agents/skills/[^\s`)\]}>，。；;,|]+"
 _REFERENCE_SHORTHAND = re.compile(r"(?i)\bref\d+(?:\s*/\s*ref\d+)*\b")
 _REFERENCE_NUMBER_PHRASE = re.compile(r"(?i)\breferences?\s+\d+(?:\s*[/,+]\s*\d+)*\b")
 _RUNTIME_TOOL_NAME = re.compile(r"\bagent_skills_[a-z0-9_]+(?:\([^\n)]*\))?", re.IGNORECASE)
-_USE_WORKFLOW_PREFIX = re.compile(r"\bUse\s+\$[A-Za-z0-9_-]+(?:\s+and\s+)?", re.IGNORECASE)
 _DEFAULT_PROMPT_LINE = re.compile(r'(?m)^(\s*default_prompt:\s*")(.+?)("\s*)$')
-_INTERNAL_LABEL = re.compile(r"\b(?:Router|Coding|Testing|Skills?|References?)\b", re.IGNORECASE)
+_INTERNAL_LABEL = re.compile(
+    r"(?<![A-Za-z0-9_-])(?:Router|Coding|Testing|Skills?|References?)(?![A-Za-z0-9_-])",
+    re.IGNORECASE,
+)
 _ASCII_WORD_BEFORE = re.compile(r"([A-Za-z][A-Za-z0-9_.+-]*)\s+$")
 _ASCII_WORD_AFTER = re.compile(r"^\s+([A-Za-z][A-Za-z0-9_.+-]*)")
-_INTERNAL_PREFIX_WORDS = {
+_INTERNAL_CONTEXT_WORDS = {
     "agent",
     "agents",
     "canonical",
+    "catalog",
+    "change",
     "coding",
+    "context",
+    "core",
     "current",
+    "dependency",
     "docs",
     "figma",
     "formal",
+    "handoff",
+    "id",
+    "ids",
+    "identity",
     "internal",
+    "mapping",
     "matched",
+    "metadata",
+    "mode",
+    "mutation",
     "new",
+    "owner",
     "project",
+    "projection",
     "reference",
     "references",
+    "regression",
     "required",
     "review",
+    "route",
     "router",
+    "routing",
     "runtime",
     "selected",
     "skill",
     "skills",
     "source",
-    "testing",
-}
-_INTERNAL_SUFFIX_WORDS = {
-    "catalog",
-    "change",
-    "context",
-    "core",
-    "dependency",
-    "handoff",
-    "id",
-    "ids",
-    "identity",
-    "mapping",
-    "metadata",
-    "mode",
-    "mutation",
-    "owner",
-    "projection",
-    "reference",
-    "references",
-    "regression",
-    "route",
-    "routing",
-    "skill",
-    "skills",
     "stub",
+    "testing",
     "trigger",
     "workflow",
 }
-_INTERNAL_CONTEXT_WORDS = _INTERNAL_PREFIX_WORDS | _INTERNAL_SUFFIX_WORDS
 _PROJECT_REFERENCE_SUFFIX_WORDS = {
     "architecture",
     "data",
@@ -248,19 +243,22 @@ def _adjacent_ascii_words(text: str, start: int, end: int) -> tuple[str | None, 
 
 
 def _is_project_literal_label(text: str, match: re.Match[str]) -> bool:
-    """只在明确项目技术上下文中保留同形词；内部上下文任一侧命中时优先投影。"""
+    """按标签职责消歧项目技术名；任何明确内部上下文优先投影。"""
     before, after = _adjacent_ascii_words(text, match.start(), match.end())
     before_lower = before.lower() if before else None
     after_lower = after.lower() if after else None
     if before_lower in _INTERNAL_CONTEXT_WORDS or after_lower in _INTERNAL_CONTEXT_WORDS:
         return False
-    if before and before[0].isupper():
-        return True
+
     token = match.group(0).lower()
-    if token in {"reference", "references"} and after_lower in _PROJECT_REFERENCE_SUFFIX_WORDS:
-        return True
-    if token == "testing" and after_lower == "library":
-        return True
+    if token == "router":
+        return bool(before and before[0].isupper())
+    if token in {"skill", "skills"}:
+        return bool(before and before[0].isupper())
+    if token == "testing":
+        return after_lower == "library"
+    if token in {"reference", "references"}:
+        return after_lower in _PROJECT_REFERENCE_SUFFIX_WORDS
     return False
 
 
@@ -426,14 +424,19 @@ def project_runtime_skill_core(
     return projected.encode("utf-8")
 
 
-def project_runtime_agent_prompt(canonical_payload: bytes) -> bytes:
+def project_runtime_agent_prompt(canonical_payload: bytes, skill_name: str | None = None) -> bytes:
     """把分发给宿主的 agent prompt 改为项目工程表达，不点名源码组织或交接身份。"""
     try:
         text = canonical_payload.decode("utf-8")
     except UnicodeDecodeError as error:
         raise ValueError("Runtime agent prompt 不是合法 UTF-8") from error
 
-    text = _USE_WORKFLOW_PREFIX.sub("", text)
+    if skill_name:
+        workflow_prefix = re.compile(
+            rf"\bUse\s+\${re.escape(skill_name)}(?:\s+and\s+)?",
+            re.IGNORECASE,
+        )
+        text = workflow_prefix.sub("", text)
     text = _project_runtime_text(text, ())
 
     def _ensure_project_prompt(match: re.Match[str]) -> str:
