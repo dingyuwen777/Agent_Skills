@@ -10,9 +10,28 @@ created: 2026-09-06T19:04:41+08:00
 updated: 2026-09-07T00:16:00+08:00
 completion_gate: required
 depends_on: []
-affected_areas: [runtime, project-payload, routing-conformance, ci, governance]
-affected_paths: [runtime/agent_skills_runtime/disclosure.py, runtime/agent_skills_runtime/runtime_skill_projection.py, runtime/agent_skills_runtime/project_payload.py, scripts/runtime_mcp_smoke.py, .agents/skills/ENTRY.md, .agents/skills/coding/tests, .github/workflows/skill-tests.yml, .agents/MAINTENANCE.md, .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md, .agents/skills/coding/references/15_规则内容守恒与Skill维护.md, runtime/README.md]
-contracts: [Runtime Project Payload plaintext projection, Source/Runtime routing and canonical-context parity, Runtime user-visible progress contract]
+affected_areas:
+  - runtime
+  - project-payload
+  - routing-conformance
+  - ci
+  - governance
+affected_paths:
+  - runtime/agent_skills_runtime/disclosure.py
+  - runtime/agent_skills_runtime/runtime_skill_projection.py
+  - runtime/agent_skills_runtime/project_payload.py
+  - scripts/runtime_mcp_smoke.py
+  - .agents/skills/ENTRY.md
+  - .agents/skills/coding/tests
+  - .github/workflows/skill-tests.yml
+  - .agents/MAINTENANCE.md
+  - .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md
+  - .agents/skills/coding/references/15_规则内容守恒与Skill维护.md
+  - runtime/README.md
+contracts:
+  - Runtime Project Payload plaintext projection
+  - Source/Runtime routing and canonical-context parity
+  - Runtime user-visible progress contract
 data_changes: []
 ---
 
