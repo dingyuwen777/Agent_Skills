@@ -85,8 +85,12 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertIn("Verify real stdio MCP contract", workflow)
         self.assertIn("Verify project-only single-binary installation", workflow)
         self.assertIn('test "${CORE_RESULT}" = "success"', workflow)
-        self.assertIn('test "${WINDOWS_RESULT}" = "skipped"', workflow)
-        self.assertIn('test "${MACOS_RESULT}" = "skipped"', workflow)
+        self.assertIn(
+            "if: always() && needs.agent-skills-core.outputs.runtime_scope == 'package'",
+            workflow,
+        )
+        self.assertNotIn('test "${WINDOWS_RESULT}" = "skipped"', workflow)
+        self.assertNotIn('test "${MACOS_RESULT}" = "skipped"', workflow)
         self.assertIn('test "${WINDOWS_RESULT}" = "success"', workflow)
         self.assertIn('test "${MACOS_RESULT}" = "success"', workflow)
         self.assertNotIn("LINUX_RESULT", workflow)

@@ -68,6 +68,8 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
             "无关 test group",
             "重复 setup/install/build",
             "仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化",
+            "job-level condition",
+            "0 Runner",
         ):
             self.assertIn(marker, text, marker)
 
@@ -186,11 +188,15 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertEqual(workflow.count("runs-on:"), 4)
         self.assertIn("name: Agent Skills Gate", workflow)
         self.assertIn("name: Runtime Package Gate", workflow)
+        gate = _job_text(workflow, "runtime-package-gate")
+        self.assertIn(
+            "if: always() && needs.agent-skills-core.outputs.runtime_scope == 'package'", gate
+        )
+        self.assertNotIn("change_only|governance|content", gate)
         self.assertIn("name: Runtime Windows Package", workflow)
         self.assertIn("name: Runtime macOS Package", workflow)
         self.assertNotIn("name: Runtime Linux Package", workflow)
         self.assertIn("Build and self-test Linux onefile Runtime", workflow)
-        gate = _job_text(workflow, "runtime-package-gate")
         self.assertIn("CHANGE_GATE_READY", gate)
         self.assertNotIn("actions/checkout", gate)
         self.assertNotIn("actions/setup-python", gate)
