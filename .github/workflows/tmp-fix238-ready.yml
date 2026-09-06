@@ -23,9 +23,8 @@ jobs:
         run: python scripts/_tmp_fix238_ready.py
       - name: Run focused regression
         run: |
-          python -m unittest \
-            .agents/skills/coding/tests/test_ci_ready_evidence_order.py \
-            .agents/skills/coding/tests/test_ci_workflow_minimal_sufficiency.py -v
+          python -m unittest discover -s .agents/skills/coding/tests -p 'test_ci_ready_evidence_order.py' -v
+          python -m unittest discover -s .agents/skills/coding/tests -p 'test_ci_workflow_minimal_sufficiency.py' -v
           git diff --check
       - name: Commit and attempt branch update
         run: |
