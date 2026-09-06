@@ -178,7 +178,7 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
             if relative_in_skill == PurePosixPath("SKILL.md"):
                 file_payload = project_runtime_skill_core(file_payload, bundle_references)
             elif relative_in_skill == PurePosixPath("agents/openai.yaml"):
-                file_payload = project_runtime_agent_prompt(file_payload)
+                file_payload = project_runtime_agent_prompt(file_payload, skill.name)
             files.append(_encode_file(relative, file_payload, mode))
 
     files.sort(key=lambda item: str(item["path"]))
