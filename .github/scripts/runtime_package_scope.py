@@ -234,6 +234,24 @@ class _SelectionBuilder:
             self.add_groups("governance")
             return
 
+        # 测试路径必须先于通用 Skill catch-all 判断：CI-self 测试 fail-closed，
+        # 普通 test-only 只运行自身，fixture/shared helper 则扩大 semantic closure。
+        if normalized.startswith(_TEST_PREFIX):
+            name = Path(normalized).name
+            if normalized.startswith(f"{_TEST_PREFIX}fixtures/"):
+                self.require_full(package=False)
+                return
+            if name in _CI_SELF_TESTS:
+                self.require_full(package=True)
+                return
+            if name.startswith("test_") and name.endswith(".py"):
+                self.promote_scope("content")
+                self.direct_tests.add(name)
+                self.runtime_dependencies_required = True
+                return
+            self.require_full(package=False)
+            return
+
         if normalized == ".agents/skills/ENTRY.md" or normalized.startswith(
             ".agents/skills/router/"
         ):
@@ -252,9 +270,7 @@ class _SelectionBuilder:
             self.cli_smoke_required = True
             return
 
-        if normalized.startswith(".agents/skills/coding/") and not normalized.startswith(
-            _TEST_PREFIX
-        ):
+        if normalized.startswith(".agents/skills/coding/"):
             self.require_full(package=False)
             return
 
@@ -272,22 +288,6 @@ class _SelectionBuilder:
                 return
 
         if normalized.startswith(".agents/skills/"):
-            self.require_full(package=False)
-            return
-
-        if normalized.startswith(_TEST_PREFIX):
-            name = Path(normalized).name
-            if normalized.startswith(f"{_TEST_PREFIX}fixtures/"):
-                self.require_full(package=False)
-                return
-            if name in _CI_SELF_TESTS:
-                self.require_full(package=True)
-                return
-            if name.startswith("test_") and name.endswith(".py"):
-                self.promote_scope("content")
-                self.direct_tests.add(name)
-                self.runtime_dependencies_required = True
-                return
             self.require_full(package=False)
             return
 
