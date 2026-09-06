@@ -60,7 +60,7 @@ Runtime / Package
 → 在 Contract / Routing 证据上继续增加 Runtime/package/platform 对应证据
 ```
 
-profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required checks、PR/main/Release 归当前项目 CI Owner。维护本仓时依 [`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md) 与当前 Workflow/classifier，不复制 scope 列表；targeted-first 不绕过 required check，不授权无关昂贵验证。
+profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required checks、PR/main/Release 归当前项目 CI Owner。维护本仓时依 [`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md) 与当前 Workflow/classifier，不复制 scope 列表；targeted-first 不绕过 required check，不授权无关昂贵验证。对于 `Semantic Local`，**只按本次真实影响面审查 Template / Parser / CLI / CI / Runtime**，可将无影响项有界记为 `not_applicable`，不得为填表逐层扫描；若发现 Contract、路由或 Runtime 真实影响再升级 profile。以上不削弱**正式仓库 CI 门禁**。
 
 ## 1. 规则完整性维护
 
@@ -204,6 +204,7 @@ Figma READY / READY_WITH_NOTES
 通用 Agent Skill 的 canonical 明文只来自 Agent_Skills 当前源码仓库中的正式 Owner：
 
 ```text
+.agents/skills/*/SKILL.md
 .agents/skills/<skill>/SKILL.md
 .agents/skills/<skill>/references/*.md
 .agents/skills/ENTRY.md
@@ -221,153 +222,4 @@ Figma READY / READY_WITH_NOTES
 
 ### 7.1.1 Skill Mutation 与外部项目 Change Ownership
 
-Mutation Target 只回答通用 Skill 的 canonical 写入仓库；Change 的 Repository Ownership、carrier 与跨仓路径边界由 [24_Change仓库归属与Carrier.md](24_Change仓库归属与Carrier.md) 负责。一次任务同时修改外部项目与 Agent_Skills 时，需要持久施工契约的两边**分别进入各自仓库的治理闭环**，可以通过 Issue / PR / Change ID 建立关联；**外部项目 Change 不承担 Agent_Skills canonical Skill Mutation**，**Agent_Skills Change 也不承担外部项目业务实现**。只读、调查或仅作为事实来源的仓库不因参与会话自动创建 Change。
-
-### 7.2 Mutation 固定入口与条件路由
-
-进入 `Mutation Apply` 后，在一个目标 HEAD 的 canonical 写入阶段开始前至少执行一次：
-
-```text
-重新读取 Agent_Skills 当前目标分支根 AGENTS.md
-→ .agents/MAINTENANCE.md
-→ .agents/skills/ENTRY.md
-→ .agents/skills/router/SKILL.md
-→ .agents/skills/coding/SKILL.md
-→ coding/references/15_规则内容守恒与Skill维护.md
-→ 本次真正受影响 Skill 的 SKILL.md / references
-```
-
-同一未漂移 HEAD 上连续修改多个文件时，不因为“下一次写入”逐文件重跑整条入口；只有 HEAD/Ownership/required Context/上位规则发生相关变化，或新的事实使原判断失效时再重读。
-
-如果 Mutation 会影响 managed block / Bootstrap，则再读 [12_目标项目安装与AGENTS_Bootstrap.md](12_目标项目安装与AGENTS_Bootstrap.md)（Stable ID `coding.reference.13`）；影响 Runtime、Project Payload、Bundle、路由 metadata/Stable ID、MCP、正式 Skill 分发、Skill 删除/重命名的运行时可达性或安装 ownership 时，再读 [13_本地MCP_Runtime分发与原文上下文加载.md](13_本地MCP_Runtime分发与原文上下文加载.md)（Stable ID `coding.reference.14`）。随后按 Agent_Skills Maintenance/Coding 当前的 Change、TDD、独立 Review、CI 与当前 **Requested Outcome** 实际交付阶段执行，不建立一套 Mutation 专用平行交付流程；未授权 `develop-and-submit` / `develop-and-deliver` 时，不自动进入 PR/merge/main-fresh/Archive/Closure。
-
-普通 Runtime Router 不承担本节维护触发；Custom Instructions / Project instructions 仅引导当前根 `AGENTS.md`，不替代 canonical、权限或交付门禁。只读 GitHub、无写权限或 required PR/CI 不可用，仅阻塞对应 Apply 写入/交付并报告未同步/未交付；Audit/Proposal 可继续。
-
-### 7.3 universal 与项目特定事实必须先分离
-
-跨仓库同步前先把输入拆成两类：
-
-```text
-可跨项目复用的研发方法 / 失败处理 / 验证责任 / 通用流程
-→ 可以进入 Agent_Skills canonical Skill
-
-项目特定技术栈 / 业务字段 / Provider / Prompt / Schema / Migration /
-部署环境 / 品牌 / 页面尺寸 / 业务 Design Token / 项目 CI 事实
-→ 留在目标项目正式 Owner
-```
-
-不能因为用户说“同步到 Skill”就把整段项目事实原样搬入通用 Skill。只有能证明跨项目成立的部分才进入 canonical 规则；无法安全抽取通用部分时，不做 Skill 变更并明确说明依据。
-
-### 7.3.1 Skill Mutation Authoring Standard
-
-维护者主要继续编辑自然语言 Markdown，但每次 Mutation 必须显式判断四层影响，不能只改正文后期待 Runtime 猜路由：
-
-```text
-正文语义是否变化？
-→ 修改 canonical 自然语言 Owner，并做内容守恒 Review
-
-什么任务应加载这条规则是否变化？
-→ 同步该 SKILL/Reference 的 agent-routing:v1 触发表达式
-
-依赖、最低风险或稳定身份是否变化？
-→ 同步显式 Stable ID / 依赖 / 最低风险，并评估 Contract/Migration
-
-是否出现新的易混淆场景？
-→ 同步 Routing Conformance 的正例、必要反例、unknown/组合 case
-```
-
-具体门禁：
-
-1. 每个正式 `SKILL.md` 与 Reference 必须且只能有一个合法中文 `agent-routing:v1` JSON 注释块；自然语言正文仍是唯一规则语义，metadata 不复制摘要；
-2. 修改正文但触发条件完全不变时，必须明确复核 metadata 后保留，不为“有 diff”机械修改 route；
-3. 修改 trigger、依赖、最低风险或 Stable ID 时，必须运行 metadata compiler、roundtrip、dangling/cycle、风险固定点和 conformance 测试；
-4. 新增/删除普通 Skill/Reference 依赖动态发现，不在 Runtime/Workflow 新增固定白名单，也不修改 Task Route 顶层 schema；
-5. Reference 文件 rename 默认保留原显式 Stable ID；只有用户/Owner 明确批准 Contract 变化时才能改 ID；
-6. 删除 Reference 前先处理所有依赖和 required case；悬空依赖必须让构建失败，而不是静默忽略；
-7. 用户说“调整某类任务的规则”时，先确定是正文、触发、依赖/风险还是多者同时变化，再修改最小必要层；
-8. Build 不调用 LLM 生成 metadata。无法确定路由时必须回到需求/Owner 决策，不能用关键词猜测提交。
-
-公共 route contract 由当前 metadata 动态生成；私有 Reference mapping 只进入加密 Bundle。Authoring 完成证据至少包含：正文内容守恒、metadata 编译、同一 evaluator parity、必要 conformance 和受影响文档同步。
-
-### 7.4 新增 Skill
-
-**新增 Skill** 至少检查：
-
-1. 正式入口为 `.agents/skills/<name>/SKILL.md`；目录名、frontmatter `name` 与现有动态发现 Contract 一致；
-2. 不在 Runtime、Project Payload、manifest、Workflow 或测试里新增固定完整 Skill 白名单；正式集合继续从 `.agents/skills/*/SKILL.md` **动态发现**；
-3. 如果 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md) 展示“当前 Catalog”，同步这个人类可读导航，但明确它不是分发白名单；薄 [`.agents/skills/ENTRY.md`](../../ENTRY.md) 不复制 Catalog；
-4. 新 Skill 的职责必须与现有 Owner 去重；需要跨 Skill Handoff 时明确触发和回程，不复制另一 Skill 的完整细则；
-5. 新 Skill/Reference 写入显式 metadata，验证 Stable ID 全局唯一、依赖无环且无悬空项；没有 references 也必须能被 Catalog/Project Payload 正确发现；
-6. 永久测试至少证明 Bundle、公开 route contract、Project Payload、Installer/manifest 能通过动态发现携带新 Skill，且 Payload 不包含 Reference/Stub；
-7. 新规则不得内嵌来源项目的项目特定事实。
-
-### 7.5 删除 Skill
-
-**删除 Skill** 不是只删一个目录。实施前至少反向检查：
-
-```text
-Router 当前 Catalog / Handoff
-→ Coding / Review / Docs / Figma 或其他 Skill 中的 live 引用
-→ Reference links / Stable ID consumer
-→ Project Payload / Bundle / Installer / manifest 测试
-→ README / Runtime 文档 / Workflow / 测试
-```
-
-规则：
-
-- 删除前证明该 Skill 的仍有效规则已经迁入新的正式 Owner，或明确其能力确实整体退役；不能把“目录删了”当内容守恒证据；
-- 清除所有指向不存在 Skill 的 **live 引用** 和 Handoff；既有历史只由项目当前正式 Git/PR 或已批准历史载体承担，不为追求全文搜索零结果改写历史提交；
-- Runtime/Project Payload 必须通过动态发现自然停止分发该 Skill，不为删除操作新增反向静态黑名单；
-- 目标项目中同名但未被 Agent_Skills install ownership 认领的项目自有 Skill 仍受项目 Ownership 保护，不能因为 canonical Skill 删除而清理；
-- 永久测试证明新 Catalog/Bundle/Payload 不再包含已删除 Skill，并保持其他 Skills 不受影响。
-
-### 7.6 重命名 Skill
-
-**重命名 Skill** 按“旧 Skill 删除 + 新 Skill 建立 + Contract 迁移”处理，不是单纯 `git mv`：
-
-- 更新 `.agents/skills/<name>/SKILL.md` 路径、frontmatter `name`、Router 当前 Catalog 与所有 live 引用；
-- Stable ID 是 Reference metadata 中的显式身份，Skill 重命名**不得自动改 ID**；是否迁移 namespace 是独立 Runtime Contract 决策，必须读取 [13_本地MCP_Runtime分发与原文上下文加载.md](13_本地MCP_Runtime分发与原文上下文加载.md)（`coding.reference.14`）并明确兼容、迁移和回滚；
-- 同步审查 Bundle/私有 Routing Manifest、公共 route contract、Project Payload no-Stub、Installer/ownership 和 Release 运行时可达性；
-- 不保留没有明确兼容需求的影子目录、复制件或第二份 canonical Skill；
-- 旧名称若必须暂时兼容，必须把时限、Owner、删除条件和验证写进 Change，不能把兼容复制件无限期保留。
-
-### 7.7 Reference 新增、删除与重命名
-
-**新增 Reference**：
-
-- `SKILL.md` 的人类可读入口和新 Reference 的 metadata 必须使相应任务在执行前命中；
-- 写入显式、全局唯一 Stable ID；文件编号只服务可读排序，不生成身份；
-- 写明依赖和适用的最低风险，验证无环、无悬空项；
-- canonical 原始 UTF-8 bytes、SHA256、size、Bundle exact-text、routing digest 与 Runtime required Context 加载都进入验证；
-- 新增正文必须真实承载必要细则，不能只为拆文件制造空壳 reference。
-
-**删除 Reference**：
-
-- 先反向检查 `SKILL.md`、其他 references、Router、测试和 live 文档是否仍指向它；
-- 仍有效规则必须先迁到新的 canonical Owner，再删除旧文件；
-- 删除后验证 Bundle/私有路由不再包含该 Reference、所有依赖已处理，且没有用历史聊天或旧 Runtime Context 继续执行的路径。
-
-**重命名 Reference**：
-
-- 同步更新所有 live 链接；
-- 默认保留 metadata 中原 Stable ID；文件名/编号变化不得自动改变身份；
-- 如果确需修改 Stable ID，按 Runtime Contract 变化读取 [13_本地MCP_Runtime分发与原文上下文加载.md](13_本地MCP_Runtime分发与原文上下文加载.md)（`coding.reference.14`），并同步依赖、conformance、Bundle identity 与迁移边界；
-- 不能只改显示文件名却遗漏 live links、私有 provenance、测试或触发链。
-
-### 7.8 修改、拆分、合并和通用化
-
-修改、拆分、合并、通用化均执行第 1–5 节：保留触发、例外、失败/停止、验证、安全与兼容；拆分保持入口可达；合并逐项证明语义覆盖；通用化仅移除/条件化项目假设、不降强度，并复核项目特定事实已剥离。
-
-### 7.9 Mutation 完成验证
-
-完成前按第 0 节 Evidence Profile 及第 1–5 节建立最小充分、可升级的证据链：
-
-```text
-用户 Mutation 意图 → 当前 canonical Agent_Skills
-→ universal / project-specific Ownership → 受影响 Skill / Reference / Router / Contract
-→ 内容守恒或退役依据 → live 引用反向检查
-→ 适用 profile 的 preservation / 语义、routing / parity、Runtime / package 证据
-→ 当前 Requested Outcome / 仓库 gate 要求的独立 Review、CI / PR / delivery
-```
-
-真实影响面与 Maintenance classifier 决定验证，轻 profile 不跳过**当前交付阶段真正适用**的 required CI；无 executable/package/platform 变化不触发无关三平台 package。证据充分且无新改动/失败/风险/疑点后遵守 Validation Stop Rule，不自动进入 merge/main-fresh/Archive/Closure。
+Mutation Target 只回答通用 Skill 的 canonical 写入仓库；Change 的 Repository Ownership、carrier 与跨仓路径边界由 [24_Change仓库归属与Carrier.md](24_Change仓库归属与Carrier.md) 负责。一次任务同时修改外部项目与 Agent_Skills 时，需要持久施工契约的两边**分别进入各自仓库的治理闭环**，可以
