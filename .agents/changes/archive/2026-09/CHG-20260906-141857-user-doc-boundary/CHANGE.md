@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260906-141857-user-doc-boundary
 title: 重划 README 与 USAGE 的受众和使用说明边界
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: docs/reorganize-readme-usage-227
 created: 2026-09-06
