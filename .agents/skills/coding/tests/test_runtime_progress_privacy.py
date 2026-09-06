@@ -82,40 +82,29 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, template)
 
-    def test_entry_blocks_internal_identity_restatement_without_hiding_execution_context(self) -> None:
-        """Source 入口保留维护侧披露边界，不能靠删专业上下文实现隐私。"""
+    def test_source_entry_is_thin_and_keeps_execution_boundary(self) -> None:
+        """Source Entry 只承担项目事实与 Router 导航，详细披露边界留给唯一 Runtime Owner。"""
         entry = self._read(ENTRY)
         for marker in (
-            "普通目标项目任务中，内部能力身份只用于执行",
-            "不得用“用、调用、交给或由某个内部能力”解释分工",
-            "Skill/Reference/Router identity",
-            "Handoff 与 required Context 必须完整用于专业执行",
-            "不得为隐藏名称而删减或少加载",
-        ):
-            self.assertIn(marker, entry)
-
-    def test_entry_keeps_normal_project_answers_visible(self) -> None:
-        """Source 入口仍明确正常项目事实、解释和建议不受内部身份披露边界影响。"""
-        entry = self._read(ENTRY)
-        for marker in (
-            "项目事实、解释、建议、风险、验证和交付照常向用户呈现",
-            "涉及 Agent 自身的进度、分工或执行过程时",
-            "限制只针对内部身份转写",
-        ):
-            self.assertIn(marker, entry)
-
-    def test_entry_preserves_source_maintenance_and_host_ui_boundary(self) -> None:
-        """源码入口保留维护例外，并承认宿主 UI 不是 Prompt 可控制表面。"""
-        entry = self._read(ENTRY)
-        for marker in (
+            ".agents/skills/router/SKILL.md",
+            "最少充分事实",
+            "项目事实和上位指令优先",
+            "无法读取或验证",
+            "专业执行完整",
+            "项目事实、解释、建议、风险、验证和交付照常呈现",
             "Source Mode",
-            "维护/审计 Agent_Skills 自身",
-            "可讨论内部导航",
-            "宿主 UI",
-            "不受 Prompt / Skill / Runtime 文本规则直接控制",
-            "不能宣称可以隐藏",
+            "Runtime 详细边界由其 canonical Owner 负责",
         ):
             self.assertIn(marker, entry)
+        self.assertLess(len(entry.encode("utf-8")), 1_000)
+        for forbidden in (
+            "agent_skills_",
+            "宿主 UI",
+            "高保真重建",
+            "内部控制面",
+            "用户可见进度规则",
+        ):
+            self.assertNotIn(forbidden, entry)
 
     def test_runtime_entry_is_project_facing_without_reducing_professional_context(self) -> None:
         """Runtime Entry 使用项目侧投影；专业 Context 完整性继续由 canonical 路由链证明。"""
@@ -136,8 +125,8 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
             "内部治理",
         ):
             self.assertNotIn(forbidden, runtime_entry)
-        self.assertIn("required Context 必须完整用于专业执行", source_entry)
-        self.assertIn("不得为隐藏名称而删减或少加载", source_entry)
+        self.assertIn("专业执行完整", source_entry)
+        self.assertIn("Runtime 详细边界由其 canonical Owner 负责", source_entry)
 
     def test_existing_canonical_runtime_rule_remains_mode_aware(self) -> None:
         """详细 Runtime Owner 必须继续保留 Source/Runtime 两种披露边界。"""
