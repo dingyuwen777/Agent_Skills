@@ -55,7 +55,6 @@ class PlanningContractTest(unittest.TestCase):
             "目标 / 非目标",
             "当前系统事实",
             "受影响能力链",
-            "Owner / Contract",
             "复用 / 公共抽象 / 能力归一",
             "工作分解",
             "依赖关系",
@@ -64,6 +63,12 @@ class PlanningContractTest(unittest.TestCase):
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, design)
+        # Owner 与 Contract 是独立语义，不要求作者为了测试保持某种固定排版组合。
+        self.assertIn("Owner", design)
+        self.assertIn("Contract", design)
+        self.assertIn("对应边界真实存在", design)
+        self.assertIn("not_applicable", design)
+        self.assertIn("不为了填表向用户逐项确认", design)
 
     def test_work_breakdown_is_behavior_based_not_file_based(self) -> None:
         """任务应按可独立验证的行为/能力边界拆分，而不是把文件清单冒充计划。"""

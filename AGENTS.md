@@ -40,7 +40,7 @@
 1. 不把当前业务项目中的 Runtime 安装副本、Reference Stub、缓存或历史聊天当作 canonical Skill 写入目标；
 2. 先执行 **Mutation Target Resolution**：默认把 `dingyuwen777/Agent_Skills` 当前目标分支视为通用 Agent Skill 的唯一 canonical repository，并把当前动作目标切换为 Agent_Skills Maintenance Mode；
 3. 本地 clone / worktree 只能是该 canonical repository 的工作 checkout。不得把 `$CODEX_HOME/skills`、目标项目 `.agents/skills`、插件缓存、Runtime / Project Payload、Release / 缓存 / Stub 作为替代写入目标，也不得创建或修改替代 Skill 后声称 canonical 已更新；
-4. 在任何写入前重新读取 Agent_Skills **当前目标分支**的本 `AGENTS.md`、[`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md) 和 [`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)，再由 Router 进入 Coding 的规则内容守恒与受影响 Skill；
+4. 进入同一 `Mutation Apply` 写入阶段时，先对 Agent_Skills **当前目标分支/HEAD** 完成一次本 `AGENTS.md`、[`.agents/MAINTENANCE.md`](.agents/MAINTENANCE.md)、[`.agents/skills/ENTRY.md`](.agents/skills/ENTRY.md)、Router、Coding、规则内容守恒与受影响 Skill 的 canonical 重新读取。只要目标 HEAD、Ownership 和必需治理规则未变化，连续多文件写入**不逐文件机械重复重读**；发生 HEAD 漂移、Ownership/required Context 变化或写入前事实已失效时再重读；
 5. 当前目标项目只继续提供本次变更的事实背景、失败证据和项目约束；项目特定技术栈、业务字段、Provider、Schema、部署、品牌或设计业务事实不得直接升级成通用 Skill 默认事实；
 6. 如果用户明确说“只改当前项目规则”或明确指向项目自有 Skill，则保持当前项目 Ownership，不跨仓库同步；
 7. 先区分 `Mutation Audit / Proposal` 与 `Mutation Apply`：**Mutation Audit / Proposal 只要求 canonical read** 能力；只要当前 canonical Source 可读，就可以完成审计、影响分析和修改建议，缺少写入/PR/CI 权限本身不阻塞只读结论。真正进入 **Mutation Apply** 后，才要求与当前动作匹配的 **write / Change / PR / CI / delivery** 能力；某一能力或权限缺失时，只阻塞依赖该能力的写入/交付并明确报告未同步/未交付，不得通过修改本地安装副本或口头声称“已同步”绕过。若连 canonical Ownership 或只读事实都无法安全恢复，则对应 Audit/Apply 都按依赖边界失败关闭；

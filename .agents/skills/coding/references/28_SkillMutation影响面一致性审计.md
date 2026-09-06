@@ -23,7 +23,7 @@ CI 继续 Green
 
 ## 2. 固定 Impact Audit
 
-每次 canonical Mutation Apply 都必须逐层判断：
+每次 canonical Mutation Apply 都必须判断当前改动是否影响：
 
 ```text
 Rule / Contract changed?
@@ -40,14 +40,16 @@ Rule / Contract changed?
 - `affected`：必须同步实现并取得对应新鲜 Evidence；
 - `not_applicable`：必须说明为什么当前 Contract 变化不会影响该层。
 
-不得用“应该没影响”“CI 已绿”“只是文案”替代影响判断。
+对于 `Semantic Local`，如果直接 diff、未变化的 routing metadata/Stable ID/dependency 和当前消费者事实已经证明 executable/routing Contract 不变，可以把 **Template / Parser / Validator / CLI / CI / Runtime/Source parity** 作为一个有界的 grouped `not_applicable` 结论并给出同一依据；**不逐层打开或扫描无关机器资产**。只有直接引用、metadata、现有 Evidence 或失败暴露真实影响时，才展开到对应层。
+
+不得用“应该没影响”“CI 已绿”“只是文案”替代影响判断；同样也不得为了显得全面，在已由直接事实证明 grouped N/A 后继续扫描整条工具链。
 
 ## 3. 常见映射
 
 - Change/Issue/PR 字段、状态或生命周期语义变化：至少反查模板、Parser/Validator、CLI/Workflow、永久回归；
 - Reference trigger、Stable ID、dependency、Owner 变化：至少反查 Router/evaluator、Runtime Bundle/required Context、Source/Runtime exact-text/hash、Context Budget；
 - Runtime/Project Payload/Installer/Bundle 协议变化：至少反查构建脚本、安装/升级/失败边界、三平台 package/smoke；
-- 仅说明性文字且没有改变任何可执行 Contract：可以把机器资产记为 not_applicable，但必须给出语义不变依据。
+- 仅说明性文字且没有改变任何可执行 Contract：可以把机器资产记为 not_applicable；当直接 diff + metadata/依赖未变已经足以证明时使用上面的 grouped N/A，不为了“逐项完成”打开无关文件。
 
 ## 4. Completion Gate
 
@@ -60,4 +62,4 @@ Skill Mutation Apply
 
 不能通过降低 validator、删除测试、提高 Context Budget、跳过 Runtime/Source parity 或把旧行为标成兼容来制造 Green。
 
-最终 A1/A2 Review 除了检查 Requirement → canonical Rule，还必须反查 canonical Rule → Template / Parser / Validator / CLI / CI / Tests / Runtime；只有各受影响层的实际行为一致，才能宣称本次 Mutation 没有留下“规则已改、机器仍旧”的漂移。
+最终 A1/A2 Review 除了检查 Requirement → canonical Rule，还必须反查 canonical Rule → 实际受影响的 Template / Parser / Validator / CLI / CI / Tests / Runtime；只有各受影响层的实际行为一致，才能宣称本次 Mutation 没有留下“规则已改、机器仍旧”的漂移。对于已有充分 grouped N/A 的 Semantic Local，不把 N/A 层重新升级成全量检查。

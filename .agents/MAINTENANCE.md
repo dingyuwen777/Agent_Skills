@@ -212,13 +212,14 @@ Router 尤其必须保持项目事实优先、动态 Skill 发现、专业 Skill
 
 测试必须自包含，**不能依赖另一个业务仓库**、外部 Blueprint、业务源码或私有测试 fixture 才成立。
 
-普通 PR/main 的 Runtime 证据责任按 `governance / content / package` 三档判断；**L3 ≠ 必然三平台打包**。风险等级决定治理和证明强度，是否构建 binary 则由本次 diff 是否改变 executable/package/platform boundary 决定：
+普通 PR/main 的 CI 证据责任以当前 [`.github/scripts/runtime_package_scope.py`](../.github/scripts/runtime_package_scope.py) 与 [`.github/workflows/skill-tests.yml`](../.github/workflows/skill-tests.yml) 为机器事实源；当前 scope 为 `change_only / governance / content / package`。**L3 ≠ 必然三平台打包**：风险等级决定治理和证明强度，是否构建 binary 由真实 executable/package/platform 影响和 Workflow 事件/Draft/Ready 条件共同决定。
 
-- `governance`：Change、维护文档和不进入 Runtime 产品语义的仓库治理文本；运行 Skill Tests、Requirement/Ready/Review 等治理门禁，不运行三平台 binary package；
+- `change_only`：只有 `.agents/changes/` 下 carrier 文件独占变更时成立；保留适用 Requirement Source、Ready/Active 与 required gate，不安装 Runtime 依赖、不重复不受影响的语义测试或 binary package。它不等于免除治理验收；
+- `governance`：维护文档和不进入 Runtime 产品语义的仓库治理文本；运行 Skill Tests、Requirement/Ready/Review 等治理门禁，不运行三平台 binary package；
 - `content`：`.agents/skills/**` 下 canonical Skill/Reference/Entry、Project Payload 文本或运行资产，以及 [`USAGE.md`](../USAGE.md) 等会影响 Runtime/Release 内容但不改变 executable mechanism 的文件；必须继续运行完整 Skill Tests，用动态 Catalog、Bundle/Project Payload 构建、Routing Conformance、canonical exact-text、加密 round-trip、ownership 与内容守恒等平台无关证据证明，不运行三平台 binary package；
-- `package`：Runtime Python/source、加密/加载实现、安装器和平台逻辑、Runtime/build requirements、Builder、真实 MCP smoke、Runtime Package/Release workflow、scope classifier 与 `.gitattributes` 等会改变 executable/package/platform boundary 的文件；必须在 Linux、Windows、macOS 对应 Runner 完成 onefile、self-test、真实 stdio MCP 和项目安装验证。
+- `package`：Runtime Python/source、加密/加载实现、安装器和平台逻辑、Runtime/build requirements、Builder、真实 MCP smoke、Runtime Package/Release workflow、scope classifier 与 `.gitattributes` 等会改变 executable/package/platform boundary 的文件；正式交付必须在 Linux、Windows、macOS 对应 Runner 完成 onefile、self-test、真实 stdio MCP 和项目安装验证。Draft 可按当前 Workflow 延后昂贵 package，但缺少该证据时 Runtime Package Gate 仍失败关闭，不能据此合并。
 
-混合修改取最高档；任一 `package` 路径存在时不能被 `content/governance` 文件掩盖。分类依据是文件在产品中的职责，不按 `.md`、`.py` 等扩展名粗暴判断：例如 [`runtime/README.md`](../runtime/README.md) 属于 `governance`，canonical Reference Markdown 属于 `content`。
+混合修改取最高档；任一 `package` 路径存在时不能被 `content/governance` 文件掩盖。分类依据是文件在产品中的职责，不按 `.md`、`.py` 等扩展名粗暴判断：例如 [`runtime/README.md`](../runtime/README.md) 属于 `governance`，canonical Reference Markdown 属于 `content`。Agent 不用手工分类覆盖 Workflow 对无法恢复 base 等情形的安全回退。
 
 永久验证仍按独立证据分层：
 
@@ -246,9 +247,9 @@ Release
 → Draft Release 精确核对三个平台 ZIP 后发布
 ```
 
-`.github/workflows/skill-tests.yml` 对 Skill/Reference/Router/Change/治理及相关源码变化运行，不安装 PyInstaller，也不因为纯规则正文变化构建 onefile；但必须继续执行会真实构建 Bundle/Project Payload、校验 canonical exact-text、Routing Conformance、sidecarless ownership、内容守恒和 Ready 的自包含测试。
+普通 PR/main 的语义验证和按 scope 触发的 Runtime package 工作统一由 [`.github/workflows/skill-tests.yml`](../.github/workflows/skill-tests.yml) 承担；`change_only` 仅跳过不受影响的语义/package 工作，`governance/content` 继续执行完整自包含测试且跳过 binary package。只有 `package` 且当前事件/Ready 条件要求时才安装构建依赖并执行对应平台构建。`Agent Skills Gate` 与 `Runtime Package Gate` 保持正式 required check 身份；不能用语义绿色替代 package 证据，不能把一个平台 artifact 当作其他平台证据。
 
-`.github/workflows/runtime-package-tests.yml` 使用唯一 classifier 输出上述三档 scope；`governance/content` 只保留稳定 Scope/Gate 且三平台 jobs 必须 skipped，只有 `package` 才在 Linux、Windows、macOS 对应 Runner 真实构建和安装。不能用 Skill Tests 的绿色替代 `package` 层，也不能把一个平台 artifact 当成其他平台证据。
+不再寻找或额外触发已经移除的独立 `.github/workflows/runtime-package-tests.yml`。classifier 保留旧路径是为了覆盖删除或意外恢复旧控制面的风险，不表示该 Workflow 当前存在。
 
 **正式 Release 不使用普通 PR/main 的 scope 快速路径；每次仍验证 Linux、Windows、macOS 最终 artifact。** Release workflow 必须重新验证当前目标 main，并完整承担构建、安装、MCP、identity、artifact SHA 和 ZIP 精确成员责任。
 
