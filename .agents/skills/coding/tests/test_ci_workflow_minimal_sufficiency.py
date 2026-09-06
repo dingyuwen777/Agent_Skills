@@ -70,6 +70,7 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
             "仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化",
             "job-level condition",
             "0 Runner",
+            "Change Ready",
         ):
             self.assertIn(marker, text, marker)
 
@@ -182,6 +183,8 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertIn("if: steps.runtime-scope.outputs.runtime_dependencies_required == 'true'", core)
         self.assertIn("if: steps.runtime-scope.outputs.compile_required == 'true'", core)
         self.assertIn("if: steps.runtime-scope.outputs.cli_smoke_required == 'true'", core)
+        self.assertIn("Enforce current Coding Change readiness", core)
+        self.assertIn("steps.change-gate.outputs.ready != 'true'", core)
 
     def test_runtime_package_gate_keeps_identity_without_duplicate_setup(self) -> None:
         workflow = self._read(WORKFLOW_DIR / "skill-tests.yml")

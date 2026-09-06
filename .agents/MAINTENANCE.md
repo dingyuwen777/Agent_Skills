@@ -285,7 +285,7 @@ CI 消重顺序固定为：
 
 ### 9.3 当前永久 Evidence 责任
 
-`Agent Skills Gate` Core 负责：Requirement Source、changed-scope selector、selected semantic tests、必要 compile/smoke、Linux package（仅 package）和当前 Change Ready 结果。`Runtime Package Gate` 保留 required check identity，但 selector 已证明 `change_only/governance/content` 时必须通过 **job-level condition 直接 skipped，分配 0 Runner**；只有 `package` 才启动真实聚合 Runner，并对 Core + Windows/macOS + Change Ready 结果 fail-closed，**不得再次 checkout/setup Python/重复 ready_check**。Windows/macOS package 仅在 package + Ready/non-draft/main 条件真实要求时启动。
+`Agent Skills Gate` Core 负责：Requirement Source、changed-scope selector、selected semantic tests、必要 compile/smoke、Linux package（仅 package）和当前 Change Ready 结果；**Change Ready 必须在 Core 对所有 scope 统一 fail-closed，不能依赖可能被 scope skip 的聚合 Gate**。`Runtime Package Gate` 保留 required check identity，但 selector 已证明 `change_only/governance/content` 时必须通过 **job-level condition 直接 skipped，分配 0 Runner**；只有 `package` 才启动真实聚合 Runner，并对 Core + Windows/macOS + Change Ready 结果 fail-closed，**不得再次 checkout/setup Python/重复 ready_check**。Windows/macOS package 仅在 package + Ready/non-draft/main 条件真实要求时启动。
 
 专业 Skill targeted Evidence 只能跳过已证明不相关的边界，不能用局部测试冒充 Runtime/package；反过来，纯人类文档也不能因为“同仓有 Runtime”就运行无关 binary Evidence。
 
