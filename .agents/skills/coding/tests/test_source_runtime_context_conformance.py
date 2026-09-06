@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.project_payload import build_project_payload, decode_payload_file
 from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
 from runtime.agent_skills_runtime.runtime import RuntimeStore
 from scripts.runtime_mcp_smoke import _assert_exact_contexts
@@ -112,6 +113,22 @@ class SourceRuntimeContextConformanceTest(unittest.TestCase):
                     self.assertEqual(actual_bytes, (ROOT / entry["source_path"]).read_bytes())
                     self.assertEqual(hashlib.sha256(actual_bytes).hexdigest(), entry["sha256"])
                 self.assertTrue(store.checkpoint(submitted["路由令牌"])["通过"])
+
+    def test_installed_router_preserves_delivery_normalization(self) -> None:
+        """验证真实安装 Payload 的 Router 保留源码交付映射，防止两模式入口分叉。"""
+        source = (ROOT / ".agents/skills/router/SKILL.md").read_text(encoding="utf-8")
+        payload = build_project_payload(ROOT, self.bundle)
+        entry = next(item for item in payload["files"] if item["path"] == "router/SKILL.md")
+        projected = decode_payload_file(entry).decode("utf-8")
+        for mapping in (
+            "合并主分支→`允许端到端交付`",
+            "审查后合并→`允许审查后交付`",
+            "提 PR→`允许开发并提交PR`",
+            "commit/push、引述或否定不升级授权",
+        ):
+            with self.subTest(mapping=mapping):
+                self.assertIn(mapping, source)
+                self.assertIn(mapping, projected)
 
     def test_mcp_context_verifier_rejects_missing_changed_or_unfinished_context(self) -> None:
         """真实 smoke 校验器必须拒绝缺失、增项、顺序/字节变化及伪成功终态。"""
