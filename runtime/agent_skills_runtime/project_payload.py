@@ -10,7 +10,11 @@ import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
-from .runtime_skill_projection import project_runtime_skill_core
+from .runtime_skill_projection import (
+    project_runtime_agent_prompt,
+    project_runtime_entry,
+    project_runtime_skill_core,
+)
 from .skill_catalog import discover_skills
 
 
@@ -150,8 +154,11 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
         path = skills_root / relative
         if path.is_symlink() or not path.is_file():
             raise ValueError(f"Project Payload 缺少普通共享运行资产：{path}")
+        file_payload = path.read_bytes()
+        if relative == "ENTRY.md":
+            file_payload = project_runtime_entry(file_payload)
         files.append(
-            _encode_file(relative, path.read_bytes(), _payload_file_mode(root, path, tracked_modes))
+            _encode_file(relative, file_payload, _payload_file_mode(root, path, tracked_modes))
         )
 
     for skill in skills:
@@ -170,6 +177,8 @@ def build_project_payload(source_root: str | Path, bundle: Mapping[str, Any]) ->
             file_payload = path.read_bytes()
             if relative_in_skill == PurePosixPath("SKILL.md"):
                 file_payload = project_runtime_skill_core(file_payload, bundle_references)
+            elif relative_in_skill == PurePosixPath("agents/openai.yaml"):
+                file_payload = project_runtime_agent_prompt(file_payload)
             files.append(_encode_file(relative, file_payload, mode))
 
     files.sort(key=lambda item: str(item["path"]))
