@@ -6,10 +6,10 @@
 
 ```text
 GitHub Release
-→ agent-skills-v<SemVer>.zip（唯一资产）
-  → Linux / Windows / macOS 三个平台 Runtime binary
-  → USAGE.md
-  → SHA256SUMS
+├── agent-skills-v<SemVer>-linux.zip
+├── agent-skills-v<SemVer>-windows.zip
+└── agent-skills-v<SemVer>-macos.zip
+    → 每包只含当前平台 Runtime binary 与同版本 USAGE.md
 ```
 
 最终用户入口见 [`USAGE.md`](USAGE.md)。
@@ -97,6 +97,14 @@ Runtime Mode
 
 Runtime 不安装 `references/` 或公开 Reference manifest，不接受任意 ID 加载。它不是第二套规则系统，也不摘要或重写 canonical References；Task Route 是宿主与 Runtime 的内部协议，不要求用户维护。
 
+### 同版本、跨宿主与模型边界
+
+Source/Runtime 是规则取得方式，不是 Git 执行能力。已授权网页仓库连接器可以读取 canonical 源码并提供托管 Git 操作；本地 CLI 可使用工作区/Git。实际路径必须满足同一权限、原子性、revision guard 和项目门禁，不能把本地 transport 失败直接视为所有仓库能力不可用。完整约束见 [`.agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md`](.agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md)。
+
+“合并到主分支”按当前完整任务执行到适用的主分支验证、原生归档、需求关闭和安全清理；仅提交 PR 则止于 PR Ready。语义由 [`.agents/skills/coding/references/23_端到端交付与合并后收尾.md`](.agents/skills/coding/references/23_端到端交付与合并后收尾.md) 唯一维护，不按 DeepSeek、GLM、Qwen、GPT 或模型新旧复制分支。
+
+源码与二进制严格比较须绑定同一 source revision、任务事实和环境。既有 [`.agents/skills/coding/tests/test_source_runtime_context_conformance.py`](.agents/skills/coding/tests/test_source_runtime_context_conformance.py) 与 [`scripts/runtime_mcp_smoke.py`](scripts/runtime_mcp_smoke.py) 复用 [`.agents/skills/coding/tests/fixtures/git_delivery_routes.json`](.agents/skills/coding/tests/fixtures/git_delivery_routes.json)，验证已归一化信号的路由、完整原文和失败边界；这不是在线模型推理或真实 Git 副作用的模拟证明。未实测的模型表现不能标为通过，旧安装也不会随源码合并自动更新。
+
 ## 3. AI 入口职责
 
 ### 根 `AGENTS.md`
@@ -182,7 +190,7 @@ python scripts/build_runtime.py --output-dir dist --json
 验证真实 stdio MCP：
 
 ```bash
-python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills-mcp --json
+python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 ```
 
 Completion Gate：
@@ -192,6 +200,8 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 ```
 
 不同平台的正式 onefile 必须在 Linux / Windows / macOS 对应 Runner 上分别构建和验证，不能互相替代。
+
+[`.github/workflows/skill-tests.yml`](.github/workflows/skill-tests.yml) 先取得当前 scope 的语义和三平台 package 证据，再由已有 `Runtime Package Gate` 执行同一 revision 的 Ready/Change 检查。这样没有本地构建环境的宿主也能先取得真实证据，不必提前把未验证 Change 标为 Ready；未 Ready、Draft package 缺证据或任一 required 平台失败仍阻止合并。`Agent Skills Gate` 与 `Runtime Package Gate` 两个 required check 必须同时满足。Change-only 仍只检查治理，不安装 Runtime 依赖或构建 binary。
 
 ## 6. 正式 Release
 
@@ -220,7 +230,7 @@ Release workflow 不读取仓库管理设置，也不需要自定义 PAT 或 Act
 
 Draft→资产校验→Publish、发布后的 tag/资产核对和失败时只清理未发布 Draft 的边界保持不变。
 
-源仓库 Release 资产固定为唯一 `agent-skills-v<SemVer>.zip`；ZIP 内精确包含三平台 binary、[`USAGE.md`](USAGE.md) 与 `SHA256SUMS`。构建期 identity manifest 只在 CI 内校验后删除；版本与 digest 身份仍可通过 binary 的 `status --json` 读取。Release 页面说明直接使用 [`USAGE.md`](USAGE.md)，不自动把维护 commit / PR 历史生成给最终使用者。最终交付给不具备源仓库权限的用户时，只复制这个 ZIP，不暴露源仓库访问权。
+源仓库 Release 按平台分别提供 ZIP；每包只包含当前平台 binary 和同版本 [`USAGE.md`](USAGE.md)，不生成额外 identity sidecar。版本与必要运行状态通过 binary 的 `status --json` 读取。正式资产名称和结构以 [`USAGE.md`](USAGE.md) 与 [`.github/workflows/release.yml`](.github/workflows/release.yml) 为准，不另维护第二份资产清单。Release 页面说明直接使用 [`USAGE.md`](USAGE.md)，不自动把维护 commit / PR 历史生成给最终使用者。给不具备源仓库权限的用户只分发对应平台 ZIP，不暴露源仓库访问权。
 
 ## 7. 继续阅读
 
