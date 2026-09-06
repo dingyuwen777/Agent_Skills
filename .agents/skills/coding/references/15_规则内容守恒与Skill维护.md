@@ -38,7 +38,7 @@ Skill Mutation 必须先区分**只读分析/建议**和**真正 canonical 写�
 
 ### Mutation Apply
 
-`Mutation Apply` 经 `coding.reference.29` 显式依赖恢复 Change、Validation、两阶段复核与影响面审计，最低 L2；Change、Completion、独立 Review 和 required CI 按当前 Maintenance 执行。**Mutation Apply 本身不自动授予** `develop-and-submit` / `develop-and-deliver` 或 PR、merge、main-fresh、Change Archive、Requirement Closure、Release、Deploy 权限；只执行 **Requested Outcome**、真实 gate 与 Effective Authorization 共同允许的阶段，不降低 CI 或扩大权限。
+`Mutation Apply` 经 `coding.reference.29` 显式依赖恢复 Change、Validation、两阶段复核与影响面审计，最低 L2；Change、Completion、独立 Review 和 required CI 按当前 Maintenance 执行，**正式仓库 CI 门禁不得降低或绕过**。**Mutation Apply 本身不自动授予** `develop-and-submit` / `develop-and-deliver` 或 PR、merge、main-fresh、Change Archive、Requirement Closure、Release、Deploy 权限；只执行 **Requested Outcome**、真实 gate 与 Effective Authorization 共同允许的阶段，不降低 CI 或扩大权限。
 
 ### Mutation 开发侧 Evidence Profile
 
