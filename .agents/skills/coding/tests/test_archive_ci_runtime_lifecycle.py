@@ -116,8 +116,8 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertEqual(workflow.count("agent-routing:v1"), 3)
         self.assertGreaterEqual(
             workflow.count("-Pattern $forbidden -SimpleMatch -CaseSensitive -Quiet"),
-            4,
-            "Windows 禁止词扫描必须大小写敏感，避免把合法 name: router 误判为内部 Router 描述",
+            2,
+            "Windows Entry/Core 禁止词扫描必须大小写敏感，避免把合法 name: router 误判为内部 Router 描述",
         )
 
     def test_project_runtime_is_host_connection_scoped_not_system_daemon(self) -> None:
