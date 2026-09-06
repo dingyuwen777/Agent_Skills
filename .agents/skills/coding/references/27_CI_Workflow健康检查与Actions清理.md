@@ -8,6 +8,6 @@
 - selector / path filter / scoped skip：**永久回归和 fail-safe**；unknown/shared/CI-self fail-closed；CI/selector 自身变化使用 full current-head Evidence。
 - required check identity：仅已证不适用→**job-level condition**、`skipped`、**0 Runner**；禁 workflow-level skip（Pending）；package/unknown/CI-self 不降级，Gate `always()`+`needs` fail-closed。
 - **仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化**；guarded archive 可复用 parent Evidence，普通提交不得借 `[skip ci]` 绕准入。
-CI/required/build/package/release 变更或重复成本→Responsibility Audit；unknown 不删。
+CI/build/package/release 变更或重复成本→Responsibility Audit。
 ## Actions Control-Plane Cleanup
 Source Workflow 与 Actions 历史控制面分开。仅清无审计价值的 disabled / deleted / orphaned / no-owner Workflow；Requirement / Change / PR / Release / 事故 / 安全审计引用的历史 Run 保留；能力不足记 `capability-limited / cleanup gap`。
