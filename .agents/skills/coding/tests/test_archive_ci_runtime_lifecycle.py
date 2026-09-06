@@ -47,34 +47,40 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
             workflow.count("needs.agent-skills-core.outputs.runtime_scope == 'package'"),
             2,
         )
-        self.assertIn("Run self-contained tests", workflow)
-        self.assertIn("Verify active Coding Change", workflow)
+        self.assertIn("Run selected self-contained tests", workflow)
+        self.assertIn("Verify current Coding Change readiness", workflow)
+        self.assertIn("change_gate_ready", workflow)
         self.assertIn("Agent Skills Gate", workflow)
 
     def test_runtime_package_ci_uses_stable_gate_and_keeps_three_platform_evidence(self) -> None:
-        """统一 CI 必须稳定产出 Runtime Package Gate，并只在 package scope 执行三平台构建。"""
+        """统一 CI 必须稳定产出 Runtime Package Gate，并只在 package+Ready 时执行三平台构建。"""
         workflow_path = ROOT / ".github/workflows/skill-tests.yml"
         classifier_path = ROOT / ".github/scripts/runtime_package_scope.py"
         self.assertTrue(workflow_path.is_file(), "缺少统一 Skill/Runtime CI workflow")
-        self.assertTrue(classifier_path.is_file(), "缺少 Runtime Package scope classifier")
+        self.assertTrue(classifier_path.is_file(), "缺少 CI Evidence Selector")
         workflow = workflow_path.read_text(encoding="utf-8")
         self.assertIn("Runtime Package Gate", workflow)
         self.assertIn(".github/scripts/runtime_package_scope.py", workflow)
         self.assertIn("runtime_scope", workflow)
+        self.assertIn("semantic_profile", workflow)
+        self.assertIn("--run-selected-tests", workflow)
         self.assertNotIn("runtime/*|runtime/**/*", workflow)
         self.assertNotIn(".agents/*|.agents/**/*", workflow)
         self.assertGreaterEqual(
             workflow.count("steps.runtime-scope.outputs.runtime_scope == 'package'"),
             4,
         )
+        self.assertGreaterEqual(
+            workflow.count("needs.agent-skills-core.outputs.runtime_scope == 'package'"),
+            2,
+        )
         self.assertEqual(
-            workflow.count("if: needs.agent-skills-core.outputs.runtime_scope == 'package'"),
+            workflow.count("needs.agent-skills-core.outputs.change_gate_ready == 'true'"),
             2,
         )
         self.assertIn("Build and self-test Linux onefile Runtime", workflow)
         self.assertIn("Runtime Windows Package", workflow)
         self.assertIn("Runtime macOS Package", workflow)
-        self.assertIn("Build and self-test", workflow)
         self.assertIn("Verify Linux real stdio MCP contract", workflow)
         self.assertIn("Verify real stdio MCP contract", workflow)
         self.assertIn("Verify project-only single-binary installation", workflow)
