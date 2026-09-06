@@ -148,7 +148,7 @@ jobs:
           set -euo pipefail
           git config user.name "Agent Skills Change Archivist"
           git config user.email "agent-skills-change-archivist@users.noreply.github.com"
-          git commit -m "归档 Change：${{ steps.archive.outputs.change_id }}"
+          git commit -m "归档 Change：${{ steps.archive.outputs.change_id }} [skip ci]"
 
           ARCHIVE_PARENT="$(git rev-parse HEAD^)"
           git fetch origin main

@@ -47,34 +47,40 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
             workflow.count("needs.agent-skills-core.outputs.runtime_scope == 'package'"),
             2,
         )
-        self.assertIn("Run self-contained tests", workflow)
-        self.assertIn("Verify active Coding Change", workflow)
+        self.assertIn("Run selected self-contained tests", workflow)
+        self.assertIn("Verify current Coding Change readiness", workflow)
+        self.assertIn("change_gate_ready", workflow)
         self.assertIn("Agent Skills Gate", workflow)
 
     def test_runtime_package_ci_uses_stable_gate_and_keeps_three_platform_evidence(self) -> None:
-        """统一 CI 必须稳定产出 Runtime Package Gate，并只在 package scope 执行三平台构建。"""
+        """统一 CI 必须稳定产出 Runtime Package Gate，并只在 package+Ready 时执行三平台构建。"""
         workflow_path = ROOT / ".github/workflows/skill-tests.yml"
         classifier_path = ROOT / ".github/scripts/runtime_package_scope.py"
         self.assertTrue(workflow_path.is_file(), "缺少统一 Skill/Runtime CI workflow")
-        self.assertTrue(classifier_path.is_file(), "缺少 Runtime Package scope classifier")
+        self.assertTrue(classifier_path.is_file(), "缺少 CI Evidence Selector")
         workflow = workflow_path.read_text(encoding="utf-8")
         self.assertIn("Runtime Package Gate", workflow)
         self.assertIn(".github/scripts/runtime_package_scope.py", workflow)
         self.assertIn("runtime_scope", workflow)
+        self.assertIn("semantic_profile", workflow)
+        self.assertIn("--run-selected-tests", workflow)
         self.assertNotIn("runtime/*|runtime/**/*", workflow)
         self.assertNotIn(".agents/*|.agents/**/*", workflow)
         self.assertGreaterEqual(
             workflow.count("steps.runtime-scope.outputs.runtime_scope == 'package'"),
             4,
         )
+        self.assertGreaterEqual(
+            workflow.count("needs.agent-skills-core.outputs.runtime_scope == 'package'"),
+            2,
+        )
         self.assertEqual(
-            workflow.count("if: needs.agent-skills-core.outputs.runtime_scope == 'package'"),
+            workflow.count("needs.agent-skills-core.outputs.change_gate_ready == 'true'"),
             2,
         )
         self.assertIn("Build and self-test Linux onefile Runtime", workflow)
         self.assertIn("Runtime Windows Package", workflow)
         self.assertIn("Runtime macOS Package", workflow)
-        self.assertIn("Build and self-test", workflow)
         self.assertIn("Verify Linux real stdio MCP contract", workflow)
         self.assertIn("Verify real stdio MCP contract", workflow)
         self.assertIn("Verify project-only single-binary installation", workflow)
@@ -84,6 +90,32 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertIn('test "${WINDOWS_RESULT}" = "success"', workflow)
         self.assertIn('test "${MACOS_RESULT}" = "success"', workflow)
         self.assertNotIn("LINUX_RESULT", workflow)
+
+    def test_release_protocol_identity_is_builder_owned_not_workflow_hardcoded(self) -> None:
+        """Release 必须比较 Builder identity，但不能复制 Runtime 协议版本成为第二事实源。"""
+        workflow = self._read(".github/workflows/release.yml")
+        builder = self._read("scripts/build_runtime.py")
+
+        protocol_fields = (
+            "BUNDLE_SCHEMA",
+            "TASK_ROUTE_PROTOCOL",
+            "ROUTING_MANIFEST_PROTOCOL",
+            "MCP_TOOL_CONTRACT_PROTOCOL",
+            "PROJECT_PAYLOAD_SCHEMA",
+        )
+        for field in protocol_fields:
+            self.assertIn(f'"{field}"', workflow, f"Release identity 缺少字段：{field}")
+            self.assertIn(f'"{field.lower()}"', builder, f"Builder identity 缺少字段：{field}")
+
+        self.assertIn("if identity != reference", workflow)
+        for pattern in (
+            r"agent-skills-runtime-bundle/v[0-9]+",
+            r"Agent Skills 任务路由/v[0-9]+",
+            r"Agent Skills 路由清单/v[0-9]+",
+            r"Agent Skills MCP工具契约/v[0-9]+",
+            r"agent-skills-project-payload/v[0-9]+",
+        ):
+            self.assertNotRegex(workflow, pattern, f"Release workflow 不应硬编码协议版本：{pattern}")
 
     def test_runtime_install_assertion_tracks_project_facing_agents_contract(self) -> None:
         """三平台真实安装验证项目侧 AGENTS/Entry/Core，不恢复 Source 导航或内部 MCP 名称断言。"""

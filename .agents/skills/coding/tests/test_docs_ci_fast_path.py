@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -9,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[4]
 
 
 class LocalCacheAndDocsGovernanceTest(unittest.TestCase):
-    """验证本地缓存与 Docs 治理仍保持轻量、项目无关。"""
+    """验证本地缓存、Docs 治理与 CI changed-scope 规则保持轻量。"""
 
     def test_project_context_is_local_and_gitignored(self) -> None:
         """project-context.json 必须明确是本地可失效缓存且不提交 Git。"""
@@ -35,6 +34,35 @@ class LocalCacheAndDocsGovernanceTest(unittest.TestCase):
         self.assertFalse((ROOT / "docs").exists())
         self.assertTrue((ROOT / ".agents/skills/docs/SKILL.md").is_file())
         self.assertTrue((ROOT / ".agents/skills/docs/references").is_dir())
+
+    def test_maintenance_requires_automatic_changed_scope_cost_reduction(self) -> None:
+        """以后每次维护都必须自动识别无独立证明价值的 CI/Test/Action 工作。"""
+        maintenance = (ROOT / ".agents/MAINTENANCE.md").read_text(encoding="utf-8")
+        for marker in (
+            "每次维护都必须做 changed-scope Evidence Check",
+            "不能等用户再次发现 Actions 消耗过高才处理",
+            "优先减少“何时运行”，不是先删测试文件",
+            "无关 test group",
+            "重复 setup/install/compile/build",
+            "不算 CI 性能优化",
+            "unknown→full",
+            "Validation Stop Rule",
+        ):
+            self.assertIn(marker, maintenance)
+
+    def test_every_implementation_loads_thin_ci_cost_health_rule(self) -> None:
+        """薄 Reference 必须把成本检查变成实现阶段默认动作，而非临时项目约定。"""
+        reference = (
+            ROOT / ".agents/skills/coding/references/27_CI_Workflow健康检查与Actions清理.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            '"执行模式","取值":["实现"]',
+            "每次实现默认执行的 Cost / Evidence Check",
+            "只测试与修改相关的边界",
+            "仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化",
+            "CI/selector 自身变化使用 full current-head Evidence",
+        ):
+            self.assertIn(marker, reference)
 
 
 if __name__ == "__main__":

@@ -27,8 +27,8 @@ _INTERNAL_LABEL = re.compile(
     r"(?<![A-Za-z0-9_-])(?:Router|Coding|Testing|Skills?|References?)(?![A-Za-z0-9_-])",
     re.IGNORECASE,
 )
-_ASCII_WORD_BEFORE = re.compile(r"([A-Za-z][A-Za-z0-9_.+-]*)\s+$")
-_ASCII_WORD_AFTER = re.compile(r"^\s+([A-Za-z][A-Za-z0-9_.+-]*)")
+_ASCII_WORD_BEFORE = re.compile(r"([A-Za-z][A-Za-z0-9_.+-]*)[ \t]+$")
+_ASCII_WORD_AFTER = re.compile(r"^[ \t]+([A-Za-z][A-Za-z0-9_.+-]*)")
 _INTERNAL_CONTEXT_WORDS = {
     "agent",
     "agents",
@@ -234,7 +234,7 @@ def _collapse_projection_labels(text: str) -> str:
 
 
 def _adjacent_ascii_words(text: str, start: int, end: int) -> tuple[str | None, str | None]:
-    """读取标签左右紧邻的 ASCII 词，用于区分项目技术名与内部组织标签。"""
+    """读取标签同一行左右紧邻的 ASCII 词，用于区分项目技术名与内部组织标签。"""
     before_match = _ASCII_WORD_BEFORE.search(text[:start])
     after_match = _ASCII_WORD_AFTER.match(text[end:])
     before = before_match.group(1) if before_match else None

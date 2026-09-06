@@ -12,6 +12,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[4]
 ARCHIVER = ROOT / ".github" / "scripts" / "archive_change_after_merge.py"
 WORKFLOW = ROOT / ".github" / "workflows" / "change-archive.yml"
+SKILL_WORKFLOW = ROOT / ".github" / "workflows" / "skill-tests.yml"
 
 
 def _module() -> dict[str, Any]:
@@ -77,7 +78,7 @@ class RepositoryChangeArchiveAutomationTest(unittest.TestCase):
     """锁定 Agent_Skills 仓库自身 Change 自动归档的确定性边界。"""
 
     def test_archive_cli_help_is_self_contained(self) -> None:
-        """新增维护脚本必须在统一 Skill CI 已安装的最小依赖面内可独立启动。"""
+        """维护脚本必须在统一 CI 的最小依赖面内可独立启动。"""
         result = subprocess.run(
             [sys.executable, str(ARCHIVER), "--help"],
             check=False,
@@ -240,6 +241,26 @@ class RepositoryChangeArchiveAutomationTest(unittest.TestCase):
                 self.assertRegex(ref, r"@[0-9a-f]{40}$", f"未固定 Action commit：{ref}")
         self.assertNotIn("contents: write", workflow)
         self.assertNotIn("\n  push:", workflow)
+
+    def test_skip_ci_is_only_on_guarded_repository_native_archive_commit(self) -> None:
+        """skip 只服务 exact carrier push，不能成为普通 PR/CI 的通用旁路。"""
+        archive = WORKFLOW.read_text(encoding="utf-8")
+        skill_ci = SKILL_WORKFLOW.read_text(encoding="utf-8")
+        skip_marker = 'git commit -m "归档 Change：${{ steps.archive.outputs.change_id }} [skip ci]"'
+        self.assertIn(skip_marker, archive)
+        self.assertNotIn("[skip ci]", skill_ci)
+
+        ready_index = archive.index(".agents/skills/coding/scripts/ready_check.py --root .")
+        allowlist_index = archive.index("归档 staged diff 超出单一 Change allowlist")
+        commit_index = archive.index(skip_marker)
+        drift_index = archive.index("main 在归档期间发生漂移")
+        push_index = archive.index("git push origin HEAD:main")
+        self.assertLess(ready_index, allowlist_index)
+        self.assertLess(allowlist_index, commit_index)
+        self.assertLess(commit_index, drift_index)
+        self.assertLess(drift_index, push_index)
+        self.assertRegex(archive, r"if \[\[ \"\$\{#ACTUAL\[@\]\}\" -ne 2")
+        self.assertIn("^\\.agents/changes/(active|archive)/", archive)
 
 
 if __name__ == "__main__":
