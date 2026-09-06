@@ -166,12 +166,13 @@ class _SelectionBuilder:
         self.groups.update(groups)
 
     def require_full(self, *, package: bool) -> None:
-        """对 CI-self、共享或未知机器边界启用完整 semantic Evidence。"""
+        """对共享或未知边界启用完整 semantic；仅 package 自动增加 Runtime compile/smoke。"""
         self.full_required = True
         self.runtime_dependencies_required = True
-        self.compile_required = True
-        self.cli_smoke_required = True
         self.promote_scope("package" if package else "content")
+        if package:
+            self.compile_required = True
+            self.cli_smoke_required = True
 
     def add_path(self, path: str) -> None:
         """根据单个仓库路径把对应 Evidence 责任并入当前选择。"""
@@ -239,7 +240,13 @@ class _SelectionBuilder:
             self.require_full(package=False)
             return
 
-        if normalized.startswith(".agents/skills/coding/scripts/ready_check.py"):
+        if normalized == ".agents/skills/coding/scripts/ready_check.py":
+            self.require_full(package=False)
+            self.compile_required = True
+            self.cli_smoke_required = True
+            return
+
+        if normalized == ".agents/skills/coding/scripts/coding.py":
             self.require_full(package=False)
             self.compile_required = True
             self.cli_smoke_required = True
