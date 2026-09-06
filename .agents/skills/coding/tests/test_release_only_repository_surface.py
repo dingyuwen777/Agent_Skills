@@ -18,27 +18,27 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         return (ROOT / relative).read_text(encoding="utf-8")
 
     def test_end_user_has_one_release_usage_document(self) -> None:
-        """最终用户只需要根 USAGE，且用户说明不得暴露源码维护或内部 Runtime Contract。"""
+        """普通开发者只看到桌面 AI Agent 用法，安装与内部治理信息必须留在维护者 README。"""
         usage = ROOT / "USAGE.md"
         self.assertTrue(usage.is_file(), "缺少最终 Release 用户唯一说明 USAGE.md")
         text = usage.read_text(encoding="utf-8")
         for marker in (
-            "Windows",
-            "Linux",
-            "macOS",
-            "install --target",
-            "status --json",
-            "self-test --json",
-            "升级",
-            "回退",
+            "AI 辅助开发使用说明",
             "Codex",
             "Cursor",
             "Claude Code",
+            "功能开发",
+            "Bug 修复",
+            "独立功能测试 / 黑盒验收",
+            "Code Review",
+            "Figma / Design-to-Code",
+            "提交 PR 给维护者审核",
+            "不要合并主分支",
         ):
             self.assertIn(marker, text)
         for maintainer_only in (
+            "Agent_Skills",
             "源仓库",
-            "维护者",
             "canonical",
             "Reference Stub",
             "Runtime Stub",
@@ -62,8 +62,31 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             "Remote MCP",
             "安全隧道",
             ".manifest.json",
+            "Runtime",
+            "MCP",
+            "Source Mode",
+            "AGENTS.md",
+            "install --target",
+            "status --json",
+            "self-test --json",
+            "升级与回退",
+            "agent-skills-v<VERSION>",
         ):
             self.assertNotIn(maintainer_only, text)
+
+        readme = self._read("README.md")
+        for maintainer_marker in (
+            "安装到目标项目",
+            "首次项目治理",
+            "status --json",
+            "self-test --json",
+            "升级与回退",
+            "网页端 / Source Mode",
+            "agent-skills-v<VERSION>-windows.zip",
+            "agent-skills-v<VERSION>-linux.zip",
+            "agent-skills-v<VERSION>-macos.zip",
+        ):
+            self.assertIn(maintainer_marker, readme)
 
     def test_source_repository_has_no_duplicate_human_document_tree(self) -> None:
         """源码仓库不再保留重复 docs、.agents 导航 README、Skill README 或 Changelog。"""
@@ -122,7 +145,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertIn("不得删除已完成的 Change 历史", maintenance)
 
     def test_coding_python_helpers_remain_runtime_assets_without_leaking_internal_paths_to_usage(self) -> None:
-        """单 binary 仍携带 Coding helper，但最终用户只看到必要的环境提示，不暴露内部降级设计。"""
+        """单 binary 仍携带 Coding helper，但普通开发者说明不暴露安装环境或内部降级设计。"""
         bundle = build_bundle(ROOT)
         payload = build_project_payload(ROOT, bundle)
         paths = {entry["path"] for entry in payload["files"]}
@@ -130,13 +153,17 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertIn("coding/scripts/ready_check.py", paths)
 
         usage = self._read("USAGE.md")
-        self.assertIn("安装和基础运行无需预装 Python", usage)
-        self.assertIn("如具体任务需要额外环境", usage)
-        self.assertNotIn("部分 Coding 流程", usage)
-        self.assertNotIn("机器检查", usage)
-        self.assertNotIn("fallback", usage)
-        self.assertNotIn("coding.py", usage)
-        self.assertNotIn("ready_check.py", usage)
+        for forbidden in (
+            "安装和基础运行无需预装 Python",
+            "部分 Coding 流程",
+            "机器检查",
+            "fallback",
+            "coding.py",
+            "ready_check.py",
+            "Project Payload",
+            ".agents/",
+        ):
+            self.assertNotIn(forbidden, usage)
 
     def test_nested_maintenance_readme_is_not_distributed_but_runtime_resource_is(self) -> None:
         """源码内局部维护 README 可保留，但不能随 Project Payload 暴露；真实运行资源必须继续分发。"""
@@ -211,7 +238,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertIn("Git 与 Release", maintenance)
 
     def test_root_readme_is_maintainer_landing_page_not_user_manual(self) -> None:
-        """根 README 只承担源码维护入口，并把最终用户路由到 USAGE。"""
+        """根 README 承担维护者源码与项目接入说明，并把普通开发者路由到 USAGE。"""
         readme = self._read("README.md")
         for marker in (
             "USAGE.md",
@@ -223,6 +250,12 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             ".agents/skills/*/SKILL.md",
             "scripts/build_runtime.py",
             ".github/workflows/release.yml",
+            "安装到目标项目",
+            "首次项目治理",
+            "升级与回退",
+            "网页端 / Source Mode",
+            "status --json",
+            "self-test --json",
         ):
             self.assertIn(marker, readme)
         for obsolete in (
