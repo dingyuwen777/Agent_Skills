@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260907-024400-change-template-first-principles
 title: 固定第一性原理 Change 文档模板
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: chore/change-template-first-principles
 created: 2026-09-07
