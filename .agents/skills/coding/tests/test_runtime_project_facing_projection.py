@@ -194,11 +194,12 @@ class RuntimeProjectFacingProjectionTest(unittest.TestCase):
         for marker in (
             "Project-facing Plaintext",
             "Private Execution Parity",
-            "不得用 Source/Runtime 明文逐字一致替代 parity",
+            "为了追求 Source/Runtime byte equality 把内部 metadata/output guard 重新塞回 Runtime 明文，也属于内容守恒失败",
         ):
             self.assertIn(marker, maintenance)
         self.assertIn("project-facing plaintext", mutation_reference)
         self.assertIn("private execution parity", mutation_reference)
+        self.assertIn("不得用 Source/Runtime 明文逐字一致替代 parity", mutation_reference)
         self.assertIn("不要求 Runtime 明文与 Source Core 逐字一致", runtime_reference)
         self.assertIn("Source/Runtime 同效通过 routing/risk/dependency/context parity 证明", runtime_readme)
 

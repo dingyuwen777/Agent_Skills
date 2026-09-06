@@ -45,43 +45,33 @@ _RUNTIME_ENTRY = """# Project Engineering Entry
 _RUNTIME_ROUTER_BODY = """
 # Project Engineering Guardrails
 
-处理当前项目任务时，先恢复项目规则和真实事实，再确定风险、授权、验证与交付范围。工程流程只服务当前目标，不因为存在更多能力而自动扩大任务。
+先读当前项目规则和真实事实，再按授权、风险、验证与完成范围行动；能力存在不等于扩大任务。
 
-## 1. 当前项目事实优先
+## 1. 当前项目事实
 
-- 先读取适用的 `AGENTS.md`、`CONTRIBUTING` 和当前任务直接相关的代码、Manifest/lock、Contract、Schema/Migration、配置、测试、CI、正式文档与设计事实。
-- 语言、Runtime、框架、数据库、Owner、API/ABI/CLI、Schema、Provider、部署和业务字段不得猜测；单个文件名不能替代真实项目调查。
-- 能从当前项目和工具结果自行核验的事实先自行恢复；只有无法确认且会实质改变业务语义、公共 Contract、数据、安全、不可逆动作或重大技术路线时，才提请用户或项目 Owner 决策。
-- 已经明确且没有被撤销的决定不重复确认。
+- 读取适用的 `AGENTS.md`、`CONTRIBUTING`，以及任务直接相关的代码、Manifest/lock、Contract、Schema/Migration、配置、测试、CI、正式文档和设计。
+- 技术栈、Owner、API/ABI/CLI、Schema、Provider、部署和业务字段不得猜测；可自行核验的先核验，只有实质影响业务语义、公共 Contract、数据、安全、不可逆动作或重大技术路线的未知项才请求决策；既有有效决定不重复确认。
 
-## 2. 权限与副作用边界
+## 2. 权限与交付
 
-只在用户已授权且当前宿主真实具备的范围内执行。只读、测试资产修改、生产代码修改、commit/push/PR、merge、Release、Deploy/生产变更是逐级更高的副作用等级；低等级授权不能自动升级为高等级授权。保护用户现有工作，不强推、不重写共享历史、不绕过 CI、Branch Protection、Ruleset 或项目门禁。
-
-常见交付请求按用户实际目标解释，不把较低授权自动升级：
+只执行用户已授权且当前宿主真实可完成的动作；低等级授权不自动升级，不强推、不重写共享历史、不绕过 CI、Branch Protection、Ruleset 或项目门禁。
 
 - 提 PR→`允许开发并提交PR`，到 PR Ready 为止，不自动合并；
-- 合并主分支→`允许端到端交付`，在 required gate 全部通过后才进入合并与收尾；
-- 审查后合并→`允许审查后交付`，先取得独立审查结论，再进入合并与收尾；
-- commit/push、引述或否定不升级授权，也不因为工具具备更高权限就扩大 Completion Scope。
+- 合并主分支→`允许端到端交付`，required gate 通过后再合并并收尾；
+- 审查后合并→`允许审查后交付`，先取得独立审查结论；
+- commit/push、引述或否定不升级授权。
 
 ## 3. 风险与验证
-
-使用最低但充分的风险等级，并在发现隐藏复杂度时单调升级：
 
 - **L1**：行为不变机械修改或影响隔离的小修复；
 - **L2**：行为变化、重要缺陷、多文件/多人或需要追踪的工作；
 - **L3**：public API/ABI、Schema/Migration、跨模块 Contract、架构、安全、部署恢复、重大依赖或破坏性兼容变化。
 
-验证遵循 targeted-first：先运行最便宜且能直接证明目标的证据，只有新失败、新边界、新独立风险或正式门禁要求时才扩大。**Fresh Evidence Contract** 要求完成结论绑定当前相关实现 revision、环境、Contract、Scope 与实际成功标准；不受影响的既有新鲜证据可以复用。
+验证 targeted-first；只有新失败、新边界、新独立风险或正式门禁才扩大。**Fresh Evidence Contract** 将完成结论绑定当前相关 revision、环境、Contract、Scope 与实际成功标准；不受影响的新鲜证据可复用。
 
-## 4. 完成范围
+## 4. 完成与失败
 
-Requested Outcome 决定当前 Completion Scope。分析止于有证据的结论；实现止于要求的实现和验证；提交 PR、合并主分支、Release、Deploy 只有在用户明确要求且全部 required gate 满足时才继续。CI 绿色不能替代需求完整性、必要文档同步、独立复核或当前项目其他完成门禁。
-
-## 5. 失败边界
-
-单一路径失败先读取错误并核验当前宿主是否存在满足同一语义目标的等价能力；只有必要路径确实不可用时才阻塞依赖它的动作。局部 blocker 不自动停止其他已授权且无依赖的工作；但缺少 required 事实、约束、权限或验证时，不得声称 complete、mergeable、releasable 或 deployable。
+Requested Outcome 决定 Completion Scope；PR、合并、Release、Deploy 只在明确要求且 required gate 满足时继续，CI 绿色不替代需求、文档、独立复核或其他项目门禁。单一路径失败先核验满足同一语义目标的等价能力；缺少 required 事实、约束、权限或验证时，不得声称 complete、mergeable、releasable 或 deployable。
 """
 
 

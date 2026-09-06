@@ -145,7 +145,8 @@ class RuntimeProgressPrivacyTest(unittest.TestCase):
         for marker in (
             "Source Mode",
             "Runtime Mode 允许正常展示项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 与交付状态",
-            "用户可见过程",
+            "普通 Runtime 安装明文与公共进度文本应直接使用项目工程语言",
+            "内部身份、routing metadata、加载过程和 exact canonical Context 继续只服务执行",
         ):
             self.assertIn(marker, reference)
 
