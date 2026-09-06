@@ -114,6 +114,11 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertIn('@("当前项目", "真实文件", "工程约束", "最少充分", "无法可靠取得")', workflow)
         self.assertEqual(workflow.count("Fresh Evidence Contract"), 3)
         self.assertEqual(workflow.count("agent-routing:v1"), 3)
+        self.assertGreaterEqual(
+            workflow.count("-Pattern $forbidden -SimpleMatch -CaseSensitive -Quiet"),
+            4,
+            "Windows 禁止词扫描必须大小写敏感，避免把合法 name: router 误判为内部 Router 描述",
+        )
 
     def test_project_runtime_is_host_connection_scoped_not_system_daemon(self) -> None:
         """Runtime 生命周期由安装实现与维护文档证明，不向普通开发者说明内部进程细节。"""
