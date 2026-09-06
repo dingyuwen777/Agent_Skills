@@ -4,7 +4,7 @@
 
 # Git、交付、依赖、安全与宿主能力边界
 
-这份规则承接 Coding 主规则中与 Git、依赖、安全、最终交付报告和宿主能力边界直接相关的完整详细约束。主 `SKILL.md` 继续保留这些边界的硬触发入口；命中 Git / PR / Release / Delivery、依赖变化、安全边界、最终完成报告或宿主能力降级时，必须读取本文件，不能只凭主文件中的导航句补流程。
+本文件是 Git / PR / Release / Delivery、依赖、安全、交付报告与宿主能力边界的详细 Owner；Coding 主 `SKILL.md` 保留硬触发入口。命中时必须读本文件，不凭导航补流程。
 
 ## 1. Git、依赖与安全的通用边界
 
@@ -20,7 +20,7 @@
 
 ### Requested Action 与 Effective Authorization
 
-Git 能力存在不等于当前任务拥有全部 Git 权限。用户说出的目标动作只是 **Requested Action**；真正可执行的 **Effective Authorization** 必须由目标项目规则、当前 authenticated principal、托管平台当前保护规则/Ruleset 与宿主真实能力共同确认。
+**Requested Action** 是用户请求，**Effective Authorization** 仍须结合项目规则、authenticated principal、当前保护规则/Ruleset 和宿主能力核验；Git 能力存在不授予任务权限。
 
 硬规则：
 
@@ -49,7 +49,7 @@ API 基于核验的 base tree/parent，保留未改文件/mode，先建真实改
 
 ### GitHub PR 零人工交付兼容策略
 
-GitHub 的 Draft 状态只是托管平台工作流状态，不能成为必须由用户手工点击才能继续的质量门禁。真正的门禁仍然是当前项目的 Change/需求追溯、Red / Green / Review / CI、真实 PR 状态、head SHA、Branch Protection/Ruleset 和 merge 前复核。
+Draft 是平台状态，不是用户必须手工点击的质量门禁；真正门禁仍是项目 Change/需求追溯、Red / Green / Review / CI、PR/head、Branch Protection/Ruleset 与 merge 前复核。
 
 处理 GitHub PR 时按以下顺序执行：
 
@@ -82,33 +82,10 @@ GitHub 的 Draft 状态只是托管平台工作流状态，不能成为必须由
 - 目标项目没有 repository-native archive 时，继续遵守其当前正式 Change Owner，不由通用 Skill 发明直接写默认分支机制；
 - 对**非 GitHub** 托管平台，不强行使用 GitHub REST、`expected_head_sha` 或 GitHub Draft 语义；使用该平台等价的 PR/MR 生命周期和 **head/revision guard**，但仍保持“自动化交付不依赖用户手工按钮、merge 前重新验证当前 revision、merge 后 fresh CI”的同等安全责任。
 
-仅在 Requested Outcome 包含端到端交付、对应授权成立，且支持 GitHub REST merge 与 repository-native Change archive 时，下面完整闭环才适用；提交 PR 的任务只执行至 PR Ready，不因能力存在自动合并：
+仅在已授权端到端交付且 REST merge/原生归档能力成立时，才走以下闭环；仅提交 PR 则止于 PR Ready，不自动合并：
 
-```text
-宿主 Ready 能力可靠
-→ 创建 Draft PR
-→ Red / Green / Review / CI
-→ 自动 Ready
-→ 如果 Ready API 返回异常，先重读 PR 状态
-   ├─ draft=false → 继续，不重建 PR
-   └─ 仍为 Draft → 自动关闭 Draft，并以相同 head/base 创建普通 PR后重新跑 fresh CI
-→ 重新确认 draft=false / CI / head SHA / mergeable / Effective Authorization
-→ REST merge + expected_head_sha
-→ implementation main fresh CI
-→ repository-native Change archive
-→ 验证 archive/done 与项目要求的 governance fresh Evidence
-→ Closure Audit
-
-宿主 Ready 能力已确认不可用
-→ 创建普通 PR（逻辑未就绪）
-→ Red / Green / Review / CI
-→ 重新确认 draft=false / CI / head SHA / mergeable / Effective Authorization
-→ REST merge + expected_head_sha
-→ implementation main fresh CI
-→ repository-native Change archive
-→ 验证 archive/done 与项目要求的 governance fresh Evidence
-→ Closure Audit
-```
+Draft/普通 PR 按上述条件汇合后：
+`Review/CI/Ready → head/mergeable/权限复核 → REST merge + expected_head_sha → implementation main fresh CI → repository-native Change archive → archive/done 与 governance fresh Evidence → Closure Audit`。
 
 ### 依赖
 
@@ -154,7 +131,7 @@ GitHub 的 Draft 状态只是托管平台工作流状态，不能成为必须由
 - 语言/项目 profile 是发现和验证导航，不是授权升级技术栈或重构架构；
 - 看不到未提交、未推送、未同步、无权限访问或另一客户端私有状态；
 - 不能强制其他人/Agent 遵守 Owner、分支或影响范围；仓库 CI/Branch Protection 可以阻止不满足门禁的变更合入；
-- 宿主不支持持久文件、目标工具链、脚本、Git、device、数据库或外部服务的某一路径时，先完成等价能力发现；必要路径确实不可用才报告具体降级与未验证风险，不把局部失败扩大为仓库不可写。
+- 宿主不支持持久文件、目标工具链、脚本、Git、device、数据库或外部服务时，先区分具体失败路径并发现等价能力；必要路径确实不可用才报告具体降级与未验证风险，不把局部失败扩大为仓库不可写。
 
 ## 4. 触发与回到主流程
 
