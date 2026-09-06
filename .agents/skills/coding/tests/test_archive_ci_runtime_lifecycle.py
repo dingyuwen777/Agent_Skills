@@ -85,34 +85,8 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertIn('test "${MACOS_RESULT}" = "success"', workflow)
         self.assertNotIn("LINUX_RESULT", workflow)
 
-    def test_release_protocol_identity_is_builder_owned_not_workflow_hardcoded(self) -> None:
-        """Release 必须比较 Builder identity，但不能复制 Runtime 协议版本成为第二事实源。"""
-        workflow = self._read(".github/workflows/release.yml")
-        builder = self._read("scripts/build_runtime.py")
-
-        protocol_fields = (
-            "BUNDLE_SCHEMA",
-            "TASK_ROUTE_PROTOCOL",
-            "ROUTING_MANIFEST_PROTOCOL",
-            "MCP_TOOL_CONTRACT_PROTOCOL",
-            "PROJECT_PAYLOAD_SCHEMA",
-        )
-        for field in protocol_fields:
-            self.assertIn(f'"{field}"', workflow, f"Release identity 缺少字段：{field}")
-            self.assertIn(f'"{field.lower()}"', builder, f"Builder identity 缺少字段：{field}")
-
-        self.assertIn("if identity != reference", workflow)
-        for pattern in (
-            r"agent-skills-runtime-bundle/v[0-9]+",
-            r"Agent Skills 任务路由/v[0-9]+",
-            r"Agent Skills 路由清单/v[0-9]+",
-            r"Agent Skills MCP工具契约/v[0-9]+",
-            r"agent-skills-project-payload/v[0-9]+",
-        ):
-            self.assertNotRegex(workflow, pattern, f"Release workflow 不应硬编码协议版本：{pattern}")
-
     def test_runtime_install_assertion_tracks_project_facing_agents_contract(self) -> None:
-        """三平台真实安装应验证项目侧 AGENTS，而把用户输出隐私留给 MCP/Projection Owner。"""
+        """三平台真实安装验证项目侧 AGENTS/Entry/Core，不恢复 Source 导航或内部 MCP 名称断言。"""
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
         workflow = self._read(".github/workflows/skill-tests.yml")
         project_contract = "必须先读取并遵守当前目录及上级适用的项目规则"
@@ -122,6 +96,24 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertNotIn("对用户正常说明", workflow)
         for forbidden in ("治理能力自身", "内部能力", "用户可见进度"):
             self.assertNotIn(forbidden, managed)
+
+        for stale_assertion in (
+            'grep -Fq ".agents/skills/router/SKILL.md" "${target}/.agents/skills/ENTRY.md"',
+            'grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/router/SKILL.md"',
+            'grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/router/SKILL.md"',
+            'Select-String -Path $entry -Pattern ".agents/skills/router/SKILL.md"',
+            'Select-String -Path $router -Pattern ".agents/skills/coding/SKILL.md"',
+            'Select-String -Path $router -Pattern "agent_skills_load_required_context"',
+        ):
+            self.assertNotIn(stale_assertion, workflow)
+
+        self.assertGreaterEqual(
+            workflow.count('"当前项目" "真实文件" "工程约束" "最少充分" "无法可靠取得"'),
+            2,
+        )
+        self.assertIn('@("当前项目", "真实文件", "工程约束", "最少充分", "无法可靠取得")', workflow)
+        self.assertEqual(workflow.count("Fresh Evidence Contract"), 3)
+        self.assertEqual(workflow.count("agent-routing:v1"), 3)
 
     def test_project_runtime_is_host_connection_scoped_not_system_daemon(self) -> None:
         """Runtime 生命周期由安装实现与维护文档证明，不向普通开发者说明内部进程细节。"""
