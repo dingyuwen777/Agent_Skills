@@ -6,6 +6,12 @@ from collections.abc import Iterable, Mapping
 import re
 from urllib.parse import unquote
 
+from .disclosure import (
+    PROJECT_FACING_AGENT_PROMPT,
+    PROJECT_FACING_FRONTMATTER_RULE,
+    PROJECT_FACING_USER_COMMUNICATION_RULE,
+)
+
 
 RUNTIME_CONTEXT_LABEL = "当前场景所需完整约束"
 _RUNTIME_CONSTRAINT_TERM = "完整约束"
@@ -96,10 +102,11 @@ _INTERNAL_LABEL_REPLACEMENTS = {
 }
 _ROUTER_FRONTMATTER_DESCRIPTION = (
     "description: 处理当前项目任务前恢复真实事实、风险、权限、验证与交付边界，"
-    "确保工程动作与当前目标和证据相称。"
+    "确保工程动作与当前目标和证据相称。 "
+    + PROJECT_FACING_FRONTMATTER_RULE
 )
 
-_RUNTIME_ENTRY = """# Project Engineering Entry
+_RUNTIME_ENTRY = f"""# Project Engineering Entry
 
 处理当前项目任务时：
 
@@ -107,7 +114,8 @@ _RUNTIME_ENTRY = """# Project Engineering Entry
 2. 按需从当前项目真实文件和机器事实恢复最少充分事实；
 3. 使用项目已配置的工程约束取得本次实际需要的完整要求，再执行相关工程动作；
 4. 当前项目事实与上位指令优先，不从历史聊天、缓存或其他项目猜测实现；
-5. 无法可靠取得本次必需工程约束时，明确影响，并停止依赖这些约束的动作和完成结论。
+5. 无法可靠取得本次必需工程约束时，明确影响，并停止依赖这些约束的动作和完成结论；
+6. {PROJECT_FACING_USER_COMMUNICATION_RULE}
 """
 
 _RUNTIME_ROUTER_BODY = """
@@ -140,6 +148,12 @@ _RUNTIME_ROUTER_BODY = """
 ## 4. 完成与失败
 
 Requested Outcome 决定 Completion Scope；PR、合并、Release、Deploy 只在明确要求且 required gate 满足时继续，CI 绿色不替代需求、文档、独立复核或其他项目门禁。单一路径失败先核验满足同一语义目标的等价能力；缺少 required 事实、约束、权限或验证时，不得声称 complete、mergeable、releasable 或 deployable。
+"""
+
+_RUNTIME_USER_COMMUNICATION_SECTION = f"""
+## 面向用户的项目表达
+
+{PROJECT_FACING_USER_COMMUNICATION_RULE}
 """
 
 
@@ -326,6 +340,22 @@ def _project_runtime_text(text: str, identities: tuple[str, ...]) -> str:
     return text
 
 
+def _append_frontmatter_description_rule(line: str) -> str:
+    """把首轮沟通约束安全追加到 description，并保持常见单/双引号 YAML 标量合法。"""
+    prefix, separator, raw_value = line.partition(":")
+    if not separator:
+        return line
+    leading = raw_value[: len(raw_value) - len(raw_value.lstrip())]
+    value = raw_value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"\"", "'"}:
+        quote = value[0]
+        body = value[1:-1].rstrip()
+        spacer = " " if body else ""
+        return f"{prefix}:{leading}{quote}{body}{spacer}{PROJECT_FACING_FRONTMATTER_RULE}{quote}"
+    spacer = " " if value else ""
+    return f"{prefix}:{leading}{value}{spacer}{PROJECT_FACING_FRONTMATTER_RULE}"
+
+
 def _project_frontmatter_line(line: str, identities: tuple[str, ...], skill_name: str) -> str:
     """保留宿主发现所需 name，并把其余 frontmatter 改为项目侧描述。"""
     if line.strip().startswith("name:"):
@@ -340,7 +370,10 @@ def _project_frontmatter_line(line: str, identities: tuple[str, ...], skill_name
         cleaned,
         flags=re.IGNORECASE,
     )
-    return _project_runtime_text(cleaned, identities)
+    projected = _project_runtime_text(cleaned, identities)
+    if line.strip().startswith("description:"):
+        return _append_frontmatter_description_rule(projected)
+    return projected
 
 
 def _assert_project_facing_plaintext(text: str, identities: tuple[str, ...]) -> None:
@@ -419,6 +452,7 @@ def project_runtime_skill_core(
         body = _remove_source_navigation_metadata(body)
         projected_body = _project_runtime_text(body, identities)
 
+    projected_body = projected_body.rstrip() + "\n" + _RUNTIME_USER_COMMUNICATION_SECTION
     projected = projected_frontmatter + projected_body
     _assert_project_facing_plaintext(projected.replace(name_lines[0], ""), identities)
     return projected.encode("utf-8")
@@ -447,6 +481,8 @@ def project_runtime_agent_prompt(canonical_payload: bytes, skill_name: str | Non
             additions.append("Work from current project facts.")
         if "validation" not in prompt.lower():
             additions.append("Complete applicable validation before making completion claims.")
+        if PROJECT_FACING_AGENT_PROMPT not in prompt:
+            additions.append(PROJECT_FACING_AGENT_PROMPT)
         if additions:
             prompt = prompt.rstrip() + " " + " ".join(additions)
         return prefix + prompt + suffix
