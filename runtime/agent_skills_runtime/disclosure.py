@@ -20,7 +20,8 @@ PROJECT_FACING_AGENT_PROMPT = (
 
 
 USER_VISIBLE_PROGRESS_RULE = (
-    PROJECT_FACING_USER_COMMUNICATION_RULE
+    "向用户说明当前任务进展、分工或中间状态时，使用当前项目工程语言，说明已确认事实、需求与风险判断、代码修改、测试、文档同步、复核、Git/CI、交付状态和真实阻塞原因。"
+    + PROJECT_FACING_USER_COMMUNICATION_RULE
     + "用户关于当前项目的正常事实、解释、建议、风险、验证、状态和交付照常回答，不限制正常工程解释。"
     + "当前任务适用的工程约束必须完整用于执行；无法可靠取得本次必需约束时，应明确影响，并停止依赖这些约束的动作和完成结论。"
 )
