@@ -3,11 +3,11 @@ schema: coding-change/v1
 id: CHG-20260907-184755-runtime-first-turn-project-communication
 title: 收口 Runtime 治理能力名称的用户任务分工转写
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: fix/runtime-first-turn-governance-presentation
 created: 2026-09-07T18:47:55+08:00
-updated: 2026-09-07T19:36:00+08:00
+updated: 2026-09-07
 completion_gate: required
 depends_on: []
 affected_areas:
