@@ -7,7 +7,7 @@ status: ready_for_review
 owner: dingyuwen777
 branch: fix/runtime-first-turn-governance-presentation
 created: 2026-09-07T18:47:55+08:00
-updated: 2026-09-07T19:31:30+08:00
+updated: 2026-09-07T19:33:30+08:00
 completion_gate: required
 depends_on: []
 affected_areas:
@@ -35,7 +35,7 @@ data_changes: []
 
 用户明确提供的项目术语、计划和决定必须照常保留。本轮用户明确指出“暂不建立 Gold Set”来自用户提示词，因此它属于应保留的用户计划，不得被本 Contract 过滤、弱化或改写。
 
-上游 Requirement Source：GitHub Issue #246；其直接来源是用户最终确认“明确阻止这种治理能力名称 → 用户任务分工的转写就可以”。
+上游 Requirement Source：GitHub Issue #246；其直接来源是用户最终确认“明确阻止这种治理能力名称 → 用户任务分工的转写就可以”。Issue AC6 属于 Ready 后的 package/merge/main-fresh 交付 Closure，由 PR/Issue 状态继续追踪，不把 post-merge Evidence 伪造为 Ready 前已满足。
 
 # 可观察成功标准
 
@@ -80,11 +80,12 @@ data_changes: []
 
 | ID | Requirement | Source | Status | Evidence / 依据 |
 | --- | --- | --- | --- | --- |
-| R1 | Runtime 用户计划/进度不得把内部治理能力/规则名称写成任务步骤/分工 | user:runtime-governance-name-presentation | satisfied | head `b1c203f9…` 的真实 Project Payload 回归覆盖 Entry、所有动态 Skill description/body、agent prompt 与 MCP public progress；Draft Run `34116736318` 的 selected self-contained semantic tests 成功。 |
-| R2 | 用户明确提供的项目术语、计划和决定必须保留；`暂不建立 Gold Set` 不得被本规则过滤 | user:preserve-user-plan | satisfied | 永久回归显式构造含 `Gold Set` 的用户计划并断言投影后仍存在；同一 current-head semantic step 成功。 |
-| R3 | 新 Contract 不扩大成一般工程过程、加载、测试资产或 Git/Release/Deploy 表达限制 | user:narrow-scope | satisfied | A1 复核先后移除覆盖既有项目过程与“规则选择/取得/加载/执行机制”扩张；anti-overreach 回归和既有 project-progress 标记均在 current-head semantic step 成功。 |
-| R4 | 保留机器 Skill name、canonical routing metadata/Stable ID/dependency/risk/required Context exact-text 与 Source/Runtime parity | user:preserve-runtime-execution | satisfied | diff 只含 2 个 Runtime 投影/披露文件、1 个测试和 Change；routing/catalog/bundle/reference 未改；package scope 的完整 semantic consumer closure 在 `34116736318` 成功。 |
-| R5 | 不用最终字符串过滤或固定内部名称黑名单解决问题 | user:no-output-filter | satisfied | A2 diff Review 确认新增实现是首次回复前 Contract 投影；没有新增 final-response filter，也没有 `router/coding/testing/...` 名称黑名单。Review submission `5131456278` 无未解决 P0/P1/P2 Finding。 |
+| R1 | Runtime 用户计划/进度不得把内部治理能力/规则名称写成任务步骤/分工 | #246 / AC1 | satisfied | implementation head `b1c203f9…` 的真实 Project Payload 回归覆盖 Entry、所有动态 Skill description/body、agent prompt 与 MCP public progress；Draft Run `34116736318` 的 selected self-contained semantic tests 成功。 |
+| R2 | 用户明确提供的项目术语、计划和决定必须保留；`暂不建立 Gold Set` 不得被本规则过滤 | #246 / AC2 | satisfied | 永久回归显式构造含 `Gold Set` 的用户计划并断言投影后仍存在；同一 implementation-head semantic step 成功。 |
+| R3 | 新 Contract 不扩大成一般工程过程、加载、测试资产或 Git/Release/Deploy 表达限制 | #246 / AC3 | satisfied | A1 复核先后移除覆盖既有项目过程与“规则选择/取得/加载/执行机制”扩张；anti-overreach 回归和既有 project-progress 标记均在 implementation-head semantic step 成功。 |
+| R4 | 保留机器 Skill name、canonical routing metadata/Stable ID/dependency/risk/required Context exact-text 与 Source/Runtime parity | #246 / AC4 | satisfied | diff 只含 Runtime 投影/披露、测试和 Change；routing/catalog/bundle/reference 未改；package scope 的完整 semantic consumer closure 在 `34116736318` 成功。 |
+| R5 | 不用最终字符串过滤或固定内部名称黑名单解决问题 | #246 / AC7 | satisfied | A2 diff Review 确认新增实现是首次回复前 Contract 投影；没有新增 final-response filter，也没有 `router/coding/testing/...` 名称黑名单。Review submission `5131456278` 无未解决 P0/P1/P2 Finding。 |
+| R6 | 永久回归覆盖首轮表面、Gold Set/anti-overreach，并保持现有 Runtime/Source conformance | #246 / AC5 | satisfied | package scope full semantic profile 在 implementation head `b1c203f9…` 的 Run `34116736318` 成功，包含新增回归及现有共享 consumer closure。 |
 
 # 关键决策
 
@@ -98,9 +99,9 @@ data_changes: []
 
 | Layer | Required | Scope / Evidence |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | `34116736318` current implementation head semantic Green；覆盖 Entry/Core/description/agent prompt/public progress、`Gold Set` 与 anti-overreach。 |
+| 行为 / Unit / Component | required | `34116736318` implementation-head semantic Green；覆盖 Entry/Core/description/agent prompt/public progress、`Gold Set` 与 anti-overreach。 |
 | 接口 / Contract | required | 真实 `build_project_payload` 回归验证 Project Payload projection 与 machine `name`；MCP public progress 与统一 Contract 一致。 |
-| 集成 / Persistence / Runtime Dependency | required | package scope full semantic consumer closure 已 Green；real stdio MCP / onefile install 在后续 package gate 作为 delivery Evidence 继续执行。 |
+| 集成 / Persistence / Runtime Dependency | required | package scope full semantic consumer closure 已 Green；real stdio MCP / onefile install 在 Ready 后 package gate 作为 delivery Evidence 继续执行。 |
 | 用户 / Workflow Acceptance | required | 真实 Project Payload 首轮可见 Entry/Core/prompt 已由自动回归验证；LLM 最终措辞非确定性作为剩余风险保留，不冒充绝对字符串保证。 |
 | 跨组件 Golden Path | required | Source → Projection → Project Payload 的 semantic closure 已 Green；onefile → install → MCP 在 package gate 继续验证。 |
 | External Dependency / Provider Probe | not_applicable | 不改变第三方 Provider/远端 API/硬件事实。 |
@@ -117,7 +118,7 @@ data_changes: []
 - [x] 第二轮 A1 复核发现“规则选择/取得/加载/执行机制”超出最终用户要求，已收窄为仅名称转写。
 - [x] 取得最终窄版 implementation head `b1c203f9…` semantic Green。
 - [x] 完成 A2 + Review submission `5131456278`，无未解决 P0/P1/P2 Finding。
-- [x] 更新 Change 为 `ready_for_review`。
+- [x] 更新 Change 为 `ready_for_review` 并绑定稳定 Issue Acceptance。
 - [ ] 通过 current carrier Ready Check，转 PR Ready 并取得 Linux/Windows/macOS package Evidence。
 - [ ] guarded merge 到 main。
 - [ ] 取得 implementation main-fresh CI，并验证 repository-native Change Archive。
@@ -126,9 +127,9 @@ data_changes: []
 # Completion Audit
 
 - [x] upstream_re_read：重新以用户最终口径“只阻止治理能力名称 → 用户任务分工”、Issue #246 与当前 canonical Runtime Owner 重建完成定义。
-- [x] change_coverage：R1-R5 均映射到实现/回归/Review，首版两次范围漂移已被收敛，没有把 Gold Set、一般工程过程或 Git 表达升级成新限制。
+- [x] change_coverage：R1-R6 覆盖 Issue #246 的实现/回归 Acceptance；AC6 为 Ready 后 delivery Closure，继续由 PR/Issue 跟踪，没有被伪造成 Ready 前已完成。
 - [x] reverse_audit：真实 Project Payload 覆盖 Entry/Core/prompt，MCP progress 复用同一 Contract；`Gold Set` 与 anti-overreach 反向 case Green；diff 未改 private routing/context owner。
-- [x] unresolved_cleared：R1-R5 全部 `satisfied`；package/main-fresh/archive 是 Ready 后交付门禁，不伪装为已完成。
+- [x] unresolved_cleared：R1-R6 全部 `satisfied`；package/main-fresh/archive 是 Ready 后交付门禁，不伪装为已完成。
 
 # 文档影响
 
@@ -148,9 +149,10 @@ Docs Impact = not_applicable。当前 canonical Runtime 规则已经要求 Runti
 - Red：原始 main 内容 tree `4571a0904cf445b3c05cbbba70972415b62ed52c` 缺少首次回复前名称转写约束；此前同树窄回归失败。
 - Draft Run `34116337085`：首版 semantic step 失败，A1 复核定位到既有 project-progress 表达被覆盖并修复；该失败未被隐藏。
 - Draft Run `34116454004` / head `0d6b3ec3…`：compile、CLI smoke、selected self-contained semantic tests 成功；Change `in_progress` 使 readiness gate 正确阻断 package。随后 A1 继续收窄用户范围，因此该 Green 未冒充最终 current-head Evidence。
-- Draft Run `34116736318` / implementation head `b1c203f9…`：PR Requirement Source、changed-scope selector、Runtime dependencies、compile、CLI smoke、selected self-contained semantic tests 全部成功；唯一失败为 Change 仍 `in_progress` 时的 readiness enforcement，符合门禁设计。
+- Draft Run `34116736318` / implementation head `b1c203f9…`：PR Requirement Source、changed-scope selector、Runtime dependencies、compile、CLI smoke、selected self-contained semantic tests 全部成功；Change 尚未 Ready 时 readiness enforcement 按设计阻断 package。
 - Review submission `5131456278`：A1/A2 对最终窄版 diff 复核，无未解决 P0/P1/P2 Finding；记录 LLM 最终措辞非确定性剩余风险。
-- 本次 Change carrier 更新不改变实现/Contract/test bytes；按 Fresh Evidence Contract 不使 `b1c203f9…` 的开发侧 semantic Evidence 失效。CI 仍会在新 carrier head 重跑仓库 required gate。
+- Carrier Run `34116927405` 首次证明 semantic 仍 Green，但 Ready Check 因 Requirement Source 尚未绑定稳定 Acceptance 而 fail-closed；已按 `ready_check.py` Contract 修正为 `#246 / ACn`，没有绕过门禁。
+- Change carrier 更新不改变实现/Contract/test bytes；按 Fresh Evidence Contract 不使 `b1c203f9…` 的开发侧 semantic Evidence 失效。CI 仍会在新 carrier head 重跑 required gate。
 
 # Git / Release
 
