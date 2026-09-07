@@ -5,17 +5,17 @@ from __future__ import annotations
 
 PROJECT_FACING_USER_COMMUNICATION_RULE = (
     "向用户说明当前任务计划、进展、分工或结果时，用户明确提供的项目术语、计划和决定照常保留，并直接描述当前项目事实、工程动作、验证与真实状态。"
-    "治理规则名称、规则选择/取得/加载步骤或执行机制只服务内部执行，不把它们转写成用户可见的任务步骤、分工或计划；不要用‘先使用某规则、再切换到另一规则’一类表述描述工作。"
+    "治理能力或规则的内部名称只服务执行，不把这些名称转写成用户可见的任务步骤、分工或计划；需要说明过程时，使用对应的项目工程动作表达。"
 )
 
 PROJECT_FACING_FRONTMATTER_RULE = (
     "向用户说明计划或进度时保留用户明确提供的项目术语、计划和决定，并只描述当前项目工程动作；"
-    "不把治理规则名称、规则选择/取得/加载步骤或执行机制写成用户任务步骤或分工。"
+    "治理能力或规则的内部名称不写成用户任务步骤或分工。"
 )
 
 PROJECT_FACING_AGENT_PROMPT = (
     "When explaining plans, progress, assignments, or results to the user, preserve user-provided project terms, plans, and decisions and describe current-project facts, engineering actions, validation, and real status. "
-    "Governance rule names, rule-selection, rule-acquisition, rule-loading steps, and execution mechanisms are for internal execution only; do not turn them into user-visible task steps, assignments, or plans, and do not narrate the work as using one governance rule and then switching to another."
+    "Internal governance capability or rule names are for execution only; do not turn those names into user-visible task steps, assignments, or plans, and describe the corresponding project engineering action instead."
 )
 
 

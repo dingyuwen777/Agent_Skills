@@ -45,7 +45,7 @@ class RuntimeFirstTurnPresentationContractTest(unittest.TestCase):
         """Entry 必须在任何后续 MCP 返回之前阻止治理名称转写，并保留用户计划。"""
         entry = self._text("ENTRY.md")
         self.assertIn(PROJECT_FACING_USER_COMMUNICATION_RULE, entry)
-        self.assertIn("治理规则名称", entry)
+        self.assertIn("治理能力或规则的内部名称", entry)
         self.assertIn("用户明确提供的项目术语、计划和决定照常保留", entry)
 
     def test_every_runtime_skill_keeps_machine_name_but_not_as_user_assignment(self) -> None:
@@ -63,11 +63,11 @@ class RuntimeFirstTurnPresentationContractTest(unittest.TestCase):
                 description = next(
                     line for line in frontmatter.splitlines() if line.strip().startswith("description:")
                 )
-                self.assertIn("不把治理规则名称", description)
+                self.assertIn("治理能力或规则的内部名称", description)
                 self.assertIn("用户明确提供的项目术语、计划和决定", description)
             with self.subTest(path=path, area="body"):
                 self.assertIn(PROJECT_FACING_USER_COMMUNICATION_RULE, text[match.end() :])
-                self.assertIn("不把它们转写成用户可见的任务步骤、分工或计划", text[match.end() :])
+                self.assertIn("不把这些名称转写成用户可见的任务步骤、分工或计划", text[match.end() :])
 
     def test_runtime_agent_prompts_block_governance_name_narration(self) -> None:
         """宿主 agent prompt 必须覆盖治理名称转写这一真实失败模式。"""
@@ -77,8 +77,10 @@ class RuntimeFirstTurnPresentationContractTest(unittest.TestCase):
             text = self._text(path)
             with self.subTest(path=path):
                 self.assertIn(PROJECT_FACING_AGENT_PROMPT, text)
-                self.assertIn("Governance rule names", text)
+                self.assertIn("governance capability or rule names", text)
                 self.assertIn("preserve user-provided project terms, plans, and decisions", text)
+                self.assertNotIn("rule-selection", text)
+                self.assertNotIn("rule-loading", text)
                 self.assertNotIn("Do not pre-announce branch", text)
                 self.assertNotIn("Use $", text)
 
@@ -93,6 +95,17 @@ class RuntimeFirstTurnPresentationContractTest(unittest.TestCase):
         self.assertIn("Gold Set", runtime)
         self.assertIn("preserve user-provided project terms, plans, and decisions", runtime)
 
+    def test_new_contract_does_not_expand_into_process_or_delivery_restrictions(self) -> None:
+        """反向回归：新增 Contract 只约束内部名称转写，不扩展到一般工程过程或交付表达。"""
+        self.assertNotIn("规则选择", PROJECT_FACING_USER_COMMUNICATION_RULE)
+        self.assertNotIn("取得/加载", PROJECT_FACING_USER_COMMUNICATION_RULE)
+        self.assertNotIn("测试资产", PROJECT_FACING_USER_COMMUNICATION_RULE)
+        self.assertNotIn("分支", PROJECT_FACING_USER_COMMUNICATION_RULE)
+        self.assertNotIn("PR", PROJECT_FACING_USER_COMMUNICATION_RULE)
+        self.assertNotIn("merge", PROJECT_FACING_AGENT_PROMPT.lower())
+        self.assertNotIn("release", PROJECT_FACING_AGENT_PROMPT.lower())
+        self.assertNotIn("deploy", PROJECT_FACING_AGENT_PROMPT.lower())
+
     def test_mcp_public_progress_uses_same_project_communication_semantics(self) -> None:
         """MCP 后续公共进度不能与首次回复前的 project-facing Contract 漂移。"""
         store = RuntimeStore(self.bundle, release_version="first-turn-test")
@@ -103,6 +116,8 @@ class RuntimeFirstTurnPresentationContractTest(unittest.TestCase):
                 self.assertEqual(rule, USER_VISIBLE_PROGRESS_RULE)
                 self.assertIn(PROJECT_FACING_USER_COMMUNICATION_RULE, rule)
                 self.assertIn("用户明确提供的项目术语、计划和决定照常保留", rule)
+                for marker in ("代码修改", "测试", "文档同步", "复核", "Git/CI", "交付状态", "真实阻塞原因"):
+                    self.assertIn(marker, rule)
                 self.assertNotIn("额外测试资产", rule)
                 self.assertNotIn("未授权的分支", rule)
 
