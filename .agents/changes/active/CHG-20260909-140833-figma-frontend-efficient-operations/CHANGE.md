@@ -56,7 +56,7 @@ Requirement-Source: #248
 4. Coding 收尾与 Testing Harness：真实隔离、登记所有权、全结果 teardown、子进程及端口核验。
 5. 复用原有测试及条件加载；独立语义推演替代逐字复述新条款的永久断言。
 
-本次为 Semantic Local：六个既有 Reference 正文增量；metadata 和 dependency 不变。Template / Parser / Validator / CLI / CI / Runtime executable Contract grouped not_applicable；正文仍由既有 Source/Runtime exact-text 与内容回归验证，不新增机制、不重打三平台包。公共 API、Schema、Migration、配置和依赖无变化；回滚通过正常反向提交，不移动既有历史。
+本次为 Semantic Local：六个既有 Reference 正文增量；metadata 和 dependency 不变。Template / Parser / Validator / CLI / CI / Runtime executable Contract grouped not_applicable；正文仍由既有 Source/Runtime exact-text 与内容回归验证；不新增机制，CI 实际触发的三平台门禁照常执行。公共 API、Schema、Migration、配置和依赖无变化；回滚通过正常反向提交，不移动既有历史。
 
 # Requirement Traceability
 
@@ -78,7 +78,7 @@ Requirement-Source: #248
 | 用户 / Workflow Acceptance | required | 对新增规则做未知写入/乱序响应/资源退出等语义决策推演 |
 | 跨组件 Golden Path | not_applicable | 仅治理正文，不声称实跑前端、Figma 或系统联调 |
 | 外部依赖 Probe | not_applicable | 不执行付费 Provider 或修改远端 Figma |
-| Build / Package / Runtime | not_applicable | 现有选择器判定 content；无 package 变更，无 Release |
+| Build / Package / Runtime | required | CI 实际路径输入触发保守 package 选择，按现有门禁执行 Linux/Windows/macOS 构建、MCP 与安装验证；仍无正式 Release/项目安装 |
 | Docs / Governance / Other | required | UTF-8/链接/diff、Ready Check、两阶段 Review、required CI |
 
 # Completion Audit
@@ -106,7 +106,7 @@ targeted：被修改的技能引用本身是规范事实源；README、USAGE、r
 # 本轮新鲜证据与限制
 
 - 2026-09-09，Python 3.14.7，mcp 2.0.0，cryptography 50.0.0；与当前仓库锁定/CI事实匹配，无安装或升级。
-- 原选择器输入六个 affected reference，输出 runtime_scope=content / semantic_profile=full / compile=false / cli_smoke=false；不触发三平台 package。
+- 原选择器输入六个 affected reference，输出 runtime_scope=content / semantic_profile=full / compile=false / cli_smoke=false；这是直接路径输入的本地结果，不代表 CI 的最终选择。
 - 初次 520 tests 有 3 failures / 1 skip：两项 exact-text 源于旧工作区存在 i/lf、w/crlf；另一项为新增正文使 backend-l2 上下文超预算。原日志保留，未修改测试或预算。
 - 在本次临时目录用 git local clone 按 .gitattributes LF 构建隔离副本，复制六个实际 diff 文件；exact-text 已通过，预算仍超 282 bytes，证明存在真实正文成本。
 - 仅压缩 Coding 21 本次新增措辞 343 bytes；原五条边界与跨 Owner 链接均保留。预算两项目标回归通过，独立 Reviewer 定向 re-review 无 Finding。
@@ -119,3 +119,5 @@ targeted：被修改的技能引用本身是规范事实源；README、USAGE、r
 
 
 - Ready Check 已通过：carrier=.agents/changes，gated=62，strict=62。首次 PR CI Run 34318912765 因 Requirement-Source 使用完整 URL 而被当前 parser 拒绝；已按实际接口修正 PR/Change 为 #248，保留门禁并由新提交触发当前事件的 CI。专业规则正文不变。
+
+- CI 输入差异复核：Run 34319316864 的 Agent Skills Gate 取得 520 tests 全通过（Linux，8.920s，无 skip），并选择 package。以 workflow 原样 git diff --name-only 复现同一结果；直接未转义路径为 content，而中文路径的 Git 引号转义触发现有 selector 保守回退。本轮不扩展为 CI 实现修改、不削弱门禁，最终按当前 head 三平台完整检查及 main fresh CI 交付。
