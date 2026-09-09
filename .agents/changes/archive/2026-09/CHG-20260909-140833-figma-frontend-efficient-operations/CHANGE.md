@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260909-140833-figma-frontend-efficient-operations
 title: 固化 Figma 与前端开发操作经验
 level: L2
-status: ready_for_review
+status: done
 owner: Codex
 branch: skill/figma-frontend-efficient-operations
 created: 2026-09-09
