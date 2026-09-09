@@ -3,15 +3,21 @@ schema: coding-change/v1
 id: CHG-20260909-140833-figma-frontend-efficient-operations
 title: 固化 Figma 与前端开发操作经验
 level: L2
-status: in_progress
+status: ready_for_review
 owner: Codex
 branch: skill/figma-frontend-efficient-operations
 created: 2026-09-09
 updated: 2026-09-09
 completion_gate: required
 depends_on: []
-affected_areas: [figma, coding, testing]
-affected_paths: [.agents/skills/figma/references, .agents/skills/coding/references, .agents/skills/testing/references]
+affected_areas:
+  - figma
+  - coding
+  - testing
+affected_paths:
+  - .agents/skills/figma/references
+  - .agents/skills/coding/references
+  - .agents/skills/testing/references
 contracts: []
 data_changes: []
 ---
@@ -37,8 +43,8 @@ Requirement-Source: https://github.com/dingyuwen777/Agent_Skills/issues/248
 
 # 目标、成功标准与非目标
 
-- [ ] 在现有正确 Owner 内补齐 AC1–AC4，规则可执行且不复制项目值。
-- [ ] 独立场景审查与现有校验支持规则守恒，完成 AC5 的 PR/CI/归档交付。
+- [x] 在现有正确 Owner 内补齐 AC1–AC4，规则可执行且不复制项目值。
+- [x] 独立场景审查与现有校验支持规则守恒；AC5 的后续 PR/main CI、原生归档与最终报告保持为 required delivery gates。
 - 非目标：业务仓库、已安装技能、Runtime 实现、路由 metadata、CI 选择器、依赖、Release/安装。
 - 不变项：Stable ID、trigger、dependency、Owner、授权、Ready/NOT_READY、Canvas-level Review、人工复核和正式 CI。
 
@@ -54,13 +60,13 @@ Requirement-Source: https://github.com/dingyuwen777/Agent_Skills/issues/248
 
 # Requirement Traceability
 
-| ID | Source | Requirement | Status | Evidence |
+| ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | https://github.com/dingyuwen777/Agent_Skills/issues/248 | AC1：系统分析、正确 Owner、已有能力与项目边界保持 | not_satisfied | 当前职责分析已完成，等待 diff 验证 |
-| R2 | https://github.com/dingyuwen777/Agent_Skills/issues/248 | AC2：Figma 有界操作、未知结果、证据身份和布局 | not_satisfied | 实现与情境复核进行中 |
-| R3 | https://github.com/dingyuwen777/Agent_Skills/issues/248 | AC3：前端异步与表单边界 | not_satisfied | 实现与情境复核进行中 |
-| R4 | https://github.com/dingyuwen777/Agent_Skills/issues/248 | AC4：隔离、进程树、监听清理与用户保护 | not_satisfied | 实现与情境复核进行中 |
-| R5 | https://github.com/dingyuwen777/Agent_Skills/issues/248 | AC5：守恒、验证、独立 Review 及可追溯交付 | not_satisfied | 正式 PR/main CI 与原生归档按项目生命周期执行 |
+| R1 | AC1：系统分析、正确 Owner、已有能力与项目边界保持 | #248 / AC1 | satisfied | 六项职责审查；六文件 diff 仅新增正文，Stable ID/trigger/dependency 逐文件原样；独立 A1/A2 无 Finding。 |
+| R2 | AC2：Figma 有界操作、未知结果、证据身份和布局 | #248 / AC2 | satisfied | Figma 01 §6.1–6.2、03 §9.1、07 §6.4；独立超时/部分应用/无法核验/导出乱序/共享布局场景推演通过。 |
+| R3 | AC3：前端异步与表单边界 | #248 / AC3 | satisfied | Coding 16 §8.1；独立 A→B→A、过期 finally、保存期间编辑及规范化新 ID 场景推演通过。 |
+| R4 | AC4：隔离、进程树、监听清理与用户保护 | #248 / AC4 | satisfied | Coding 21 新增区段与 Testing 01 §6.6；正常/失败/取消/部分启动/孤儿进程/PID复用/未知归属/端口接管/清理失败推演通过。 |
+| R5 | AC5：守恒、验证、独立 Review 与正式交付门禁 | #248 / AC5 | satisfied | 520 tests / 0 failures / 1 Windows bash skip；6 文件 metadata、8 本地链接与 diff 校验通过；独立 Review 与精简后 re-review 无 Finding。PR #249 已建立，required PR/main CI、原生归档和最终报告仍在下文按实际生命周期确认，未提前声明已合并/发布。 |
 
 # Validation Matrix
 
@@ -77,16 +83,16 @@ Requirement-Source: https://github.com/dingyuwen777/Agent_Skills/issues/248
 
 # Completion Audit
 
-- [ ] upstream_re_read：重新读取用户要求与 Issue AC。
-- [ ] change_coverage：逐项核对 AC1–AC5。
-- [ ] reverse_audit：规则 → Owner/触发/消费者/证据；保留强门禁。
-- [ ] unresolved_cleared：实现和 Review 未解决项清零，交付状态按实际证据记录。
+- [x] upstream_re_read：独立 Reviewer 重新读取 live Issue #248 和用户明确目标，未以 Change 替代需求全集。
+- [x] change_coverage：逐项核对 AC1–AC5；新增规则落在六个既有引用内，源码/安装边界和后续交付门禁明确。
+- [x] reverse_audit：规则 → Owner/原有触发/dependency/消费者/证据闭环；没有降低权限、Canvas、Ready 或人工复核门禁；机器资产 grouped N/A 已验证。
+- [x] unresolved_cleared：实现和独立 Review 无未解决 Findings；本地换行与预算失败已分类并复验，正式后续交付门禁不冒充完成。
 
 # 实施与验证记录
 
 - [x] 当前事实、维护规则、六项技能职责与差距调查。
-- [ ] 六个现有引用文件增量修改。
-- [ ] 独立 A1/A2、场景推演、结构/现有回归、Ready。
+- [x] 六个现有引用文件增量修改。
+- [x] 独立 A1/A2、16 类规则场景、结构/现有回归完成；Ready 由当前 carrier 机器检查确认。
 - [ ] PR / required CI / merge / main fresh CI / 原生归档与 Issue 关闭。
 
 # Docs Impact
@@ -96,4 +102,18 @@ targeted：被修改的技能引用本身是规范事实源；README、USAGE、r
 # Git 与生效边界
 
 本地任务分支先建立，首个治理提交后首次 push 和早期 PR。实现 PR 保持 active/ready_for_review；归档只由 repository-native workflow 执行。源码合并不自动升级业务项目中已安装的 Runtime；本轮不发布或安装。
+
+# 本轮新鲜证据与限制
+
+- 2026-09-09，Python 3.14.7，mcp 2.0.0，cryptography 50.0.0；与当前仓库锁定/CI事实匹配，无安装或升级。
+- 原选择器输入六个 affected reference，输出 runtime_scope=content / semantic_profile=full / compile=false / cli_smoke=false；不触发三平台 package。
+- 初次 520 tests 有 3 failures / 1 skip：两项 exact-text 源于旧工作区存在 i/lf、w/crlf；另一项为新增正文使 backend-l2 上下文超预算。原日志保留，未修改测试或预算。
+- 在本次临时目录用 git local clone 按 .gitattributes LF 构建隔离副本，复制六个实际 diff 文件；exact-text 已通过，预算仍超 282 bytes，证明存在真实正文成本。
+- 仅压缩 Coding 21 本次新增措辞 343 bytes；原五条边界与跨 Owner 链接均保留。预算两项目标回归通过，独立 Reviewer 定向 re-review 无 Finding。
+- 最终运行既有 runtime_package_scope.py --run-selected-tests selection.json --root <LF副本>：520 tests，0 failures，1 skipped，20.947s；唯一 skip 为当前 Windows 环境未发现 bash 的 ZIP 组装脚本测试，Linux required CI 继续覆盖。
+- 六个 Reference metadata 与 main 逐字相同；8 个本地链接、UTF-8、代码围栏与 git diff --check 通过。
+- 独立 Review 结论 NO_FINDINGS_WITHIN_SCOPE；16 类情境属于规则推演，不是在线模型、Figma/浏览器/进程真实实验。未承诺提效比例。
+- 本地原始/隔离/最终测试日志保留在任务专属临时证据目录 agent-skills-248；GitHub current-head CI 为长期可核验测试记录。
+
+后续 required 交付：PR #249 current-head CI → expected-head REST merge → implementation main fresh CI 与 repository-native Change Archive → Closure/Issue AC 回写 → 用户逐文件交付报告。Agent 不写归档 commit。
 
