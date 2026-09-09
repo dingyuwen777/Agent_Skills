@@ -26,7 +26,7 @@ data_changes: []
 
 近期 Figma/前端操作暴露未知写入结果、布局相互影响、请求串状态和测试子进程残留等可复用失败边界。补充现有专业引用，减少盲重试、重复取证和收尾遗漏；不新增平行技能或业务实现。
 
-Requirement-Source: https://github.com/dingyuwen777/Agent_Skills/issues/248
+Requirement-Source: #248
 
 # 背景、现状与问题
 
@@ -117,3 +117,5 @@ targeted：被修改的技能引用本身是规范事实源；README、USAGE、r
 
 后续 required 交付：PR #249 current-head CI → expected-head REST merge → implementation main fresh CI 与 repository-native Change Archive → Closure/Issue AC 回写 → 用户逐文件交付报告。Agent 不写归档 commit。
 
+
+- Ready Check 已通过：carrier=.agents/changes，gated=62，strict=62。首次 PR CI Run 34318912765 因 Requirement-Source 使用完整 URL 而被当前 parser 拒绝；已按实际接口修正 PR/Change 为 #248，保留门禁并由新提交触发当前事件的 CI。专业规则正文不变。
