@@ -25,7 +25,7 @@ class RuntimeCliDisclosureTest(unittest.TestCase):
             "removed_managed_files": ["coding/SKILL.md"],
             "runtime": ".agents/runtime/agent-skills.exe",
             "manifest": ".agents/agent-skills-install.json",
-            "hosts": ["codex", "cursor", "claude-code"],
+            "hosts": ["codex", "cursor", "claude-code", "deepseek-harness"],
         }
 
         public = server._public_install_result(internal)
@@ -36,7 +36,7 @@ class RuntimeCliDisclosureTest(unittest.TestCase):
                 "ok": True,
                 "target": "D:/work/project",
                 "release_version": "2.1.0",
-                "hosts": ["codex", "cursor", "claude-code"],
+                "hosts": ["codex", "cursor", "claude-code", "deepseek-harness"],
             },
         )
         serialized = str(public)
