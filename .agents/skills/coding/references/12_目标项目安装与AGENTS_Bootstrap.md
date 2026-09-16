@@ -16,7 +16,7 @@
 → 安装/升级 Runtime + shared files + 正式 Skill Core/运行资产
 → 不安装 canonical Reference 或 Stub
 → 不生成独立 install manifest / ownership sidecar
-→ 创建/更新项目 AGENTS managed block 与项目级 MCP 配置
+→ 创建/更新项目 AGENTS managed block 与 Codex/Cursor/Claude Code/DeepSeek Harness 项目级接入配置
 ```
 
 **目标项目不安装 canonical Reference 或 Stub。** Runtime Mode 的完整规则正文继续由项目级治理 MCP 按当前 required Context 取得。
@@ -83,26 +83,27 @@ Source Mode 从 [`.agents/skills/ENTRY.md`](../../ENTRY.md) 进入 [`.agents/ski
 
 最终使用者不需要访问 Agent_Skills 源仓库，也不需要为了**安装 Agent_Skills 或运行项目 MCP Runtime**预先安装 Python、pip、venv 或外部安装脚本。正式 Skill 若在具体研发流程中需要 Python helper，仍按该 Skill 的环境/降级规则执行，不能用 onefile Runtime 冒充这些机器门禁已执行。
 
-Windows：
+Windows 推荐把 `agent-skills.exe` 放在目标项目根目录后直接双击；Windows onefile **无参数启动以 EXE 自身所在目录为目标项目根**，不依赖 Explorer 当前工作目录。命令行执行同一文件也等价：
 
 ```powershell
-cd D:\work\MyProject
-.\agent-skills.exe
+D:\work\MyProject\agent-skills.exe
 ```
 
-Linux / macOS：
+Linux / macOS 保持原有无参数行为：
 
 ```bash
 cd /work/MyProject
-chmod +x ./agent-skills
-./agent-skills
+chmod +x /path/to/agent-skills
+/path/to/agent-skills
 ```
 
-无参数运行等价于安装/升级当前目录；也可显式：
+即 POSIX 无参数运行安装/升级**当前工作目录**。所有平台也都可显式：
 
 ```text
 agent-skills install --target <目标项目根目录> --json
 ```
+
+显式 `--target` 始终优先于平台默认目标。
 
 当前 Project Payload 使用 v2。新安装不写持久 ownership manifest；内部 install-state 从 Runtime 自身内嵌 Project Payload 确定性派生，只供后续安装器恢复 previous ownership，不进入普通 MCP/public status。
 
@@ -112,9 +113,10 @@ agent-skills install --target <目标项目根目录> --json
 2. previous ownership 只接受合法 legacy v3，或旧已安装 Runtime 返回并通过严格校验的内嵌 install-state；两者都没有时按首次安装处理，有旧受管冲突时 fail closed；
 3. 只逐文件更新/删除可证明受管的 shared/Core/运行资产，保留项目自有内容；
 4. 安装并校验项目 Runtime；
-5. 安全增量维护 `AGENTS.md`、`.gitignore` 中 Agent_Skills 本地缓存规则与 Codex/Cursor/Claude Code 项目 MCP 边界；
-6. 成功后不写 install manifest；若使用 legacy v3，则在事务末端删除；
-7. 任一步失败按安装前快照恢复本轮受管变化，回滚不完整必须显式报告。
+5. 安全增量维护 `AGENTS.md`、`.gitignore` 中 Agent_Skills 本地缓存规则、Codex/Cursor/Claude Code 项目 MCP 边界，以及项目级 DeepSeek Harness overlay；Windows 额外维护项目根 `DeepSeek-Harness.cmd`；
+6. DeepSeek Harness 接入只写目标项目 `.dsh/agent-skills.cordis.yml`，不得修改 `$DSH_HOME`、全局 `cordis.patch.yml` 或用户 profile；Windows launcher 只负责切到自身项目根并带项目 overlay 启动 `dsh web`；
+7. 成功后不写 install manifest；若使用 legacy v3，则在事务末端删除；
+8. 任一步失败按安装前快照恢复本轮受管变化，回滚不完整必须显式报告。
 
 无合法 legacy v3 且旧 Runtime 无法返回合法 install-state 时，**previous ownership 不可证明，必须停止升级；不得靠路径、目录名、内容相似或 hash 猜归属。** 旧 Runtime 自描述依赖用户已经信任并明确选择的目标工作区，不是代码签名、TEE 或对机器 Owner 的安全隔离。
 
@@ -209,10 +211,10 @@ previous managed_files + 新 Payload
 - 目标 `.agents`、受管文件、Runtime、legacy manifest、AGENTS/宿主配置路径出现符号链接时拒绝越界修改；
 - Project Payload 先校验 schema、skills/shared files、path/SHA/size/mode/digest；
 - previous ownership 不可证明时 fail closed；
-- 同名未认领冲突在任何目标写入前发现；
+- 同名未认领冲突在任何目标写入前发现；DeepSeek Harness 专用 overlay/Windows launcher 只有不存在或含唯一合法 Agent_Skills DeepSeek marker 时才能创建/更新，不能仅凭旧 install-state 推断新 Host 文件 ownership；
 - 不移动/替换整棵 Skill 目录，只逐文件原子写入；
-- 写入前保存 touched managed files、Runtime、legacy manifest（如存在）和受管文本快照；
-- AGENTS、`.gitignore`、CLAUDE/Codex marker、JSON MCP 配置先验证再修改；
+- 写入前保存 touched managed files、Runtime、legacy manifest（如存在）和受管文本快照，包括 DeepSeek overlay/launcher；
+- AGENTS、`.gitignore`、CLAUDE/Codex marker、JSON MCP 配置、DeepSeek marker 文件先验证再修改；
 - legacy manifest 只在新 Runtime/受管文件/宿主配置全部成功后删除；
 - 任一步异常恢复本轮快照；rollback 自身失败必须聚合报告并保留原始异常；
 - 禁止用 `git reset --hard`、`git clean`、强推或历史重写冒充安装回滚。
@@ -254,20 +256,24 @@ Greenfield / 空仓库：
 
 ## 13. 宿主差异
 
-项目级配置只是让宿主找到同一个项目 Runtime：Codex 使用 `.codex/config.toml`，Cursor 使用 `.cursor/mcp.json`，Claude Code 使用 `.mcp.json` 并通过 `CLAUDE.md` 最薄 bridge 读取项目规则。已有同名 Agent Skills MCP 但 ownership 不可证明时拒绝静默覆盖；Codex managed marker 损坏/缺失或 block 外存在重复同名 table 时仍 fail closed。宿主自己的 trust/approval 边界不得绕过。
+项目级配置只是让宿主找到同一个项目 Runtime：Codex 使用 `.codex/config.toml`，Cursor 使用 `.cursor/mcp.json`，Claude Code 使用 `.mcp.json` 并通过 `CLAUDE.md` 最薄 bridge 读取项目规则；DeepSeek Harness 原生发现项目 `.agents/skills`，Agent_Skills Installer 额外生成项目级 `.dsh/agent-skills.cordis.yml`，通过 `@deepseek-ai/dsh-mcp-client` 的 stdio 配置启动同一个 `.agents/runtime/agent-skills[.exe] serve`。Windows 项目根同时生成 `DeepSeek-Harness.cmd`，只负责切换到自身项目根并以该 overlay 启动 `dsh web`；Linux/macOS 不生成 Windows launcher。
+
+DeepSeek Harness 接入不得写 `$DSH_HOME`、全局 `cordis.patch.yml` 或用户 profile。现有同名 DeepSeek overlay/launcher 没有唯一合法 Agent_Skills marker 时 fail closed；Codex/Cursor/Claude 继续按各自既有 ownership 规则处理。任何宿主自己的 trust/approval 边界都不得绕过，DeepSeek 环境还必须由用户/团队预先提供可从 `PATH` 调用的 `dsh` 命令。
 
 ## 14. 验证安装/Bootstrap
 
 至少验证：
 
 - 当前平台 artifact `status/self-test`、真实 stdio MCP 和项目内 Runtime；
-- 无参数安装、显式 target、重复安装/升级；
+- Windows `.exe` 无参数安装目标为 EXE 所在目录，Linux/macOS 无参数保持当前工作目录，显式 `--target` 始终优先；
 - 首次/重复/sidecarless 升级均不生成 `.agents/agent-skills-install.json`；
 - legacy v3 可一次迁移并在成功后删除，失败可恢复；v1/v2/未知/损坏状态拒绝；
 - 旧 Runtime install-state 能恢复 previous managed/shared/Skill ownership；查询失败或不可证明时 fail closed；
 - 动态正式 Skill、shared Entry、Router/Core 安装正确，目标项目无 canonical Reference/Stub；
 - 同名未认领 shared/Skill/managed file 在写入前 fail closed，项目自有 Skill/Reference/资产保留；
 - `AGENTS.md` 用户原文/managed marker、`.gitignore` 与 Codex/Cursor/Claude 配置保留其他项目内容；安装器不自动新增 Runtime ignore，项目原本已有的 Runtime ignore 保持原样；
+- DeepSeek Harness overlay 使用项目相对 Runtime command、stdio `serve`、项目 cwd 且不含安装机器绝对路径；Windows 根 launcher 正确加载项目 overlay，POSIX 不生成该 Windows launcher；同名未受管/损坏 marker/symlink 冲突 fail closed；
+- Installer 不修改 `$DSH_HOME` 或用户 Harness profile，DeepSeek 适配不新增第七个 MCP Tool、不复制第二套 Skill/Prompt；
 - Runtime 安装后的根 `AGENTS.md` 满足第 7 节项目侧行为契约，不展开 Runtime/Source/MCP/Router/Reference/路由/加载或防披露说明；
 - marker 外 Overlay 只使用项目自身术语和可确认事实，不加入与当前项目无关的通用治理说明；
 - Source Mode 与 Runtime Mode 的 required Context、专业规则与 ordinary user-visible engineering behavior 保持同效果；
