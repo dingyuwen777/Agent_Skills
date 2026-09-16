@@ -166,7 +166,7 @@ def _build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
     install_parser = subparsers.add_parser(
         "install",
-        help="安装/升级目标项目；无子命令时默认安装 Runtime binary 所在目录",
+        help="安装/升级目标项目；Windows 无子命令时默认安装 Runtime EXE 所在目录",
     )
     install_parser.add_argument(
         "--target",
@@ -236,7 +236,7 @@ def _run_internal_command(argv: Sequence[str]) -> int | None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """无参数 onefile 默认安装 binary 所在项目；显式子命令保持稳定可脚本化入口。"""
+    """Windows 无参数 EXE 安装自身目录；POSIX 与显式子命令保持现有可脚本化语义。"""
     raw_argv = list(sys.argv[1:] if argv is None else argv)
     try:
         internal_result = _run_internal_command(raw_argv)
@@ -257,7 +257,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         if command == "install":
             _, payload, release_version = _load_embedded_material()
             artifact = _runtime_artifact_path()
-            target = artifact.parent if arguments.command is None else arguments.target
+            if arguments.command is None:
+                target = artifact.parent if artifact.suffix.lower() == ".exe" else "."
+            else:
+                target = arguments.target
             as_json = bool(getattr(arguments, "json", False))
             result = install_project(
                 target,
