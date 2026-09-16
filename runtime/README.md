@@ -2,7 +2,7 @@
 
 `runtime/` 实现 Agent_Skills 当前唯一正式对外分发形态：**项目级 onefile Runtime + Project-facing Entry/Skill Projection + Encrypted Canonical References + local stdio MCP**。
 
-最终使用者不需要阅读本文件；下载、安装、升级、回滚和排障见根 [`USAGE.md`](../USAGE.md)。
+最终使用者不需要阅读本文件；普通开发使用见根 [`USAGE.md`](../USAGE.md)，维护者安装、升级和首次治理见根 [`README.md`](../README.md)。
 
 ## 1. 模块职责
 
@@ -32,13 +32,13 @@ agent_skills_runtime/install_state.py
 → 从已验证 Project Payload 确定性派生 Runtime 内嵌 installation ownership；严格校验 legacy v3 migration 与安全 managed path
 
 agent_skills_runtime/project_installer.py
-→ 无 sidecar 项目安装/升级、previous ownership、宿主配置与回滚；legacy v3 仅作为一次迁移输入
+→ 无 sidecar 项目安装/升级、previous ownership、Codex/Cursor/Claude Code/DeepSeek Harness 宿主配置与回滚；legacy v3 仅作为一次迁移输入
 
 agent_skills_runtime/runtime.py
 → 维护 task-bound route capability、单调 required Context、按需原文加载、project-facing 用户进度边界与 checkpoint
 
 agent_skills_runtime/server.py
-→ CLI + stdio MCP Server；另有不进入普通 help/MCP 的内部 install-state 自描述入口供下一版安装器升级使用
+→ CLI + stdio MCP Server；Windows onefile 无参数双击使用 EXE 所在目录，POSIX 无参数仍使用当前工作目录；另有不进入普通 help/MCP 的内部 install-state 自描述入口供下一版安装器升级使用
 ```
 
 Runtime 不重新解释专业 Skill 规则；跨 Skill 发现、trigger、dependency、risk floor 与 required Context 仍由 canonical [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md)、各 Skill canonical `SKILL.md` / `references/*.md` 以及编译后的私有 Routing Manifest 共同决定。[`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 仍是 Source Mode 的共享入口，但写入目标项目的是其确定性 project-facing Runtime Projection，不是源码导航原样副本。
@@ -107,10 +107,19 @@ Runtime Skill Projection 必须由当前 Bundle 中实际 canonical Reference id
 
 当前 Runtime 产品 basename 统一为 `agent-skills`：Windows 项目安装为 `.agents/runtime/agent-skills.exe`，Linux/macOS 安装为 `.agents/runtime/agent-skills`。该名称同时用于 Builder 默认产物与 Release ZIP 内 binary。
 
-onefile binary 无参数运行默认安装/升级当前目录；也支持：
+onefile 安装目标按平台和调用方式保持明确：
 
 ```text
-agent-skills install --target <project-root>
+Windows .exe 无参数
+→ 安装 / 升级 EXE 自身所在目录
+→ 支持从项目根直接双击，不依赖 Explorer 当前工作目录
+
+Linux / macOS 无参数
+→ 保持安装 / 升级当前工作目录
+
+显式 install
+→ agent-skills install --target <project-root>
+→ 始终以 --target 为准
 ```
 
 当前 Project Payload 使用 v2。**新安装和升级不再生成 `.agents/agent-skills-install.json` 或其他 ownership sidecar。** 当前 Runtime 的 installation ownership 由 `install_state.py` 直接从已验证 Project Payload 确定性派生，协议为：
@@ -145,13 +154,16 @@ v1、v2、未知或损坏 legacy manifest 直接失败；旧 Runtime 不存在�
 - 新 Release 删除文件时只删除 previous `managed_files` 明确认领项，不替换整棵 Skill 目录；
 - 项目后来添加到受管 Skill 目录中的 Reference/asset/其他文件继续是项目自有，普通升级不能删除；
 - `.agents/runtime/` 仍为项目本地运行资产，但安装/升级**不自动新增** Runtime ignore；**项目原本已有** `/.agents/runtime/` 或等价 ignore 时保持原样，不删除、不重复追加；
-- `AGENTS.md` / CLAUDE / Codex 使用 managed marker；
+- `AGENTS.md` / CLAUDE / Codex 使用既有 managed marker；DeepSeek Harness 的 `.dsh/agent-skills.cordis.yml` 与 Windows 根 `DeepSeek-Harness.cmd` 使用独立 DeepSeek managed marker；
+- DeepSeek Harness 资产只写目标项目：不修改 `$DSH_HOME`、全局 `cordis.patch.yml` 或用户 profile；同名文件存在但没有合法 DeepSeek managed marker 时 fail closed，不因为旧 install-state 存在就猜新 Host 文件 ownership；
+- Windows 安装生成项目根 `DeepSeek-Harness.cmd`，它只负责切到自身项目根并执行 `dsh web --patch "%~dp0.dsh\agent-skills.cordis.yml"`；Linux/macOS 只安装项目级 overlay，不生成 Windows launcher；
+- DeepSeek Harness 原生发现目标项目 `.agents/skills`；项目级 overlay 仅通过 `@deepseek-ai/dsh-mcp-client`、`transport: stdio`、`args: [serve]` 把现有项目 Runtime 接入 Harness，不复制 DeepSeek 专用 Skill、Prompt 或第二套治理语义；
 - 目标项目 `AGENTS.md` managed block 只做 Runtime 薄 Bootstrap：先恢复项目真实事实，再通过已配置的项目级治理 MCP 获取本次任务所需完整约束；不得把受管源码维护导航当作 Runtime 日常读取入口；
 - Runtime 用户可见过程可以正常描述项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 和交付状态，并解释当前项目真正适用的工程要求；普通分发明文不通过“不要暴露某某内部能力”这类自说明来表达边界；
 - Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产和未认领 shared file 保留；
 - Codex 同名 MCP table 存在但 managed marker 缺失，或合法 managed block 外另有重复同名 table 时，即使 legacy v3 或旧 Runtime install-state 能证明历史安装存在也 fail closed，不猜测 table ownership；
-- 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、legacy manifest（如存在）与受管文本；
+- 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、legacy manifest（如存在）与包括 DeepSeek overlay/launcher 在内的受管文本；
 - legacy v3 manifest 只在所有新文件、Runtime、宿主配置都成功后删除；失败回滚必须恢复它；
 - 如果回滚本身有任何失败，必须同时报告原始安装异常与未恢复路径/原因，不能静默吞掉 rollback failure。
 
@@ -161,7 +173,7 @@ v1、v2、未知或损坏 legacy manifest 直接失败；旧 Runtime 不存在�
 
 ### 宿主连接级生命周期
 
-项目安装写入的 Codex、Cursor、Claude Code MCP 配置都是 `stdio`，命令参数为 `serve`。这意味着 Runtime 是由当前宿主启动并通过标准输入/输出保持连接的**前台子进程**，采用**宿主连接级生命周期**，不是系统常驻服务：
+项目安装写入的 Codex、Cursor、Claude Code 和 DeepSeek Harness MCP 接入最终都使用 `stdio`，命令参数为 `serve`。DeepSeek Harness 先由项目级 Cordis overlay 启动 `@deepseek-ai/dsh-mcp-client`，再由该客户端启动同一 Runtime。Runtime 因此仍是由当前宿主启动并通过标准输入/输出保持连接的**前台子进程**，采用**宿主连接级生命周期**，不是系统常驻服务：
 
 ```text
 宿主打开项目 / 建立 MCP 连接
@@ -172,7 +184,7 @@ v1、v2、未知或损坏 legacy manifest 直接失败；旧 Runtime 不存在�
 → Runtime 进程退出
 ```
 
-因此一个 Tool 调用或一次模型回复结束后，Codex 等宿主仍可能继续保持 Runtime 进程，这是正常的连接复用；**不应为了“用完即关”把每个 MCP Tool 调用改成一次独立进程**，否则会丢失当前任务的进程内渐进状态并反复完成 MCP 初始化。
+因此一个 Tool 调用或一次模型回复结束后，Codex、Cursor、Claude Code、DeepSeek Harness 等宿主仍可能继续保持 Runtime 进程，这是正常的连接复用；**不应为了“用完即关”把每个 MCP Tool 调用改成一次独立进程**，否则会丢失当前任务的进程内渐进状态并反复完成 MCP 初始化。
 
 Runtime 不自行 fork/detach，不注册 Windows Service，也不创建 systemd、launchd 或其他 daemon/自动启动项。若宿主已经完全退出或明确断开项目 MCP，而 `serve` 进程仍长期存在，应按 orphan process 缺陷调查，而不能把这种状态当成设计目标。
 
@@ -295,7 +307,8 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 - Runtime Projection 不暴露当前 canonical Reference 文件名、路径、Stable ID、`agent-routing:v1`、内部组织或防披露自说明，同时保留宿主 `name`、核心项目工程语义与交付授权；
 - Runtime 公共返回面保持 project-facing，required canonical Context exact-text 不被删改；
 - v3 Manifest/record tamper、record swap、locator mismatch、lazy decrypt、自检全库与 task capability 安全回归；
-- sidecarless install-state、legacy v3 一次迁移、v1/v2/未知 schema 拒绝、项目自有 Reference 保留、同名冲突、Codex marker/重复 table fail-closed 和失败/回滚诊断；
+- sidecarless install-state、legacy v3 一次迁移、v1/v2/未知 schema 拒绝、项目自有 Reference 保留、同名冲突、Codex marker/重复 table fail-closed，以及 DeepSeek overlay/launcher marker ownership、四 Host 可移植性和失败/回滚诊断；
+- Windows onefile 无参数 EXE-parent 与 POSIX 无参数 cwd 语义、显式 `install --target` 优先级；
 - Builder JSON identity 与 no-sidecar Release preservation；
 - 动态 Skill Bundle + Project Payload 的源码级构建、投影确定性与内容守恒；
 - Active/changed Change Ready Check。
@@ -307,7 +320,8 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 - Builder JSON 的 `integrity_fingerprint` 和实际 binary `artifact_sha256`；
 - 构建目录不存在 `*.manifest.json`；
 - real stdio MCP，包括 stable Tool Contract、project-facing progress、exact-text、capability 与 unknown full-corpus anti-export；
-- project-only single-binary 首次安装、重复安装/升级和无参数安装；
+- project-only single-binary 首次安装、重复安装/升级和平台对应无参数安装；
+- 四 Host 项目资产：Codex、Cursor、Claude Code 与 DeepSeek Harness project-local overlay；Windows 还必须验证根 `DeepSeek-Harness.cmd`，POSIX 不生成该 Windows launcher；
 - 安装项目不存在 `.agents/agent-skills-install.json`，也不存在 canonical Reference/Stub/Private Routing Manifest；
 - 已安装 Runtime 的内部 install-state 能认领当前 Entry/Router，但不进入 MCP；
 - 项目内 Runtime status/MCP smoke；
