@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260916-174758-deepseek-harness-host
 title: 增加 DeepSeek Harness Host 项目级适配
 level: L3
-status: blocked
+status: ready_for_review
 owner: dingyuwen777
 branch: feature/deepseek-harness-host
 created: 2026-09-16
@@ -58,6 +58,7 @@ data_changes: []
 - 补安装/CLI/可移植性/冲突/回滚回归，并同步 Runtime CLI 四宿主公开结果 fixture。
 - 同步两个 canonical Runtime/Bootstrap Reference 与三个人类文档入口中的受影响事实。
 - 定向校准现有 Windows package 验收：把无参数真实 artifact 复制到目标项目根、从不同 cwd 启动，并直接检查 DeepSeek overlay/launcher；不新增 Workflow/Job、不改变 required check 身份。
+- 保持 `USAGE.md` 的普通开发者边界：只说明 DeepSeek Harness 的日常入口和必要排障，不暴露安装内部路径、协议或维护实现细节。
 
 # 非目标
 
@@ -83,31 +84,32 @@ data_changes: []
 - Windows `.exe` 无参数 onefile 以 binary parent 为项目根；Linux/macOS 无参数继续使用当前工作目录；显式 `install --target` 在所有平台保持权威。
 - canonical Reference 只更新宿主安装/使用事实；两份 `agent-routing:v1`、Stable ID、dependency 与 trigger 保持原值。
 - 现有 Windows package CI 原本用“artifact 在构建目录 + cwd 指向目标项目”验证无参数安装；该输入属于旧 Contract。本 Change 只把 artifact 复制到目标项目根，并从另一个 cwd 启动，从而直接证明 EXE-parent 语义，不减少任何既有 build/self-test/MCP/install Evidence。
+- `USAGE.md` 只保留普通开发者需要的 `DeepSeek-Harness.cmd` 入口、`dsh` 可用性和用户级排障；安装、Host overlay、项目内部路径与协议说明继续由维护者文档承担。
 
 # 需求追溯
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 四 Host 项目级安装且现有三 Host 不回归 | #250 / AC1 | satisfied | `project_installer.py` 返回四 Host；`test_deepseek_harness_host_config.py` 与 `test_project_mcp_config_portability.py` 覆盖新/旧 Host 配置 |
+| R1 | 四 Host 项目级安装且现有三 Host 不回归 | #250 / AC1 | satisfied | `project_installer.py` 返回四 Host；`test_deepseek_harness_host_config.py` 与 `test_project_mcp_config_portability.py` 覆盖新/旧 Host 配置；最新真实 semantic run 中 DeepSeek 专项均通过 |
 | R2 | 无参数 Windows onefile 以 EXE 目录为目标，显式 target 保持 | #250 / AC2 | satisfied | `server.py` 按 `.exe`/POSIX 分流；专项测试锁定 Windows binary-parent、POSIX cwd 与显式 target；Windows package job 使用不同 cwd 启动项目根 artifact |
-| R3 | 根目录 `DeepSeek-Harness.cmd` 一键启动 Harness + 项目 overlay | #250 / AC3 | satisfied | Installer 生成根 launcher 与 `.dsh/agent-skills.cordis.yml`；测试和 Windows package 验收都直接检查 launcher/overlay |
-| R4 | 项目内隔离、ownership/fail-closed/rollback | #250 / AC4 | satisfied | DeepSeek 专用 marker preflight、symlink 复用通用受管路径检查、专项未受管冲突与 launcher 写失败 rollback 回归 |
-| R5 | MCP/Bundle/Payload/parity 不变 | #250 / AC5 | satisfied | PR diff 未修改 `runtime.py`、`routing.py`、`catalog.py`、`project_payload.py` 或六 Tool 注册；canonical routing metadata 未变，package CI 继续承担最终 parity 证明 |
-| R6 | USAGE/README/runtime README/canonical Rules 同步 | #250 / AC6 | satisfied | `USAGE.md` 增加 DeepSeek 特殊使用；README/runtime README 与 Reference 12/13 同步四 Host、平台默认目标与项目内边界 |
-| R7 | required CI、三平台、main-fresh、Change Archive | #250 / AC7 | not_satisfied | 多个 Ready/current-head Skill Tests run 均在 `Agent Skills Gate` 分配 Runner 前失败：job 没有 steps/logs，Windows/macOS package 因上游 core 未启动而 skipped；代表性 run：35084301963、35084479928。required CI 未执行，禁止 merge |
+| R3 | 根目录 `DeepSeek-Harness.cmd` 一键启动 Harness + 项目 overlay | #250 / AC3 | satisfied | Installer 生成根 launcher 与 `.dsh/agent-skills.cordis.yml`；专项 semantic test 已真实通过，Windows package 验收继续承担 artifact 证明 |
+| R4 | 项目内隔离、ownership/fail-closed/rollback | #250 / AC4 | satisfied | DeepSeek 专用 marker preflight、symlink 复用通用受管路径检查、专项未受管冲突与 launcher 写失败 rollback 回归；最新 semantic run 均通过 |
+| R5 | MCP/Bundle/Payload/parity 不变 | #250 / AC5 | satisfied | PR diff 未修改 `runtime.py`、`routing.py`、`catalog.py`、`project_payload.py` 或六 Tool 注册；canonical routing metadata 未变，package CI 继续承担最终 artifact/parity 证明 |
+| R6 | USAGE/README/runtime README/canonical Rules 同步 | #250 / AC6 | satisfied | `USAGE.md` 保留 DeepSeek 日常特殊入口且恢复普通开发者披露边界；README/runtime README 与 Reference 12/13 同步四 Host、平台默认目标与项目内边界 |
+| R7 | required CI、三平台、main-fresh、Change Archive | #250 / AC7 | explicitly_deferred | GitHub Actions 执行层已恢复；Run `35084622717` 第一次真实执行 528 semantic tests 时仅暴露 3 个 `USAGE.md` 边界回归，DeepSeek 专项全部通过。文案已修复；current-head required CI/三平台 package → merge → main-fresh → Archive 仍作为交付阶段强制收尾 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | Installer Host 生成、marker 冲突、回滚、Windows/POSIX CLI 默认目标与显式 target；永久测试已落仓，但 current-head required CI 未实际执行 |
-| 接口 / 契约 | required | 现有三 Host 配置、六 MCP Tool、Bundle v3/Project Payload v2 与公开 CLI 边界不退化；diff 审计完成，机器 Evidence 被 Actions pre-run failure 阻塞 |
-| 集成 / 持久化 / 运行依赖 | required | 项目文件系统安装、真实 Runtime stdio MCP 与 DeepSeek overlay 到 Runtime command 的接线；三平台 package CI 未实际执行 |
-| 用户 / 工作流验收 | required | Windows 项目根 EXE 无参数安装、不同 cwd、根 launcher 与项目 overlay；Windows package job 已按目标 Contract 编写但未实际运行 |
-| 跨组件关键路径 | required | onefile → project install → Host config → stdio MCP → required Context；当前被 Actions 执行层阻塞 |
+| 行为 / 单元 / 组件 | required | Installer Host 生成、marker 冲突、回滚、Windows/POSIX CLI 默认目标与显式 target；真实 semantic run 已验证 DeepSeek 专项通过，文案修复后需 current-head 全量复跑 |
+| 接口 / 契约 | required | 现有三 Host 配置、六 MCP Tool、Bundle v3/Project Payload v2 与公开 CLI 边界不退化；current-head required CI 继续验证 |
+| 集成 / 持久化 / 运行依赖 | required | 项目文件系统安装、真实 Runtime stdio MCP 与 DeepSeek overlay 到 Runtime command 的接线；三平台 package CI 待 current-head 执行 |
+| 用户 / 工作流验收 | required | Windows 项目根 EXE 无参数安装、不同 cwd、根 launcher 与项目 overlay；Windows package job 负责真实 artifact 验证 |
+| 跨组件关键路径 | required | onefile → project install → Host config → stdio MCP → required Context；由 package/full Evidence 继续证明 |
 | 外部依赖 / 供应方探测 | not_applicable | 不升级/安装 DeepSeek Harness 或调用在线模型；Host 配置形状已对照当前官方 Harness `.agents/skills`、stdio MCP client、`cwd: !!js process.cwd()` 与 `web --patch` Contract；不把第三方 Harness 加成仓库构建依赖 |
-| 构建 / 打包 / 运行 | required | Linux/Windows/macOS onefile build/self-test/MCP/install；Actions 未分配 Runner，因此无新鲜 package Evidence |
-| 文档 / 治理 / 其他 | required | canonical Reference 内容守恒、USAGE 特殊说明、README/runtime README、Change/PR Deep Review 与 Workflow Responsibility Audit 已完成；平台 gate 仍 blocked |
+| 构建 / 打包 / 运行 | required | Linux/Windows/macOS onefile build/self-test/MCP/install；current-head package Evidence 待执行 |
+| 文档 / 治理 / 其他 | required | canonical Reference 内容守恒、USAGE 特殊说明、README/runtime README、Change/PR Deep Review 与 Workflow Responsibility Audit 已完成；USAGE 披露边界失败已依据真实 CI 修复 |
 
 # Skill Mutation 影响面审计
 
@@ -125,34 +127,33 @@ data_changes: []
 
 | 原证明责任 | 原位置 | 当前变化 | 证据等级 |
 | --- | --- | --- | --- |
-| semantic/full tests + Change Ready | `Agent Skills Gate` | 不变 | 保持；同一 selector、命令和 Ready gate |
+| semantic/full tests + Change Ready | `Agent Skills Gate` | 不变 | 保持；同一 selector、命令和 Ready gate；首次真实执行已运行 528 tests |
 | Linux onefile/status/self-test/MCP/install | `Agent Skills Gate` package steps | 不变 | 保持；POSIX no-arg cwd Contract 不变 |
 | Windows onefile/status/self-test/MCP/install | `Runtime Windows Package` | 无参数安装改为把 artifact 复制到项目根并从不同 cwd 启动；新增 overlay/launcher 断言 | 增强且不降级；仍执行相同 build/self-test/MCP/显式安装，并新增新 Contract 的真实 artifact 证明 |
 | macOS onefile/status/self-test/MCP/install | `Runtime macOS Package` | 不变 | 保持；POSIX no-arg cwd Contract 不变 |
 | 三平台聚合与 Ready fail-closed | `Runtime Package Gate` | 不变 | 保持；needs/check identity/聚合条件未改变 |
 
-本次没有删除、合并、迁移任何独立 Evidence Owner，也没有新增 Runner 或 Workflow；CI 自身变化按 Maintenance fail-closed 为 full/package。当前 GitHub Actions 在 Runner 分配前失败，因此不是测试失败，也不能被解释为 Gate Green。
+本次没有删除、合并、迁移任何独立 Evidence Owner，也没有新增 Runner 或 Workflow；CI 自身变化按 Maintenance fail-closed 为 full/package。GitHub Actions 当前已恢复真实 Runner 执行，后续以 current-head 新鲜结果为准。
 
 # 完成审计
 
-- [x] upstream_re_read：已回读 Issue #250 的 AC1–AC7，并以用户本轮“实施、根目录 launcher、USAGE、合并 main”作为当前 Requested Outcome。
-- [x] change_coverage：AC1–AC6 已分别映射到生产实现、永久测试与文档；AC7 仍要求真实 required CI/三平台 package、merge、main-fresh 与 Archive。
-- [x] reverse_audit：已从 Windows 双击安装、POSIX cwd、四 Host、DeepSeek launcher/overlay、MCP、ownership、rollback、package CI 和用户日常使用反向检查；并修正了 Windows package job 仍按旧 cwd Contract 验收的问题。
-- [ ] unresolved_cleared：实现/文档侧无未解决 Finding，但 R7 因 GitHub Actions pre-run failure 仍为 `not_satisfied`；当前 Change 状态为 `blocked`。
+- [x] upstream_re_read：已回读 Issue #250 的 AC1–AC7，并以用户本轮“实施、根目录 launcher、USAGE、CI 通过后合并 main”作为当前 Requested Outcome。
+- [x] change_coverage：AC1–AC6 已分别映射到生产实现、永久测试与文档；AC7 明确保留为 current-head required CI/三平台 package、merge、main-fresh 与 Archive 的交付闭环。
+- [x] reverse_audit：已从 Windows 双击安装、POSIX cwd、四 Host、DeepSeek launcher/overlay、MCP、ownership、rollback、package CI 和用户日常使用反向检查；并修正 Windows package 旧 cwd Contract 与 USAGE 过度披露两类真实问题。
+- [x] unresolved_cleared：当前实现/文档侧没有 `not_satisfied` Requirement 或阻塞 Finding；AC7 属于合并前后必须执行的交付阶段 gate，不被豁免。
 
 # 两阶段复核
 
 阶段 A / A1-A2：已从 Issue #250 独立重建范围；AC1–AC6 均有实现/测试/文档映射，AC7 是完整交付的 required gate。canonical Reference diff 只改变宿主/平台事实，没有改变 routing metadata。
 
-阶段 B：已对 current-base diff 做 Deep Review，重点审查 ownership、路径/symlink、安全预检、Windows/POSIX 兼容、rollback、Release 资产不变、六 MCP Tool/Bundle/Payload 不变、文档一致性以及 CI 证明责任。Review 发现旧 Windows package no-arg 输入与新 Contract 冲突后已修正；修正后当前没有 BLOCKER/HIGH/MEDIUM 代码 Finding。**交付 Finding：required CI 无法启动，是当前唯一 blocking Evidence gap。**
+阶段 B：已对 current-base diff 做 Deep Review，重点审查 ownership、路径/symlink、安全预检、Windows/POSIX 兼容、rollback、Release 资产不变、六 MCP Tool/Bundle/Payload 不变、文档一致性以及 CI 证明责任。Review 发现旧 Windows package no-arg 输入与新 Contract 冲突后已修正；真实 semantic CI 又发现 USAGE 把维护实现细节暴露给普通开发者，已只收窄文案而未削弱 DeepSeek 日常入口。当前没有 BLOCKER/HIGH/MEDIUM 代码 Finding。
 
 # 验证
 
 - DeepSeek Harness 当前官方源码/文档已核对：项目 Skill filesystem 支持 `.agents/skills`；`@deepseek-ai/dsh-mcp-client` 支持 stdio `command/args/cwd/failOnStartupError`；官方 MCP 示例使用 `cwd: !!js process.cwd()`；CLI/开发文档使用 `web --patch <overlay>`。当前 Host Adapter 与这些外部 Contract 对齐。
-- 历史仅含 Change + 目标失败测试的 commit 保留；此前多次 GitHub Actions 均在 Runner 分配前失败（`runner_id=0` / `steps=[]` 或 `steps=null` / 无 job logs），因此没有把平台 pre-run failure 冒充 Red 或 Green 测试结果。
-- Ready/current-head 代表性 Run `35084301963` 与后续仅更新 blocker 记录后的 Run `35084479928` 均再次确认同一 pre-run failure：`Agent Skills Gate` 没有实际步骤/日志，Windows/macOS package 随后 skipped。此前已对同类失败执行过一次 job rerun，结果仍为零步骤失败，因此不继续重复同一无效路径。
-- 当前连接器不能读取 GitHub UI 中更具体的平台错误提示，因此不猜测 billing、配额、账户或 Runner 基础设施根因；只把已直接观察到的执行层阻塞写入 Evidence。
-- 当前 HEAD 的永久测试资产已覆盖：四 Host 安装、DeepSeek overlay/launcher、未受管冲突、安装 rollback、Windows binary-parent、POSIX cwd、显式 target、Host 配置可移植性和 Runtime CLI public result。
+- GitHub Actions 执行层已恢复。Run `35084622717` 的有效尝试真实完成 checkout/setup/requirement-source/scope/compile/CLI smoke，并运行 528 semantic tests；DeepSeek Harness 专项测试全部通过。
+- 该有效尝试共有 3 个失败，均为 `USAGE.md` 最终用户披露边界：出现 `stdio`、`.agents/`、`Agent_Skills` 等维护实现词汇。生产代码和 DeepSeek 专项行为没有失败。已依据既有 Release surface Contract 将 USAGE 收窄为普通开发者所需的 `DeepSeek-Harness.cmd`、`dsh` 可用性和排障说明。
+- 当前 HEAD 永久测试资产覆盖：四 Host 安装、DeepSeek overlay/launcher、未受管冲突、安装 rollback、Windows binary-parent、POSIX cwd、显式 target、Host 配置可移植性和 Runtime CLI public result。
 - Windows package CI 已同步新 EXE-parent Contract，并从不同 cwd 启动目标根 artifact，能直接识别误用 cwd 的回归。
-- 当前 `main` 仍为 `f65193be8029935507f7fc0c2ce8f97ee84ac530`，与 PR base 一致；没有 base drift。
-- 在 GitHub Actions 能实际分配 Runner并取得 required Green 前，不执行 merge；因此也不存在 main-fresh 与 Change Archive Evidence。
+- current-head required semantic/full + Linux/Windows/macOS package Evidence 将在本次文案与 Change 状态修复后重新执行；取得 Green 前不 merge。
+- 当前 `main` 仍为本 PR base `f65193be8029935507f7fc0c2ce8f97ee84ac530`，没有 base drift。
