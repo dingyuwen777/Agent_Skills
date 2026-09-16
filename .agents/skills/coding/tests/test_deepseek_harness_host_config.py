@@ -7,9 +7,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.install_state import build_install_state
 from runtime.agent_skills_runtime.project_installer import install_project
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime.routing import REFERENCE_ROUTE_PROTOCOL, SKILL_ROUTE_PROTOCOL
+from runtime.agent_skills_runtime import project_installer as INSTALLER
 from runtime.agent_skills_runtime import server as SERVER
 
 
@@ -164,6 +166,45 @@ class DeepSeekHarnessHostConfigTest(unittest.TestCase):
         self.assertEqual(launcher.read_text(encoding="utf-8"), "@echo off\necho project-owned\n")
         self.assertFalse((target / "AGENTS.md").exists())
         self.assertFalse((target / ".agents" / "runtime").exists())
+
+    def test_deepseek_launcher_write_failure_rolls_back_runtime_and_host_files(self) -> None:
+        """升级写 Windows launcher 失败时应恢复旧 Runtime、overlay 与 launcher，避免部分 Host 切换。"""
+        target = self.root / "rollback-project"
+        target.mkdir()
+        first_artifact = self.root / "rollback-agent-skills.exe"
+        first_artifact.write_bytes(b"runtime-v1")
+        payload = self._payload()
+        install_project(target, payload, first_artifact, release_version="1.2.3")
+        old_state = build_install_state(payload, "1.2.3")
+        overlay_path = (target / ".dsh" / "agent-skills.cordis.yml").resolve()
+        launcher_path = (target / "DeepSeek-Harness.cmd").resolve()
+        runtime_path = (target / ".agents/runtime/agent-skills.exe").resolve()
+        old_overlay = overlay_path.read_bytes()
+        old_launcher = launcher_path.read_bytes()
+        old_runtime = runtime_path.read_bytes()
+
+        second_artifact = self.root / "rollback-upgrade" / "agent-skills.exe"
+        second_artifact.parent.mkdir()
+        second_artifact.write_bytes(b"runtime-v2")
+        original_atomic_write = INSTALLER._atomic_write
+        failed = False
+
+        def controlled_atomic_write(path: Path, content: bytes, mode: int | None = None) -> None:
+            """只在升级首次写 launcher 时制造 I/O 失败，随后允许安装器执行真实回滚。"""
+            nonlocal failed
+            if Path(path).resolve() == launcher_path and not failed:
+                failed = True
+                raise OSError("fixture DeepSeek launcher write failure")
+            original_atomic_write(path, content, mode)
+
+        with patch.object(INSTALLER, "_query_installed_runtime_state", return_value=old_state):
+            with patch.object(INSTALLER, "_atomic_write", side_effect=controlled_atomic_write):
+                with self.assertRaisesRegex(OSError, "DeepSeek launcher write failure"):
+                    install_project(target, payload, second_artifact, release_version="1.3.0")
+
+        self.assertEqual(overlay_path.read_bytes(), old_overlay)
+        self.assertEqual(launcher_path.read_bytes(), old_launcher)
+        self.assertEqual(runtime_path.read_bytes(), old_runtime)
 
     def test_no_argument_onefile_install_targets_binary_parent(self) -> None:
         """无参数 onefile 入口必须以 binary 所在目录为 target，而不是依赖进程 cwd。"""
