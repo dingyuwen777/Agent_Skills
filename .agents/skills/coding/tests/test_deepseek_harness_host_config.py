@@ -206,8 +206,8 @@ class DeepSeekHarnessHostConfigTest(unittest.TestCase):
         self.assertEqual(launcher_path.read_bytes(), old_launcher)
         self.assertEqual(runtime_path.read_bytes(), old_runtime)
 
-    def test_no_argument_onefile_install_targets_binary_parent(self) -> None:
-        """无参数 onefile 入口必须以 binary 所在目录为 target，而不是依赖进程 cwd。"""
+    def test_windows_no_argument_onefile_install_targets_binary_parent(self) -> None:
+        """Windows 无参数 onefile 入口必须以 EXE 所在目录为 target，而不是依赖进程 cwd。"""
         project = self.root / "double-click-project"
         project.mkdir()
         artifact = project / "agent-skills.exe"
@@ -226,6 +226,26 @@ class DeepSeekHarnessHostConfigTest(unittest.TestCase):
                         self.assertEqual(SERVER.main([]), 0)
 
         self.assertEqual(Path(install.call_args.args[0]), project)
+        self.assertEqual(Path(install.call_args.args[2]), artifact)
+
+    def test_posix_no_argument_onefile_install_keeps_current_directory(self) -> None:
+        """POSIX 无参数 onefile 必须保留原有当前工作目录语义，不能被 Windows 双击行为改写。"""
+        artifact = self.root / "agent-skills"
+        artifact.write_bytes(b"runtime")
+        install_result = {
+            "ok": True,
+            "target": ".",
+            "release_version": "1.2.3",
+            "hosts": ["codex", "cursor", "claude-code", "deepseek-harness"],
+        }
+
+        with patch.object(SERVER, "_load_embedded_material", return_value=(object(), {"fixture": True}, "1.2.3")):
+            with patch.object(SERVER, "_runtime_artifact_path", return_value=artifact):
+                with patch.object(SERVER, "install_project", return_value=install_result) as install:
+                    with patch.object(SERVER, "_print_result"):
+                        self.assertEqual(SERVER.main([]), 0)
+
+        self.assertEqual(install.call_args.args[0], ".")
         self.assertEqual(Path(install.call_args.args[2]), artifact)
 
     def test_explicit_install_target_remains_authoritative(self) -> None:
