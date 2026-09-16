@@ -1,37 +1,10 @@
 # AI 辅助开发使用说明
 
-本说明面向已经完成项目开发环境配置的普通开发者。你可以在 **Codex、Cursor、Claude Code、DeepSeek Harness** 或团队允许的其他桌面 AI Agent 中打开项目，然后用自然语言描述任务。
+本说明面向已经完成项目开发环境配置的普通开发者。你只需要在 **Codex、Cursor、Claude Code、DeepSeek Harness** 或团队允许的其他桌面 AI Agent 中打开项目，然后用自然语言描述任务。
 
 你不需要了解或维护项目如何配置这些开发约束，也不需要手工选择规则文件或执行流程。AI 应先读取当前项目自己的规则和真实代码，再根据任务完成调查、实现、测试、文档、Review、Git/CI 和交付。
 
-## DeepSeek Harness 特殊使用方式
-
-Agent_Skills 对 Codex、Cursor、Claude Code 和 DeepSeek Harness 仍使用同一次项目安装。Windows 上把 Release ZIP 中的 `agent-skills.exe` 放到目标项目根目录后直接双击即可；无参数 onefile 会以 **EXE 所在目录** 作为目标项目根，不依赖 Windows Explorer 当时的工作目录。显式命令 `agent-skills.exe install --target <项目根>` 仍按你指定的目录执行。
-
-安装成功后，Windows 项目根会生成：
-
-```text
-DeepSeek-Harness.cmd
-.dsh/agent-skills.cordis.yml
-```
-
-日常使用 DeepSeek Harness 时，直接双击项目根的 `DeepSeek-Harness.cmd`。它会先切到当前项目根，再执行等价的 Harness 启动：
-
-```text
-dsh web --patch <当前项目>/.dsh/agent-skills.cordis.yml
-```
-
-因此 **Windows 用户不需要每次手工输入 `dsh web --patch ...`**。前提是 DeepSeek Harness 的 `dsh` 命令已经按团队环境要求安装，并可从当前系统 `PATH` 直接运行。
-
-Linux / macOS 安装同样会生成项目内 `.dsh/agent-skills.cordis.yml`，但不会生成 Windows `.cmd`。需要使用 DeepSeek Harness 时，从项目根运行：
-
-```bash
-dsh web --patch "$PWD/.dsh/agent-skills.cordis.yml"
-```
-
-这些 DeepSeek Harness 资产只属于当前项目。Agent_Skills **不会修改** `$DSH_HOME`、Harness 全局配置或用户 profile 的 `cordis.patch.yml`。重新运行当前版本 Agent_Skills 时，只会更新自己带 managed marker 的 DeepSeek 配置/启动器；若目标项目已经存在同名但无法证明属于 Agent_Skills 的文件，安装会停止并保留原文件，不会静默覆盖。
-
-DeepSeek Harness 会直接发现项目 `.agents/skills`，而项目内 Cordis overlay 只负责把现有 `.agents/runtime/agent-skills[.exe] serve` 接入 Harness MCP。它与 Codex、Cursor、Claude Code 共用同一套 Agent_Skills Runtime 和工程约束，不维护 DeepSeek 专用的第二套 Skill 或 Prompt。
+> **DeepSeek Harness 例外说明**：它需要项目级 Host overlay 才能把已安装的 Agent_Skills stdio Runtime 接进 Harness。Windows 安装后项目根会自动生成 `DeepSeek-Harness.cmd`，日常可直接双击使用；详细见下文“DeepSeek Harness 特殊使用方式”。
 
 ## 1. 日常使用原则
 
@@ -68,6 +41,61 @@ AI 可以正常告诉你：正在检查哪些项目文件、发现了什么问�
 ### 真正需要业务决策时再问人
 
 普通实现细节、代码位置、版本、现有接口和测试入口应由 AI 自行调查。只有确实会改变业务语义、公共接口、Schema/数据、安全/权限、不可逆行为或重大技术路线，而且仓库没有既定决定时，才需要你确认。
+
+## DeepSeek Harness 特殊使用方式
+
+Agent_Skills 安装器会把 DeepSeek Harness 作为项目级 Host 接入，但不会修改你的 `$DSH_HOME`、全局 `cordis.patch.yml` 或其他 Harness profile。
+
+### Windows：安装后直接双击项目根入口
+
+把 `agent-skills.exe` 放到目标项目根目录，例如：
+
+```text
+D:\work\MyProject\agent-skills.exe
+```
+
+直接双击它即可完成项目安装。Windows 的无参数 `.exe` 会把 **EXE 自身所在目录**作为目标项目根，因此不依赖 Explorer 当时的工作目录。
+
+安装完成后项目根会生成：
+
+```text
+.dsh/agent-skills.cordis.yml
+DeepSeek-Harness.cmd
+```
+
+以后使用 DeepSeek Harness 时，直接双击：
+
+```text
+DeepSeek-Harness.cmd
+```
+
+它会先切换到当前项目根，再执行等价命令：
+
+```text
+dsh web --patch <当前项目>/.dsh/agent-skills.cordis.yml
+```
+
+前提是当前机器已经安装 DeepSeek Harness，并且 `dsh` 可以从 `PATH` 调用。Agent_Skills 不负责安装或升级 DeepSeek Harness 本身。
+
+### Linux / macOS
+
+Linux/macOS 无参数 `agent-skills` 仍按传统 CLI 语义安装**当前工作目录**。完成安装后，从项目根启动 DeepSeek Harness：
+
+```bash
+dsh web --patch "$PWD/.dsh/agent-skills.cordis.yml"
+```
+
+### 为什么还需要这个 overlay
+
+DeepSeek Harness 可以直接发现项目中的 `.agents/skills`，所以 Agent_Skills 不为 DeepSeek 复制第二套 Skill。项目内 `.dsh/agent-skills.cordis.yml` 只负责通过 Harness 的 stdio MCP client 启动项目中的：
+
+```text
+.agents/runtime/agent-skills[.exe] serve
+```
+
+这样 DeepSeek Harness 与 Codex、Cursor、Claude Code 使用的是同一个项目 Runtime、同一套 canonical 规则和同一组工程门禁。
+
+如果 Harness 启动时报告 `dsh` 不存在、MCP 启动失败或项目 overlay 无法加载，应先检查 DeepSeek Harness 自身安装、当前项目路径和 Agent_Skills `status/self-test`；不要手工修改受管 overlay 来绕过错误。
 
 ## 2. 功能开发
 
