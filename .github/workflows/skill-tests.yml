@@ -383,7 +383,8 @@ jobs:
           $artifact = (Resolve-Path .\.runtime-dist\agent-skills.exe).Path
           $target = Join-Path $env:RUNNER_TEMP "agent-skills-project-target"
           $noArgsTarget = Join-Path $env:RUNNER_TEMP "agent-skills-project-no-args"
-          New-Item -ItemType Directory -Force -Path $target, $noArgsTarget | Out-Null
+          $foreignCwd = Join-Path $env:RUNNER_TEMP "agent-skills-windows-explorer-cwd"
+          New-Item -ItemType Directory -Force -Path $target, $noArgsTarget, $foreignCwd | Out-Null
 
           & $artifact install --target $target --json
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目首次安装失败" }
@@ -395,6 +396,8 @@ jobs:
           $entry = Join-Path $target ".agents\skills\ENTRY.md"
           $router = Join-Path $target ".agents\skills\router\SKILL.md"
           $agents = Join-Path $target "AGENTS.md"
+          $deepseekOverlay = Join-Path $target ".dsh\agent-skills.cordis.yml"
+          $deepseekLauncher = Join-Path $target "DeepSeek-Harness.cmd"
           foreach ($path in @(
             $installedRuntime,
             $entry,
@@ -403,10 +406,16 @@ jobs:
             (Join-Path $target ".cursor\mcp.json"),
             (Join-Path $target ".mcp.json"),
             (Join-Path $target ".codex\config.toml"),
-            (Join-Path $target "CLAUDE.md")
+            (Join-Path $target "CLAUDE.md"),
+            $deepseekOverlay,
+            $deepseekLauncher
           )) {
             if (-not (Test-Path $path)) { throw "Windows 项目安装缺少文件: $path" }
           }
+          if (-not (Select-String -Path $deepseekOverlay -Pattern "name: '@deepseek-ai/dsh-mcp-client'" -SimpleMatch -Quiet)) { throw "Windows DeepSeek overlay 缺少 MCP client" }
+          if (-not (Select-String -Path $deepseekOverlay -Pattern "command: .agents/runtime/agent-skills.exe" -SimpleMatch -Quiet)) { throw "Windows DeepSeek overlay Runtime command 非项目相对路径" }
+          if (-not (Select-String -Path $deepseekLauncher -Pattern 'cd /d "%~dp0"' -SimpleMatch -Quiet)) { throw "Windows DeepSeek launcher 未切换到自身项目根" }
+          if (-not (Select-String -Path $deepseekLauncher -Pattern 'dsh web --patch "%~dp0.dsh\agent-skills.cordis.yml"' -SimpleMatch -Quiet)) { throw "Windows DeepSeek launcher 未加载项目 overlay" }
           if (Test-Path $legacyManifest) { throw "Windows 新安装不应保留 agent-skills-install.json" }
           $gitignore = Join-Path $target ".gitignore"
           if (-not (Select-String -Path $gitignore -Pattern ".agents/project-context.json" -SimpleMatch -Quiet)) { throw "Windows 项目安装缺少 cache ignore" }
@@ -444,16 +453,21 @@ jobs:
           python scripts/runtime_mcp_smoke.py --artifact $installedRuntime --json
           if ($LASTEXITCODE -ne 0) { throw "Windows 项目 Runtime MCP smoke 失败" }
 
-          Push-Location $noArgsTarget
+          $noArgsArtifact = Join-Path $noArgsTarget "agent-skills.exe"
+          Copy-Item -Path $artifact -Destination $noArgsArtifact
+          Push-Location $foreignCwd
           try {
-            & $artifact
+            & $noArgsArtifact
             if ($LASTEXITCODE -ne 0) { throw "Windows binary 无参数项目安装失败" }
           } finally {
             Pop-Location
           }
+          if (Test-Path (Join-Path $foreignCwd ".agents")) { throw "Windows 无参数安装错误使用进程 cwd，而不是 EXE 所在目录" }
           if (-not (Test-Path (Join-Path $noArgsTarget ".agents\runtime\agent-skills.exe"))) { throw "Windows binary 无参数运行未安装项目 Runtime" }
           if (-not (Test-Path (Join-Path $noArgsTarget ".agents\skills\ENTRY.md"))) { throw "Windows binary 无参数运行未安装 Entry" }
           if (-not (Test-Path (Join-Path $noArgsTarget ".agents\skills\router\SKILL.md"))) { throw "Windows binary 无参数运行未安装 Router Skill" }
+          if (-not (Test-Path (Join-Path $noArgsTarget ".dsh\agent-skills.cordis.yml"))) { throw "Windows binary 无参数运行未安装 DeepSeek overlay" }
+          if (-not (Test-Path (Join-Path $noArgsTarget "DeepSeek-Harness.cmd"))) { throw "Windows binary 无参数运行未安装 DeepSeek launcher" }
           if (Test-Path (Join-Path $noArgsTarget ".agents\agent-skills-install.json")) { throw "Windows 无参数安装不应生成 install manifest" }
           $noArgsGitignore = Join-Path $noArgsTarget ".gitignore"
           if (-not (Select-String -Path $noArgsGitignore -Pattern ".agents/project-context.json" -SimpleMatch -Quiet)) { throw "Windows 无参数安装缺少 cache ignore" }
