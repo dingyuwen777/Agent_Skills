@@ -34,6 +34,10 @@ CLAUDE_MANAGED_START = "<!-- agent-skills:claude:start -->"
 CLAUDE_MANAGED_END = "<!-- agent-skills:claude:end -->"
 CODEX_MANAGED_START = "# agent-skills:mcp:start"
 CODEX_MANAGED_END = "# agent-skills:mcp:end"
+DEEPSEEK_MANAGED_START = "# agent-skills:deepseek-harness:start"
+DEEPSEEK_MANAGED_END = "# agent-skills:deepseek-harness:end"
+DEEPSEEK_LAUNCHER_MANAGED_START = "REM agent-skills:deepseek-harness:start"
+DEEPSEEK_LAUNCHER_MANAGED_END = "REM agent-skills:deepseek-harness:end"
 CACHE_IGNORE_RULE = ".agents/project-context.json"
 SKILL_ENTRY_ASSET = "ENTRY.md"
 _CODEX_SERVER_PATTERN = re.compile(r"(?m)^\s*\[mcp_servers\.agent-skills\]\s*$")
@@ -142,6 +146,21 @@ def _replace_or_append_block(
     else:
         separator = newline + newline
     return existing + separator + block + newline
+
+
+def _replace_owned_marker_file(
+    existing: bytes | None,
+    block_text: str,
+    start_text: str,
+    end_text: str,
+    label: str,
+) -> bytes:
+    """仅创建新专用文件或替换已有合法 managed block，拒绝覆盖无法证明 ownership 的同名文件。"""
+    if existing is not None:
+        _validate_utf8(existing, label)
+        if _marker_range(existing, start_text, end_text, label) is None:
+            raise ValueError(f"{label} 已存在但缺少 Agent Skills managed marker，拒绝覆盖")
+    return _replace_or_append_block(existing, block_text, start_text, end_text, label)
 
 
 def _payload_files(payload: Mapping[str, Any]) -> dict[str, bytes]:
@@ -413,6 +432,51 @@ def _updated_claude_md(existing: bytes | None) -> bytes:
     )
 
 
+def _updated_deepseek_harness_config(existing: bytes | None, runtime_command: str) -> bytes:
+    """创建或更新项目级 DeepSeek Harness MCP overlay，不覆盖无法证明 ownership 的同名文件。"""
+    block = (
+        f"{DEEPSEEK_MANAGED_START}\n"
+        "- insert:\n"
+        "    - id: mcp-agent-skills\n"
+        "      name: '@deepseek-ai/dsh-mcp-client'\n"
+        "      config:\n"
+        "        serverName: agent-skills\n"
+        "        transport: stdio\n"
+        f"        command: {runtime_command}\n"
+        "        args:\n"
+        "          - serve\n"
+        "        cwd: !!js process.cwd()\n"
+        "        failOnStartupError: true\n"
+        f"{DEEPSEEK_MANAGED_END}"
+    )
+    return _replace_owned_marker_file(
+        existing,
+        block,
+        DEEPSEEK_MANAGED_START,
+        DEEPSEEK_MANAGED_END,
+        "DeepSeek Harness 配置 .dsh/agent-skills.cordis.yml",
+    )
+
+
+def _updated_deepseek_harness_launcher(existing: bytes | None) -> bytes:
+    """创建或更新 Windows 项目根 DeepSeek Harness 启动器，不覆盖项目自有同名文件。"""
+    block = (
+        f"{DEEPSEEK_LAUNCHER_MANAGED_START}\n"
+        "@echo off\n"
+        'cd /d "%~dp0"\n'
+        'call dsh web --patch "%~dp0.dsh\\agent-skills.cordis.yml"\n'
+        "exit /b %ERRORLEVEL%\n"
+        f"{DEEPSEEK_LAUNCHER_MANAGED_END}"
+    )
+    return _replace_owned_marker_file(
+        existing,
+        block,
+        DEEPSEEK_LAUNCHER_MANAGED_START,
+        DEEPSEEK_LAUNCHER_MANAGED_END,
+        "DeepSeek-Harness.cmd",
+    )
+
+
 def _atomic_write(path: Path, content: bytes, mode: int | None = None) -> None:
     """在目标同目录写临时文件后原子替换，并按需保持/设置权限。"""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -541,7 +605,19 @@ def install_project(
     claude_mcp_path = target / ".mcp.json"
     codex_path = target / ".codex" / "config.toml"
     claude_md_path = target / "CLAUDE.md"
-    text_paths = [agents_path, gitignore_path, cursor_path, claude_mcp_path, codex_path, claude_md_path]
+    deepseek_path = target / ".dsh" / "agent-skills.cordis.yml"
+    deepseek_launcher_path = target / "DeepSeek-Harness.cmd" if runtime_name.endswith(".exe") else None
+    text_paths = [
+        agents_path,
+        gitignore_path,
+        cursor_path,
+        claude_mcp_path,
+        codex_path,
+        claude_md_path,
+        deepseek_path,
+    ]
+    if deepseek_launcher_path is not None:
+        text_paths.append(deepseek_launcher_path)
     for path in text_paths:
         _ensure_path_not_symlink(target, path)
 
@@ -557,7 +633,12 @@ def install_project(
         claude_mcp_path: _updated_json_mcp(_existing_bytes(claude_mcp_path), claude_runtime_command, owned, ".mcp.json"),
         codex_path: _updated_codex_config(_existing_bytes(codex_path), codex_runtime_command, owned),
         claude_md_path: _updated_claude_md(_existing_bytes(claude_md_path)),
+        deepseek_path: _updated_deepseek_harness_config(_existing_bytes(deepseek_path), runtime_relative),
     }
+    if deepseek_launcher_path is not None:
+        text_updates[deepseek_launcher_path] = _updated_deepseek_harness_launcher(
+            _existing_bytes(deepseek_launcher_path)
+        )
     snapshots = {path: _snapshot_file(path) for path in text_paths}
     legacy_manifest_snapshot = _snapshot_file(legacy_manifest_path)
     runtime_snapshot = _snapshot_file(runtime_target)
@@ -656,5 +737,5 @@ def install_project(
         "removed_managed_files": removed_managed_files,
         "runtime": runtime_relative,
         "ownership_source": ownership_source,
-        "hosts": ["codex", "cursor", "claude-code"],
+        "hosts": ["codex", "cursor", "claude-code", "deepseek-harness"],
     }

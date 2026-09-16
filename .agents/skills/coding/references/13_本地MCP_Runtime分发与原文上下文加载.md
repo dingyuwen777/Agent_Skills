@@ -134,7 +134,7 @@ Runtime project-facing Projection 必须：
 - 同一 canonical 输入确定性输出；
 - 输出后若仍发现当前 Reference identity、`references/` 路径、私有 routing metadata 或被禁止内部组织身份，构建失败关闭。
 
-Project Payload 继续明文安装这些 project-facing Projection，是为了保留 Codex/Cursor/Claude Code 等宿主原生 Skill/Rules 入口与执行效果。目标项目 Owner 可以查看这些投影 Core；本方案不宣称物理隐藏。详细 canonical Reference 正文仍只在 Runtime encrypted Bundle 中。
+Project Payload 继续明文安装这些 project-facing Projection，是为了保留 Codex、Cursor、Claude Code、DeepSeek Harness 等宿主原生 Skill/Rules 入口与执行效果。DeepSeek Harness 直接发现项目 `.agents/skills`；其项目级 Cordis overlay 只负责把现有 stdio Runtime 接入 Harness MCP，不产生第二套 Skill、Prompt 或 canonical 规则。目标项目 Owner 可以查看这些投影 Core；本方案不宣称物理隐藏。详细 canonical Reference 正文仍只在 Runtime encrypted Bundle 中。
 
 **Source/Runtime 同效必须用 private execution 证据证明**：同一任务事实应得到相同 matched Skill、required risk、dependency closure 与 required canonical Context；Runtime 加载的 Context 必须与 Source canonical UTF-8 bytes 完全一致。不得因为 Runtime 明文不再包含 `agent-routing:v1` 或 Source 导航就判定执行能力缺失，也不得为了“同效”把这些内部 metadata 重新写回安装明文。
 
@@ -333,8 +333,9 @@ Runtime 校验当前 task 和 Task Route，用唯一 evaluator 求值并单调�
 稳定公开入口：
 
 ```text
-无参数                       → install 当前工作目录
-install --target <project>   → 显式安装/当前版本重复安装
+Windows .exe 无参数          → install EXE 自身所在目录
+Linux/macOS 无参数           → install 当前工作目录
+install --target <project>   → 显式安装/当前版本重复安装；始终以 --target 为准
 status --json                → 最小 Runtime 状态
 self-test --json             → Runtime/Payload 完整性
 serve                         → stdio MCP Server
@@ -346,6 +347,18 @@ serve                         → stdio MCP Server
 Windows: .agents/runtime/agent-skills.exe
 POSIX:   .agents/runtime/agent-skills
 ```
+
+项目 Host 资产：
+
+```text
+Codex       → .codex/config.toml
+Cursor      → .cursor/mcp.json
+Claude Code → .mcp.json + 最薄 CLAUDE.md bridge
+DeepSeek    → .dsh/agent-skills.cordis.yml
+Windows DeepSeek 日常入口 → 项目根 DeepSeek-Harness.cmd
+```
+
+DeepSeek Harness 原生发现项目 `.agents/skills`；项目级 Cordis overlay 通过 `@deepseek-ai/dsh-mcp-client`、`transport: stdio`、当前项目 cwd 与 `serve` 参数启动同一个项目 Runtime。Windows launcher 只负责切到自身项目根并带该 overlay 启动 `dsh web`。Installer 不修改 `$DSH_HOME`、全局 `cordis.patch.yml` 或用户 profile；Linux/macOS 安装 overlay 但不生成 Windows `.cmd`。
 
 `.agents/runtime/` 仍是目标项目本地运行资产，但安装/升级**不自动新增** `/.agents/runtime/` 或等价 Runtime ignore；Runtime 是否进入版本控制由项目 Owner 决定。**项目原本已有** Runtime ignore 时保持原样，不删除、不重排、不重复追加。安装不得生成 `.agents/agent-skills-install.json`、Reference/Stub、Private Routing Manifest、key/security sidecar。
 
@@ -371,6 +384,8 @@ previous managed file + 新 Payload 删除        → 只删除该受管文件
 
 安装器不得通过目录名、内容相似、当前 Payload 或旧 Stub 猜 ownership。现有 legacy install-state 迁移规则如果被触发仍按安装器当前 Contract 处理，但**本次 Bundle v3 加固不以历史 Bundle v2 Runtime → v3 迁移作为验收条件，也不为此新增长期 v2 Bundle reader。**
 
+DeepSeek overlay/launcher 是 Host 专用受管文本，不进入 Project Payload `managed_files` 来伪造旧版 ownership。首次创建要求目标不存在；后续只有文件自身存在唯一合法 Agent_Skills DeepSeek marker 时才允许替换对应 block。旧 Runtime install-state 能证明 Agent_Skills 曾安装，**不能单独证明一个此前不存在于旧 Contract 的同名 DeepSeek 文件属于 Agent_Skills**。
+
 ## 14. AGENTS / `.gitignore` / 宿主配置保护
 
 安装器只修改可证明的受管边界：
@@ -380,24 +395,26 @@ previous managed file + 新 Payload 删除        → 只删除该受管文件
 - Cursor 只认领 `.cursor/mcp.json` 的 `mcpServers.agent-skills`；
 - Claude Code 只认领 `.mcp.json` 的同名 server，并保持最薄 `CLAUDE.md` bridge；
 - Codex 只认领 `.codex/config.toml` 的 Agent Skills managed MCP block；
+- DeepSeek Harness 只认领项目 `.dsh/agent-skills.cordis.yml` 的唯一 DeepSeek managed block；Windows 只认领项目根 `DeepSeek-Harness.cmd` 的唯一对应 managed block；两个专用文件存在但 marker 缺失/损坏/重复时 fail closed；
+- 不修改 `$DSH_HOME`、Harness 全局配置或用户 profile；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产必须保留；
 - 同名但 ownership 不可证明、marker 损坏、symlink/特殊文件或文本无法安全增量编辑时 fail closed。
 
 Runtime managed block 只表达项目侧契约：先读项目自身规则与真实事实，正常展示真实工程过程，治理能力自身运行/实现细节不作为项目进度或交付内容。详细 Runtime 披露边界由本 canonical Owner 与 Runtime 私有执行/公共输出 Contract 承担，不把内部控制面清单或“防披露说明”复制回目标根 `AGENTS.md`、Entry、Skill Core 或 agent prompt。
 
-Codex workspace trust 与 Cursor/Claude 首次确认属于宿主安全边界，安装器不得绕过。
+Codex workspace trust 与 Cursor/Claude/DeepSeek Harness 首次确认属于宿主安全边界，安装器不得绕过。DeepSeek Harness 的 `dsh` 命令由用户/团队环境提供，Agent_Skills 安装器不安装 Harness 本身。
 
 ## 15. 安装原子性与回滚
 
 安装器必须先完整预检，再进入可恢复写入：
 
 1. 验证 Project Payload v2、path/hash/size/mode/shared files/no-reference；
-2. 恢复 previous ownership，并预检同名冲突、symlink、marker、JSON/TOML；
-3. 为全部 touched managed files、Runtime 和受管文本保存原始 bytes/权限快照；
+2. 恢复 previous ownership，并预检同名冲突、symlink、marker、JSON/TOML，以及 DeepSeek 专用 marker 文件；
+3. 为全部 touched managed files、Runtime 和受管文本保存原始 bytes/权限快照，包括 DeepSeek overlay/launcher；
 4. 使用同目录临时文件 + 原子替换，不整体替换 Skill 目录；
 5. 只删除 previous `managed_files` 明确认领且新 Payload 已删除的文件；
 6. 安装 Runtime 并验证 artifact SHA256；
-7. 写 AGENTS、`.gitignore` 本地缓存规则、Host 配置；不写新的 ownership sidecar；
+7. 写 AGENTS、`.gitignore` 本地缓存规则、四 Host 配置；不写新的 ownership sidecar；
 8. 任一步异常恢复本轮快照；
 9. rollback 自身失败必须聚合报告“回滚不完整”、未恢复路径/原因，并保留原始异常 cause；不得 `except: pass`。
 
@@ -434,9 +451,10 @@ release_version / source_commit
 7. Project Payload 不含 Reference/Stub/Private Routing Manifest；project-facing Entry/Core/agent prompt 无 Reference identity、`agent-routing:v1`、内部组织或防披露自说明，同时保留宿主发现和高价值工程语义；
 8. MCP `tools/list` 恰为六 Tool，Context envelope 只含 `完整原文`，伪造/stale/cross-task token 失败；
 9. Source/Runtime private execution parity 对代表性任务保持 matched Skill、required risk、dependency closure、required Context 一致，Runtime Context 与 canonical exact bytes 一致；公共进度规则只描述项目工程过程，不枚举内部实现身份；
-10. Linux/Windows/macOS 各自在对应 Runner 完成 onefile build/status/self-test/real MCP/首次安装/当前版本重复安装；
-11. Builder/Release 不生成 `*.manifest.json`、key、Reference pack 或其他新 sidecar；
-12. Context budget 不得因 Runtime v3 规则维护显著膨胀；安全实现细节优先放在 [`runtime/README.md`](../../../../runtime/README.md)，canonical 本文件只保留执行必须的契约和边界。
+10. Linux/Windows/macOS 各自在对应 Runner 完成 onefile build/status/self-test/real MCP/首次安装/当前版本重复安装；Windows 额外验证无参数 `.exe` 以 binary parent 为项目根、DeepSeek overlay 与根 launcher，POSIX 无参数继续使用 cwd 且不生成 Windows launcher；
+11. 四 Host 项目配置均使用可移植项目相对语义，不固化安装机器绝对路径；DeepSeek 不修改 `$DSH_HOME`，专用 marker 冲突与写入失败能 fail closed/rollback；
+12. Builder/Release 不生成 `*.manifest.json`、key、Reference pack 或其他新 sidecar；
+13. Context budget 不得因 Runtime v3 规则维护显著膨胀；安全实现细节优先放在 [`runtime/README.md`](../../../../runtime/README.md)，canonical 本文件只保留执行必须的契约和边界。
 
 Routing Conformance 必须继续覆盖 Greenfield、Fact Recovery、L1/L2/L3、Feature/Bug/Incident/Refactor/Performance/Schema、Frontend/Figma/Docs/Review、Dependency/CI/Git/PR/Release、Runtime/Project Payload/Skill Mutation/Security、unknown 和复杂叠加。除本 Change 明确批准的 unknown 过披露收窄外，历史安全门禁不得欠披露。
 
@@ -479,7 +497,7 @@ agent-skills-v<SemVer>-macos.zip
 
 Agent_Skills 源仓库维护默认不承担跨版本升级兼容；除非 Requirement Source 明确要求，当前版本以干净安装和当前版本内行为为验收基线，不为历史 binary/config/schema 自动保留 alias、fallback 或双 reader。已有 legacy/previous ownership 路径只是当前实现事实，不构成下一次变更必须继续兼容的承诺。
 
-本 Change 只验收当前 Bundle v3 的首次/无参数/显式安装与当前版本重复安装；Project Payload v2、sidecarless ownership、Host managed 和安装事务边界保持。
+本 Change 只验收当前 Bundle v3 的首次/平台对应无参数/显式安装与当前版本重复安装；Project Payload v2、sidecarless ownership、四 Host managed 和安装事务边界保持。
 
 未来如需历史 Bundle v2 installed Runtime → v3 或其他不兼容 Contract/schema 迁移，另建 Change 明确兼容范围、迁移、回滚和三平台证据；当前 v3 不为未验收迁移保留无限期双 reader。
 

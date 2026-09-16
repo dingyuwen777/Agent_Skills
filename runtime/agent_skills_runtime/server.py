@@ -164,8 +164,15 @@ def _build_parser() -> argparse.ArgumentParser:
     """构造项目安装、MCP 服务与诊断 CLI 参数。"""
     parser = argparse.ArgumentParser(description="Agent Skills 项目级单二进制 Runtime")
     subparsers = parser.add_subparsers(dest="command")
-    install_parser = subparsers.add_parser("install", help="安装/升级目标项目；无子命令时默认安装当前目录")
-    install_parser.add_argument("--target", default=".", help="目标项目根目录，默认当前目录")
+    install_parser = subparsers.add_parser(
+        "install",
+        help="安装/升级目标项目；Windows 无子命令时默认安装 Runtime EXE 所在目录",
+    )
+    install_parser.add_argument(
+        "--target",
+        default=".",
+        help="显式 install 的目标项目根目录，默认当前目录",
+    )
     install_parser.add_argument("--json", action="store_true", help="以 JSON 输出")
     subparsers.add_parser("serve", help="通过 stdio 启动 MCP Server")
     status_parser = subparsers.add_parser("status", help="输出 Runtime 当前最小状态")
@@ -229,7 +236,7 @@ def _run_internal_command(argv: Sequence[str]) -> int | None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """无参数默认安装当前项目；显式 serve/status/self-test 保持稳定可脚本化入口。"""
+    """Windows 无参数 EXE 安装自身目录；POSIX 与显式子命令保持现有可脚本化语义。"""
     raw_argv = list(sys.argv[1:] if argv is None else argv)
     try:
         internal_result = _run_internal_command(raw_argv)
@@ -249,12 +256,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if command == "install":
             _, payload, release_version = _load_embedded_material()
-            target = getattr(arguments, "target", ".")
+            artifact = _runtime_artifact_path()
+            if arguments.command is None:
+                target = artifact.parent if artifact.suffix.lower() == ".exe" else "."
+            else:
+                target = arguments.target
             as_json = bool(getattr(arguments, "json", False))
             result = install_project(
                 target,
                 payload,
-                _runtime_artifact_path(),
+                artifact,
                 release_version=release_version,
             )
             _print_result(_public_install_result(result), as_json)
