@@ -94,7 +94,7 @@ data_changes: []
 | R4 | 项目内隔离、ownership/fail-closed/rollback | #250 / AC4 | satisfied | DeepSeek 专用 marker preflight、symlink 复用通用受管路径检查、专项未受管冲突与 launcher 写失败 rollback 回归 |
 | R5 | MCP/Bundle/Payload/parity 不变 | #250 / AC5 | satisfied | PR diff 未修改 `runtime.py`、`routing.py`、`catalog.py`、`project_payload.py` 或六 Tool 注册；canonical routing metadata 未变，package CI 继续承担最终 parity 证明 |
 | R6 | USAGE/README/runtime README/canonical Rules 同步 | #250 / AC6 | satisfied | `USAGE.md` 增加 DeepSeek 特殊使用；README/runtime README 与 Reference 12/13 同步四 Host、平台默认目标与项目内边界 |
-| R7 | required CI、三平台、main-fresh、Change Archive | #250 / AC7 | not_satisfied | 最新 head `9b6e56a3ffe676be975473932562617ecbdc3302` 的 Run 35084301963 在 `Agent Skills Gate` 分配 Runner 之前失败：job `steps=null`、`logs=null`；Windows/macOS package 因上游 core 未启动而 skipped，禁止 merge |
+| R7 | required CI、三平台、main-fresh、Change Archive | #250 / AC7 | not_satisfied | 多个 Ready/current-head Skill Tests run 均在 `Agent Skills Gate` 分配 Runner 前失败：job 没有 steps/logs，Windows/macOS package 因上游 core 未启动而 skipped；代表性 run：35084301963、35084479928。required CI 未执行，禁止 merge |
 
 # 验证矩阵
 
@@ -106,7 +106,7 @@ data_changes: []
 | 用户 / 工作流验收 | required | Windows 项目根 EXE 无参数安装、不同 cwd、根 launcher 与项目 overlay；Windows package job 已按目标 Contract 编写但未实际运行 |
 | 跨组件关键路径 | required | onefile → project install → Host config → stdio MCP → required Context；当前被 Actions 执行层阻塞 |
 | 外部依赖 / 供应方探测 | not_applicable | 不升级/安装 DeepSeek Harness 或调用在线模型；Host 配置形状已对照当前官方 Harness `.agents/skills`、stdio MCP client、`cwd: !!js process.cwd()` 与 `web --patch` Contract；不把第三方 Harness 加成仓库构建依赖 |
-| 构建 / 打包 / 运行 | required | Linux/Windows/macOS onefile build/self-test/MCP/install；Run 35084301963 未分配 Runner，因此无新鲜 package Evidence |
+| 构建 / 打包 / 运行 | required | Linux/Windows/macOS onefile build/self-test/MCP/install；Actions 未分配 Runner，因此无新鲜 package Evidence |
 | 文档 / 治理 / 其他 | required | canonical Reference 内容守恒、USAGE 特殊说明、README/runtime README、Change/PR Deep Review 与 Workflow Responsibility Audit 已完成；平台 gate 仍 blocked |
 
 # Skill Mutation 影响面审计
@@ -150,7 +150,7 @@ data_changes: []
 
 - DeepSeek Harness 当前官方源码/文档已核对：项目 Skill filesystem 支持 `.agents/skills`；`@deepseek-ai/dsh-mcp-client` 支持 stdio `command/args/cwd/failOnStartupError`；官方 MCP 示例使用 `cwd: !!js process.cwd()`；CLI/开发文档使用 `web --patch <overlay>`。当前 Host Adapter 与这些外部 Contract 对齐。
 - 历史仅含 Change + 目标失败测试的 commit 保留；此前多次 GitHub Actions 均在 Runner 分配前失败（`runner_id=0` / `steps=[]` 或 `steps=null` / 无 job logs），因此没有把平台 pre-run failure 冒充 Red 或 Green 测试结果。
-- 最新 head `9b6e56a3ffe676be975473932562617ecbdc3302` 的 Run `35084301963` 再次确认同一 pre-run failure：`Agent Skills Gate` 没有实际步骤/日志，Windows/macOS package 随后 skipped。此前已对同类失败执行过一次 job rerun，结果仍为零步骤失败，因此不继续重复同一无效路径。
+- Ready/current-head 代表性 Run `35084301963` 与后续仅更新 blocker 记录后的 Run `35084479928` 均再次确认同一 pre-run failure：`Agent Skills Gate` 没有实际步骤/日志，Windows/macOS package 随后 skipped。此前已对同类失败执行过一次 job rerun，结果仍为零步骤失败，因此不继续重复同一无效路径。
 - 当前连接器不能读取 GitHub UI 中更具体的平台错误提示，因此不猜测 billing、配额、账户或 Runner 基础设施根因；只把已直接观察到的执行层阻塞写入 Evidence。
 - 当前 HEAD 的永久测试资产已覆盖：四 Host 安装、DeepSeek overlay/launcher、未受管冲突、安装 rollback、Windows binary-parent、POSIX cwd、显式 target、Host 配置可移植性和 Runtime CLI public result。
 - Windows package CI 已同步新 EXE-parent Contract，并从不同 cwd 启动目标根 artifact，能直接识别误用 cwd 的回归。
