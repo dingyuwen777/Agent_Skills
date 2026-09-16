@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260916-174758-deepseek-harness-host
 title: 增加 DeepSeek Harness Host 项目级适配
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: feature/deepseek-harness-host
 created: 2026-09-16
