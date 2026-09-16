@@ -9,7 +9,7 @@
 本仓库的人类入口分为三类：
 
 - [`README.md`](README.md)：维护者 / 项目管理员入口。说明源仓库结构、分发、安装、首次治理、升级/回退、网页端 Source Mode、验证与 Release。
-- [`USAGE.md`](USAGE.md)：已完成接入和首次治理后的普通项目开发者说明。只讲如何在 Codex、Cursor、Claude Code 等桌面 AI Agent 中开展日常研发。
+- [`USAGE.md`](USAGE.md)：已完成接入和首次治理后的普通项目开发者说明。说明如何在 Codex、Cursor、Claude Code、DeepSeek Harness 等桌面 AI Agent 中开展日常研发，以及 DeepSeek Harness 当前项目级启动入口的特殊用法。
 - [`runtime/README.md`](runtime/README.md)：Runtime 源码子系统维护说明。保存 Runtime 内部实现、构建和维护细节。
 
 普通项目开发者不需要知道 Agent_Skills 如何安装、如何路由规则或如何维护源码；他们只需要在已经配置好的目标项目里使用团队允许的桌面 AI Agent，并遵守目标项目自身的权限、Review、CI 和交付门禁。
@@ -145,9 +145,12 @@ agent-skills-v<VERSION>-macos.zip
 
 ### 6.2 Windows
 
+推荐把 `agent-skills.exe` 放到目标项目根目录后直接双击。Windows onefile **无参数启动**会以 EXE 自身所在目录作为目标项目根，因此不依赖 Windows Explorer 当时的工作目录。
+
+命令行执行同一文件也可以：
+
 ```powershell
-cd D:\work\MyProject
-.\agent-skills.exe
+D:\work\MyProject\agent-skills.exe
 ```
 
 也可以显式指定目标：
@@ -155,6 +158,8 @@ cd D:\work\MyProject
 ```powershell
 .\agent-skills.exe install --target D:\work\MyProject --json
 ```
+
+安装成功后，除 Codex / Cursor / Claude Code 项目配置外，还会写入 DeepSeek Harness 的项目级 `.dsh/agent-skills.cordis.yml`，并在项目根生成 `DeepSeek-Harness.cmd`。后续 Windows 日常使用直接双击该启动器即可；详见 [`USAGE.md`](USAGE.md)。
 
 ### 6.3 Linux
 
@@ -170,6 +175,8 @@ chmod +x /path/to/agent-skills
 /path/to/agent-skills install --target /work/MyProject --json
 ```
 
+Linux 无参数行为保持为安装当前工作目录。安装还会生成项目级 `.dsh/agent-skills.cordis.yml`，但不会生成 Windows `.cmd` 启动器。
+
 ### 6.4 macOS
 
 ```bash
@@ -184,7 +191,9 @@ chmod +x /path/to/agent-skills
 /path/to/agent-skills install --target /work/MyProject --json
 ```
 
-无参数运行等价于安装 / 更新当前工作目录。安装只作用于目标项目，不全局修改其他项目；已有项目内容必须按安装器 ownership 与 fail-closed 边界保留。
+macOS 无参数行为同样保持为安装当前工作目录，并生成项目级 DeepSeek Harness overlay，不生成 Windows `.cmd`。
+
+安装只作用于目标项目，不全局修改其他项目或 `$DSH_HOME`；已有项目内容必须按安装器 ownership 与 fail-closed 边界保留。
 
 ### 6.5 安装后状态与自检
 
@@ -223,14 +232,16 @@ agent-skills self-test --json
 
 首次治理完成后，普通功能开发不重复全量校准。只有技术栈、模块职责、Contract/Schema、开发验证入口、CI/Release/部署等长期项目事实真实变化，或维护者明确要求刷新项目规则时，才对受影响 Overlay 做定向更新。
 
-## 8. Codex、Cursor、Claude Code 接入检查
+## 8. Codex、Cursor、Claude Code、DeepSeek Harness 接入检查
 
-安装器负责维护目标项目中的项目级接入配置。首次打开项目时，Codex、Cursor、Claude Code 可能要求用户确认项目 Trust、Approval 或相关工具权限；宿主自身的安全确认不得绕过。
+安装器负责维护目标项目中的项目级接入配置。首次打开项目时，Codex、Cursor、Claude Code、DeepSeek Harness 可能要求用户确认项目 Trust、Approval 或相关工具权限；宿主自身的安全确认不得绕过。
+
+DeepSeek Harness 与前三个 Host 的差异只在当前宿主配置模型：Harness 原生发现项目 `.agents/skills`，而 Agent_Skills MCP 通过项目内 `.dsh/agent-skills.cordis.yml` 作为 Cordis overlay 接入现有 stdio Runtime。Windows `DeepSeek-Harness.cmd` 负责切到自身项目根并带 `--patch` 启动 `dsh web`；Installer 不修改 `$DSH_HOME` 或用户 profile。`dsh` 命令本身必须由环境提供并可从 `PATH` 运行。
 
 如果目标项目没有正常识别已配置的治理能力，维护者按以下顺序处理：
 
-1. 关闭并重新打开当前项目，或新建 Agent 会话；
-2. 检查宿主是否存在待确认的 Trust / Approval；
+1. 关闭并重新打开当前项目，或新建 Agent 会话；DeepSeek Harness 则重新从项目根启动 `DeepSeek-Harness.cmd`（Windows）或等价项目级 `--patch` 命令（Linux/macOS）；
+2. 检查宿主是否存在待确认的 Trust / Approval，并确认 DeepSeek 环境的 `dsh` 命令可用；
 3. 运行 `status --json` 和 `self-test --json`；
 4. 如当前版本安装状态可安全恢复，在项目根重新执行同版本安装；
 5. 仍失败时按当前错误和 [`runtime/README.md`](runtime/README.md) 调查，不让普通项目开发者手工改内部受管文件。
