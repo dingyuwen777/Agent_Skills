@@ -21,7 +21,7 @@ def _routing_block(payload: dict[str, object]) -> str:
 
 
 class ProjectMcpConfigPortabilityTest(unittest.TestCase):
-    """验证项目级 MCP Host 配置不绑定安装机器绝对路径，且无需 install manifest。"""
+    """验证四个项目级 Host 配置不绑定安装机器绝对路径，且无需 install manifest。"""
 
     def setUp(self) -> None:
         """建立最小可安装 Skill source 与隔离目标根目录。"""
@@ -110,10 +110,11 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         return target
 
     def _assert_portable_host_commands(self, target: Path, runtime_name: str) -> None:
-        """断言全部受管持久文本与三个 Host command 都不绑定目标绝对路径。"""
+        """断言全部受管持久文本与四个 Host command 都不绑定目标绝对路径。"""
         cursor = json.loads((target / ".cursor/mcp.json").read_text(encoding="utf-8"))
         claude = json.loads((target / ".mcp.json").read_text(encoding="utf-8"))
         codex = tomllib.loads((target / ".codex/config.toml").read_text(encoding="utf-8"))
+        deepseek = (target / ".dsh/agent-skills.cordis.yml").read_text(encoding="utf-8")
 
         expected_cursor = (
             "${workspaceFolder}${pathSeparator}.agents${pathSeparator}runtime${pathSeparator}"
@@ -121,6 +122,7 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         )
         expected_claude = f"${{CLAUDE_PROJECT_DIR:-.}}/.agents/runtime/{runtime_name}"
         expected_codex = f".agents/runtime/{runtime_name}"
+        expected_deepseek = f"        command: .agents/runtime/{runtime_name}"
 
         self.assertEqual(cursor["mcpServers"]["agent-skills"]["command"], expected_cursor)
         self.assertEqual(cursor["mcpServers"]["agent-skills"]["args"], ["serve"])
@@ -128,6 +130,10 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         self.assertEqual(claude["mcpServers"]["agent-skills"]["args"], ["serve"])
         self.assertEqual(codex["mcp_servers"]["agent-skills"]["command"], expected_codex)
         self.assertEqual(codex["mcp_servers"]["agent-skills"]["args"], ["serve"])
+        self.assertIn(expected_deepseek, deepseek)
+        self.assertIn("name: '@deepseek-ai/dsh-mcp-client'", deepseek)
+        self.assertIn("cwd: !!js process.cwd()", deepseek)
+        self.assertIn("failOnStartupError: true", deepseek)
         self.assertFalse((target / INSTALL_MANIFEST_PATH).exists())
 
         absolute_target = str(target.resolve())
@@ -135,17 +141,21 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
             cursor["mcpServers"]["agent-skills"]["command"],
             claude["mcpServers"]["agent-skills"]["command"],
             codex["mcp_servers"]["agent-skills"]["command"],
+            deepseek,
         ):
             self.assertNotIn(absolute_target, command)
 
-        persisted_paths = (
+        persisted_paths = [
             Path("AGENTS.md"),
             Path("CLAUDE.md"),
             Path(".gitignore"),
             Path(".cursor/mcp.json"),
             Path(".mcp.json"),
             Path(".codex/config.toml"),
-        )
+            Path(".dsh/agent-skills.cordis.yml"),
+        ]
+        if runtime_name.endswith(".exe"):
+            persisted_paths.append(Path("DeepSeek-Harness.cmd"))
         for relative in persisted_paths:
             content = (target / relative).read_text(encoding="utf-8")
             self.assertNotIn(
@@ -194,6 +204,24 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
             encoding="utf-8",
         )
 
+        deepseek_path = target / ".dsh/agent-skills.cordis.yml"
+        deepseek_path.write_text(
+            "# user-prefix\n"
+            "# agent-skills:deepseek-harness:start\n"
+            "- insert:\n"
+            "    - id: mcp-agent-skills\n"
+            "      name: '@deepseek-ai/dsh-mcp-client'\n"
+            "      config:\n"
+            "        serverName: agent-skills\n"
+            "        transport: stdio\n"
+            f"        command: {old_command}\n"
+            "        args:\n"
+            "          - serve\n"
+            "# agent-skills:deepseek-harness:end\n"
+            "# user-suffix\n",
+            encoding="utf-8",
+        )
+
         artifact = self.root / "upgrade-runtime" / "agent-skills.exe"
         artifact.parent.mkdir()
         artifact.write_bytes(b"runtime-v2")
@@ -204,9 +232,14 @@ class ProjectMcpConfigPortabilityTest(unittest.TestCase):
         cursor_after = json.loads(cursor_path.read_text(encoding="utf-8"))
         claude_after = json.loads(claude_path.read_text(encoding="utf-8"))
         codex_after = tomllib.loads(codex_path.read_text(encoding="utf-8"))
+        deepseek_after = deepseek_path.read_text(encoding="utf-8")
         self.assertEqual(cursor_after["mcpServers"]["other"]["command"], "other-cursor")
         self.assertEqual(claude_after["mcpServers"]["other"]["command"], "other-claude")
         self.assertTrue(codex_after["custom_flag"])
+        self.assertIn("# user-prefix", deepseek_after)
+        self.assertIn("# user-suffix", deepseek_after)
+        self.assertIn("command: .agents/runtime/agent-skills.exe", deepseek_after)
+        self.assertNotIn(old_command, deepseek_after)
 
 
 if __name__ == "__main__":
