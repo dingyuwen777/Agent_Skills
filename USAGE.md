@@ -4,7 +4,7 @@
 
 你不需要了解或维护项目如何配置这些开发约束，也不需要手工选择规则文件或执行流程。AI 应先读取当前项目自己的规则和真实代码，再根据任务完成调查、实现、测试、文档、Review、Git/CI 和交付。
 
-> **DeepSeek Harness 例外说明**：它需要项目级 Host overlay 才能把已安装的 Agent_Skills stdio Runtime 接进 Harness。Windows 安装后项目根会自动生成 `DeepSeek-Harness.cmd`，日常可直接双击使用；详细见下文“DeepSeek Harness 特殊使用方式”。
+> **DeepSeek Harness**：Windows 项目在完成维护者配置后，会在项目根提供 `DeepSeek-Harness.cmd`。日常使用时直接双击该文件即可，不需要手工输入较长的启动命令。
 
 ## 1. 日常使用原则
 
@@ -44,58 +44,31 @@ AI 可以正常告诉你：正在检查哪些项目文件、发现了什么问�
 
 ## DeepSeek Harness 特殊使用方式
 
-Agent_Skills 安装器会把 DeepSeek Harness 作为项目级 Host 接入，但不会修改你的 `$DSH_HOME`、全局 `cordis.patch.yml` 或其他 Harness profile。
+### Windows
 
-### Windows：安装后直接双击项目根入口
-
-把 `agent-skills.exe` 放到目标项目根目录，例如：
-
-```text
-D:\work\MyProject\agent-skills.exe
-```
-
-直接双击它即可完成项目安装。Windows 的无参数 `.exe` 会把 **EXE 自身所在目录**作为目标项目根，因此不依赖 Explorer 当时的工作目录。
-
-安装完成后项目根会生成：
-
-```text
-.dsh/agent-skills.cordis.yml
-DeepSeek-Harness.cmd
-```
-
-以后使用 DeepSeek Harness 时，直接双击：
+项目已经由维护者完成配置后，直接双击项目根的：
 
 ```text
 DeepSeek-Harness.cmd
 ```
 
-它会先切换到当前项目根，再执行等价命令：
+它会从当前项目打开 DeepSeek Harness。首次打开时，如果 Harness 要求项目信任或工具权限确认，请按团队安全策略完成确认。
 
-```text
-dsh web --patch <当前项目>/.dsh/agent-skills.cordis.yml
-```
-
-前提是当前机器已经安装 DeepSeek Harness，并且 `dsh` 可以从 `PATH` 调用。Agent_Skills 不负责安装或升级 DeepSeek Harness 本身。
+前提是当前机器已经能够正常使用 `dsh` 命令。如果系统提示找不到 `dsh`，请先按团队环境说明修复 DeepSeek Harness 环境。
 
 ### Linux / macOS
 
-Linux/macOS 无参数 `agent-skills` 仍按传统 CLI 语义安装**当前工作目录**。完成安装后，从项目根启动 DeepSeek Harness：
+项目完成配置后，从项目根按团队提供的 DeepSeek Harness 启动方式打开当前项目。当前平台没有 Windows 的 `.cmd` 双击入口。
 
-```bash
-dsh web --patch "$PWD/.dsh/agent-skills.cordis.yml"
-```
+### 排障
 
-### 为什么还需要这个 overlay
+如果 DeepSeek Harness 无法打开当前项目：
 
-DeepSeek Harness 可以直接发现项目中的 `.agents/skills`，所以 Agent_Skills 不为 DeepSeek 复制第二套 Skill。项目内 `.dsh/agent-skills.cordis.yml` 只负责通过 Harness 的 stdio MCP client 启动项目中的：
+1. 确认 `dsh` 命令可用；
+2. 确认当前目录是正确的项目根；
+3. 重新执行维护者提供的项目配置流程，或联系项目维护者处理受管配置。
 
-```text
-.agents/runtime/agent-skills[.exe] serve
-```
-
-这样 DeepSeek Harness 与 Codex、Cursor、Claude Code 使用的是同一个项目 Runtime、同一套 canonical 规则和同一组工程门禁。
-
-如果 Harness 启动时报告 `dsh` 不存在、MCP 启动失败或项目 overlay 无法加载，应先检查 DeepSeek Harness 自身安装、当前项目路径和 Agent_Skills `status/self-test`；不要手工修改受管 overlay 来绕过错误。
+不要自行编辑由项目配置流程生成的受管文件来绕过错误。
 
 ## 2. 功能开发
 
