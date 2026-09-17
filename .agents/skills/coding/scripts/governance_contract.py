@@ -149,8 +149,12 @@ def is_current_change_id(change_id: str) -> bool:
 
 
 def is_legacy_change_id(change_id: str) -> bool:
-    """判断 Change ID 是否为仅允许历史读取的日期级格式。"""
-    return LEGACY_CHANGE_ID_PATTERN.fullmatch(change_id.strip()) is not None
+    """判断 Change ID 是否为仅允许历史读取、且不与当前秒级格式重叠的日期级格式。"""
+    candidate = change_id.strip()
+    return (
+        LEGACY_CHANGE_ID_PATTERN.fullmatch(candidate) is not None
+        and CURRENT_CHANGE_ID_PATTERN.fullmatch(candidate) is None
+    )
 
 
 def validate_new_change_text(
