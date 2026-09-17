@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""校验 GitHub PR 是否引用了满足机器 Contract 的 Requirement Source。"""
+"""校验 GitHub PR 的 Requirement Source 与本次新增治理资产。"""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import importlib.util
 import json
 import os
 import re
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -19,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GOVERNANCE_CONTRACT_PATH = (
     ROOT / ".agents" / "skills" / "coding" / "scripts" / "governance_contract.py"
 )
+CHANGE_TEMPLATE_RELATIVE = Path(".agents/skills/coding/assets/CHANGE.template.md")
 
 
 def _load_governance_contract() -> Any:
@@ -55,7 +57,7 @@ IssueLoader = Callable[[int], dict[str, Any]]
 
 
 class RequirementSourceError(ValueError):
-    """表示 PR Requirement Source 不满足仓库机器门禁。"""
+    """表示 PR Requirement Source 或本次新增治理资产不满足仓库机器门禁。"""
 
 
 def extract_requirement_sources(body: str) -> tuple[str, ...]:
@@ -82,6 +84,19 @@ def _is_coding_change_path(relative: Path) -> bool:
     if relative.name != "CHANGE.md":
         return False
     return parts[:2] == (".agents", "changes") or parts[:1] == ("changes",)
+
+
+def _is_active_change_document(relative: Path) -> bool:
+    """判断路径是否位于任一受支持 Coding carrier 的 active Change 文档。"""
+    parts = relative.parts
+    if relative.name != "CHANGE.md":
+        return False
+    return (
+        len(parts) == 4
+        and parts[:2] == ("changes", "active")
+        or len(parts) == 5
+        and parts[:3] == (".agents", "changes", "active")
+    )
 
 
 def _validate_repository_path(root: Path, source: str) -> None:
@@ -171,6 +186,61 @@ def validate_requirement_sources(
     return sources
 
 
+def _git_added_paths(root: Path, base_sha: str, head_sha: str) -> tuple[Path, ...]:
+    """读取 PR base→head 新增文件，作为 current/new 治理资产的客观范围。"""
+    result = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "diff",
+            "--name-only",
+            "--diff-filter=A",
+            "--no-renames",
+            base_sha,
+            head_sha,
+            "--",
+            "changes/active",
+            ".agents/changes/active",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if result.returncode != 0:
+        raise RequirementSourceError(
+            "无法计算本 PR 新增 Change 范围：" + result.stderr.strip()
+        )
+    return tuple(Path(line.strip()) for line in result.stdout.splitlines() if line.strip())
+
+
+def validate_new_changes_since(root: Path, *, base_sha: str, head_sha: str) -> tuple[str, ...]:
+    """对本 PR 新增的 Active Change 执行 current/new machine Contract。"""
+    template_path = root / CHANGE_TEMPLATE_RELATIVE
+    errors: list[str] = []
+    validated: list[str] = []
+    for relative in _git_added_paths(root, base_sha, head_sha):
+        if not _is_active_change_document(relative):
+            continue
+        path = root / relative
+        document_errors = GOVERNANCE_CONTRACT.validate_new_change_file(
+            path,
+            template_path=template_path,
+        )
+        if document_errors:
+            errors.append(
+                f"新增 Change `{relative.as_posix()}` 不满足当前机器 Contract：\n- "
+                + "\n- ".join(document_errors)
+            )
+        else:
+            validated.append(relative.as_posix())
+    if errors:
+        raise RequirementSourceError("\n".join(errors))
+    return tuple(validated)
+
+
 def _load_github_issue(repository: str, issue_number: int, token: str) -> dict[str, Any]:
     """通过 GitHub REST API 读取同仓 Issue，且不把 Token 写入日志或异常文本。"""
     if not repository or "/" not in repository:
@@ -253,8 +323,21 @@ def _resolve_repository(event: dict[str, Any]) -> str:
     return os.environ.get("GITHUB_REPOSITORY", "")
 
 
+def _pull_request_revisions(pull_request: dict[str, Any]) -> tuple[str, str]:
+    """从 PR event 读取 base/head revision，保证 new-instance 校验绑定实际 PR。"""
+    base = pull_request.get("base")
+    head = pull_request.get("head")
+    if not isinstance(base, dict) or not isinstance(head, dict):
+        raise RequirementSourceError("GitHub PR event 缺少 base/head revision。")
+    base_sha = str(base.get("sha") or "").strip()
+    head_sha = str(head.get("sha") or "").strip()
+    if not base_sha or not head_sha:
+        raise RequirementSourceError("GitHub PR event 的 base/head SHA 为空。")
+    return base_sha, head_sha
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    """执行 PR Requirement Source 门禁；非 PR push 事件显式走可审计 fast path。"""
+    """执行 PR 治理资产门禁；非 PR push 事件显式走可审计 fast path。"""
     args = _build_parser().parse_args(argv)
     event_path_text = os.environ.get("GITHUB_EVENT_PATH", "").strip()
     event_path = args.event_path or (Path(event_path_text) if event_path_text else None)
@@ -269,6 +352,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("Requirement Source: 非 pull_request 事件，按仓库规则明确 not_applicable。")
             return 0
 
+        base_sha, head_sha = _pull_request_revisions(pull_request)
+        validated_changes = validate_new_changes_since(
+            args.root,
+            base_sha=base_sha,
+            head_sha=head_sha,
+        )
         body = str(pull_request.get("body") or "")
         repository = _resolve_repository(event)
         token = os.environ.get("GITHUB_TOKEN", "")
@@ -287,6 +376,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
 
     print("Requirement Source 验证通过：" + ", ".join(sources))
+    if validated_changes:
+        print("新增 Change 机器 Contract 验证通过：" + ", ".join(validated_changes))
     return 0
 
 
