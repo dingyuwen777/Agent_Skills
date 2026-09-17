@@ -30,12 +30,12 @@ class RepositoryStructureTest(unittest.TestCase):
         self.assertNotIn("docs/distribution/", readme)
         self.assertNotIn("docs/maintainers/", readme)
 
-    def test_only_runtime_build_and_smoke_scripts_are_public_maintenance_entrypoints(self) -> None:
-        """旧明文分发/历史 installer 不应继续作为源码仓库正式入口。"""
+    def test_only_approved_source_maintenance_scripts_are_public_entrypoints(self) -> None:
+        """根 scripts 只允许 Runtime 构建/冒烟与 canonical Issue Form 投影同步入口。"""
         scripts = ROOT / "scripts"
         self.assertEqual(
             {path.name for path in scripts.iterdir() if path.is_file() and path.suffix == ".py"},
-            {"build_runtime.py", "runtime_mcp_smoke.py"},
+            {"build_runtime.py", "runtime_mcp_smoke.py", "sync_repository_issue_forms.py"},
         )
         self.assertTrue(
             (ROOT / ".github/scripts/check_pr_requirement_source.py").is_file(),
