@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""校验 GitHub PR 是否引用了真实、可访问的 Requirement Source。"""
+"""校验 GitHub PR 的 Requirement Source 与本次新增/修改治理资产。"""
 
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import re
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -14,6 +16,27 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
+ROOT = Path(__file__).resolve().parents[2]
+GOVERNANCE_CONTRACT_PATH = (
+    ROOT / ".agents" / "skills" / "coding" / "scripts" / "governance_contract.py"
+)
+CHANGE_TEMPLATE_RELATIVE = Path(".agents/skills/coding/assets/CHANGE.template.md")
+
+
+def _load_governance_contract() -> Any:
+    """加载 canonical 治理资产机器 Contract，避免 CI 脚本复制第二套规则。"""
+    spec = importlib.util.spec_from_file_location(
+        "agent_skills_governance_contract",
+        GOVERNANCE_CONTRACT_PATH,
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"无法加载治理资产机器 Contract：{GOVERNANCE_CONTRACT_PATH}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+GOVERNANCE_CONTRACT = _load_governance_contract()
 REQUIREMENT_SOURCE_PATTERN = re.compile(
     r"^\s*Requirement-Source:\s*(?P<source>.+?)\s*$",
     re.MULTILINE,
@@ -34,7 +57,7 @@ IssueLoader = Callable[[int], dict[str, Any]]
 
 
 class RequirementSourceError(ValueError):
-    """表示 PR Requirement Source 不满足仓库机器门禁。"""
+    """表示 PR Requirement Source 或本次治理资产不满足仓库机器门禁。"""
 
 
 def extract_requirement_sources(body: str) -> tuple[str, ...]:
@@ -50,9 +73,7 @@ def extract_requirement_sources(body: str) -> tuple[str, ...]:
 def _is_placeholder(source: str) -> bool:
     """判断来源是否仍是模板占位值或明显未完成内容。"""
     normalized = source.strip().lower()
-    if any(token in normalized for token in PLACEHOLDER_TOKENS):
-        return True
-    return "<" in source or ">" in source
+    return any(token in normalized for token in PLACEHOLDER_TOKENS) or "<" in source or ">" in source
 
 
 def _is_coding_change_path(relative: Path) -> bool:
@@ -63,31 +84,37 @@ def _is_coding_change_path(relative: Path) -> bool:
     return parts[:2] == (".agents", "changes") or parts[:1] == ("changes",)
 
 
+def _is_active_change_document(relative: Path) -> bool:
+    """判断路径是否位于任一受支持 Coding carrier 的 active Change 文档。"""
+    parts = relative.parts
+    if relative.name != "CHANGE.md":
+        return False
+    return (
+        len(parts) == 4 and parts[:2] == ("changes", "active")
+    ) or (
+        len(parts) == 5 and parts[:3] == (".agents", "changes", "active")
+    )
+
+
 def _validate_repository_path(root: Path, source: str) -> None:
     """验证仓库相对事实源是仓库内真实文件，且不是 Coding Change 施工契约。"""
     if SCHEME_PATTERN.match(source):
         raise RequirementSourceError(
             f"Requirement Source `{source}` 不是本仓库支持的相对路径；外部系统必须使用项目已定义的稳定标识。"
         )
-
     relative = Path(source)
     if relative.is_absolute():
         raise RequirementSourceError(f"Requirement Source `{source}` 不能使用绝对路径。")
-
     root_resolved = root.resolve()
     candidate = (root_resolved / relative).resolve()
     try:
         resolved_relative = candidate.relative_to(root_resolved)
     except ValueError as exc:
-        raise RequirementSourceError(
-            f"Requirement Source `{source}` 发生路径逃逸。"
-        ) from exc
-
+        raise RequirementSourceError(f"Requirement Source `{source}` 发生路径逃逸。") from exc
     if _is_coding_change_path(resolved_relative):
         raise RequirementSourceError(
             f"Requirement Source `{source}` 指向 Coding Change 施工契约；Change 不能把自己或同类施工记录当作上游需求来源。"
         )
-
     if not candidate.is_file():
         raise RequirementSourceError(
             f"Requirement Source `{source}` 必须指向当前 PR checkout 中存在的仓库文件。"
@@ -95,17 +122,22 @@ def _validate_repository_path(root: Path, source: str) -> None:
 
 
 def _validate_issue_payload(issue_number: int, payload: dict[str, Any]) -> None:
-    """验证 GitHub Requirement Source 是可审查的真实 Issue，而不是 PR。"""
+    """验证 GitHub Requirement Source 是真实 Issue，且满足 canonical machine Profile。"""
     if payload.get("pull_request") is not None:
         raise RequirementSourceError(
             f"Requirement Source `#{issue_number}` 指向 Pull Request，不能把 PR 自身当作上游需求来源。"
         )
-
     title = str(payload.get("title") or "").strip()
     body = str(payload.get("body") or "").strip()
     if not title or not body:
         raise RequirementSourceError(
             f"Requirement Source `#{issue_number}` 缺少可审查的标题或正文。"
+        )
+    errors = GOVERNANCE_CONTRACT.validate_issue_instance(title, body)
+    if errors:
+        raise RequirementSourceError(
+            f"Requirement Source `#{issue_number}` 不满足当前治理资产机器 Contract：\n- "
+            + "\n- ".join(errors)
         )
 
 
@@ -120,15 +152,11 @@ def validate_requirement_sources(
         raise RequirementSourceError(
             "PR body 缺少 `Requirement-Source:`；不能用 PR 描述、CI 绿色或关闭关键字替代需求追溯。"
         )
-
     errors: list[str] = []
     for source in sources:
         try:
             if _is_placeholder(source):
-                raise RequirementSourceError(
-                    f"Requirement Source `{source}` 仍是模板占位值。"
-                )
-
+                raise RequirementSourceError(f"Requirement Source `{source}` 仍是模板占位值。")
             issue_match = ISSUE_SOURCE_PATTERN.fullmatch(source)
             if issue_match is not None:
                 issue_number = int(issue_match.group("number"))
@@ -137,10 +165,63 @@ def validate_requirement_sources(
                 _validate_repository_path(root, source)
         except RequirementSourceError as exc:
             errors.append(str(exc))
-
     if errors:
         raise RequirementSourceError("\n".join(errors))
     return sources
+
+
+def _git_changed_active_paths(root: Path, base_sha: str, head_sha: str) -> tuple[Path, ...]:
+    """读取 PR base→head 新增或修改的 Active Change；archive 历史完全排除。"""
+    result = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "diff",
+            "--name-only",
+            "--diff-filter=AM",
+            "--no-renames",
+            base_sha,
+            head_sha,
+            "--",
+            "changes/active",
+            ".agents/changes/active",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if result.returncode != 0:
+        raise RequirementSourceError(
+            "无法计算本 PR Active Change 范围：" + result.stderr.strip()
+        )
+    return tuple(Path(line.strip()) for line in result.stdout.splitlines() if line.strip())
+
+
+def validate_new_changes_since(root: Path, *, base_sha: str, head_sha: str) -> tuple[str, ...]:
+    """对本 PR 新增或修改的 Active Change 执行 current machine Contract。"""
+    template_path = root / CHANGE_TEMPLATE_RELATIVE
+    errors: list[str] = []
+    validated: list[str] = []
+    for relative in _git_changed_active_paths(root, base_sha, head_sha):
+        if not _is_active_change_document(relative):
+            continue
+        document_errors = GOVERNANCE_CONTRACT.validate_new_change_file(
+            root / relative,
+            template_path=template_path,
+        )
+        if document_errors:
+            errors.append(
+                f"Active Change `{relative.as_posix()}` 不满足当前机器 Contract：\n- "
+                + "\n- ".join(document_errors)
+            )
+        else:
+            validated.append(relative.as_posix())
+    if errors:
+        raise RequirementSourceError("\n".join(errors))
+    return tuple(validated)
 
 
 def _load_github_issue(repository: str, issue_number: int, token: str) -> dict[str, Any]:
@@ -151,7 +232,6 @@ def _load_github_issue(repository: str, issue_number: int, token: str) -> dict[s
         raise RequirementSourceError(
             f"无法验证 Requirement Source `#{issue_number}`：当前 Workflow 没有可用的 GitHub token。"
         )
-
     request = urllib.request.Request(
         f"https://api.github.com/repos/{repository}/issues/{issue_number}",
         headers={
@@ -176,7 +256,6 @@ def _load_github_issue(repository: str, issue_number: int, token: str) -> dict[s
         raise RequirementSourceError(
             f"验证 Requirement Source `#{issue_number}` 时无法取得可靠 GitHub Issue 响应：{type(exc).__name__}。"
         ) from exc
-
     if not isinstance(payload, dict):
         raise RequirementSourceError(
             f"Requirement Source `#{issue_number}` 的 GitHub API 响应结构非法。"
@@ -200,12 +279,7 @@ def _load_event(event_path: Path) -> dict[str, Any]:
 def _build_parser() -> argparse.ArgumentParser:
     """创建命令行参数解析器，保持 CI 与本地验证入口一致。"""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--root",
-        type=Path,
-        default=Path.cwd(),
-        help="仓库根目录，默认当前工作目录。",
-    )
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="仓库根目录，默认当前工作目录。")
     parser.add_argument(
         "--event-path",
         type=Path,
@@ -225,40 +299,54 @@ def _resolve_repository(event: dict[str, Any]) -> str:
     return os.environ.get("GITHUB_REPOSITORY", "")
 
 
+def _pull_request_revisions(pull_request: dict[str, Any]) -> tuple[str, str]:
+    """从 PR event 读取 base/head revision，保证 machine validation 绑定真实 PR。"""
+    base = pull_request.get("base")
+    head = pull_request.get("head")
+    if not isinstance(base, dict) or not isinstance(head, dict):
+        raise RequirementSourceError("GitHub PR event 缺少 base/head revision。")
+    base_sha = str(base.get("sha") or "").strip()
+    head_sha = str(head.get("sha") or "").strip()
+    if not base_sha or not head_sha:
+        raise RequirementSourceError("GitHub PR event 的 base/head SHA 为空。")
+    return base_sha, head_sha
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    """执行 PR Requirement Source 门禁；非 PR push 事件显式走可审计 fast path。"""
+    """执行 PR 治理资产门禁；非 PR push 事件显式走可审计 fast path。"""
     args = _build_parser().parse_args(argv)
     event_path_text = os.environ.get("GITHUB_EVENT_PATH", "").strip()
     event_path = args.event_path or (Path(event_path_text) if event_path_text else None)
     if event_path is None:
         print("PR_REQUIREMENT_SOURCE_ERROR: 缺少 GITHUB_EVENT_PATH。", file=sys.stderr)
         return 1
-
     try:
         event = _load_event(event_path)
         pull_request = event.get("pull_request")
         if not isinstance(pull_request, dict):
             print("Requirement Source: 非 pull_request 事件，按仓库规则明确 not_applicable。")
             return 0
-
+        base_sha, head_sha = _pull_request_revisions(pull_request)
+        validated_changes = validate_new_changes_since(
+            args.root,
+            base_sha=base_sha,
+            head_sha=head_sha,
+        )
         body = str(pull_request.get("body") or "")
         repository = _resolve_repository(event)
         token = os.environ.get("GITHUB_TOKEN", "")
         sources = validate_requirement_sources(
             body,
             args.root,
-            lambda issue_number: _load_github_issue(
-                repository,
-                issue_number,
-                token,
-            ),
+            lambda issue_number: _load_github_issue(repository, issue_number, token),
         )
     except RequirementSourceError as exc:
         for line in str(exc).splitlines():
             print(f"PR_REQUIREMENT_SOURCE_ERROR: {line}", file=sys.stderr)
         return 1
-
     print("Requirement Source 验证通过：" + ", ".join(sources))
+    if validated_changes:
+        print("Active Change 机器 Contract 验证通过：" + ", ".join(validated_changes))
     return 0
 
 
