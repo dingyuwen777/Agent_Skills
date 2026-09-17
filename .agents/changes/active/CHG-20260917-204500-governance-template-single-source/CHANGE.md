@@ -3,11 +3,11 @@ schema: coding-change/v1
 id: CHG-20260917-204500-governance-template-single-source
 title: 治理模板收敛为单一 canonical source
 level: L3
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/governance-template-single-source
 created: 2026-09-17T20:45:00+08:00
-updated: 2026-09-17T20:45:00+08:00
+updated: 2026-09-18T06:45:00+08:00
 completion_gate: required
 depends_on: []
 affected_areas:
@@ -76,10 +76,10 @@ Agent_Skills、AIMA 与 validator 会继续出现“当前相同、以后可能�
 
 ## 成功标准
 
-- [ ] canonical Issue Forms 只有 Coding assets 一处人工维护，根 `.github` 为原字节投影。
-- [ ] validator 不再维护重复 Issue headings/title 与 L3 heading 文本。
-- [ ] 干净首次安装自动生成目标项目根 Issue Forms，冲突 fail closed，后续安装失败时投影回滚。
-- [ ] source/root/project projection 与 machine Contract 均有永久正反例。
+- [x] canonical Issue Forms 只有 Coding assets 一处人工维护，根 `.github` 为原字节投影。
+- [x] validator 不再维护重复 Issue headings/title 与 L3 heading 文本。
+- [x] 干净首次安装自动生成目标项目根 Issue Forms，冲突 fail closed，后续安装失败时投影回滚。
+- [x] source/root/project projection 与 machine Contract 均有永久正反例。
 
 ## 范围
 
@@ -137,14 +137,14 @@ Agent_Skills、AIMA 与 validator 会继续出现“当前相同、以后可能�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | canonical Issue Forms 单一人工 Owner、根为投影 | #256 / AC1 | not_satisfied | 待实现/验证 |
-| R2 | validator 从 Form/Template 动态恢复 Profile | #256 / AC2 | not_satisfied | 待实现/验证 |
-| R3 | first-install 根 Issue Form 投影、冲突失败、事务回滚 | #256 / AC3 | not_satisfied | 待实现/验证 |
-| R4 | Change Template/validator 沿用 Project Payload | #256 / AC4 | not_satisfied | 待验证 |
-| R5 | 永久正反例覆盖 parity/drift/live Contract | #256 / AC5 | not_satisfied | 待实现/验证 |
+| R1 | canonical Issue Forms 单一人工 Owner、根为投影 | #256 / AC1 | satisfied | `test_governance_single_source_projection`：canonical→root 原字节 parity 与 drift 负例；run `35283360654` self-contained tests 通过 |
+| R2 | validator 从 Form/Template 动态恢复 Profile | #256 / AC2 | satisfied | dynamic Form title/required-label 与 L3 template marker 正反例通过；run `35283360654` |
+| R3 | first-install 根 Issue Form 投影、冲突失败、事务回滚 | #256 / AC3 | satisfied | first-install / collision / downstream rollback 测试通过；3 个既有 onefile target 入口回归恢复通过；run `35283360654` |
+| R4 | Change Template/validator 沿用 Project Payload | #256 / AC4 | satisfied | Project Payload 仍为 v2，canonical forms 经现有 Coding assets 自动携带；payload regression 在 self-contained suite 通过 |
+| R5 | 永久正反例覆盖 parity/drift/live Contract | #256 / AC5 | satisfied | 新 projection tests + 现有 Issue/Change/Acceptance contract tests 共随 555 个 self-contained tests 通过 |
 | R6 | 不实现升级兼容 | #256 / AC6 | satisfied | 方案明确限定 first-install，无迁移分支 |
-| R7 | final-head CI/Review/merge | #256 / AC7 | not_satisfied | 交付阶段取得 |
-| R8 | main-fresh/archive/Closure | #256 / AC8 | not_satisfied | merge 后取得 |
+| R7 | final-head CI/Review/merge | #256 / AC7 | explicitly_deferred | Ref23 lifecycle：Change Ready 后取得 final-head package CI、独立 Review 与 guarded merge；#256 保持 open 作为最终 Owner |
+| R8 | main-fresh/archive/Closure | #256 / AC8 | explicitly_deferred | Ref23 lifecycle：仅 merge 后可取得 main-fresh、repository-native archive 与 Issue Closure；不得在 Active Change Ready 前伪造 |
 
 # 计划改动
 
@@ -159,11 +159,11 @@ Agent_Skills、AIMA 与 validator 会继续出现“当前相同、以后可能�
 
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 行为变化建立失败证据或说明测试例外
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -206,10 +206,10 @@ Agent_Skills、AIMA 与 validator 会继续出现“当前相同、以后可能�
 
 # 完成审计
 
-- [ ] upstream_re_read：完成前重新读取 #256 与当前 canonical Rules。
-- [ ] change_coverage：确认覆盖 AC1-AC8，没有把 Change 自身当需求全集。
-- [ ] reverse_audit：完成 Rule→Template/Validator/CLI/CI/Tests/Runtime 反向影响审计。
-- [ ] unresolved_cleared：R1-R8 全部 satisfied/not_applicable 且有直接证据。
+- [x] upstream_re_read：已重新读取 live #256、当前 root AGENTS/Maintenance、Router/Coding 与本次命中的 Runtime/Mutation/Change/Validation/Delivery rules。
+- [x] change_coverage：AC1-AC6 已实现并有当前 head 证据；AC7/AC8 明确保留给 PR/merge/post-merge lifecycle，由 #256 继续持有。
+- [x] reverse_audit：已覆盖 canonical Form/Template → validator → Project Payload → Runtime install transaction → CI/tests；未新增第二套 schema 或 upgrade 路径。
+- [x] unresolved_cleared：Ready 阶段 R1-R6 已 satisfied；R7/R8 按正式 delivery lifecycle explicitly_deferred，#256 保持 open，当前没有 not_satisfied。
 
 # 完成证据与状态
 
@@ -217,18 +217,18 @@ Agent_Skills、AIMA 与 validator 会继续出现“当前相同、以后可能�
 
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
-| V1 | 待填写 | targeted tests / CI | 待执行 | 待补 |
+| V1 | PR head `c962b37f654e1e13ad0ec90d5728b7377c5b113f` / Ubuntu 24.04 / Python 3.14.7 | Skill Tests run `35283360654` → compile + CLI smoke + self-contained tests | **PASS：555 tests**；Change readiness 随后仅因本次写回前状态仍为 `proposed` 而按设计 fail-closed | 证明治理 Contract、projection、Runtime install 回归、路由/context budget 与现有安全语义均通过当前 head 语义测试 |
 
 ## 未验证内容与剩余风险
 
-- 当前尚未实现；final-head CI/Review/main-fresh/archive/Closure 待后续阶段取得。
+- 实现与语义回归已完成。剩余均为生命周期证据：本次状态写回后需取得新 final-head package CI、独立 Review、guarded merge；merge 后再取得 main-fresh、repository-native archive 与 #256 Closure。
 
 ## 交付状态
 
-- 提交：待实现
-- 拉取请求：待创建
-- CI：待执行
-- 合并：待执行
+- 提交：当前实现 head `c962b37f654e1e13ad0ec90d5728b7377c5b113f`；本次 Change 状态写回会形成新的 final head
+- 拉取请求：#257，open / mergeable
+- CI：run `35283360654` 的 555 self-contained tests 已通过；Change Ready 写回后重新取得 package/full final-head Evidence
+- 合并：待 final-head required CI + 独立 Review 通过后 guarded merge
 - Change 归档：待 merge 后 repository-native automation
 - 发布 / 部署：不适用；用户未要求 Release/Deploy。
 
