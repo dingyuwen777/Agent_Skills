@@ -7,7 +7,7 @@ status: ready_for_review
 owner: dingyuwen777
 branch: tech/governance-template-single-source
 created: 2026-09-17T20:45:00+08:00
-updated: 2026-09-18T06:45:00+08:00
+updated: 2026-09-18T06:55:00+08:00
 completion_gate: required
 depends_on: []
 affected_areas:
@@ -21,6 +21,7 @@ affected_paths:
   - .agents/skills/coding/tests
   - runtime/agent_skills_runtime
   - .github/ISSUE_TEMPLATE
+  - scripts/sync_repository_issue_forms.py
 contracts:
   - coding-change/v1
   - github-requirement-source
@@ -63,6 +64,7 @@ Agent_Skills、AIMA 与 validator 会继续出现“当前相同、以后可能�
 | E2 | 根 Issue Forms 与 AIMA 当前副本内容相同但各自存在 | `.github/ISSUE_TEMPLATE/*` 与 AIMA 对应路径 | 应改为 generated projection，而非继续人工同步 |
 | E3 | validator 硬编码 `ISSUE_TYPE_PROFILES` 与 L3 heading | `.agents/skills/coding/scripts/governance_contract.py` | machine Profile 也必须从 canonical asset 派生 |
 | E4 | 用户明确排除版本升级兼容 | #256 / AC6 | 只实现 first-install + exact-idempotent，不增加迁移分支 |
+| E5 | Agent_Skills 根 Issue Forms 需要可重复生成而非人工复制 | #256 风险/AC1 + 独立 Review | 新增 source-repo 专用 deterministic renderer；不进入 Runtime 升级语义 |
 
 ## 推断与待确认
 
@@ -137,11 +139,11 @@ Agent_Skills、AIMA 与 validator 会继续出现“当前相同、以后可能�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | canonical Issue Forms 单一人工 Owner、根为投影 | #256 / AC1 | satisfied | `test_governance_single_source_projection`：canonical→root 原字节 parity 与 drift 负例；run `35283360654` self-contained tests 通过 |
-| R2 | validator 从 Form/Template 动态恢复 Profile | #256 / AC2 | satisfied | dynamic Form title/required-label 与 L3 template marker 正反例通过；run `35283360654` |
-| R3 | first-install 根 Issue Form 投影、冲突失败、事务回滚 | #256 / AC3 | satisfied | first-install / collision / downstream rollback 测试通过；3 个既有 onefile target 入口回归恢复通过；run `35283360654` |
+| R1 | canonical Issue Forms 单一人工 Owner、根为投影 | #256 / AC1 | satisfied | source-repo renderer + exact-set parity/drift tests；current implementation head `6685ae20f4e297c58970f9c49a6ef722f8d05f5d` 的 run `35284326355` self-contained step 已通过 |
+| R2 | validator 从 Form/Template 动态恢复 Profile | #256 / AC2 | satisfied | dynamic Form title/required-label 与 L3 template marker 正反例在 run `35284326355` self-contained step 通过 |
+| R3 | first-install 根 Issue Form 投影、冲突失败、事务回滚 | #256 / AC3 | satisfied | first-install / collision / downstream rollback 与 3 个 onefile target 入口回归均在 run `35284326355` self-contained step 通过 |
 | R4 | Change Template/validator 沿用 Project Payload | #256 / AC4 | satisfied | Project Payload 仍为 v2，canonical forms 经现有 Coding assets 自动携带；payload regression 在 self-contained suite 通过 |
-| R5 | 永久正反例覆盖 parity/drift/live Contract | #256 / AC5 | satisfied | 新 projection tests + 现有 Issue/Change/Acceptance contract tests 共随 555 个 self-contained tests 通过 |
+| R5 | 永久正反例覆盖 parity/drift/live Contract | #256 / AC5 | satisfied | source renderer exact-set/drift + Runtime projection + 现有 Issue/Change/Acceptance tests 均随 run `35284326355` self-contained step 通过 |
 | R6 | 不实现升级兼容 | #256 / AC6 | satisfied | 方案明确限定 first-install，无迁移分支 |
 | R7 | final-head CI/Review/merge | #256 / AC7 | explicitly_deferred | Ref23 lifecycle：Change Ready 后取得 final-head package CI、独立 Review 与 guarded merge；#256 保持 open 作为最终 Owner |
 | R8 | main-fresh/archive/Closure | #256 / AC8 | explicitly_deferred | Ref23 lifecycle：仅 merge 后可取得 main-fresh、repository-native archive 与 Issue Closure；不得在 Active Change Ready 前伪造 |
@@ -154,6 +156,7 @@ Agent_Skills、AIMA 与 validator 会继续出现“当前相同、以后可能�
 | `.github/ISSUE_TEMPLATE/*` | 改为 canonical 原字节投影 | GitHub UI 继续可用 | R1/R5 |
 | `governance_contract.py` | 动态 Form/Template Profile + projection validation | 删除机器语义重复 | R2/R5 |
 | `runtime/agent_skills_runtime/governance_projection.py` | first-install root projection transaction | 目标项目自动消费 | R3/R4 |
+| `scripts/sync_repository_issue_forms.py` | source-repo deterministic renderer / `--check` | 根 `.github` 不再人工复制维护 | R1/R5 |
 | `server.py` | 把 projection transaction 包住 `install_project` | 失败回滚 | R3 |
 | targeted tests / Ref29 | 回归与规则同步 | 防止后续再漂移 | R1-R5 |
 
@@ -217,7 +220,7 @@ Agent_Skills、AIMA 与 validator 会继续出现“当前相同、以后可能�
 
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
-| V1 | PR head `c962b37f654e1e13ad0ec90d5728b7377c5b113f` / Ubuntu 24.04 / Python 3.14.7 | Skill Tests run `35283360654` → compile + CLI smoke + self-contained tests | **PASS：555 tests**；Change readiness 随后仅因本次写回前状态仍为 `proposed` 而按设计 fail-closed | 证明治理 Contract、projection、Runtime install 回归、路由/context budget 与现有安全语义均通过当前 head 语义测试 |
+| V1 | implementation head `6685ae20f4e297c58970f9c49a6ef722f8d05f5d` / GitHub Actions Ubuntu 24.04 | Skill Tests run `35284326355` → compile + CLI smoke + self-contained tests + Change Ready | **PASS**；package 阶段在本 Evidence carrier 写回前已启动 | 证明 renderer、canonical/profile、Runtime first-install、路由/context budget 与现有安全语义在当前实现 revision 通过；本次仅修改 Change Evidence，不使该实现证据失效 |
 
 ## 未验证内容与剩余风险
 
@@ -225,9 +228,9 @@ Agent_Skills、AIMA 与 validator 会继续出现“当前相同、以后可能�
 
 ## 交付状态
 
-- 提交：当前实现 head `c962b37f654e1e13ad0ec90d5728b7377c5b113f`；本次 Change 状态写回会形成新的 final head
+- 提交：当前实现 revision `6685ae20f4e297c58970f9c49a6ef722f8d05f5d`；本次只回写 Change Evidence，将形成 final PR head
 - 拉取请求：#257，open / mergeable
-- CI：run `35283360654` 的 555 self-contained tests 已通过；Change Ready 写回后重新取得 package/full final-head Evidence
+- CI：run `35284326355` 的 compile、CLI smoke、self-contained tests、Change Ready 已通过；Evidence 写回后的 final head 重新取得 required package/full Evidence
 - 合并：待 final-head required CI + 独立 Review 通过后 guarded merge
 - Change 归档：待 merge 后 repository-native automation
 - 发布 / 部署：不适用；用户未要求 Release/Deploy。
