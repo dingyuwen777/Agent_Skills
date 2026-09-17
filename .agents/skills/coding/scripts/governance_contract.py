@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""治理资产机器 Contract：校验新 Coding Change 与 GitHub Requirement Source 实例。"""
+"""治理资产机器 Contract：校验 Coding Change、Requirement Source 与 Issue Form 投影。"""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 import re
 import sys
-from typing import Any, Sequence
+from typing import Sequence
 
 
 CHANGE_SCHEMA = "coding-change/v1"
@@ -25,67 +25,40 @@ ACCEPTANCE_ITEM_PATTERN = re.compile(
     r"^\s*-\s*\[(?P<checked>[ xX])\]\s*\*{0,2}AC(?P<number>[1-9][0-9]*)\*{0,2}[：:]\s*(?P<text>.+?)\s*$",
     re.MULTILINE,
 )
-ISSUE_TYPE_PROFILES: dict[str, dict[str, Any]] = {
-    "requirement": {
-        "title_prefix": "[需求] ",
-        "required_headings": (
-            "问题背景",
-            "目标",
-            "用户 / 使用场景",
-            "范围",
-            "非目标",
-            "验收标准",
-            "必须保持不变",
-            "上游事实源 / 相关资料",
-            "风险与依赖",
-            "验证要求",
-        ),
-    },
-    "bug": {
-        "title_prefix": "[缺陷] ",
-        "required_headings": (
-            "实际行为",
-            "期望行为",
-            "影响范围",
-            "环境 / 版本",
-            "复现步骤",
-            "证据",
-            "回归范围",
-            "验收标准",
-            "验证要求",
-            "上游事实源 / 相关资料",
-        ),
-    },
-    "technical_change": {
-        "title_prefix": "[技术变更] ",
-        "required_headings": (
-            "动机 / 根因",
-            "当前状态",
-            "目标状态",
-            "范围",
-            "非目标",
-            "兼容与迁移",
-            "风险与回滚",
-            "验收标准",
-            "验证要求",
-            "上游事实源 / 相关资料",
-        ),
-    },
-}
-ISSUE_PROFILE_ALIASES = {
-    "requirement": "requirement",
-    "需求": "requirement",
-    "bug": "bug",
-    "缺陷": "bug",
-    "technical": "technical_change",
-    "technical_change": "technical_change",
-    "技术变更": "technical_change",
-}
-L3_REQUIRED_SECOND_LEVEL_HEADINGS = ("备选方案与取舍",)
+ISSUE_HEADING_PATTERN = re.compile(r"^#{2,6}\s+(.+?)\s*$", re.MULTILINE)
+FORM_TITLE_PATTERN = re.compile(r'^title:\s*"(?P<prefix>.+?)"\s*$', re.MULTILINE)
+FORM_TYPE_PATTERN = re.compile(r"^\s*- type:\s*(?P<type>[a-z_]+)\s*$", re.MULTILINE)
+FORM_ID_PATTERN = re.compile(r"^\s*id:\s*(?P<id>[a-z0-9_]+)\s*$", re.MULTILINE)
+FORM_LABEL_PATTERN = re.compile(r"^\s*label:\s*(?P<label>.+?)\s*$", re.MULTILINE)
+REQUIRED_HEADING_MARKER_PATTERN = re.compile(
+    r"<!--\s*governance:required-for=(?P<level>L[23])\s*-->\s*\n"
+    r"##\s+(?P<heading>.+?)\s*$",
+    re.MULTILINE,
+)
+ISSUE_FORM_CONFIG_NAME = "config.yml"
+ISSUE_FORM_PROJECTION_RELATIVE = Path(".github/ISSUE_TEMPLATE")
+CANONICAL_CODING_ROOT = Path(__file__).resolve().parents[1]
+CANONICAL_CHANGE_TEMPLATE = CANONICAL_CODING_ROOT / "assets" / "CHANGE.template.md"
+CANONICAL_ISSUE_FORM_DIR = CANONICAL_CODING_ROOT / "assets" / "issue-templates"
 
 
 class GovernanceContractError(ValueError):
     """表示治理资产实例不满足当前机器 Contract。"""
+
+
+class IssueProfile:
+    """表示从 canonical GitHub Issue Form 恢复出的稳定机器 Profile。"""
+
+    def __init__(
+        self,
+        filename: str,
+        title_prefix: str,
+        required_headings: tuple[str, ...],
+    ) -> None:
+        """保存 Form 文件身份、标题前缀与 required textarea 语义段。"""
+        self.filename = filename
+        self.title_prefix = title_prefix
+        self.required_headings = required_headings
 
 
 def _frontmatter_and_body(text: str) -> tuple[dict[str, str], str]:
@@ -114,6 +87,18 @@ def template_top_level_headings(template_text: str) -> tuple[str, ...]:
         raise GovernanceContractError("Change 模板未包含可识别的一级标题")
     if len(set(headings)) != len(headings):
         raise GovernanceContractError("Change 模板一级标题重复，无法形成稳定机器 Profile")
+    return headings
+
+
+def template_required_second_level_headings(template_text: str, level: str) -> tuple[str, ...]:
+    """从模板内显式 marker 恢复指定风险级别额外必需的二级标题。"""
+    headings = tuple(
+        match.group("heading").strip()
+        for match in REQUIRED_HEADING_MARKER_PATTERN.finditer(template_text)
+        if match.group("level") == level
+    )
+    if len(set(headings)) != len(headings):
+        raise GovernanceContractError(f"Change 模板 {level} 必需二级标题重复")
     return headings
 
 
@@ -167,13 +152,14 @@ def validate_new_change_text(
     try:
         metadata, body = _frontmatter_and_body(text)
         required_headings = template_top_level_headings(template_text)
+        level = metadata.get("level", "")
+        required_second_level = template_required_second_level_headings(template_text, level)
     except GovernanceContractError as exc:
         return [str(exc)]
 
     errors: list[str] = []
     schema = metadata.get("schema", "")
     change_id = metadata.get("id", "")
-    level = metadata.get("level", "")
     if schema != CHANGE_SCHEMA:
         errors.append(f"新 Change schema 必须为 {CHANGE_SCHEMA}，当前为 {schema or '<empty>'}")
     if not is_current_change_id(change_id):
@@ -192,19 +178,23 @@ def validate_new_change_text(
             asset_name="新 Change",
         )
     )
-    if level == "L3":
+    if required_second_level:
         errors.extend(
             _validate_ordered_headings(
                 body,
-                L3_REQUIRED_SECOND_LEVEL_HEADINGS,
+                required_second_level,
                 level=2,
-                asset_name="L3 Change",
+                asset_name=f"{level} Change",
             )
         )
     return errors
 
 
-def validate_new_change_file(path: Path, *, template_path: Path) -> list[str]:
+def validate_new_change_file(
+    path: Path,
+    *,
+    template_path: Path = CANONICAL_CHANGE_TEMPLATE,
+) -> list[str]:
     """读取新 Change 与 canonical 模板并执行当前实例校验。"""
     expected_id = path.parent.name if path.name == "CHANGE.md" else None
     try:
@@ -226,21 +216,117 @@ def _normalise_issue_heading(value: str) -> str:
 
 def _issue_headings(body: str) -> tuple[str, ...]:
     """提取二到六级 Markdown 标题；Issue Form 与 API 写入可使用不同标题级别。"""
-    pattern = re.compile(r"^#{2,6}\s+(.+?)\s*$", re.MULTILINE)
-    return tuple(_normalise_issue_heading(match.group(1)) for match in pattern.finditer(body))
+    return tuple(
+        _normalise_issue_heading(match.group(1))
+        for match in ISSUE_HEADING_PATTERN.finditer(body)
+    )
 
 
-def resolve_issue_profile(title: str, profile: str | None = None) -> str:
-    """按显式 profile 或标准标题前缀解析 Requirement Source 类型。"""
+def _form_blocks(text: str) -> tuple[str, ...]:
+    """按 Issue Form 顶层 body item 切分 YAML 文本，避免增加 YAML 运行依赖。"""
+    starts = [match.start() for match in re.finditer(r"^  - type:\s*", text, re.MULTILINE)]
+    if not starts:
+        return ()
+    starts.append(len(text))
+    return tuple(text[starts[index] : starts[index + 1]] for index in range(len(starts) - 1))
+
+
+def _field_is_required(block: str) -> bool:
+    """确认当前字段自己的 validations.required=true，避免其他控件误满足。"""
+    lines = [line.strip() for line in block.splitlines()]
+    try:
+        validations_index = lines.index("validations:")
+    except ValueError:
+        return False
+    return "required: true" in lines[validations_index + 1 :]
+
+
+def load_issue_profile(path: Path) -> IssueProfile:
+    """从一个 canonical Issue Form 恢复 title prefix 与 required textarea labels。"""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise GovernanceContractError(f"无法读取 Issue Form {path}: {exc}") from exc
+    title_match = FORM_TITLE_PATTERN.search(text)
+    if title_match is None:
+        raise GovernanceContractError(f"Issue Form {path} 缺少 title prefix")
+    required_headings: list[str] = []
+    for block in _form_blocks(text):
+        type_match = FORM_TYPE_PATTERN.search(block)
+        field_id = FORM_ID_PATTERN.search(block)
+        label = FORM_LABEL_PATTERN.search(block)
+        if type_match is None or type_match.group("type") != "textarea":
+            continue
+        if field_id is None or label is None or not _field_is_required(block):
+            continue
+        required_headings.append(_normalise_issue_heading(label.group("label")))
+    if not required_headings:
+        raise GovernanceContractError(f"Issue Form {path} 没有 required textarea Profile")
+    if len(set(required_headings)) != len(required_headings):
+        raise GovernanceContractError(f"Issue Form {path} required labels 重复")
+    return IssueProfile(
+        filename=path.name,
+        title_prefix=title_match.group("prefix"),
+        required_headings=tuple(required_headings),
+    )
+
+
+def _canonical_issue_form_paths(forms_dir: Path) -> tuple[Path, ...]:
+    """返回 canonical Issue Form 资产；config 参与投影但不参与 Issue 类型 Profile。"""
+    if forms_dir.is_symlink() or not forms_dir.is_dir():
+        raise GovernanceContractError(f"canonical Issue Form 目录不存在或非法：{forms_dir}")
+    paths = tuple(
+        sorted(
+            path
+            for path in forms_dir.glob("*.yml")
+            if path.is_file() and not path.is_symlink()
+        )
+    )
+    if not paths:
+        raise GovernanceContractError(f"canonical Issue Form 目录为空：{forms_dir}")
+    return paths
+
+
+def load_issue_profiles(forms_dir: Path = CANONICAL_ISSUE_FORM_DIR) -> tuple[IssueProfile, ...]:
+    """从 canonical Issue Form assets 动态加载全部类型 Profile。"""
+    profiles = tuple(
+        load_issue_profile(path)
+        for path in _canonical_issue_form_paths(forms_dir)
+        if path.name != ISSUE_FORM_CONFIG_NAME
+    )
+    if not profiles:
+        raise GovernanceContractError("canonical Issue Form 未定义任何 Requirement Source Profile")
+    prefixes = [profile.title_prefix for profile in profiles]
+    if len(set(prefixes)) != len(prefixes):
+        raise GovernanceContractError("canonical Issue Form title prefix 重复，无法唯一解析类型")
+    return profiles
+
+
+def resolve_issue_profile(
+    title: str,
+    profile: str | None = None,
+    *,
+    forms_dir: Path = CANONICAL_ISSUE_FORM_DIR,
+) -> IssueProfile:
+    """按显式 profile 或 canonical title prefix 解析唯一 Requirement Source 类型。"""
+    profiles = load_issue_profiles(forms_dir)
     if profile is not None:
-        resolved = ISSUE_PROFILE_ALIASES.get(profile.strip().casefold()) or ISSUE_PROFILE_ALIASES.get(profile.strip())
-        if resolved is None:
-            raise GovernanceContractError(f"未知 Issue Profile：{profile}")
-        return resolved
-    for name, contract in ISSUE_TYPE_PROFILES.items():
-        if title.startswith(str(contract["title_prefix"])):
-            return name
-    raise GovernanceContractError("Issue 标题必须使用 [需求] / [缺陷] / [技术变更] 标准类型前缀")
+        candidate = profile.strip().casefold().replace("_", "-")
+        matches: list[IssueProfile] = []
+        for current in profiles:
+            stem = Path(current.filename).stem.casefold()
+            suffix = stem.split("-", 1)[-1]
+            title_identity = current.title_prefix.strip().strip("[]").strip().casefold()
+            if candidate in {stem, suffix, title_identity}:
+                matches.append(current)
+        if len(matches) != 1:
+            raise GovernanceContractError(f"未知或不唯一的 Issue Profile：{profile}")
+        return matches[0]
+    matches = [current for current in profiles if title.startswith(current.title_prefix)]
+    if len(matches) != 1:
+        allowed = " / ".join(current.title_prefix.strip() for current in profiles)
+        raise GovernanceContractError(f"Issue 标题必须唯一匹配 canonical 类型前缀：{allowed}")
+    return matches[0]
 
 
 def validate_issue_instance(
@@ -249,25 +335,25 @@ def validate_issue_instance(
     *,
     profile: str | None = None,
     require_all_checked: bool = False,
+    forms_dir: Path = CANONICAL_ISSUE_FORM_DIR,
 ) -> list[str]:
     """校验 GitHub Requirement Source 实例的类型、语义段与稳定 Acceptance task list。"""
     errors: list[str] = []
+    normalized_title = title.strip()
     try:
-        resolved = resolve_issue_profile(title.strip(), profile)
+        contract = resolve_issue_profile(normalized_title, profile, forms_dir=forms_dir)
     except GovernanceContractError as exc:
         return [str(exc)]
-    contract = ISSUE_TYPE_PROFILES[resolved]
-    title_prefix = str(contract["title_prefix"])
-    if not title.startswith(title_prefix):
-        errors.append(f"Issue 标题必须以 {title_prefix!r} 开头")
+    if not normalized_title.startswith(contract.title_prefix):
+        errors.append(f"Issue 标题必须以 {contract.title_prefix!r} 开头")
 
     headings = _issue_headings(body)
-    for heading in contract["required_headings"]:
-        normalised = _normalise_issue_heading(str(heading))
-        if headings.count(normalised) == 0:
-            errors.append(f"Issue 缺少必需语义段：{normalised}")
-        elif headings.count(normalised) > 1:
-            errors.append(f"Issue 必需语义段重复：{normalised}")
+    for heading in contract.required_headings:
+        count = headings.count(heading)
+        if count == 0:
+            errors.append(f"Issue 缺少必需语义段：{heading}")
+        elif count > 1:
+            errors.append(f"Issue 必需语义段重复：{heading}")
 
     matches = list(ACCEPTANCE_ITEM_PATTERN.finditer(body))
     if not matches:
@@ -285,6 +371,31 @@ def validate_issue_instance(
     return errors
 
 
+def validate_issue_form_projection(
+    project_root: Path,
+    *,
+    forms_dir: Path = CANONICAL_ISSUE_FORM_DIR,
+) -> list[str]:
+    """校验仓库根 GitHub Issue Forms 是 canonical assets 的原字节受管投影。"""
+    errors: list[str] = []
+    target_dir = project_root / ISSUE_FORM_PROJECTION_RELATIVE
+    try:
+        canonical_paths = _canonical_issue_form_paths(forms_dir)
+    except GovernanceContractError as exc:
+        return [str(exc)]
+    for source in canonical_paths:
+        target = target_dir / source.name
+        if not target.is_file() or target.is_symlink():
+            errors.append(f"Issue Form 投影缺失或不是普通文件：{target}")
+            continue
+        try:
+            if target.read_bytes() != source.read_bytes():
+                errors.append(f"Issue Form 投影已漂移，必须从 canonical asset 重新生成：{target}")
+        except OSError as exc:
+            errors.append(f"无法读取 Issue Form 投影：{target}: {exc}")
+    return errors
+
+
 def _build_parser() -> argparse.ArgumentParser:
     """构建宿主无关 CLI，使无 Python import 集成的 Agent 也能调用同一校验器。"""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -292,14 +403,19 @@ def _build_parser() -> argparse.ArgumentParser:
 
     change = subparsers.add_parser("validate-change", help="校验新 Coding Change 实例")
     change.add_argument("--path", type=Path, required=True)
-    change.add_argument("--template", type=Path, required=True)
+    change.add_argument("--template", type=Path, default=CANONICAL_CHANGE_TEMPLATE)
 
     issue = subparsers.add_parser("validate-issue", help="校验 GitHub Requirement Source 实例")
     issue.add_argument("--title", required=True)
     issue.add_argument("--body-file", type=Path, required=True)
     issue.add_argument("--profile")
+    issue.add_argument("--forms-dir", type=Path, default=CANONICAL_ISSUE_FORM_DIR)
     issue.add_argument("--require-all-checked", action="store_true")
     issue.add_argument("--json", action="store_true")
+
+    projection = subparsers.add_parser("validate-projection", help="校验根 GitHub Issue Forms 受管投影")
+    projection.add_argument("--root", type=Path, required=True)
+    projection.add_argument("--forms-dir", type=Path, default=CANONICAL_ISSUE_FORM_DIR)
     return parser
 
 
@@ -308,6 +424,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     if args.command == "validate-change":
         errors = validate_new_change_file(args.path, template_path=args.template)
+    elif args.command == "validate-projection":
+        errors = validate_issue_form_projection(args.root, forms_dir=args.forms_dir)
     else:
         try:
             body = args.body_file.read_text(encoding="utf-8")
@@ -319,6 +437,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 body,
                 profile=args.profile,
                 require_all_checked=args.require_all_checked,
+                forms_dir=args.forms_dir,
             )
     if args.command == "validate-issue" and args.json:
         print(json.dumps({"ok": not errors, "errors": errors}, ensure_ascii=False))
