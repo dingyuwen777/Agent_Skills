@@ -70,6 +70,10 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
                 1,
             )
             (target / "01-requirement.yml").write_text(stale, encoding="utf-8")
+            stale_managed = target / "legacy-managed.yml"
+            stale_managed.write_bytes(
+                b"# agent-skills:governance-issue-form:v1\nlegacy: true\n"
+            )
 
             self.assertIn(
                 ".github/ISSUE_TEMPLATE/01-requirement.yml",
@@ -77,6 +81,8 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             )
             changed = SYNC.sync_projection(root)
             self.assertIn(".github/ISSUE_TEMPLATE/01-requirement.yml", changed)
+            self.assertIn(".github/ISSUE_TEMPLATE/legacy-managed.yml", changed)
+            self.assertFalse(stale_managed.exists())
             self.assertEqual(SYNC.projection_drift(root), [])
             for canonical in sorted(CANONICAL_FORMS.glob("*.yml")):
                 self.assertEqual(
@@ -98,6 +104,21 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "拒绝覆盖非受管"):
                 SYNC.sync_projection(root)
             self.assertEqual(collision.read_text(encoding="utf-8"), "project-owned\n")
+
+    def test_source_repository_renderer_flags_unmanaged_extra_file(self) -> None:
+        """根投影集合不能悄悄容纳 canonical 之外的未受管 Issue Form。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / ".agents/skills/coding/assets/issue-templates"
+            shutil.copytree(CANONICAL_FORMS, source)
+            SYNC.sync_projection(root)
+            extra = root / ".github/ISSUE_TEMPLATE/custom.yml"
+            extra.write_text("project-owned\n", encoding="utf-8")
+
+            self.assertIn(".github/ISSUE_TEMPLATE/custom.yml", SYNC.projection_drift(root))
+            with self.assertRaisesRegex(ValueError, "非 canonical"):
+                SYNC.sync_projection(root)
+            self.assertEqual(extra.read_text(encoding="utf-8"), "project-owned\n")
 
     def test_project_payload_contains_canonical_issue_form_assets(self) -> None:
         """不新增 Payload schema，现有 Coding assets 分发链必须自动携带 canonical Forms。"""
