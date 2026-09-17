@@ -75,8 +75,7 @@ def projection_drift(root: Path) -> list[str]:
                 continue
             if target.is_symlink() or not target.is_file():
                 raise ValueError(f"Issue Form 投影目标必须是普通文件：{target}")
-            if target.read_bytes().startswith(MANAGED_MARKER):
-                drift.append((TARGET_RELATIVE / target.name).as_posix())
+            drift.append((TARGET_RELATIVE / target.name).as_posix())
     return drift
 
 
@@ -104,6 +103,8 @@ def sync_projection(root: Path) -> tuple[str, ...]:
                 raise ValueError(f"Issue Form 投影目标必须是普通文件：{target}")
             if target.read_bytes().startswith(MANAGED_MARKER):
                 stale.append(target)
+                continue
+            raise ValueError(f"根投影目录存在非 canonical 且未受管的 Issue Form：{target}")
 
     changed: list[str] = []
     for name, content in canonical.items():
