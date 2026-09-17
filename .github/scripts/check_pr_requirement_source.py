@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""校验 GitHub PR 是否引用了真实、可访问的 Requirement Source。"""
+"""校验 GitHub PR 是否引用了满足机器 Contract 的 Requirement Source。"""
 
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import re
@@ -14,6 +15,26 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
+ROOT = Path(__file__).resolve().parents[2]
+GOVERNANCE_CONTRACT_PATH = (
+    ROOT / ".agents" / "skills" / "coding" / "scripts" / "governance_contract.py"
+)
+
+
+def _load_governance_contract() -> Any:
+    """加载 canonical 治理资产机器 Contract，避免在 CI 脚本复制第二套规则。"""
+    spec = importlib.util.spec_from_file_location(
+        "agent_skills_governance_contract",
+        GOVERNANCE_CONTRACT_PATH,
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"无法加载治理资产机器 Contract：{GOVERNANCE_CONTRACT_PATH}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+GOVERNANCE_CONTRACT = _load_governance_contract()
 REQUIREMENT_SOURCE_PATTERN = re.compile(
     r"^\s*Requirement-Source:\s*(?P<source>.+?)\s*$",
     re.MULTILINE,
@@ -95,7 +116,7 @@ def _validate_repository_path(root: Path, source: str) -> None:
 
 
 def _validate_issue_payload(issue_number: int, payload: dict[str, Any]) -> None:
-    """验证 GitHub Requirement Source 是可审查的真实 Issue，而不是 PR。"""
+    """验证 GitHub Requirement Source 是真实 Issue，且满足 canonical machine Profile。"""
     if payload.get("pull_request") is not None:
         raise RequirementSourceError(
             f"Requirement Source `#{issue_number}` 指向 Pull Request，不能把 PR 自身当作上游需求来源。"
@@ -106,6 +127,13 @@ def _validate_issue_payload(issue_number: int, payload: dict[str, Any]) -> None:
     if not title or not body:
         raise RequirementSourceError(
             f"Requirement Source `#{issue_number}` 缺少可审查的标题或正文。"
+        )
+
+    errors = GOVERNANCE_CONTRACT.validate_issue_instance(title, body)
+    if errors:
+        raise RequirementSourceError(
+            f"Requirement Source `#{issue_number}` 不满足当前治理资产机器 Contract：\n- "
+            + "\n- ".join(errors)
         )
 
 
