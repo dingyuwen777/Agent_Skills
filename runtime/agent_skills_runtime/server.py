@@ -12,6 +12,7 @@ from typing import Any, Mapping, Sequence
 
 from .crypto import recover_root_material
 from .encrypted_bundle import EncryptedBundleStore
+from .governance_projection import issue_form_projection_transaction
 from .install_state import INSTALL_STATE_SCHEMA, build_install_state
 from .project_installer import install_project
 from .project_payload import validate_project_payload
@@ -262,12 +263,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             else:
                 target = arguments.target
             as_json = bool(getattr(arguments, "json", False))
-            result = install_project(
-                target,
-                payload,
-                artifact,
-                release_version=release_version,
-            )
+            with issue_form_projection_transaction(target, payload):
+                result = install_project(
+                    target,
+                    payload,
+                    artifact,
+                    release_version=release_version,
+                )
             _print_result(_public_install_result(result), as_json)
             return 0
         parser.error(f"未知命令：{command}")
