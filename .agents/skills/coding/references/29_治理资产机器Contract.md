@@ -68,29 +68,9 @@ machine validator 机械化：
 
 ## 3. Mutation：写前写后同检
 
-Issue 创建/实质更新：
+Issue 创建/实质更新固定为：`canonical Contract + 显式项目 Overlay（如有） → candidate validate → write → live reread → same validate`。Closure 在 Ref18 要求的 Evidence/Acceptance 回写后，以 `require_all_checked=true` 校验；再次读取通过后才 close，并确认 closed 与 Acceptance 未漂移。
 
-```text
-canonical Contract + 显式项目 Overlay（如有）
-→ candidate validate
-→ write
-→ read live Issue
-→ same validate
-```
-
-Issue Closure 按 Ref18 完成 Evidence/Acceptance 回写后，以 `require_all_checked=true` 校验；reread 后再校验，之后才 close，并再次确认 closed 与 Acceptance 未漂移。
-
-Change 创建/更新：
-
-```text
-canonical Change Template + project Carrier
-→ generate/write candidate
-→ new-instance validate
-→ commit/PR changed-scope 再验证
-→ Ready Check / Completion / Review
-```
-
-没有本地 shell 时使用宿主等价 API 写入与 readback；不得退回“模型自行确认格式”。
+Change 创建/更新固定为：`canonical Change Template + project Carrier → candidate validation → changed-scope validation → Ready/Completion/Review`。没有本地 shell 时使用宿主等价 API 写入与 readback，不得退回“模型自行确认格式”。
 
 ## 4. Project Payload、首次安装与项目边界
 
