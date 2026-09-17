@@ -176,6 +176,17 @@ coding-change/v1
 
 ## 7. 内容守恒
 
+### GitHub Issue Form 单一维护源
+
+源仓库根 `.github/ISSUE_TEMPLATE/*.yml` 是 Coding canonical assets 的受管生成物，不是第二个人工 Owner。修改 Issue Form 时只编辑 `.agents/skills/coding/assets/issue-templates/`，随后运行：
+
+```bash
+python scripts/sync_repository_issue_forms.py
+python scripts/sync_repository_issue_forms.py --check
+```
+
+同步器只覆盖带 `agent-skills:governance-issue-form:v1` marker 的源仓库投影；未受管同名文件 fail closed。目标项目的首次安装投影仍由 Runtime Owner 负责，本同步器不承担旧版本升级或迁移。
+
 任何 Skill/Reference/模板/Router/managed block 的拆分、合并、迁移、删 README、通用化或“精简”都必须保证：
 
 - 触发条件不丢；
