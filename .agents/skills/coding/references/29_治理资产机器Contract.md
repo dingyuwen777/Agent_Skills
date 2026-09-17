@@ -16,7 +16,7 @@ canonical template / Issue Form / validator
 → same validation
 ```
 
-generator、GitHub Form、网页、CLI、Contents/Git Data API 都只是写入入口；ChatGPT、Codex、Cursor、Claude Code、DeepSeek 等宿主不同，合法治理资产的机器判据不能不同。required validation 失败即 fail closed，不能用模型判断、其他 CI 绿色或 prose 看似合理代替。
+各种 UI、CLI、API 与 Agent 都只是写入入口；宿主不同不能改变合法治理资产的机器判据。required validation 失败即 fail closed，不能用模型判断或其他 CI 绿色代替。
 
 canonical stdlib validator：
 
@@ -38,7 +38,7 @@ canonical stdlib validator：
 → 只允许 CHG-YYYYMMDD-HHMMSS-kebab-case
 ```
 
-低层 parser、`depends_on` 或显式 legacy `--id` 只代表历史 identity 可处理，不授权新的日期级 Change 进入交付链。正常新建使用 `new-change --slug`；其他宿主直接写文件也必须产生相同 current identity。PR 对新增/修改 Active Change 执行 new-instance validation；历史 archive 不批量改名、改正文或按新 Profile 迁移。
+历史 parser/legacy ID 只表示旧 identity 可读，不授权新日期级 Change。新建统一使用 current identity；PR 对新增/修改 Active Change 执行 new-instance validation，历史 archive 不批量迁移。
 
 新实例结构直接以 canonical [`../assets/CHANGE.template.md`](../assets/CHANGE.template.md) 为 Profile：validator 动态读取有序一级标题；风险级别额外必需的二级结构由模板内 `governance:required-for=<level>` marker 定义，不维护第二份标题清单。至少要求当前 schema、秒级 ID、目录/frontmatter identity 一致、L2/L3、模板结构完整/唯一/有序。`ready_check.py` 继续拥有 Traceability/Completion/Ready。
 
@@ -56,13 +56,7 @@ GitHub 默认 Issue Form 的唯一人工维护源：
 
 Agent_Skills 根和使用默认 GitHub Profile 的目标项目，其 `.github/ISSUE_TEMPLATE/*.yml` 都是 canonical assets 的**原字节受管投影**，不得独立编辑。`governance_contract.py` 从 Form 的 title prefix 与字段自身 `validations.required=true` 的 textarea label 恢复 Profile，因此 Form 改名或 required 段变化时不再同步维护第二份标题表。
 
-machine validator 机械化：
-
-- title 唯一匹配 canonical 类型前缀；
-- 类型对应 required textarea labels 在 live Issue 中存在且唯一；
-- `- [ ] AC1：...` / `- [x] AC1：...` 稳定 task list；
-- AC 从 1 连续且唯一；
-- Closure 时所有适用 AC 已写回完成状态。
+machine validator 要求：title 唯一匹配 canonical 类型前缀；required textarea labels 在 live Issue 中存在且唯一；Acceptance 使用从 AC1 连续且唯一的 task list；Closure 时所有适用 AC 已写回完成状态。
 
 项目若正式声明更强且项目自有的 Issue/Ticket Profile，可以在 canonical minimum 上增加字段或使用其他平台等价 Carrier；不能复制默认 Form 后把副本当第二个通用 Owner。API/Agent 绕过 Form UI 时，live Issue 仍必须满足同一 machine Contract；Comment-only Evidence 不能替代 body Acceptance Owner。
 
@@ -108,4 +102,4 @@ canonical Rule
 + current-head / main-fresh required CI
 ```
 
-完成证明不是“某个 Agent 这次生成正确”，而是任何宿主产生的不合规治理资产或手改 generated projection 都会被同一 Contract 稳定拒绝。
+完成证明要求同一 Contract 能稳定拒绝不合规治理资产和手改 projection。
