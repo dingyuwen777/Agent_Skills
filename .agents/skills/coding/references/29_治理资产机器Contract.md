@@ -54,7 +54,7 @@ GitHub 默认 Issue Form 的唯一人工维护源：
 └── config.yml
 ```
 
-Agent_Skills 根和使用默认 GitHub Profile 的目标项目，其 `.github/ISSUE_TEMPLATE/*.yml` 都是 canonical assets 的**原字节受管投影**，不得独立编辑。`governance_contract.py` 从 Form 的 title prefix 与字段自身 `validations.required=true` 的 textarea label 恢复 Profile，因此 Form 改名或 required 段变化时不再同步维护第二份标题表。
+使用默认 GitHub Profile 的仓库，其 `.github/ISSUE_TEMPLATE/*.yml` 都是 canonical assets 的**原字节受管投影**，不得独立编辑。`governance_contract.py` 从 Form 的 title prefix 与字段自身 `validations.required=true` 的 textarea label 恢复 Profile，因此 Form 改名或 required 段变化时不再同步维护第二份标题表。
 
 machine validator 要求：title 唯一匹配 canonical 类型前缀；required textarea labels 在 live Issue 中存在且唯一；Acceptance 使用从 AC1 连续且唯一的 task list；Closure 时所有适用 AC 已写回完成状态。
 
@@ -64,7 +64,7 @@ machine validator 要求：title 唯一匹配 canonical 类型前缀；required 
 
 Issue 创建/实质更新固定为：`canonical Contract + 显式项目 Overlay（如有） → candidate validate → write → live reread → same validate`。Closure 在 Ref18 要求的 Evidence/Acceptance 回写后，以 `require_all_checked=true` 校验；再次读取通过后才 close，并确认 closed 与 Acceptance 未漂移。
 
-Change 创建/更新固定为：`canonical Change Template + project Carrier → candidate validation → changed-scope validation → Ready/Completion/Review`。没有本地 shell 时使用宿主等价 API 写入与 readback，不得退回“模型自行确认格式”。
+Change 创建/更新固定为：`canonical Change Template + project Carrier → candidate validation → changed-scope validation → Ready/Completion/Review`。无本地 shell 时使用宿主等价 API 写入与 readback，不得靠模型自证格式。
 
 ## 4. Project Payload、首次安装与项目边界
 
