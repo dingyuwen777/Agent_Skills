@@ -3,11 +3,11 @@ schema: coding-change/v1
 id: CHG-20260917-204500-governance-template-single-source
 title: 治理模板收敛为单一 canonical source
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/governance-template-single-source
 created: 2026-09-17T20:45:00+08:00
-updated: 2026-09-18T06:55:00+08:00
+updated: 2026-09-18
 completion_gate: required
 depends_on: []
 affected_areas:
