@@ -8,13 +8,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[4]
 
 
-def test_pr_gate_validates_live_issue_and_new_change_contract() -> None:
-    """正式 PR gate 必须同时校验 live Issue 实例与本 PR 新增 Change。"""
+def test_pr_gate_validates_live_issue_and_changed_active_change_contract() -> None:
+    """正式 PR gate 必须同时校验 live Issue 与本 PR 新增/修改 Active Change。"""
     text = (ROOT / ".github/scripts/check_pr_requirement_source.py").read_text(encoding="utf-8")
     assert "GOVERNANCE_CONTRACT.validate_issue_instance" in text
     assert "validate_new_changes_since" in text
     assert "GOVERNANCE_CONTRACT.validate_new_change_file" in text
-    assert "--diff-filter=A" in text
+    assert "--diff-filter=AM" in text
+    assert "changes/active" in text
+    assert ".agents/changes/active" in text
 
 
 def test_machine_contract_is_part_of_coding_project_payload_surface() -> None:
