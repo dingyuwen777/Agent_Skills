@@ -3,11 +3,11 @@ schema: coding-change/v1
 id: CHG-20260917-161047-change-archive-carrier-recovery
 title: 修复 Change carrier 检查与归档恢复
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: fix/change-archive-carrier-recovery
 created: 2026-09-17T16:10:47+08:00
-updated: 2026-09-17T16:21:09+08:00
+updated: 2026-09-17
 completion_gate: required
 depends_on: []
 affected_areas:
