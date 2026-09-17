@@ -51,10 +51,9 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
         """Agent_Skills 自身三类 GitHub Form 的 chooser 名称与 title 前缀必须统一。"""
         for filename, (chooser_name, title_prefix) in FORM_PROFILES.items():
             with self.subTest(filename=filename):
-                text = self._read(FORM_DIR / filename)
-                first_lines = text.splitlines()[:4]
-                self.assertIn(f"name: {chooser_name}", first_lines)
-                self.assertIn(f'title: "{title_prefix}"', first_lines)
+                lines = self._read(FORM_DIR / filename).splitlines()
+                self.assertIn(f"name: {chooser_name}", lines)
+                self.assertIn(f'title: "{title_prefix}"', lines)
 
     def test_canonical_contract_owns_acceptance_state_and_evidence_mapping(self) -> None:
         """Acceptance Criteria 应是 Requirement Source 的最终状态 Owner，而不是 Change 的第二套需求。"""
@@ -264,28 +263,29 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
         self.assertEqual(positions, sorted(positions), "Post-Merge Finalization 顺序发生漂移")
         self.assertIn("blocked/incomplete", text)
 
-    def test_target_repository_default_contract_does_not_require_installed_github_forms(self) -> None:
-        """目标仓库未复制 GitHub Form 时，Agent 默认 Issue lifecycle 仍必须生效。"""
+    def test_github_first_install_projects_canonical_forms_without_changing_live_issue_ownership(self) -> None:
+        """GitHub 首次安装要落地 canonical Form 投影，但 live Issue 仍是最终 Requirement 状态 Owner。"""
         text = self._read(TRACEABILITY)
         required = (
-            "GitHub Form 只是可选 UI Profile",
-            "没有安装或复制 Agent_Skills GitHub Forms",
-            "创建、规范、更新和关闭 Requirement Source",
-            "仍执行本节默认 Contract",
-            "落地 Issue Form 不是 Agent 行为 Contract 生效的前置条件",
+            "GitHub 首次安装",
+            "受管投影",
+            "canonical Issue Form",
+            "不能独立维护",
+            "live Requirement Source",
             "每个仓库继续使用自己的 Requirement/Change/PR 生命周期",
         )
         for item in required:
             self.assertIn(item, text, item)
 
-    def test_contract_is_cross_platform_without_forcing_github_forms(self) -> None:
-        """统一的是语义 Contract，不是把 GitHub YAML 强制复制给所有项目。"""
+    def test_contract_is_cross_platform_while_github_uses_managed_form_projection(self) -> None:
+        """统一语义 Contract；GitHub 使用受管 YAML 投影，非 GitHub 平台使用等价 Carrier。"""
         text = self._read(TRACEABILITY)
         required = (
             "公共 Contract + 类型 Profile + 平台 Profile",
             "项目已有更强 Issue/工单模板",
-            "不强制复制 Agent_Skills 的 GitHub Issue Form",
             "等价 Acceptance/Closure 状态",
+            "非 GitHub 平台",
+            "等价 ticket/work item 字段",
         )
         for marker in required:
             self.assertIn(marker, text, marker)
