@@ -18,15 +18,52 @@ if str(GITHUB_SCRIPTS) not in sys.path:
 import check_pr_requirement_source as subject  # noqa: E402
 
 
+TECHNICAL_BODY = """## 动机 / 根因
+当前治理资产可以因宿主差异发生漂移。
+
+## 当前状态
+PR gate 只验证部分来源事实。
+
+## 目标状态
+Requirement Source 由同一机器 Contract 验证。
+
+## 范围
+PR Requirement Source 与治理门禁。
+
+## 非目标
+不修改业务功能。
+
+## 兼容与迁移
+无数据迁移；历史记录保持不变。
+
+## 风险与回滚
+误判时 revert 当前 PR。
+
+## 验收标准
+- [ ] AC1：真实 Issue 满足当前 Profile
+- [ ] AC2：不合规 Issue 稳定失败
+
+## 验证要求
+运行 targeted unit tests。
+
+## 上游事实源 / 相关资料
+canonical Coding 规则。
+"""
+
+
 class RequirementSourceValidationTests(unittest.TestCase):
     """覆盖 Requirement Source 的合法来源、拒绝路径和 CLI fast path。"""
 
-    def _issue(self, *, body: str | None = None) -> dict[str, object]:
-        """返回满足当前最小机器可审查边界的 GitHub Issue 假响应。"""
-        resolved_body = body if body is not None else "## 目标\n完成治理改造\n\n## 验收标准\n- Gate 可验证"
+    def _issue(
+        self,
+        *,
+        body: str | None = None,
+        title: str = "[技术变更] 稳定治理门禁",
+    ) -> dict[str, object]:
+        """返回满足当前机器 Contract 的 GitHub Issue 假响应。"""
         return {
-            "title": "治理变更",
-            "body": resolved_body,
+            "title": title,
+            "body": TECHNICAL_BODY if body is None else body,
         }
 
     def test_extracts_multiple_requirement_sources_without_duplicates(self) -> None:
@@ -114,7 +151,7 @@ class RequirementSourceValidationTests(unittest.TestCase):
                 )
 
     def test_valid_issue_source_is_accepted(self) -> None:
-        """真实 GitHub Issue 且标题正文可审查时通过机器来源门禁。"""
+        """真实 GitHub Issue 且实例满足当前机器 Contract 时通过来源门禁。"""
         seen: list[int] = []
 
         def loader(issue_number: int) -> dict[str, object]:
@@ -154,19 +191,38 @@ class RequirementSourceValidationTests(unittest.TestCase):
                     lambda _: payload,
                 )
 
-    def test_issue_content_is_language_agnostic(self) -> None:
-        """机器门禁不能依赖中文标题关键词替代自然语言 Requirement Review。"""
-        payload = {
-            "title": "Stabilize CI gates",
-            "body": "Make pull-request checks stable and preserve existing evidence responsibilities.",
-        }
+    def test_issue_without_standard_type_prefix_is_rejected(self) -> None:
+        """API 直接创建的 Issue 也必须保留标准 Requirement Source 类型身份。"""
+        payload = self._issue(title="Stabilize CI gates")
         with tempfile.TemporaryDirectory() as directory:
-            sources = subject.validate_requirement_sources(
-                "Requirement-Source: #131",
-                Path(directory),
-                lambda _: payload,
-            )
-        self.assertEqual(sources, ("#131",))
+            with self.assertRaisesRegex(subject.RequirementSourceError, "标题"):
+                subject.validate_requirement_sources(
+                    "Requirement-Source: #131",
+                    Path(directory),
+                    lambda _: payload,
+                )
+
+    def test_issue_missing_machine_profile_section_is_rejected(self) -> None:
+        """只有局部摘要与 AC 的 Issue 不能冒充完整 Requirement Source。"""
+        payload = self._issue(body="## 验收标准\n- [ ] AC1：完成治理改造")
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(subject.RequirementSourceError, "必需语义段"):
+                subject.validate_requirement_sources(
+                    "Requirement-Source: #131",
+                    Path(directory),
+                    lambda _: payload,
+                )
+
+    def test_issue_acceptance_must_use_contiguous_task_list(self) -> None:
+        """Requirement Source 的最终 Acceptance Owner 必须是连续可回写 task list。"""
+        payload = self._issue(body=TECHNICAL_BODY.replace("AC2：", "AC3："))
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(subject.RequirementSourceError, "连续"):
+                subject.validate_requirement_sources(
+                    "Requirement-Source: #131",
+                    Path(directory),
+                    lambda _: payload,
+                )
 
     def test_non_pr_event_uses_explicit_fast_path(self) -> None:
         """main push 不应伪造 PR 需求来源，而应明确 not_applicable 并成功。"""
