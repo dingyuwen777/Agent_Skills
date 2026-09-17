@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Archive the single Agent_Skills Change carried by a merged implementation PR."""
+"""归档已合并 Implementation PR 携带的单一 Agent_Skills Change。"""
 
 from __future__ import annotations
 
@@ -14,15 +14,19 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 CURRENT_SCHEMA = "coding-change/v1"
-ACTIVE_PATTERN = re.compile(
+CANONICAL_ACTIVE_PATTERN = re.compile(
     r"^\.agents/changes/active/(?P<change_id>CHG-[^/]+)/CHANGE\.md$"
 )
+RECOVERY_ACTIVE_PATTERN = re.compile(
+    r"^changes/active/(?P<change_id>CHG-[^/]+)/CHANGE\.md$"
+)
+ACTIVE_PATTERNS = (CANONICAL_ACTIVE_PATTERN, RECOVERY_ACTIVE_PATTERN)
 FIELD_PATTERN = re.compile(r"^(?P<key>[A-Za-z_]+):(?P<rest>.*)$")
 BEIJING = timezone(timedelta(hours=8), name="Asia/Shanghai")
 
 
 class ArchiveError(ValueError):
-    """Fail-closed archive error."""
+    """表示 repository-native Change Archive 必须失败关闭的输入或状态错误。"""
 
 
 @dataclass(frozen=True)
@@ -64,12 +68,15 @@ def load_changed_paths(path: Path) -> tuple[str, ...]:
 
 
 def select_change(changed_paths: Sequence[str]) -> tuple[str, str] | None:
+    """从 canonical/recovery source 中解析唯一 Active Change，歧义时失败关闭。"""
     matches: list[tuple[str, str]] = []
     for raw in changed_paths:
         relative = _normalise(raw)
-        match = ACTIVE_PATTERN.fullmatch(relative)
-        if match is not None:
-            matches.append((match.group("change_id"), relative))
+        for pattern in ACTIVE_PATTERNS:
+            match = pattern.fullmatch(relative)
+            if match is not None:
+                matches.append((match.group("change_id"), relative))
+                break
     if not matches:
         return None
     if len(matches) != 1:
@@ -200,6 +207,7 @@ def archive_change(
     merged_at: str,
     expected_source: str | None = None,
 ) -> ArchiveResult:
+    """把唯一 merged Active Change 归档到 canonical `.agents/changes/archive`。"""
     root = root.resolve()
     selected = select_change(changed_paths)
     if selected is None:
