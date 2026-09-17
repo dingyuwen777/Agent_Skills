@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 import json
 from pathlib import Path
 import re
@@ -47,13 +46,19 @@ class GovernanceContractError(ValueError):
     """表示治理资产实例不满足当前机器 Contract。"""
 
 
-@dataclass(frozen=True)
 class IssueProfile:
     """表示从 canonical GitHub Issue Form 恢复出的稳定机器 Profile。"""
 
-    filename: str
-    title_prefix: str
-    required_headings: tuple[str, ...]
+    def __init__(
+        self,
+        filename: str,
+        title_prefix: str,
+        required_headings: tuple[str, ...],
+    ) -> None:
+        """保存 Form 文件身份、标题前缀与 required textarea 语义段。"""
+        self.filename = filename
+        self.title_prefix = title_prefix
+        self.required_headings = required_headings
 
 
 def _frontmatter_and_body(text: str) -> tuple[dict[str, str], str]:
@@ -270,7 +275,13 @@ def _canonical_issue_form_paths(forms_dir: Path) -> tuple[Path, ...]:
     """返回 canonical Issue Form 资产；config 参与投影但不参与 Issue 类型 Profile。"""
     if forms_dir.is_symlink() or not forms_dir.is_dir():
         raise GovernanceContractError(f"canonical Issue Form 目录不存在或非法：{forms_dir}")
-    paths = tuple(sorted(path for path in forms_dir.glob("*.yml") if path.is_file() and not path.is_symlink()))
+    paths = tuple(
+        sorted(
+            path
+            for path in forms_dir.glob("*.yml")
+            if path.is_file() and not path.is_symlink()
+        )
+    )
     if not paths:
         raise GovernanceContractError(f"canonical Issue Form 目录为空：{forms_dir}")
     return paths
@@ -313,7 +324,7 @@ def resolve_issue_profile(
         return matches[0]
     matches = [current for current in profiles if title.startswith(current.title_prefix)]
     if len(matches) != 1:
-        allowed = " / ".join(profile.title_prefix.strip() for profile in profiles)
+        allowed = " / ".join(current.title_prefix.strip() for current in profiles)
         raise GovernanceContractError(f"Issue 标题必须唯一匹配 canonical 类型前缀：{allowed}")
     return matches[0]
 
