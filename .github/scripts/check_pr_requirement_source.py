@@ -20,23 +20,26 @@ ROOT = Path(__file__).resolve().parents[2]
 GOVERNANCE_CONTRACT_PATH = (
     ROOT / ".agents" / "skills" / "coding" / "scripts" / "governance_contract.py"
 )
+CODING_TOOL_PATH = ROOT / ".agents" / "skills" / "coding" / "scripts" / "coding.py"
 CHANGE_TEMPLATE_RELATIVE = Path(".agents/skills/coding/assets/CHANGE.template.md")
 
 
-def _load_governance_contract() -> Any:
-    """加载 canonical 治理资产机器 Contract，避免 CI 脚本复制第二套规则。"""
-    spec = importlib.util.spec_from_file_location(
-        "agent_skills_governance_contract",
-        GOVERNANCE_CONTRACT_PATH,
-    )
+def _load_python_module(name: str, path: Path) -> Any:
+    """按仓库路径加载 canonical Python 模块，并保持模块身份稳定。"""
+    spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"无法加载治理资产机器 Contract：{GOVERNANCE_CONTRACT_PATH}")
+        raise RuntimeError(f"无法加载治理模块：{path}")
     module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
 
-GOVERNANCE_CONTRACT = _load_governance_contract()
+GOVERNANCE_CONTRACT = _load_python_module(
+    "agent_skills_governance_contract",
+    GOVERNANCE_CONTRACT_PATH,
+)
+CODING_TOOL = _load_python_module("agent_skills_coding_tool", CODING_TOOL_PATH)
 REQUIREMENT_SOURCE_PATTERN = re.compile(
     r"^\s*Requirement-Source:\s*(?P<source>.+?)\s*$",
     re.MULTILINE,
@@ -73,7 +76,11 @@ def extract_requirement_sources(body: str) -> tuple[str, ...]:
 def _is_placeholder(source: str) -> bool:
     """判断来源是否仍是模板占位值或明显未完成内容。"""
     normalized = source.strip().lower()
-    return any(token in normalized for token in PLACEHOLDER_TOKENS) or "<" in source or ">" in source
+    return (
+        any(token in normalized for token in PLACEHOLDER_TOKENS)
+        or "<" in source
+        or ">" in source
+    )
 
 
 def _is_coding_change_path(relative: Path) -> bool:
@@ -94,6 +101,17 @@ def _is_active_change_document(relative: Path) -> bool:
     ) or (
         len(parts) == 5 and parts[:3] == (".agents", "changes", "active")
     )
+
+
+def _resolved_active_change_root(root: Path) -> Path:
+    """复用 canonical Coding resolver 取得当前仓库唯一可交付 Active Change 根目录。"""
+    root_resolved = root.resolve()
+    change_root = Path(CODING_TOOL.resolve_change_root(root_resolved)).resolve()
+    try:
+        change_root.relative_to(root_resolved)
+    except ValueError as exc:
+        raise RequirementSourceError("当前 resolved Change carrier 发生仓库路径逃逸。") from exc
+    return change_root / "active"
 
 
 def _validate_repository_path(root: Path, source: str) -> None:
@@ -201,15 +219,27 @@ def _git_changed_active_paths(root: Path, base_sha: str, head_sha: str) -> tuple
 
 
 def validate_new_changes_since(root: Path, *, base_sha: str, head_sha: str) -> tuple[str, ...]:
-    """对本 PR 新增或修改的 Active Change 执行 current machine Contract。"""
-    template_path = root / CHANGE_TEMPLATE_RELATIVE
+    """只允许当前 resolved carrier 的 changed Active Change 进入 current machine Contract。"""
+    root_resolved = root.resolve()
+    template_path = root_resolved / CHANGE_TEMPLATE_RELATIVE
+    expected_active_root = _resolved_active_change_root(root_resolved).resolve()
+    expected_display = expected_active_root.relative_to(root_resolved).as_posix()
     errors: list[str] = []
     validated: list[str] = []
-    for relative in _git_changed_active_paths(root, base_sha, head_sha):
+    for relative in _git_changed_active_paths(root_resolved, base_sha, head_sha):
         if not _is_active_change_document(relative):
             continue
+        candidate = (root_resolved / relative).resolve()
+        try:
+            candidate.relative_to(expected_active_root)
+        except ValueError:
+            errors.append(
+                f"Active Change `{relative.as_posix()}` carrier 与当前仓库 resolved carrier "
+                f"`{expected_display}` 不一致。"
+            )
+            continue
         document_errors = GOVERNANCE_CONTRACT.validate_new_change_file(
-            root / relative,
+            candidate,
             template_path=template_path,
         )
         if document_errors:

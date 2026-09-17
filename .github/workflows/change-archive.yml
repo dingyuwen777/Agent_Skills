@@ -123,11 +123,37 @@ jobs:
           set -euo pipefail
           python .agents/skills/coding/scripts/ready_check.py --root .
 
-          git add -A -- .agents/changes
+          SOURCE="${{ steps.archive.outputs.source }}"
+          TARGET="${{ steps.archive.outputs.target }}"
+          RECOVERY=false
+
+          case "${SOURCE}" in
+            .agents/changes/active/*/CHANGE.md)
+              ;;
+            changes/active/*/CHANGE.md)
+              RECOVERY=true
+              if [[ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]]; then
+                echo "归档 source/target carrier 不满足允许边界" >&2
+                exit 1
+              fi
+              ;;
+            *)
+              echo "归档 source/target carrier 不满足允许边界" >&2
+              exit 1
+              ;;
+          esac
+          case "${TARGET}" in
+            .agents/changes/archive/*/*/CHANGE.md)
+              ;;
+            *)
+              echo "归档 source/target carrier 不满足允许边界" >&2
+              exit 1
+              ;;
+          esac
+
+          git add -A -- "${SOURCE}" "${TARGET}"
           mapfile -t ACTUAL < <(git diff --cached --name-only --no-renames | sort)
-          mapfile -t EXPECTED < <(printf '%s\n%s\n' \
-            "${{ steps.archive.outputs.source }}" \
-            "${{ steps.archive.outputs.target }}" | sort)
+          mapfile -t EXPECTED < <(printf '%s\n%s\n' "${SOURCE}" "${TARGET}" | sort)
 
           if [[ "${#ACTUAL[@]}" -ne 2 || "${ACTUAL[*]}" != "${EXPECTED[*]}" ]]; then
             echo "归档 staged diff 超出单一 Change allowlist" >&2
@@ -136,7 +162,12 @@ jobs:
             exit 1
           fi
 
-          if git diff --cached --name-only --no-renames | grep -Ev '^\.agents/changes/(active|archive)/' >/dev/null; then
+          if [[ "${RECOVERY}" == "true" ]]; then
+            ALLOWED_PATTERN='^(changes/active/|\.agents/changes/archive/)'
+          else
+            ALLOWED_PATTERN='^\.agents/changes/(active|archive)/'
+          fi
+          if git diff --cached --name-only --no-renames | grep -Ev "${ALLOWED_PATTERN}" >/dev/null; then
             echo "归档 diff 出现 Change carrier 之外路径" >&2
             exit 1
           fi
