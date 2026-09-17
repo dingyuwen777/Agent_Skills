@@ -47,10 +47,10 @@ Requirement Source 为 Agent_Skills Issue #252。用户明确要求所有编程 
 
 | 证据编号 | 已确认事实 | 来源 / 定位 / 命令 | 支撑的约束或决策 |
 | --- | --- | --- | --- |
-| E1 | 新 Change ID canonical 为秒级，历史日期级仅兼容读取 | `coding/references/24_Change仓库归属与Carrier.md` | 新建与历史读取必须分开验证 |
+| E1 | 新 Change ID canonical 为秒级，历史日期级仅兼容读取 | [`.agents/skills/coding/references/24_Change仓库归属与Carrier.md`](../../../.agents/skills/coding/references/24_Change仓库归属与Carrier.md) | 新建与历史读取必须分开验证 |
 | E2 | 当前 parser 接受两种 ID | `.agents/skills/coding/scripts/coding.py` | 需要新增 current/new identity 判据 |
 | E3 | 当前 Ready validator 主要检查 Traceability 与 Completion Audit | `.agents/skills/coding/scripts/ready_check.py` | 需要补实例 Profile validation |
-| E4 | Issue Contract 已定义 title/type/AC/readback/closure | `coding/references/17_需求来源与PR追溯治理.md` | 应机器化稳定语义，而不是再写第二套 prose |
+| E4 | Issue Contract 已定义 title/type/AC/readback/closure | [`.agents/skills/coding/references/17_需求来源与PR追溯治理.md`](../../../.agents/skills/coding/references/17_需求来源与PR追溯治理.md) | 应机器化稳定语义，而不是再写第二套 prose |
 | E5 | 用户要求不修改历史 Change/Issue | 本轮用户 Requirement | 所有新门禁必须按新建/changed scope 生效 |
 
 ## 推断与待确认
