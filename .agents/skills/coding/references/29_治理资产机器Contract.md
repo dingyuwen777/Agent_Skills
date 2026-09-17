@@ -1,5 +1,5 @@
 <!-- agent-routing:v1
-{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.30","触发":{"任一":[{"包含":{"维度":"意图","取值":["Issue/工单治理","PR Ready","Git 交付"]}},{"包含":{"维度":"治理","取值":["存在活动变更","多个活动变更","要求变更记录","要求完成门禁","多人协作"]}}]},"依赖":["coding.reference.18","coding.reference.25"],"最低风险":"L2"}
+{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.30","触发":{"任一":[{"包含":{"维度":"意图","取值":["Issue/工单治理"]}},{"包含":{"维度":"治理","取值":["存在活动变更","多个活动变更","要求变更记录","要求完成门禁"]}}]},"依赖":["coding.reference.18","coding.reference.25"],"最低风险":"L2"}
 -->
 
 # 治理资产机器 Contract
@@ -36,6 +36,8 @@ canonical 自然语言 Owner
 ```
 
 没有 Python import 集成的宿主可以调用其 CLI；能够直接加载模块的项目 adapter 可以复用同一函数。Runtime / Project Payload 分发必须让正式安装后的 machine tooling 与当前 canonical 同版本；Source Mode 仍从当前 canonical Source 取得规则，不把目标项目安装副本当 canonical。
+
+本 Reference 只在**真实治理资产操作**出现时加载：创建/更新/关闭 Issue/工单，或当前任务已经存在/要求持久 Change、完成门禁。普通 Git Delivery / PR 交付如果没有这些事实，继续由既有 Requirement/Git Owner 与 CI 的机器 gate 承担，不为了说明同一门禁而预加载 carrier 细节或扩大上下文。
 
 ## 2. Coding Change：历史可读与当前新建必须分离
 
