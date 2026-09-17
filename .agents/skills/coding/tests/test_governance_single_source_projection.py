@@ -18,19 +18,21 @@ CONTRACT_PATH = ROOT / ".agents/skills/coding/scripts/governance_contract.py"
 CANONICAL_FORMS = ROOT / ".agents/skills/coding/assets/issue-templates"
 ROOT_FORMS = ROOT / ".github/ISSUE_TEMPLATE"
 SERVER_PATH = ROOT / "runtime/agent_skills_runtime/server.py"
+SYNC_PATH = ROOT / "scripts/sync_repository_issue_forms.py"
 
 
-def _load_contract():
-    """按真实路径加载 canonical governance validator。"""
-    spec = importlib.util.spec_from_file_location("single_source_governance_contract", CONTRACT_PATH)
+def _load_module(name: str, path: Path):
+    """按真实路径加载治理模块，避免测试复制实现逻辑。"""
+    spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
-        raise RuntimeError("无法加载 canonical governance contract")
+        raise RuntimeError(f"无法加载治理模块：{path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-CONTRACT = _load_contract()
+CONTRACT = _load_module("single_source_governance_contract", CONTRACT_PATH)
+SYNC = _load_module("single_source_governance_sync", SYNC_PATH)
 
 
 class GovernanceSingleSourceProjectionTests(unittest.TestCase):
@@ -52,6 +54,50 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
         self.assertEqual(CONTRACT.validate_issue_form_projection(ROOT), [])
         for source in sorted(CANONICAL_FORMS.glob("*.yml")):
             self.assertEqual((ROOT_FORMS / source.name).read_bytes(), source.read_bytes())
+
+
+    def test_source_repository_renderer_is_deterministic_and_repairs_managed_drift(self) -> None:
+        """源仓库 renderer 必须只从 canonical source 恢复根受管投影。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / ".agents/skills/coding/assets/issue-templates"
+            shutil.copytree(CANONICAL_FORMS, source)
+            target = root / ".github/ISSUE_TEMPLATE"
+            target.mkdir(parents=True)
+            stale = (CANONICAL_FORMS / "01-requirement.yml").read_text(encoding="utf-8").replace(
+                "name: 需求",
+                "name: 旧需求",
+                1,
+            )
+            (target / "01-requirement.yml").write_text(stale, encoding="utf-8")
+
+            self.assertIn(
+                ".github/ISSUE_TEMPLATE/01-requirement.yml",
+                SYNC.projection_drift(root),
+            )
+            changed = SYNC.sync_projection(root)
+            self.assertIn(".github/ISSUE_TEMPLATE/01-requirement.yml", changed)
+            self.assertEqual(SYNC.projection_drift(root), [])
+            for canonical in sorted(CANONICAL_FORMS.glob("*.yml")):
+                self.assertEqual(
+                    (target / canonical.name).read_bytes(),
+                    canonical.read_bytes(),
+                )
+
+    def test_source_repository_renderer_refuses_unmanaged_collision(self) -> None:
+        """源仓库 renderer 不能把无受管 marker 的同名文件当生成物覆盖。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / ".agents/skills/coding/assets/issue-templates"
+            shutil.copytree(CANONICAL_FORMS, source)
+            target = root / ".github/ISSUE_TEMPLATE"
+            target.mkdir(parents=True)
+            collision = target / "01-requirement.yml"
+            collision.write_text("project-owned\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "拒绝覆盖非受管"):
+                SYNC.sync_projection(root)
+            self.assertEqual(collision.read_text(encoding="utf-8"), "project-owned\n")
 
     def test_project_payload_contains_canonical_issue_form_assets(self) -> None:
         """不新增 Payload schema，现有 Coding assets 分发链必须自动携带 canonical Forms。"""
