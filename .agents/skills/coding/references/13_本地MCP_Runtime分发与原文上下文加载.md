@@ -333,12 +333,13 @@ Runtime 校验当前 task 和 Task Route，用唯一 evaluator 求值并单调�
 稳定公开入口：
 
 ```text
-Windows .exe 无参数          → install EXE 自身所在目录
-Linux/macOS 无参数           → install 当前工作目录
-install --target <project>   → 显式安装/当前版本重复安装；始终以 --target 为准
-status --json                → 最小 Runtime 状态
-self-test --json             → Runtime/Payload 完整性
-serve                         → stdio MCP Server
+Windows .exe 无参数 → install EXE 自身所在目录
+Linux/macOS 无参数 → install 当前工作目录
+install --target <project> → 显式安装/重装，以 --target 为准
+status --json → 最小状态
+self-test --json → 完整性
+serve → stdio MCP
+Windows frozen+TTY 无参数失败：flush error 后提示 Enter 并读一次；显式/非交互/POSIX 不等待，stdin 异常保留原 error/1
 ```
 
 项目 Runtime 安装：
