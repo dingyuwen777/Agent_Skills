@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260918-110415-windows-install-error-pause
 title: Windows 安装失败时保留错误窗口
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: fix/windows-install-error-pause
 created: 2026-09-18
