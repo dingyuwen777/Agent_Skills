@@ -96,6 +96,81 @@ class DevelopmentGuidanceTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, systemic)
 
+    def test_planning_architecture_and_conflict_guidance_are_preserved(self) -> None:
+        """方案落地、架构设计、纵向切片、大型规划和意图冲突解决必须保持可达。"""
+        design = self._read(".agents/skills/coding/references/05_设计实施与根因调试.md")
+        planning = self._read(".agents/skills/coding/references/30_方案落地架构设计与渐进式规划.md")
+        collaboration = self._read(".agents/skills/coding/references/09_多人和多智能体并行协作.md")
+        delivery = self._read(".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md")
+        usage = self._read("USAGE.md")
+
+        for fragment in (
+            "外部 / 既有方案先作为 Proposal",
+            "Architecture / Codebase Design",
+            "大型任务渐进式规划",
+            "Locality / Leverage",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, planning)
+
+        self.assertIn("Vertical Slice", planning)
+        self.assertIn("Vertical Slice", collaboration)
+
+        for fragment in ("Vertical Slice", "DAG", "frontier", "expand", "migrate batches", "contract"):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, collaboration)
+
+        for fragment in ("Merge/Rebase 冲突", "Primary Requirement Source", "ours/theirs", "abort"):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, delivery)
+
+        for fragment in (
+            "先讨论方案，再决定是否实施",
+            "已经从其他地方拿到方案，怎么落实到当前代码",
+            "复杂功能怎么拆",
+            "任务很大、现在还看不清完整路径",
+            "Merge / Rebase 冲突",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, usage)
+
+    def test_specialist_planning_context_is_loaded_only_for_plan_intent(self) -> None:
+        """方案专项必须命中显式方案任务，同时不污染普通后端 L2 实现。"""
+        manifest = compile_routing(ROOT)
+
+        for signals in (
+            {"执行模式": ["方案"], "意图": ["技术方案"], "风险": ["L2"]},
+            {"执行模式": ["实现"], "意图": ["技术方案"], "风险": ["L2"]},
+        ):
+            with self.subTest(signals=signals):
+                result = evaluate_route(
+                    manifest,
+                    {
+                        "协议": TASK_ROUTE_PROTOCOL,
+                        "信号": signals,
+                        "未知项": [],
+                        "依据": ["planning progressive disclosure regression"],
+                    },
+                )
+                self.assertIn("coding.reference.31", result["必需Reference"])
+
+        ordinary = evaluate_route(
+            manifest,
+            {
+                "协议": TASK_ROUTE_PROTOCOL,
+                "信号": {
+                    "执行模式": ["实现"],
+                    "项目形态": ["后端服务"],
+                    "阶段": ["功能开发"],
+                    "风险": ["L2"],
+                    "范围": ["API", "持久化"],
+                },
+                "未知项": [],
+                "依据": ["ordinary backend l2 regression"],
+            },
+        )
+        self.assertNotIn("coding.reference.31", ordinary["必需Reference"])
+
     def test_core_tdd_debugging_and_completion_rules_remain(self) -> None:
         """通用化不得删除 TDD、根因调试、Traceability 和 Completion Audit。"""
         skill = self._read(".agents/skills/coding/SKILL.md")
