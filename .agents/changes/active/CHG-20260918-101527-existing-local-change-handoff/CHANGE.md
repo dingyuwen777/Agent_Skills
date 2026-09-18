@@ -1,0 +1,232 @@
+---
+schema: coding-change/v1
+id: CHG-20260918-101527-existing-local-change-handoff
+title: 增加既有本地改动的接管式 PR 交付规则
+level: L2
+status: proposed
+owner: dingyuwen777
+branch: tech/existing-local-change-handoff
+created: 2026-09-18
+updated: 2026-09-18
+completion_gate: required
+depends_on: []
+affected_areas:
+  - coding-governance
+  - git-delivery
+  - usage-documentation
+affected_paths:
+  - .agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md
+  - USAGE.md
+  - .agents/changes/active/CHG-20260918-101527-existing-local-change-handoff/CHANGE.md
+contracts: []
+data_changes: []
+---
+
+# 变更摘要
+
+- **要解决的问题**：现有 Git 与多人协作规则没有明确覆盖“协作者已经在本地完成开发，但此前没有完整遵循 Agent_Skills，现在需要重新达到 PR Ready”的场景。
+- **拟议修改**：在 canonical Git 交付 Reference 中增加“既有本地实现接管”规则，并在 `USAGE.md` 增加协作者可直接使用的完整提示词和短指令；不新增 Skill/Reference，不改变 Router/Runtime。
+- **预期结果**：已有实现不被机械重做或覆盖，历史缺失流程不被伪造，当前 revision 能按真实需求、验证、Review 和 Git 门禁重新进入 PR Ready。
+
+# 背景、现状与问题
+
+## 背景
+
+Requirement Source 为 #258。维护者要求在 `USAGE.md` 的 Git 与多人协作章节增加一种真实协作场景：协作者本地代码已经开发完成，但开发过程没有完全依照 Agent_Skills；此时应按照 Agent_Skills 规则重新完成远程 PR 交付，并给出协作者可以直接对 AI 说的话。
+
+## 当前现状
+
+- `USAGE.md` 第 10 节已有“基于最新主分支开发”“Review 后继续修复”“继续上一任务”三类提示，但没有既有本地实现的接管入口。
+- canonical Git 交付 Reference 已要求保护用户工作、恢复 branch/worktree/未提交修改、使用新鲜证据、满足 Review/CI/PR 门禁。
+- canonical TDD/Validation 规则已经区分“真实开发时 Red→Green”与事后证据边界，但尚未在 Git 交付场景中明确说明如何处理已经存在的实现。
+
+## 问题、根因或约束
+
+缺口不是 Agent_Skills 缺少测试、Review 或 Git 能力，而是这些既有能力没有被组合成“接管既有实现”的显式交付语义。若只在 `USAGE.md` 增加长提示词而不补 canonical Owner，弱模型或其他宿主可能只把它当示例文本；若把历史过程当作可补写，又会产生伪造 TDD/Issue/Change/Review 的风险。
+
+## 不修改的后果
+
+协作者可能直接推送未复核实现、机械重写已经正确的代码、倒填不存在的治理历史，或者把“补流程”误解为所有任务都必须事后创建 Issue/Change，造成真实性和协作成本问题。
+
+# 事实与证据
+
+| 证据编号 | 已确认事实 | 来源 / 定位 / 命令 | 支撑的约束或决策 |
+| --- | --- | --- | --- |
+| E1 | `USAGE.md` 第 10 节没有既有本地实现接管场景 | main / `USAGE.md` 当前内容 | 需要新增最终用户入口 |
+| E2 | canonical Git Owner 已拥有用户工作保护、PR Ready、CI、merge 与权限边界 | `coding/reference.15` 当前正文 | 新场景应进入现有 Owner，不新增平行 Reference |
+| E3 | TDD 默认要求真实 Red→Green，但 Validation 只允许陈述实际发生的证据 | `05_设计实施与根因调试.md`、`07_通用验证与证据策略.md` | 事后验证不能冒充开发时 TDD |
+| E4 | L2 + PR 交付需要团队可访问 Requirement Source；Change 不能自证需求 | `17_需求来源与PR追溯治理.md` | #258 作为本次正式 Requirement Source |
+| E5 | Agent_Skills Maintenance 的 L2/L3 必须有正式 Change | `.agents/MAINTENANCE.md` | 本 Change 必须存在并通过 Ready 门禁 |
+
+## 推断与待确认
+
+无。当前修改范围、Owner 和验收条件已由 #258 与 canonical 规则确定。
+
+# 目标、成功标准与非目标
+
+## 目标
+
+让协作者在已有本地实现的情况下，能够不重做、不覆盖现有工作地让 AI 按 Agent_Skills 接管当前 revision，重新完成必要的需求核对、验证、Review、文档和 PR 交付，并且不伪造过去没有发生的工程过程。
+
+## 成功标准
+
+- [ ] canonical Git 交付规则拥有明确的“既有本地实现接管”语义。
+- [ ] 历史流程真实性、事后 `base Red → current Green` 证据边界、Issue/Change 条件式创建和 PR Ready 停止点都被明确。
+- [ ] `USAGE.md` 提供完整提示词与常用短指令，语义与 canonical Owner 一致。
+- [ ] 本变更通过当前适用治理/文档验证、独立 Review、PR CI、main fresh 与 repository-native archive。
+
+## 范围
+
+- `.agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md`
+- `USAGE.md`
+- 本次 `coding-change/v1` Change 与 PR/Issue 交付证据
+
+## 非目标
+
+- 不新增 Skill 或 Reference。
+- 不修改 Router、routing metadata、Runtime、Project Payload、MCP、Release 包结构。
+- 不改变 public API、Schema、数据、依赖、部署或生产行为。
+- 不把所有协作默认改成 Issue-first。
+- 不要求协作者重写已有实现，不倒填历史 TDD/Review/Issue/Change。
+
+## 必须保持不变
+
+- 现有正常开发、Review 修复与“继续上一任务”路径继续有效。
+- Git 用户工作保护、权限、Branch Protection、PR/CI/merge 门禁强度不降低。
+- Requirement Source、Change、Review、Validation 各自 Owner 不被 Git Reference 复制成第二套完整规则。
+- Runtime/Router 触发与分发语义保持不变。
+
+# 约束与意图决策
+
+| 决策维度 | 当前决定 | 依据 | 影响 |
+| --- | --- | --- | --- |
+| 范围与负责人边界 | Git Reference 只新增接管式交付组合规则，USAGE 只提供用户提示词 | E1/E2 | 不新增 Skill/Reference |
+| 接口与契约 | 不改变 public API/Runtime/Router Contract | #258 非目标 | 仅治理/文档语义变化 |
+| 数据与迁移 | 不适用 | 无 Schema/数据变化 | 无迁移 |
+| 错误与失败语义 | 缺失历史证据必须如实标记；required 当前证据不足则不得 PR Ready | #258 AC2/AC3 | fail closed 于完成结论，不重写历史 |
+| 兼容性 | 现有正常 Git/PR 路径保留，新场景只补充入口 | #258 | 无破坏性迁移 |
+| 部署与回滚 | 无部署；通过 revert PR 回滚 | 纯治理/文档变化 | 无生产恢复步骤 |
+
+# 修改方案与决策依据
+
+## 最小充分方案
+
+1. 在 canonical Git 交付 Reference 的 Git 通用边界之后增加“既有本地实现的接管式 PR 交付”小节：
+   - 先保护工作区并恢复 base/head/diff/Requirement Source；
+   - 把当前实现视为待验证候选实现；
+   - 不伪造历史流程；
+   - 必要时补当前治理/测试证据；
+   - 允许安全的 `base Red → current Green`，但禁止冒充开发时 TDD；
+   - Issue/Change 只按现行触发创建；
+   - 协作者止于 PR Ready。
+2. 在 `USAGE.md` 第 10 节加入完整自然语言指令，并在第 14 节加入短指令。
+3. 只做治理/文档范围验证和独立 Review；不触发无关 Runtime/package 工作。
+4. 通过 PR 合并 main，回读 main、CI、Change archive 与 Issue Acceptance 后完成 Closure。
+
+## 证据到决策
+
+| 决策 | 依据证据 | 为什么采用这个方案 |
+| --- | --- | --- |
+| D1 | E1/E2 | canonical Owner + USAGE 双层能同时保证规则有效与用户易用，避免只改示例 |
+| D2 | E3 | 真实性边界必须显式写入，避免把事后验证描述为开发时 TDD |
+| D3 | E4/E5 | 本次交付沿用现有 Requirement/Change/PR 治理，不另造流程 |
+| D4 | #258 非目标 | 不改 Router/Runtime/依赖，保持修改面最小 |
+
+# 需求追溯
+
+| 编号 | 要求 | 来源 | 状态 | 证据 |
+| --- | --- | --- | --- | --- |
+| R1 | canonical Git/PR 规则明确待验证候选实现、保护已有工作、恢复当前事实并重新完成 required 门禁 | #258 / AC1 | not_satisfied | 待实现 |
+| R2 | 不伪造历史；安全时允许事后 base Red→current Green，但不得冒充开发时 TDD | #258 / AC2 | not_satisfied | 待实现 |
+| R3 | Issue/Change/测试条件式建立；协作者止于 PR Ready，不自行合并 | #258 / AC3 | not_satisfied | 待实现 |
+| R4 | USAGE 增加完整提示词与短指令，并与 canonical 语义一致 | #258 / AC4 | not_satisfied | 待实现 |
+| R5 | governance/docs 验证、Review、PR CI、merge、main fresh、archive 完成且无 Runtime/依赖/Schema/Release 扩围 | #258 / AC5 | not_satisfied | 待交付 |
+
+# 计划改动
+
+| 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
+| --- | --- | --- | --- |
+| `.agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md` | 新增既有本地实现接管式 PR 交付规则 | canonical Owner | R1-R3 / E2-E3 |
+| `USAGE.md` | 第 10 节新增完整提示词；第 14 节新增短指令 | 最终用户可直接使用 | R4 / E1 |
+| 本 Change / Issue / PR | 保存追溯、验证与交付证据 | Maintenance 门禁 | R5 / E4-E5 |
+
+- [x] 调查当前实现和事实源
+- [x] 建立与风险相称的任务路由和验证矩阵
+- [x] 行为变化建立失败证据或说明测试例外：本任务为治理/文档语义修改，不新增产品 Runtime 行为，使用内容/机器治理 Gate 而非伪造 Runtime Red
+- [ ] 完成最小实现，不静默扩大范围
+- [ ] 同步受影响的长期文档或明确不适用依据
+- [ ] 取得仍覆盖当前版本的验证证据
+- [ ] 完成需求追溯、完成审计和适用复核
+
+# 验证矩阵
+
+| 验证层 | 是否要求 | 范围 / 证据 |
+| --- | --- | --- |
+| 行为 / 单元 / 组件 | not_applicable | 不改变产品/Runtime 可观察行为；治理文本由 Docs/Governance Gate 与语义 Review 证明 |
+| 接口 / 契约 | not_applicable | 不改变 public API、CLI、Schema、Runtime route contract 或机器数据格式 |
+| 集成 / 持久化 / 运行依赖 | not_applicable | 不修改数据库、文件运行语义、队列、服务或 OS 集成 |
+| 用户 / 工作流验收 | not_applicable | 不新增产品工作流；协作者用法作为 `USAGE.md` 治理文档语义审查 |
+| 跨组件关键路径 | not_applicable | 无产品组件接线变化 |
+| 外部依赖 / 供应方探测 | not_applicable | 无第三方外部事实需 Probe |
+| 构建 / 打包 / 运行 | not_applicable | 不修改 Runtime/Project Payload/build/package/release 资产 |
+| 文档 / 治理 / 其他 | required | Change/Issue machine contract、Reference/USAGE 内容守恒、routing metadata unchanged、Review、PR/current-head CI、main/archive |
+
+## 验证计划
+
+- 目标测试：仓库当前治理资产/Requirement Source/Change/Reference 的 targeted machine checks。
+- 相关回归：PR Skill Tests 中本次 changed scope 选中的 governance/content/docs 回归。
+- 静态检查或构建：不适用；没有构建/Runtime 资产变化。
+- 专项真实边界：不适用；没有外部 Provider/数据/运行时边界。
+- 就绪检查：仓库 PR CI 对本 Change 运行当前 `ready_check` / governance gate；人工复核 Traceability 与 Completion Audit。
+
+# 风险、兼容性、迁移与回滚
+
+| 项目 | 结论 | 依据 / 处理方式 |
+| --- | --- | --- |
+| 主要风险 | 过度补流程、历史证据伪造、USAGE/canonical 漂移 | 条件式规则 + 独立 Review + CI |
+| 兼容性 | 保持现有正常路径，新增补充场景 | #258 范围 |
+| 数据 / Migration | 不适用 | 无数据/Schema |
+| 部署 / 运行 | 不适用 | 无 Runtime/部署变化 |
+| 回滚 / 恢复 | revert PR | 无不可逆状态 |
+
+# 文档、依赖、部署与发布影响
+
+- **长期文档**：更新最终用户唯一说明 `USAGE.md`；canonical Git Reference 同步规则 Owner。
+- **依赖 / Runtime**：不适用；不新增/删除/升级依赖，不修改 Runtime。
+- **配置 / Secret**：不适用；无配置或 Secret 变化。
+- **部署 / Release**：不适用；不创建 Release/Deploy。
+- **兼容 / 消费方通知**：现有协作者提示继续有效；新增既有实现接管入口，无业务消费者 Contract 变化。
+
+# 完成审计
+
+进入 `ready_for_review` 前重新读取 #258、当前 main canonical Owner、实际 diff 与最终验证结果。
+
+- [ ] upstream_re_read：重新读取 #258 与当前 canonical Owner，从上游独立重建 AC1-AC5。
+- [ ] change_coverage：确认 R1-R5 与 AC1-AC5 一一对应，没有让 Change 自己扩写需求。
+- [ ] reverse_audit：从协作者场景 → USAGE 提示词 → canonical Git Owner → Validation/Review/Requirement/PR Handoff 反向检查；每个 not_applicable 层有事实依据。
+- [ ] unresolved_cleared：R1-R5 全部 satisfied 或有正式处置，不保留 not_satisfied。
+
+# 完成证据与状态
+
+## 新鲜证据
+
+| 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
+| --- | --- | --- | --- | --- |
+| V1 | main `cf1b0963` 调查基线 | canonical Source / USAGE / Issue Form / Change Contract 读取 | 已完成 | 当前 Owner、缺口与交付门禁已确认 |
+
+## 未验证内容与剩余风险
+
+实现、独立 Review、最终 PR head CI、merge/main fresh 和 repository-native archive 尚未执行；在这些证据取得前不得声明完成。
+
+## 交付状态
+
+- 提交：尚未形成实现提交。
+- 拉取请求：尚未创建。
+- CI：尚未运行本变更 PR checks。
+- 合并：未执行。
+- Change 归档：未执行，由 repository-native archive 在 merge 后负责。
+- 发布 / 部署：不适用；本次不涉及 Release/Deploy。
+
+## 备注
+
+本 Change 只治理 Agent_Skills canonical 与 `USAGE.md`；不修改任何外部业务仓库。
