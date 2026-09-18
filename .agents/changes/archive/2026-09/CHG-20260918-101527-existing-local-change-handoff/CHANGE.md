@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260918-101527-existing-local-change-handoff
 title: 增加既有本地改动的接管式 PR 交付规则
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/existing-local-change-handoff
 created: 2026-09-18
