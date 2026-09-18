@@ -3,11 +3,11 @@ schema: coding-change/v1
 id: CHG-20260918-165459-figma-owner-prototype-acceptance
 title: Figma 系统化 Owner 与无代码 Prototype 验收通用规则
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: feature/figma-owner-prototype-acceptance
 created: 2026-09-18T16:54:59+08:00
-updated: 2026-09-18T17:16:00+08:00
+updated: 2026-09-18
 completion_gate: required
 depends_on: []
 affected_areas:
