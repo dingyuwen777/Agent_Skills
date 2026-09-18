@@ -218,16 +218,18 @@ Requirement Source 为 #258。维护者要求在 `USAGE.md` 的 Git 与多人协
 | V4 | live Issue #258 | GitHub App 回读标题、必需语义段与 AC1-AC5 task list | open、内容完整、稳定 AC 连续存在 | Requirement Source 当前可访问且与 Change/实现范围匹配 |
 | V5 | PR #259 run #1448 / head `dc992c58` | GitHub Actions `Agent Skills Gate`（Python 3.14.7） | Requirement Source / changed-scope / compile / CLI smoke 通过；558 tests 中 2 failures | 暴露 `USAGE.md` 内部名词泄漏与 canonical Context 预算增长，未把失败当 Green |
 | V6 | CI 修复后的当前分支 | release-surface forbidden-term 等价扫描 + ref14 UTF-8 大小对比 | `USAGE.md` forbidden hits=0；ref14 14865→14669 bytes（-196） | 直接修复 #1448 两个根因，不放宽测试/selector；等待最终 current-head CI 复证 |
+| V7 | PR #259 run #1450 / head `6ff2b406` | GitHub Actions `Agent Skills Gate`（Python 3.14.7） | 558 tests / 2 failures：#1448 的 release-surface 与 Context-budget 失败已消失；新失败为 ref14 稳定治理 marker / 本地分支顺序字符串被压缩 | 第一轮根因修复有效，但内容守恒禁止改写既有稳定 marker |
+| V8 | 最终候选 ref14 | 以 main 原文为基线重建 + 最小新增接管规则；稳定 marker 全量回读；UTF-8 size 对比 | 14865 → 14881 bytes（+16）；已知稳定 marker 均存在 | 同时满足旧治理 Contract 与路由上下文预算，不通过放宽测试或阈值制造 Green |
 
 ## 未验证内容与剩余风险
 
-实现与独立 Review 已完成；本地 `git clone` 因执行环境 DNS 无法解析 GitHub 未能运行仓库脚本。PR #259 的首轮 current-head CI run #1448 真实失败并已按失败日志修复；最终新 head 的 GitHub Actions、merge/main fresh 与 repository-native archive 仍待下游交付，这些证据取得前不得声明端到端完成。
+实现与独立 Review 已完成；本地 `git clone` 因执行环境 DNS 无法解析 GitHub 未能运行仓库脚本。PR #259 的 run #1448 与 #1450 均真实失败并已按各自失败日志修复；#1450 证明第一轮两项根因已消失，同时暴露稳定 marker 内容守恒问题。最终新 head 的 GitHub Actions、merge/main fresh 与 repository-native archive 仍待下游交付，这些证据取得前不得声明端到端完成。
 
 ## 交付状态
 
 - 提交：任务分支已包含 Change、canonical Git Reference、`USAGE.md`、Review 修复和 CI 根因修复；以 PR #259 当前 head 为交付 revision。
 - 拉取请求：PR #259 已创建并 live 回读，`Requirement-Source: #258` 正确。
-- CI：run #1448 在 `dc992c58` 上失败（558 tests / 2 failures），根因已修复；等待 PR #259 最新 head 的 required checks。
+- CI：run #1448 与 #1450 均为 558 tests / 2 failures；失败根因分别为用户说明内部名词/Context 预算、随后 ref14 稳定 marker 内容守恒。两轮均已按日志修复；等待 PR #259 最终 head 的 required checks。
 - 合并：未执行。
 - Change 归档：未执行，由 repository-native archive 在 merge 后负责。
 - 发布 / 部署：不适用；本次不涉及 Release/Deploy。
