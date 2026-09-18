@@ -122,6 +122,8 @@ Linux / macOS 无参数
 → 始终以 --target 为准
 ```
 
+Windows 双击等价的无参数安装如果失败，CLI 会先 flush 原始 `error: ...`，再在 **Windows frozen onefile + interactive stdin** 时提示“按 Enter 键退出”并等待一次输入，使错误窗口保持可读。显式子命令、CI/重定向 stdin、源码模式以及 Linux/macOS 不进入该等待；读取 stdin 本身失败时保持原错误和退出码 1，不用第二异常覆盖根因。
+
 当前 Project Payload 使用 v2。**新安装和升级不再生成 `.agents/agent-skills-install.json` 或其他 ownership sidecar。** 当前 Runtime 的 installation ownership 由 `install_state.py` 直接从已验证 Project Payload 确定性派生，协议为：
 
 ```text
