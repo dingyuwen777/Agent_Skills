@@ -19,6 +19,16 @@
 - 本地 Git 路径可用时，开工顺序：`最新目标分支 → 本地任务分支 → 本地 Change / 失败测试 / 最小治理提交 → 首个本地提交 → 首次 push 创建远程跟踪分支 → 早期 PR`；不得先创建远程空分支。仅有托管平台 API 时按下文语义等价路径执行，不把本地 clone/commit 当作远端写入的固定前置条件。
 - 既有本地实现接管：保留工作、不伪造历史；以当前 revision 按 Requirement Source 与现有 Change/Validation/Review/Git 门禁做到 PR Ready；可安全复现的 `base Red → current Green` 仅作事后回归证据，Issue/Change/测试仍按既有触发。
 
+### Merge / Rebase 冲突：按意图解决
+
+发生 in-progress merge / rebase conflict 时，不把 `ours / theirs`、当前分支或较新的提交自动当成正确答案：
+
+1. 先读取当前 merge/rebase 状态、base/current/other revision、冲突文件和 hunk，保护未提交用户工作；
+2. 对每一侧恢复能取得的 Primary Requirement Source、Issue/PR/Change、commit message 和相关实现，明确双方各自想保留的行为与约束；
+3. 逐 hunk 判断：兼容意图尽量同时保留；当前正式 Requirement 已明确取代旧行为时按新事实收敛；如果双方真正冲突且会改变业务、public Contract、Schema/数据、安全/权限或重大路线，回到现有决策门禁，不由冲突解决过程发明第三种行为；
+4. `abort` 不是禁用动作。只有在当前 merge/rebase 本身目标错误、基线/方向选错、继续会危及用户工作，且能安全恢复到操作前状态时才按 Git 实际语义退出；普通可解冲突不要用 abort 逃避理解双方意图；
+5. 解决后先运行覆盖双方受影响边界的 targeted validation / regression，再按现有授权决定是否 stage、continue、commit、push、PR 或 merge。解决冲突本身不自动授予后续 Git 权限。
+
 ### Requested Action 与 Effective Authorization
 
 **Requested Action** 是用户请求；**Effective Authorization** 仍须核验项目规则、authenticated principal、保护规则/Ruleset 和宿主能力；Git 能力不等于任务权限。

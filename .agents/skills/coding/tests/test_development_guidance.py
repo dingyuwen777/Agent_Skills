@@ -96,6 +96,40 @@ class DevelopmentGuidanceTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, systemic)
 
+    def test_planning_architecture_and_conflict_guidance_are_preserved(self) -> None:
+        """方案落地、架构设计、纵向切片、大型规划和意图冲突解决必须保持可达。"""
+        design = self._read(".agents/skills/coding/references/05_设计实施与根因调试.md")
+        collaboration = self._read(".agents/skills/coding/references/09_多人和多智能体并行协作.md")
+        delivery = self._read(".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md")
+        usage = self._read("USAGE.md")
+
+        for fragment in (
+            "外部 / 既有方案不是当前仓库事实",
+            "Architecture / Codebase Design",
+            "大型任务渐进式规划",
+            "Vertical Slice",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, design)
+
+        for fragment in ("纵向切片与阻塞依赖图（DAG）", "frontier", "expand", "migrate batches", "contract"):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, collaboration)
+
+        for fragment in ("Merge / Rebase 冲突：按意图解决", "Primary Requirement Source", "ours / theirs", "abort"):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, delivery)
+
+        for fragment in (
+            "先讨论方案，再决定是否实施",
+            "已经从其他地方拿到方案，怎么落实到当前代码",
+            "复杂功能怎么拆",
+            "任务很大、现在还看不清完整路径",
+            "Merge / Rebase 冲突",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, usage)
+
     def test_core_tdd_debugging_and_completion_rules_remain(self) -> None:
         """通用化不得删除 TDD、根因调试、Traceability 和 Completion Audit。"""
         skill = self._read(".agents/skills/coding/SKILL.md")
