@@ -21,7 +21,7 @@
 
 ### Merge / Rebase 冲突：按意图解决
 
-in-progress merge/rebase 先恢复 revision、冲突 hunk 及双方可取得的 Requirement/Issue/PR/Change/commit 意图；不按 `ours/theirs` 机械选行。兼容意图同时保留；正式要求已取代旧行为时按当前事实收敛；业务/public Contract/数据/安全等真正冲突回到既有决策门禁。操作目标/方向错误或继续会危及用户工作时允许安全 `abort`。解决后跑双方受影响边界的 targeted regression，后续 Git 动作仍受原授权约束。
+冲突先恢复 revision/hunk 与双方 **Primary Requirement Source**、Issue/PR/Change/commit 意图，不按 `ours / theirs` 机械选行；兼容意图保留，正式要求已替代旧行为则按当前事实收敛，真正的业务/Contract/数据/安全冲突回既有决策门禁。操作目标/方向错误或继续会危及用户工作时允许安全 `abort`；解决后跑 targeted regression，后续 Git 仍按原授权。
 
 ### Requested Action 与 Effective Authorization
 ### Requested Action 与 Effective Authorization
