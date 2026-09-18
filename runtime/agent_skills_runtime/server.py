@@ -236,6 +236,30 @@ def _run_internal_command(argv: Sequence[str]) -> int | None:
     return 0
 
 
+def _should_pause_after_windows_no_arg_install_failure(raw_argv: Sequence[str]) -> bool:
+    """只让 Windows onefile 的交互式无参数安装失败进入人工确认。"""
+    if raw_argv or sys.platform != "win32" or not getattr(sys, "frozen", False):
+        return False
+    stdin = getattr(sys, "stdin", None)
+    if stdin is None:
+        return False
+    try:
+        return bool(stdin.isatty())
+    except (AttributeError, OSError, ValueError):
+        return False
+
+
+def _pause_after_windows_no_arg_install_failure(raw_argv: Sequence[str]) -> None:
+    """在双击等价失败路径保留错误窗口；输入不可用时保持原失败直接退出。"""
+    if not _should_pause_after_windows_no_arg_install_failure(raw_argv):
+        return
+    print("安装失败。错误信息如上，请按 Enter 键退出。", file=sys.stderr, flush=True)
+    try:
+        sys.stdin.readline()
+    except (EOFError, OSError, ValueError):
+        return
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Windows 无参数 EXE 安装自身目录；POSIX 与显式子命令保持现有可脚本化语义。"""
     raw_argv = list(sys.argv[1:] if argv is None else argv)
@@ -275,7 +299,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error(f"未知命令：{command}")
         return 2
     except (FileNotFoundError, NotADirectoryError, OSError, RuntimeError, ValueError) as error:
-        print(f"error: {error}", file=sys.stderr)
+        print(f"error: {error}", file=sys.stderr, flush=True)
+        _pause_after_windows_no_arg_install_failure(raw_argv)
         return 1
 
 
