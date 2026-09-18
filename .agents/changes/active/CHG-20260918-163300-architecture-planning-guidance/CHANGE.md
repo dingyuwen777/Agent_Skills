@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260918-163300-architecture-planning-guidance
 title: 强化架构设计、任务拆分与方案落地流程
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/architecture-planning-guidance
 created: 2026-09-18
@@ -147,9 +147,9 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 | R2 | Vertical Slice + blocker DAG/frontier + Wide Refactor 例外 | #262 / AC2 | satisfied | `30` 定义完整切片方法；`09_多人和多智能体并行协作.md` 保留默认 Vertical Slice、DAG/frontier 与 `expand → migrate batches → contract` 执行硬规则 |
 | R3 | 条件式 Large-task Progressive Planning | #262 / AC3 | satisfied | `30` 仅在跨多会话/多阶段且路径不可见时启用 Destination / Decisions So Far / Current Frontier / Blocked / Not Yet Specifiable / Out of Scope，并在路径清晰后退出 |
 | R4 | 外部/既有方案先按当前事实核验再实施 | #262 / AC4 | satisfied | `30` 将其他聊天/同事/文档/工具等方案定义为 Proposal，按仍成立/已过时/冲突/需 Owner 决策分类并映射当前实现；`USAGE.md` 提供用户入口 |
-| R5 | intent-based Merge/Rebase conflict 且不扩大授权 | #262 / AC5 | not_satisfied | Review 发现当前 Ref14 压缩后缺少“恢复操作状态/逐 hunk 合并兼容意图”的明确语义；本 commit 已修正，等待 current-head 回归后转 satisfied |
+| R5 | intent-based Merge/Rebase conflict 且不扩大授权 | #262 / AC5 | satisfied | `14_Git交付依赖安全与宿主能力边界.md` 明确恢复操作状态、双方 Primary Requirement Source/Issue/PR/Change/commit 与 hunk，逐 hunk 合并兼容意图，真实语义冲突回决策门禁，保留安全 abort 与既有 Git 授权；独立 re-review #5246457257 无阻塞 Finding |
 | R6 | USAGE 提供全部指定场景的可复制指令 | #262 / AC6 | satisfied | `USAGE.md` 已覆盖方案讨论、确认后实施、外部方案落地、纵向切片、大型任务、架构审视、Merge/Rebase 冲突及短指令 |
-| R7 | 只新增 1 个 Coding 专项 Reference；既有 Stable ID/dependency、Task Route schema/词汇与 Runtime executable/MCP/Payload/install Contract 不变；Context Budget 不回归 | #262 / AC7 | satisfied | PR #263 run #1476 在最新 main `ba127180` 基线上执行 564 tests 全部通过，包括方案路由正/反例、metadata/compiler、历史路由增长、Context Budget、Bundle exact-text 与 Source/Runtime parity |
+| R7 | 只新增 1 个 Coding 专项 Reference；既有 Stable ID/dependency、Task Route schema/词汇与 Runtime executable/MCP/Payload/install Contract 不变；Context Budget 不回归 | #262 / AC7 | satisfied | PR #263 run #1477 在 base `ba127180` / head `634356d0` 上 selected semantic tests 全部成功；覆盖方案路由正/反例、metadata/compiler、历史路由增长、Context Budget、Bundle exact-text 与 Source/Runtime parity |
 | R8 | PR final head、Review、main fresh、archive、Closure 完整交付 | #262 / AC8 | not_applicable | pre-Ready 阶段平台交付证据由后续 Delivery 生命周期持有；不在 Change 内伪造未来状态 |
 
 # 计划改动
@@ -166,10 +166,10 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 - [x] 调查当前实现和事实源
 - [x] 建立与风险相称的任务路由和验证矩阵
 - [x] 行为变化建立失败证据或说明测试例外：本次为治理方法/文档增强，增加规则可达性回归，不伪造产品 Runtime Red
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -181,14 +181,14 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 | 用户 / 工作流验收 | not_applicable | 不新增业务工作流；USAGE 作为治理文档审查 |
 | 跨组件关键路径 | not_applicable | 无产品组件接线变化 |
 | 外部依赖 / 供应方探测 | not_applicable | 无第三方实时事实需要 Probe |
-| 构建 / 打包 / 运行 | not_applicable | Runtime executable/MCP/Payload/install Contract 不变；若 changed-scope classifier 因 Reference inventory 选择 Runtime smoke，则接受其升级 Evidence，不手工跳过 |
+| 构建 / 打包 / 运行 | required | 新增 canonical Reference 改变 Bundle/reference inventory；changed-scope classifier 已要求 Runtime package Evidence。Ready 后必须完成 Linux/Windows/macOS package/self-test/真实 MCP/安装证据；不因 executable 源码未改而手工跳过 |
 | 文档 / 治理 / 其他 | required | canonical 内容、USAGE、规则回归、Change/Issue gate、独立 Review、PR/main CI、archive/closure |
 
 # 验证计划
 
 - 目标测试：`test_development_guidance.py` 新增方案 Reference 路由正/反例，以及 changed-scope selector 选择的治理/内容回归。
 - 相关回归：metadata compiler/Stable ID/dependency、Context Budget、历史路由增长、Skill Mutation 内容守恒、Source/Runtime required Context parity（按 CI classifier 实际选择）。
-- 静态检查或构建：仅仓库 CI selector 认为当前 content/governance scope 所需的 compile/check；不机械跑三平台 package。
+- 静态检查或构建：classifier 已把新增 Reference 判定为需要 package Evidence；Ready 后执行仓库正式 Linux/Windows/macOS package gate，不新增临时 Workflow。
 - 专项真实边界：不适用；无外部 Provider/业务数据/运行环境变更。
 - 就绪检查：PR Requirement Source + new Change machine Contract + `ready_check` + 独立 Review。
 
@@ -214,14 +214,18 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 进入 `ready_for_review` 前重新读取 #262、当前 branch 的三个 canonical Owner、`USAGE.md`、实际 diff、测试与 Review Evidence，并从上游独立重建 AC1-AC8。
 
-- [ ] upstream_re_read：修正后重新读取 live #262、最终 diff 与当前 canonical Owner，再独立重建 AC1-AC8。
-- [ ] change_coverage：修正后确认新 Reference/路由/预算调整仍完整覆盖 AC1-AC8。
-- [ ] reverse_audit：修正后从用户场景 → USAGE → 专项 Reference/现有 Owner → Routing/Context Budget/Delivery 反查。
-- [ ] unresolved_cleared：等待 R7 current-head CI 证明后清零未满足项。
+- [x] upstream_re_read：已重新读取 live #262、base `ba127180`、current semantic head `634356d0`、Ref09/Ref14/Ref30、`USAGE.md`、实际 PR diff 与 #1477 Evidence，并从上游独立重建 AC1-AC8。
+- [x] change_coverage：R1-R7 与 #262 AC1-AC7 一一满足；AC8 的 final PR/package/merge/main-fresh/archive/Closure 属 Ready 后 Delivery，不由 Change 自证。
+- [x] reverse_audit：已从方案讨论/外部方案/纵向切片/大型任务/架构审视/Merge-Rebase 冲突用户场景反查 `USAGE.md` → Ref30/Ref09/Ref14 → routing/context-budget/parity tests → Delivery gate；无遗漏的新增顶层 Owner。
+- [x] unresolved_cleared：R1-R7 均 satisfied；R8 仅按 pre-Ready 阶段记 `not_applicable`，无 `not_satisfied`；post-Ready Evidence 继续 fail-closed。
 
 # 完成证据与状态
 
 ## 新鲜证据
+
+**PR #263 run #1477（current semantic head）**：base `ba127180` / head `634356d0743a5ddddd48a5ac70df546b168a62c8` 的 Requirement Source、changed-scope selector、compile/smoke、selected semantic tests、current Coding Change structural readiness 均成功；selected tests 全部通过。最终 Agent Skills/Runtime Package Gate 仅因 Change 尚未切到 `ready_for_review` 而按设计 fail-closed，Windows/macOS package 未提前运行。
+
+**Independent re-review #5246457257**：以 live #262 从 A1/A2 重建 AC，确认之前 AC5 与 Change 漂移 Finding 已修复，结果 `NO_FINDINGS_WITHIN_SCOPE`。仍未取得的证据仅为 Ready 后 final package CI、guarded merge、main-fresh、repository-native archive 与 Issue Closure。
 
 **Review Finding（current-base）**：以 live #262 + base `ba127180` + head `d8b36a63` 独立重建 AC 后，发现 Ref14 压缩规则未明确保留“恢复 merge/rebase 状态”和“逐 hunk 合并兼容意图”，同时 Change 仍残留“Ref05/routing/Stable ID 全不变”的旧实现描述。当前 commit 只修正这两个证据/规则缺口，不改变方案架构；修复后必须重新取得 current-head semantic CI 再 re-review。
 
@@ -239,22 +243,20 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
-| V1 | main `46a872cb` | canonical Source / Maintenance / affected Owner / Issue #262 回读 | 已完成 | 当前 Owner、范围、Requirement Source 与非目标已确认 |
-| V2 | branch `b9095018` | GitHub commit/file readback + `46a872cb...b9095018` compare | ahead 2 / behind 0；仅 6 个预期路径 | 实际修改只落在 3 个既有 Reference、USAGE、回归测试与当前 Change，无 Router/Runtime/metadata 扩围 |
-| V3 | branch `b9095018` | #262 AC1-AC7 → 当前 diff 独立 Review；检查普通任务不过度规划、外部方案不盲信/全推翻、冲突不越权 | `NO_FINDINGS_WITHIN_SCOPE`；另修复 1 个 USAGE 代码块间距后 re-read | 当前实现语义与上游要求一致；真实机器回归继续由 PR current-head Actions 证明 |
-| V4 | Ready 后 Delivery | PR current-head CI、guarded merge、main fresh、repository-native Change archive、Issue Closure Audit | pre-Ready 阶段不复制未来平台事实 | 这些证据仍是端到端完成硬门禁，由 PR/Actions/Requirement Source 真实持有 |
-
-当前 `main` 已前进到 `ba127180`；新增提交仅涉及 Figma 规则/测试与另一个已归档 Change，与本任务路径无重叠。本次以双 parent merge commit 同步最新 main 后再取得 fresh CI，旧基线 CI 不作为最终证据。
+| V1 | current base `ba127180` | live #262 + canonical Owner + PR diff readback | 完成 | 最终 Requirement、范围、Owner 与 main 新鲜基线一致 |
+| V2 | head `634356d0` | PR #263 Skill Tests #1477 selected semantic phase | 全部成功 | 方案路由、metadata/compiler、历史路由、Context Budget、Bundle exact-text、Source/Runtime parity、USAGE/Planning 回归无失败 |
+| V3 | head `634356d0` | Independent Review #5246457257 | `NO_FINDINGS_WITHIN_SCOPE` | AC1–AC7 实现与测试充分性通过独立 A1/A2 复核；AC5 修复已 re-review |
+| V4 | Ready 后 Delivery | final required PR CI + 3-platform package + guarded merge + main fresh + repository-native archive + Closure Audit | 尚未执行 | 这些证据必须由真实 Actions/PR/main/archive Owner 取得，不能由 pre-Ready Change 预写 |
 
 ## 未验证内容与剩余风险
 
-Context Budget 与 routing/parity 已由 #1476 证明通过；当前只剩 Review Finding 的最小 canonical 修正需要 current-head 回归与 re-review，完成前仍保持 `in_progress`。
+实现、routing/parity/context-budget 与独立 re-review 已完成；当前进入 `ready_for_review`。剩余风险仅是尚未执行 final required package CI、merge/main-fresh、repository-native archive 与 Issue Closure，在这些真实证据完成前不声明端到端完成。
 
 ## 交付状态
 
-- 提交：当前 Review 修复基于已同步最新 main 的 head `d8b36a6393fba61e51a3be19bfcd2e34049c280d`；本 commit 只修改 Ref09/Ref14 与 Change 证据。
+- 提交：semantic/review 候选 head 为 `634356d0743a5ddddd48a5ac70df546b168a62c8`；本次仅把已满足的 Change 门禁切到 `ready_for_review` 并固化 fresh Evidence。
 - 拉取请求：PR #263 已存在，当前为普通 open PR；Change Ready 前逻辑上仍未就绪。
-- CI：PR #263 run #1476 在 base `ba127180` / head `d8b36a63` 上 selected semantic tests 564/564 = OK；失败仅为 Change 仍 `in_progress` 的预期 Ready gate。当前 Review 修复后需新 head 复证。
+- CI：#1477 selected semantic phase 全部成功；final Agent Skills/Runtime Package Gate 将由本 Ready commit 的新 head 重新运行，旧 run 不冒充 final Evidence。
 - 合并：未执行。
 - Change 归档：未执行，由 repository-native automation 在 merge 后负责。
 - 发布 / 部署：不适用；本次不涉及 Release/Deploy。
