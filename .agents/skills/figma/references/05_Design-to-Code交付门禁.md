@@ -357,7 +357,8 @@ Figma Frame 是设计基准，不自动等于生产固定像素。
 - 真实系统不支持设计行为；
 - 动态字段事实源不明；
 - 关键 Annotation 缺失、错误或与真实机器事实冲突；
-- Prototype 会回弹旧数据；
+- Prototype 会回弹旧数据，或存在视觉上 enabled 的死按钮/死控件，关键流程无法 No-code Acceptance；
+- Formal Screen/State 绕过既有 Design Ownership Ladder 形成第二 Owner；
 - 关键公共组件是假复用；
 - 相同业务逻辑被要求多页面复制；
 - 页面尺寸/滚动/重叠导致关键任务不可用；
@@ -388,11 +389,15 @@ Figma Frame 是设计基准，不自动等于生产固定像素。
 [ ] 重复 / 无意义 Annotation 已在不丢语义前提下收敛
 [ ] 页面尺寸 / Viewport / 响应式边界明确
 [ ] 正常状态无图片/文字/标注/控件无意重叠
+[ ] Design Ownership Ladder 已恢复；Formal Screen/State 的公共稳定语义消费真实 Owner，Page-private 仅承载单页特例
 [ ] 公共组件真实复用
 [ ] 可复用业务逻辑有唯一 Owner
 [ ] Component Property 无外覆 Text
 [ ] Token 无明确语义漂移
 [ ] Prototype Variable / Reaction 无旧数据
+[ ] enabled 可操作控件均有有效 Reaction；disabled/readonly 语义显式
+[ ] 关键流程通过 No-code Acceptance：Starting Point → 代表性终态，取消/关闭/返回可达
+[ ] Representative State 未冒充真实系统成功
 [ ] Flow 无失效目标
 [ ] Overlay / Scroll / Dropdown / Modal / Drawer 正确
 [ ] 关键状态完整
@@ -422,6 +427,7 @@ Ready 后交付给实现方至少包含：
 Feature/Page 边界
 页面尺寸/响应式规则
 Prototype / 状态规格入口
+Prototype Acceptance Flow / Interaction Coverage
 已知 Notes
 ```
 

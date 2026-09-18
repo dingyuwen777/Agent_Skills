@@ -22,7 +22,8 @@ description: 面向任意项目的 Figma 产品原型、设计系统、页面可
 动态数据来自哪里，是否明确标注？
 公共视觉组件是否真正复用？
 可复用业务逻辑是否有唯一 Owner？
-Prototype 点击之后是否仍然正确？
+现有 Design System / Page Template / Feature/Page Owner 是否保持唯一 Owner，Formal Screen/State 的公共稳定语义是否消费它们、单页特例是否留在 Page-private？
+Prototype Interaction Completeness / 无代码验收是否通过：所有视觉上可操作且 enabled 的控件有有效 Reaction，关键流程无需前端代码即可走通？
 实现方能否无歧义地把设计接到当前项目？
 ```
 
@@ -37,9 +38,9 @@ Prototype 点击之后是否仍然正确？
 → 审查页面尺寸、布局与真实使用习惯
 → 审查视觉层级、图片、标注、表格、表单
 → 审查 Canvas / Section / Annotation 的组织与间距
-→ 审查公共组件和业务逻辑复用
+→ 审查公共组件 / Page Template / Feature/Page Owner 和业务逻辑复用
 → 审查系统能力、动态数据和状态来源
-→ 审查 Prototype Variable / Reaction / Flow
+→ 审查 Prototype Variable / Reaction / Flow / Interaction Completeness
 → Figma 写操作后执行 Canvas-level Review
 → Fresh Screenshot / Machine Audit（模式要求时）
 → Design Context / 实现视角复核（适用时）
@@ -50,6 +51,8 @@ Prototype 点击之后是否仍然正确？
 ```
 
 详细方法位于 `references/`。命中对应场景时必须读取相关 reference；不能只读本文件后凭经验完成审查。
+
+Owner 层级、Prototype 交互完整性与 READY 判定分别由 references 03、04、05 唯一维护。
 
 ---
 
