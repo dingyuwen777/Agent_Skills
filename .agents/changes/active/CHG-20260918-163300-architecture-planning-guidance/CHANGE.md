@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260918-163300-architecture-planning-guidance
 title: 强化架构设计、任务拆分与方案落地流程
 level: L2
-status: ready_for_review
+status: in_progress
 owner: dingyuwen777
 branch: tech/architecture-planning-guidance
 created: 2026-09-18
@@ -18,6 +18,7 @@ affected_areas:
   - usage-documentation
 affected_paths:
   - .agents/skills/coding/references/05_设计实施与根因调试.md
+  - .agents/skills/coding/references/30_方案落地架构设计与渐进式规划.md
   - .agents/skills/coding/references/09_多人和多智能体并行协作.md
   - .agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md
   - .agents/skills/coding/tests/test_development_guidance.py
@@ -30,7 +31,7 @@ data_changes: []
 # 变更摘要
 
 - **要解决的问题**：现有 Agent_Skills 的执行/验证/交付治理已经完整，但方案落地、代码结构设计、复杂任务纵向拆分、大型未知任务渐进规划和 Merge/Rebase 冲突意图恢复仍缺少集中、可执行的方法。
-- **拟议修改**：只增强现有 Coding Owner 与最终用户说明，不新增顶层 Skill/Reference，不改变路由和 Runtime Contract。
+- **拟议修改**：保持现有顶层 Skill/Owner；新增 1 个 Coding 方案专项 Reference，通过既有“方案/技术方案”词汇按需加载，避免普通 L2 上下文膨胀。
 - **预期结果**：开发者既可以先讨论方案，也可以把其他来源的方案安全映射到当前代码；复杂任务拆分反馈更快，大型任务不过早伪造完整计划，冲突按双方真实意图解决。
 
 # 背景、现状与问题
@@ -48,7 +49,7 @@ Requirement Source 为 #262。维护者明确排除“主动维护领域词汇�
 
 ## 问题、根因或约束
 
-缺口不是需要更多顶层 Skill，而是既有 Owner 的专业方法不够显式。若新增平行 Planner/Architecture Skill，会增加路由、上下文和职责冲突；若只改 `USAGE.md`，又会让规则停留在示例层，不能稳定约束不同宿主/模型。
+缺口不是需要更多顶层 Skill，而是既有 Owner 的专业方法不够显式。首轮实现把全部新方法写入普通 L2 必达 Reference，PR #263 Skill Tests #1462 证明这会让 backend L2 上下文达到 200,051B，超过 195,000B 预算，复杂历史组合也超过允许增长。不能通过抬高预算解决，因此改为新增 1 个 Coding 专项 Reference，按现有“方案/技术方案”信号渐进披露。
 
 ## 不修改的后果
 
@@ -95,8 +96,9 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 ## 非目标
 
 - 不维护领域词汇、CONTEXT.md 或 Ubiquitous Language。
-- 不新增顶层 Skill/Reference、Planner、Task Manager 或 Ticket 系统。
-- 不修改 routing metadata、Stable ID、Task Route schema、Runtime executable、MCP、Project Payload 或安装 Contract。
+- 不新增顶层 Skill、Planner、Task Manager 或 Ticket 系统；只新增 1 个 Coding 专项 Reference。
+- 不修改任何既有 Reference 的 Stable ID/dependency，不新增 Task Route 维度/词汇；新 Reference 使用新的唯一 Stable ID，并复用现有 `执行模式=方案` / `意图=技术方案`。
+- 不修改 Runtime executable、MCP、Project Payload schema 或安装 Contract。
 - 不强制所有任务拆 ticket、做架构重构或进入渐进式规划。
 - 不改变任何业务 public API、Schema、数据、依赖或部署。
 
@@ -122,7 +124,7 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 ## 最小充分方案
 
-1. 在现有设计 Reference 加入：外部/既有方案核验、Architecture/Codebase Design、Large-task Progressive Planning，并把复杂 Feature 拆分明确为 Vertical Slice。
+1. 新增 `30_方案落地架构设计与渐进式规划.md`：承载外部/既有方案核验、Architecture/Codebase Design、Large-task Progressive Planning，并只按现有“方案/技术方案”场景加载；现有设计 Reference 只保留薄入口和实施阶段 Vertical Slice 核心。
 2. 在多人协作 Reference 补 blocker DAG/frontier 与 expand → migrate batches → contract Wide Refactor 例外。
 3. 在 Git Reference 补 intent-based Merge/Rebase conflict workflow，继续复用现有授权。
 4. 在 `USAGE.md` 增加面向最终用户的讨论/实施/外部方案/切片/大型任务/架构审视/冲突解决提示词。
@@ -147,14 +149,15 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 | R4 | 外部/既有方案先按当前事实核验再实施 | #262 / AC4 | satisfied | `05` 将其他聊天/同事/文档/工具等方案定义为 Proposal，按仍成立/已过时/冲突/需 Owner 决策分类并映射当前实现；`USAGE.md` 提供实施入口 |
 | R5 | intent-based Merge/Rebase conflict 且不扩大授权 | #262 / AC5 | satisfied | `14` 先恢复 merge/rebase 状态与双方 Requirement/Issue/PR/Change/commit 意图，逐 hunk 处理，允许安全 abort，并把后续 Git 动作留在既有授权门禁 |
 | R6 | USAGE 提供全部指定场景的可复制指令 | #262 / AC6 | satisfied | `USAGE.md` 已覆盖方案讨论、确认后实施、外部方案落地、纵向切片、大型任务、架构审视、Merge/Rebase 冲突及短指令 |
-| R7 | 不增加 Skill/Reference/路由/Runtime/Payload/install Contract 变化 | #262 / AC7 | satisfied | main `46a872cb` → branch `b9095018` compare 仅含 3 个既有 Reference、USAGE、1 个既有测试文件与当前 Change；无 SKILL/frontmatter/routing/Runtime/Payload/install 文件变化 |
-| R8 | PR final head、Review、main fresh、archive、Closure 完整交付 | #262 / AC8 | not_applicable | 本行只对 pre-Ready Change 状态记 not_applicable：PR current-head CI、guarded merge、main fresh、repository-native archive 与 Issue Closure 按既有 Delivery/Closure 生命周期在 Ready 之后执行，仍是 end_to_end 完成硬门禁 |
+| R7 | 只新增 1 个 Coding 专项 Reference；既有 Stable ID/dependency、Task Route schema/词汇与 Runtime executable/MCP/Payload/install Contract 不变；Context Budget 不回归 | #262 / AC7 | not_satisfied | 新 Reference 与正/反路由测试已实施；等待修正后 PR current-head metadata/context-budget/parity CI 证明 |
+| R8 | PR final head、Review、main fresh、archive、Closure 完整交付 | #262 / AC8 | not_applicable | pre-Ready 阶段平台交付证据由后续 Delivery 生命周期持有；不在 Change 内伪造未来状态 |
 
 # 计划改动
 
 | 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
 | --- | --- | --- | --- |
-| `05_设计实施与根因调试.md` | 方案落地、架构设计、大型渐进规划、Vertical Slice | 当前 Planning/Design Owner | R1-R4 / E2 |
+| `30_方案落地架构设计与渐进式规划.md` | 新增方案专项 Reference，承载方案核验、架构设计和大型渐进规划 | 保护普通 L2 Context Budget，同时保留 Coding Owner | R1/R3/R4 / #262 |
+| `05_设计实施与根因调试.md` | 保留专项入口与 Vertical Slice 薄规则 | 普通实施路径必须轻量 | R2/R4 / E2 |
 | `09_多人和多智能体并行协作.md` | blocker DAG/frontier、Wide Refactor | 当前并行/依赖 Owner | R2 / E3 |
 | `14_Git交付依赖安全与宿主能力边界.md` | intent-based conflict workflow | 当前 Git Owner | R5 / E4 |
 | `test_development_guidance.py` | 关键规则可达性回归 | 防止后续精简丢失 | R1-R7 |
@@ -164,28 +167,28 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 - [x] 调查当前实现和事实源
 - [x] 建立与风险相称的任务路由和验证矩阵
 - [x] 行为变化建立失败证据或说明测试例外：本次为治理方法/文档增强，增加规则可达性回归，不伪造产品 Runtime Red
-- [x] 完成最小实现，不静默扩大范围
-- [x] 同步受影响的长期文档或明确不适用依据
-- [x] 取得仍覆盖当前版本的验证证据
-- [x] 完成需求追溯、完成审计和适用复核
+- [ ] 完成最小实现，不静默扩大范围
+- [ ] 同步受影响的长期文档或明确不适用依据
+- [ ] 取得仍覆盖当前版本的验证证据
+- [ ] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
 | 行为 / 单元 / 组件 | not_applicable | 不改变业务/Runtime 可观察行为 |
-| 接口 / 契约 | not_applicable | public API、Task Route、Stable ID、metadata/dependency 不变 |
+| 接口 / 契约 | required | 新增 Reference Stable ID `coding.reference.31` 与 routing metadata；必须证明只命中方案/技术方案，普通 backend L2 不命中，既有 Stable ID/dependency 与 Task Route schema/词汇不变 |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 无数据库/服务/设备/OS 运行语义变化 |
 | 用户 / 工作流验收 | not_applicable | 不新增业务工作流；USAGE 作为治理文档审查 |
 | 跨组件关键路径 | not_applicable | 无产品组件接线变化 |
 | 外部依赖 / 供应方探测 | not_applicable | 无第三方实时事实需要 Probe |
-| 构建 / 打包 / 运行 | not_applicable | Runtime executable/package/install 边界不变 |
+| 构建 / 打包 / 运行 | not_applicable | Runtime executable/MCP/Payload/install Contract 不变；若 changed-scope classifier 因 Reference inventory 选择 Runtime smoke，则接受其升级 Evidence，不手工跳过 |
 | 文档 / 治理 / 其他 | required | canonical 内容、USAGE、规则回归、Change/Issue gate、独立 Review、PR/main CI、archive/closure |
 
 # 验证计划
 
-- 目标测试：`test_development_guidance.py` 及 changed-scope selector 选择的治理/内容回归。
-- 相关回归：Skill Mutation 内容守恒、Source/Runtime required Context parity（按 CI classifier 实际选择）。
+- 目标测试：`test_development_guidance.py` 新增方案 Reference 路由正/反例，以及 changed-scope selector 选择的治理/内容回归。
+- 相关回归：metadata compiler/Stable ID/dependency、Context Budget、历史路由增长、Skill Mutation 内容守恒、Source/Runtime required Context parity（按 CI classifier 实际选择）。
 - 静态检查或构建：仅仓库 CI selector 认为当前 content/governance scope 所需的 compile/check；不机械跑三平台 package。
 - 专项真实边界：不适用；无外部 Provider/业务数据/运行环境变更。
 - 就绪检查：PR Requirement Source + new Change machine Contract + `ready_check` + 独立 Review。
@@ -195,7 +198,7 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 | 项目 | 结论 | 依据 / 处理方式 |
 | --- | --- | --- |
 | 主要风险 | 普通任务过度规划、盲信/推翻外部方案、冲突解决越权 | 条件式触发 + 项目事实优先 + Authorization 不变 + Review |
-| 兼容性 | 现有流程保持，新方法按真实场景加载 | 不改 Router/metadata/public Contract |
+| 兼容性 | 现有流程保持，新专项只在方案场景加载 | 新增 Reference 使用新 Stable ID 和既有 route 词汇；不改 Task Route schema/public contract |
 | 数据 / Migration | 不适用 | 无 Schema/数据 |
 | 部署 / 运行 | 不适用 | 无 Runtime/部署 |
 | 回滚 / 恢复 | revert Implementation PR | 无不可逆状态 |
@@ -203,7 +206,7 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 # 文档、依赖、部署与发布影响
 
 - **长期文档**：更新唯一最终用户说明 `USAGE.md`；canonical 规则由三个现有 References 承载。
-- **依赖 / Runtime**：不适用；不新增/删除/升级依赖，不修改 Runtime executable。
+- **依赖 / Runtime**：不新增/删除/升级软件依赖，不修改 Runtime executable/MCP/Payload schema；新增 canonical Reference 会进入动态 Bundle/private routing manifest，因此必须通过现有 routing/parity/context-budget 回归。
 - **配置 / Secret**：不适用；无配置/Secret 变化。
 - **部署 / Release**：不适用；不创建 Release/Deploy。
 - **兼容 / 消费方通知**：既有提示词继续有效；新增方案/规划/冲突入口，不改变业务 consumer Contract。
@@ -212,10 +215,10 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 进入 `ready_for_review` 前重新读取 #262、当前 branch 的三个 canonical Owner、`USAGE.md`、实际 diff、测试与 Review Evidence，并从上游独立重建 AC1-AC8。
 
-- [x] upstream_re_read：已重新读取 live #262、当前 main/branch、三个受影响 canonical Owner、`USAGE.md` 与实际 diff，独立重建 AC1-AC8。
-- [x] change_coverage：R1-R8 与 #262 AC1-AC8 一一绑定；Change 只保存施工与证据，不作为 Requirement Source。
-- [x] reverse_audit：已从方案讨论/外部方案/切片/大型任务/架构审视/冲突场景反查 `USAGE.md` → 现有 Owner → 回归测试/Delivery；无新顶层 Skill、routing 或 Runtime 边界。
-- [x] unresolved_cleared：R1-R7 均 satisfied；R8 只在 pre-Ready Change 记阶段性 not_applicable，真实 PR/main/archive/Closure 仍由 end_to_end 门禁强制执行；无 not_satisfied。
+- [ ] upstream_re_read：修正后重新读取 live #262、最终 diff 与当前 canonical Owner，再独立重建 AC1-AC8。
+- [ ] change_coverage：修正后确认新 Reference/路由/预算调整仍完整覆盖 AC1-AC8。
+- [ ] reverse_audit：修正后从用户场景 → USAGE → 专项 Reference/现有 Owner → Routing/Context Budget/Delivery 反查。
+- [ ] unresolved_cleared：等待 R7 current-head CI 证明后清零未满足项。
 
 # 完成证据与状态
 
@@ -230,13 +233,13 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 ## 未验证内容与剩余风险
 
-当前实现与独立语义 Review 已完成到 PR Ready 候选；本地 `git clone` 因 DNS 不可用，因此没有伪造本地测试成功。PR current-head GitHub Actions、merge/main fresh、Change archive 与 Issue Closure 仍需实际执行，取得这些证据前不能宣称端到端完成。
+首轮实现语义满足目标，但 PR current-head CI 暴露 Context Budget 回归，当前已回到 in_progress 修正；修正后必须取得新的 current-head routing/context-budget/parity Evidence 才能重新进入 Ready。
 
 ## 交付状态
 
-- 提交：任务分支当前 head `b9095018b21f31459d7d3c762a4bf67d16d62658`，包含原子实现 commit 与 USAGE 格式修复 commit。
+- 提交：当前 head 为首轮实现 `fe5ef7f9`；本次 corrective commit 将新增专项 Reference 并压回普通 L2 上下文。
 - 拉取请求：Change Ready 后创建；pre-Ready 阶段尚未创建。
-- CI：真实机器回归由即将创建的 PR current-head GitHub Actions 执行；当前不冒充本地测试结果。
+- CI：PR #263 Skill Tests #1462 已失败于 2 个 Context Budget/历史路由增长断言；正在按根因修正，不降低测试或预算。
 - 合并：未执行。
 - Change 归档：未执行，由 repository-native automation 在 merge 后负责。
 - 发布 / 部署：不适用；本次不涉及 Release/Deploy。
