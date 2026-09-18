@@ -134,6 +134,7 @@ class UniversalFigmaSkillTest(unittest.TestCase):
             "Page Template / Page Pattern",
             "Formal Screen / State Frame（Consumer）",
             "最近且正确的真实 Owner",
+            "Page-private Composition",
         ):
             self.assertIn(marker, components)
 

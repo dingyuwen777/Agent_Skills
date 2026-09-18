@@ -389,7 +389,7 @@ Figma Frame 是设计基准，不自动等于生产固定像素。
 [ ] 重复 / 无意义 Annotation 已在不丢语义前提下收敛
 [ ] 页面尺寸 / Viewport / 响应式边界明确
 [ ] 正常状态无图片/文字/标注/控件无意重叠
-[ ] Design Ownership Ladder 已恢复；Formal Screen/State 只消费真实 Owner
+[ ] Design Ownership Ladder 已恢复；Formal Screen/State 的公共稳定语义消费真实 Owner，Page-private 仅承载单页特例
 [ ] 公共组件真实复用
 [ ] 可复用业务逻辑有唯一 Owner
 [ ] Component Property 无外覆 Text

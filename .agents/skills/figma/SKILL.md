@@ -22,7 +22,7 @@ description: 面向任意项目的 Figma 产品原型、设计系统、页面可
 动态数据来自哪里，是否明确标注？
 公共视觉组件是否真正复用？
 可复用业务逻辑是否有唯一 Owner？
-现有 Design System / Page Template / Feature/Page Owner 是否保持唯一 Owner，正式 Screen/State 是否只消费它们？
+现有 Design System / Page Template / Feature/Page Owner 是否保持唯一 Owner，Formal Screen/State 的公共稳定语义是否消费它们、单页特例是否留在 Page-private？
 Prototype Interaction Completeness / 无代码验收是否通过：所有视觉上可操作且 enabled 的控件有有效 Reaction，关键流程无需前端代码即可走通？
 实现方能否无歧义地把设计接到当前项目？
 ```
