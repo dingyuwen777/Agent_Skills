@@ -18,7 +18,7 @@
 - Git 提交信息必须中文；项目可增格式、前缀或工单号，不得覆盖中文要求；
 - 本地 Git 路径可用时，开工顺序：`最新目标分支 → 本地任务分支 → 本地 Change / 失败测试 / 最小治理提交 → 首个本地提交 → 首次 push 创建远程跟踪分支 → 早期 PR`；不得先创建远程空分支。仅有托管平台 API 时按下文语义等价路径执行，不把本地 clone/commit 当作远端写入的固定前置条件。
 - 既有本地实现接管：保留工作、不伪造历史；以当前 revision 按 Requirement Source 与现有 Change/Validation/Review/Git 门禁做到 PR Ready；可安全复现的 `base Red → current Green` 仅作事后回归证据，Issue/Change/测试仍按既有触发。
-- Merge/Rebase 冲突先恢复双方 **Primary Requirement Source** / PR / Change / commit 意图，不按 `ours/theirs`；真实语义冲突回决策门禁，可安全 `abort`；解决后回归，Git 授权不变。
+- Merge/Rebase 冲突先恢复状态、双方 **Primary Requirement Source** / Issue / PR / Change / commit 与 hunk；逐 hunk 合并兼容意图，不按 `ours/theirs`；语义冲突回决策门禁，错误/危险操作可 `abort`；回归后 Git 授权不变。
 
 ### Requested Action 与 Effective Authorization
 
