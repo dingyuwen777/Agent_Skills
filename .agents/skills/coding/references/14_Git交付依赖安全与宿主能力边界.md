@@ -18,6 +18,25 @@
 - Git 提交信息必须中文；项目可增格式、前缀或工单号，不得覆盖中文要求；
 - 本地 Git 路径可用时，开工顺序：`最新目标分支 → 本地任务分支 → 本地 Change / 失败测试 / 最小治理提交 → 首个本地提交 → 首次 push 创建远程跟踪分支 → 早期 PR`；不得先创建远程空分支。仅有托管平台 API 时按下文语义等价路径执行，不把本地 clone/commit 当作远端写入的固定前置条件。
 
+### 既有本地实现的接管式 PR 交付
+
+当协作者已经在本地完成一批实现，但此前的开发过程**没有完整按当前 Agent_Skills / 项目治理执行**，而当前目标是把这批既有实现按规则提交到远程 PR 时，不要求为了“流程看起来完整”丢弃或从头重写已有代码。应把当前实现视为**尚未完成交付验证的候选实现**，从当前事实重新进入治理与交付门禁。
+
+固定顺序：
+
+1. **先保护现有工作并恢复 Git 事实。** 检查当前 branch/worktree、目标 base、当前 head、已有 commits、未提交修改、完整 diff、与目标分支的 ahead/behind/冲突以及可见 Active Change；区分本任务改动、协作者其他改动和上游新变化。禁止为重新走流程使用 `reset --hard`、`clean`、force push、覆盖式 checkout 或其他破坏用户工作的手段。
+2. **从上游事实重新建立预期，不从代码反推需求。** 重新读取项目规则、当前 Requirement Source、相关 Contract/Schema/配置/代码/测试/CI，从这些事实独立重建目标、成功标准、范围、非目标、不变项与风险，再对照当前 diff 判断已有实现实际完成了什么、遗漏了什么、是否包含无关改动。
+3. **历史过程只能如实记录，不能倒填。** 如果此前没有真实执行 TDD、Change、Issue、Review、测试或其他证据，就明确它们当时没有发生；不得补写过去日期、伪造旧 Red/Green、把当前新建的治理记录说成开发前已经存在，或用“现在补齐”改写历史事实。
+4. **按当前真实触发补治理，不机械补资产。** 重新判断当前风险等级、Requirement Source、Change、Validation Matrix、Docs、Review 和 Git/PR 门禁。只有当前项目规则、风险或交付阶段真实要求时才创建/认领 Issue、Change、测试或其他记录；新建记录描述“既有实现接管后的当前施工与验证”，不证明此前开发过程合规。
+5. **把已有实现当作待验证候选，按当前 revision 补最小充分证据。** 优先复用现有测试、parser/check、真实入口和项目已有验证；只有现有 Evidence 无法保护当前真实行为、Contract 或具体回归缺口时才新增最小测试。发现确定问题直接在当前任务范围内修复，再重新验证。
+6. **事后回归证据与开发时 TDD 必须区分。** 对 Bug 修复或行为变化，如果可以在不破坏现有工作、不重写共享历史且环境仍可复现的前提下验证修改前 base/revision 上目标测试失败、当前实现上通过，可以记录为 **`base Red → current Green` 的事后回归证据**；这只能证明回归和修复边界，**不能声称原开发过程已经执行 Red → Green TDD**。base 无法安全复现时不要为形式强行切换/重建环境，应记录该历史 Red 未验证，并使用当前可取得的最强直接证据。
+7. **对当前 diff 做独立 Review 与文档影响审计。** 从 Requirement Source 和项目事实检查正确性、边界、错误处理、安全/权限、public Contract、数据/兼容、依赖、测试充分性、无关改动和长期文档；Finding 修复后 re-review，不能因为“代码已经写完”降低 Review 强度。
+8. **处理目标分支新鲜性，但不默认重写历史。** merge 前仍需面向当前目标分支重新确认 base/head、冲突、required checks 和 reviewed revision；按项目既有策略选择 merge queue、更新分支或其他安全路径，不为了“同步 main”默认 rebase/force push。任何会改变已审 diff 的更新都使相关旧 Review/Evidence 按 Fresh Evidence Contract 重新判定。
+9. **PR 必须如实描述接管事实。** PR 说明应明确这是“既有本地实现经过当前 Agent_Skills 接管、需求复核、补充验证和 Review 后的提交”，列出实际执行的验证、未验证项和剩余风险；不得写成“从开发开始就完整遵循了 Agent_Skills”。Requirement-Source、Change、CI 与 Review 继续按各自 Owner 的现行规则关联。
+10. **普通协作者止于 PR Ready。** 达到当前项目要求的 PR Ready 后提交给维护者审核；没有额外授权时不自行 merge 主分支、Release、Deploy、生产 Migration/数据动作或删除共享分支。维护者后续 Review/merge 仍执行当前独立门禁，不因“接管式验证”降低标准。
+
+这条路径的目标不是证明**过去的开发过程合规**，而是证明**当前准备提交 PR 的 revision**在现有规则下具备真实、可追溯、足够的新鲜 Evidence。它不改变正常从任务开始就按 Agent_Skills 开发的首选流程，也不把 Issue-first、Change-first 或新增测试变成所有任务的无条件要求。
+
 ### Requested Action 与 Effective Authorization
 
 **Requested Action** 是用户请求，**Effective Authorization** 仍须结合项目规则、authenticated principal、当前保护规则/Ruleset 和宿主能力核验；Git 能力存在不授予任务权限。
