@@ -333,14 +333,13 @@ Runtime 校验当前 task 和 Task Route，用唯一 evaluator 求值并单调�
 稳定公开入口：
 
 ```text
-Windows .exe 无参数          → install EXE 自身所在目录
-Linux/macOS 无参数           → install 当前工作目录
-install --target <project>   → 显式安装/当前版本重复安装；始终以 --target 为准
-status --json                → 最小 Runtime 状态
-self-test --json             → Runtime/Payload 完整性
-serve                         → stdio MCP Server
-
-Windows onefile 无参数安装如果在**交互式控制台**中失败，必须先完整输出并 flush 原始错误，再显示“按 Enter 退出”提示并等待一次输入，避免双击启动的控制台随失败进程立即关闭。该停留只适用于 Windows + frozen onefile + 无参数 + interactive stdin；显式子命令、源码模式、Linux/macOS、stdin 重定向/CI 等非交互调用保持 fail-fast，不等待人工输入。等待输入本身发生 EOF/OSError/ValueError 时直接保留原失败退出，不用第二异常覆盖原始错误。
+Windows .exe 无参数 → install EXE 自身所在目录
+Linux/macOS 无参数 → install 当前工作目录
+install --target <project> → 显式安装/重装，以 --target 为准
+status --json → 最小状态
+self-test --json → 完整性
+serve → stdio MCP
+Windows frozen+TTY 无参数失败：flush error 后提示 Enter 并读一次；显式/非交互/POSIX 不等待，stdin 异常保留原 error/1
 ```
 
 项目 Runtime 安装：
