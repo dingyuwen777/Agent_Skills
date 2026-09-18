@@ -3,11 +3,11 @@ schema: coding-change/v1
 id: CHG-20260917-145659-governance-asset-machine-contract
 title: 统一治理资产机器 Contract 与宿主无关校验
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/governance-asset-machine-contract
 created: 2026-09-17T14:56:59+08:00
-updated: 2026-09-17T15:52:00+08:00
+updated: 2026-09-17
 completion_gate: required
 depends_on: []
 affected_areas:
