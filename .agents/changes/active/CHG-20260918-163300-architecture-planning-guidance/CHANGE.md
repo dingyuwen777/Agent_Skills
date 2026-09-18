@@ -225,6 +225,8 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 ## 新鲜证据
 
+第七轮 PR #263 Skill Tests #1471 仅剩历史“复杂多条件叠加” Context Budget 超 646B；其余 selected tests，包括方案专项路由、metadata/compiler、Bundle exact-text、Source/Runtime parity、Planning/USAGE 回归均通过。当前不抬预算：删除前几轮残留的重复标题，并把 Vertical Slice/DAG 与 Merge/Rebase 冲突硬规则并回各自现有 Owner 段落。
+
 第六轮 PR #263 Skill Tests #1469 已使 backend L2、方案路由、metadata/compiler、Bundle exact-text、Source/Runtime parity、Planning/USAGE 回归全部通过；仅复杂历史组合仍超预算 868B。当前只把 Ref09/Ref14 的重复解释收敛成执行硬规则，并恢复普通 Ref05 原有行为/能力工作分解，不改变四项能力或路由。
 
 第五轮 PR #263 Skill Tests #1467 已将预算回归收敛到 backend L2 +154B、复杂组合 +1.3KB；新增 Reference 路由/metadata/Bundle/parity 继续通过。另有一个既有 Planning Contract 断言要求保留“工作分解”原词。当前删除普通 Ref05 的重复专项导航、压缩 Ref09/Ref14 的重复解释，并恢复原 Planning 关键词；详细方法仍由专项 Reference 与 USAGE 完整承载。
@@ -242,6 +244,8 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 | V3 | branch `b9095018` | #262 AC1-AC7 → 当前 diff 独立 Review；检查普通任务不过度规划、外部方案不盲信/全推翻、冲突不越权 | `NO_FINDINGS_WITHIN_SCOPE`；另修复 1 个 USAGE 代码块间距后 re-read | 当前实现语义与上游要求一致；真实机器回归继续由 PR current-head Actions 证明 |
 | V4 | Ready 后 Delivery | PR current-head CI、guarded merge、main fresh、repository-native Change archive、Issue Closure Audit | pre-Ready 阶段不复制未来平台事实 | 这些证据仍是端到端完成硬门禁，由 PR/Actions/Requirement Source 真实持有 |
 
+当前 `main` 已前进到 `ba127180`；新增提交仅涉及 Figma 规则/测试与另一个已归档 Change，与本任务路径无重叠。本次以双 parent merge commit 同步最新 main 后再取得 fresh CI，旧基线 CI 不作为最终证据。
+
 ## 未验证内容与剩余风险
 
 首轮实现语义满足目标，但 PR current-head CI 暴露 Context Budget 回归，当前已回到 in_progress 修正；修正后必须取得新的 current-head routing/context-budget/parity Evidence 才能重新进入 Ready。
@@ -250,7 +254,7 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 - 提交：当前 head 为首轮实现 `fe5ef7f9`；本次 corrective commit 将新增专项 Reference 并压回普通 L2 上下文。
 - 拉取请求：Change Ready 后创建；pre-Ready 阶段尚未创建。
-- CI：#1469 已除复杂历史组合 +868B 外全部 selected tests 通过；当前只去除 Ref09/Ref14 与专项/既有规则的重复说明，不调高预算。
+- CI：#1462–#1471 按真实 Context Budget 单调收敛；#1471 仅剩复杂历史组合 +646B。当前清除重复标题/章节并保持同等规则语义，不调高预算。
 - 合并：未执行。
 - Change 归档：未执行，由 repository-native automation 在 merge 后负责。
 - 发布 / 部署：不适用；本次不涉及 Release/Deploy。

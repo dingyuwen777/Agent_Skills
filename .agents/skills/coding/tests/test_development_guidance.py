@@ -116,11 +116,11 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         self.assertIn("Vertical Slice", planning)
         self.assertIn("Vertical Slice", collaboration)
 
-        for fragment in ("纵向切片与阻塞依赖图（DAG）", "frontier", "expand", "migrate batches", "contract"):
+        for fragment in ("Vertical Slice", "DAG", "frontier", "expand", "migrate batches", "contract"):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, collaboration)
 
-        for fragment in ("Merge / Rebase 冲突：按意图解决", "Primary Requirement Source", "ours / theirs", "abort"):
+        for fragment in ("Merge/Rebase 冲突", "Primary Requirement Source", "ours/theirs", "abort"):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, delivery)
 
