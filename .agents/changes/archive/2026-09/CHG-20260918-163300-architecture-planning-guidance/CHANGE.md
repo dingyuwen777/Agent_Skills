@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260918-163300-architecture-planning-guidance
 title: 强化架构设计、任务拆分与方案落地流程
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/architecture-planning-guidance
 created: 2026-09-18
