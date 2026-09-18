@@ -225,6 +225,8 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 ## 新鲜证据
 
+第三轮 PR #263 Skill Tests #1464 已证明新增 Reference 的 metadata/compiler、方案路由正反例、Bundle exact-text、Source/Runtime context conformance 等相关回归继续通过；剩余失败是普通 backend L2 仅超预算 477B、复杂历史组合超约 2.4KB，以及两条既有文本可达性断言因压缩改写失配。当前仅进一步去重复并恢复既有关键措辞，不提高预算、不削弱门禁。
+
 第二轮 PR #263 Skill Tests #1463 证明专项 Reference 的显式方案/技术方案正反路由测试通过；剩余失败为 backend L2 仍超预算 743B、复杂历史组合超约 3.8KB，以及历史“方案 + unknown project shape”精确 expected-set 尚未加入新 Reference。当前修正通过进一步压薄普通 Ref05/Ref09/Ref14，并只对该历史方案用例加入 `coding.reference.31` 精确期望；不提高 Context Budget。
 
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
@@ -242,7 +244,7 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 - 提交：当前 head 为首轮实现 `fe5ef7f9`；本次 corrective commit 将新增专项 Reference 并压回普通 L2 上下文。
 - 拉取请求：Change Ready 后创建；pre-Ready 阶段尚未创建。
-- CI：#1462 暴露第一版 Context Budget 回归；#1463 已证明新 Reference 路由测试通过，但仍有 2 个预算断言和 1 个历史方案 expected-set 需修正。当前继续压缩常驻 Context，并精确更新已批准的新方案路由期望；不降低预算。
+- CI：#1462/#1463 驱动渐进披露重构；#1464 已把预算回归收窄到 backend L2 +477B、复杂组合 +2.4KB，且新增 Reference 路由/Bundle/parity 测试通过。当前只压缩常驻重复文本并恢复既有规划断言。
 - 合并：未执行。
 - Change 归档：未执行，由 repository-native automation 在 merge 后负责。
 - 发布 / 部署：不适用；本次不涉及 Release/Deploy。

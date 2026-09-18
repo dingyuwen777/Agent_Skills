@@ -21,8 +21,9 @@
 
 ### Merge / Rebase 冲突：按意图解决
 
-in-progress merge/rebase 先恢复 base/current/other revision、冲突 hunk 和双方可取得的 Primary Requirement Source、Issue/PR/Change/commit 意图，不把 `ours/theirs` 或“更新”自动当正确。兼容意图尽量同时保留；正式 Requirement 已明确取代旧行为时按当前事实收敛；真正涉及业务、public Contract、Schema/数据、安全/权限或重大路线冲突时回到既有决策门禁，不在冲突处理中发明第三种行为。操作目标/方向本身错误或继续会危及用户工作时允许安全 `abort`，普通可解冲突不靠 abort 逃避。解决后运行双方受影响边界的 targeted regression；stage/continue/commit/push/PR/merge 仍需原有授权。
+in-progress merge/rebase 先恢复 revision、冲突 hunk 及双方可取得的 Requirement/Issue/PR/Change/commit 意图；不按 `ours/theirs` 机械选行。兼容意图同时保留；正式要求已取代旧行为时按当前事实收敛；业务/public Contract/数据/安全等真正冲突回到既有决策门禁。操作目标/方向错误或继续会危及用户工作时允许安全 `abort`。解决后跑双方受影响边界的 targeted regression，后续 Git 动作仍受原授权约束。
 
+### Requested Action 与 Effective Authorization
 ### Requested Action 与 Effective Authorization
 
 **Requested Action** 是用户请求；**Effective Authorization** 仍须核验项目规则、authenticated principal、保护规则/Ruleset 和宿主能力；Git 能力不等于任务权限。

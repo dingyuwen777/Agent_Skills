@@ -113,7 +113,8 @@ class DevelopmentGuidanceTest(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, planning)
 
-        self.assertIn("Vertical Slice", design)
+        self.assertIn("Vertical Slice", planning)
+        self.assertIn("Vertical Slice", collaboration)
 
         for fragment in ("纵向切片与阻塞依赖图（DAG）", "frontier", "expand", "migrate batches", "contract"):
             with self.subTest(fragment=fragment):
