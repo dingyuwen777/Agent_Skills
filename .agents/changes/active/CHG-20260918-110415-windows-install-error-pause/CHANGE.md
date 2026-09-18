@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260918-110415-windows-install-error-pause
 title: Windows 安装失败时保留错误窗口
 level: L3
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: fix/windows-install-error-pause
 created: 2026-09-18
@@ -76,12 +76,12 @@ Requirement Source 为 #260。用户提供的真实现象是安装遇到目标�
 
 ## 成功标准
 
-- [ ] 交互 Windows frozen 无参数失败时错误可见并等待 Enter。
-- [ ] 非交互/显式/POSIX/源码模式均不等待。
-- [ ] pause 自身输入异常不掩盖原始失败。
-- [ ] 当前 Runtime/installer/package 回归通过。
-- [ ] canonical Contract 和最终用户文档同步。
-- [ ] PR/main/archive/Issue Closure 完整闭环。
+- [x] 交互 Windows frozen 无参数失败时错误可见并等待 Enter。
+- [x] 非交互/显式/POSIX/源码模式均不等待。
+- [x] pause 自身输入异常不掩盖原始失败。
+- [x] 当前 Runtime/installer 语义回归已通过；最终三平台 package Evidence 由 Ready 后 PR CI 获取。
+- [x] canonical Contract、runtime README 和最终用户 USAGE 已同步。
+- [x] 已完成到 PR Ready；merge/main fresh/archive/Issue Closure 作为下游 Delivery/Closure Evidence 继续获取。
 
 ## 范围
 
@@ -146,12 +146,12 @@ Requirement Source 为 #260。用户提供的真实现象是安装遇到目标�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Windows frozen 无参数交互失败显示并等待 | #260 / AC1 | not_satisfied | 待 Red/Green |
-| R2 | 显式/POSIX/源码/非交互不等待，退出码 1 | #260 / AC2 | not_satisfied | 待测试 |
-| R3 | EOF/OSError 不掩盖原错误 | #260 / AC3 | not_satisfied | 待测试 |
-| R4 | Red/Green + 现有 Runtime/package 回归 | #260 / AC4 | not_satisfied | 待 CI |
-| R5 | Contract + runtime README + USAGE 同步 | #260 / AC5 | not_satisfied | 待修改 |
-| R6 | PR/三平台/merge/main/archive Closure | #260 / AC6 | not_satisfied | 待交付 |
+| R1 | Windows frozen 无参数交互失败显示并等待 | #260 / AC1 | satisfied | Red #1454 证明当前 readline=0；Green #1459 中目标测试通过，`server.py` 在 Windows+frozen+no-args+TTY 时 flush error、提示并读一次 |
+| R2 | 显式/POSIX/源码/非交互不等待，退出码 1 | #260 / AC2 | satisfied | `test_noninteractive_or_nonimplicit_invocations_never_wait` 从 Red 阶段起持续通过；Green #1459 全套 561 tests 通过 |
+| R3 | EOF/OSError 不掩盖原错误 | #260 / AC3 | satisfied | helper 只包围 stdin 判断/读取；OSError/EOFError/ValueError 被限制在 pause 内；Green 目标测试通过且返回码仍 1 |
+| R4 | Red/Green + 现有 Runtime/package 回归 | #260 / AC4 | satisfied | #1454：3 tests/2 expected failures；#1459：561 self-contained tests 全绿，Requirement Source/compile/CLI smoke/ready_check success；最终 package 待 Ready 后 current-head CI |
+| R5 | Contract + runtime README + USAGE 同步 | #260 / AC5 | satisfied | ref13 CLI Contract +17 bytes 收敛表达；runtime README 与 USAGE 同步；#1459 release/context regressions 全绿 |
+| R6 | PR/三平台/merge/main/archive Closure | #260 / AC6 | not_applicable | 当前 Change 只到 Ready；PR final-head package、guarded merge、main fresh、archive 与 Issue Closure 属于 Ready 后 Delivery/Closure 平台事实，不在 pre-Ready Change 中自证 |
 
 # 计划改动
 
@@ -166,11 +166,11 @@ Requirement Source 为 #260。用户提供的真实现象是安装遇到目标�
 
 - [x] 调查当前实现和事实源
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据
-- [ ] 完成最小实现
-- [ ] 同步长期文档
-- [ ] 取得当前版本验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 行为变化建立失败证据
+- [x] 完成最小实现
+- [x] 同步长期文档
+- [x] 取得 Red #1454 与 Green #1459 当前版本验证证据；最终三平台 package 继续由 Ready 后 CI 获取
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -213,10 +213,10 @@ Requirement Source 为 #260。用户提供的真实现象是安装遇到目标�
 
 # 完成审计
 
-- [ ] upstream_re_read
-- [ ] change_coverage
-- [ ] reverse_audit
-- [ ] unresolved_cleared
+- [x] upstream_re_read：已重新读取 #260、当前 branch canonical Runtime Owner、Review 规则和实际 diff，并从 AC1-AC6 独立重建完成定义。
+- [x] change_coverage：R1-R6 与 #260 AC1-AC6 一一对应；R6 的 post-Ready 平台事实未由 Change 自证。
+- [x] reverse_audit：从 Windows 用户双击失败 → CLI catch → pause 条件 → stdin/退出码 → installer 不变项 → 文档 → package CI 反查；外部 Provider 不适用。
+- [x] unresolved_cleared：R1-R5 satisfied；R6 仅为 Ready 后 Delivery/Closure Evidence，按当前阶段 not_applicable；无 not_satisfied。
 
 # 完成证据与状态
 
@@ -225,16 +225,20 @@ Requirement Source 为 #260。用户提供的真实现象是安装遇到目标�
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main `4bcd62e9` | current Source / server / installer / Runtime Contract / package tests readback | 已完成 | 根因和不变项已确认 |
+| V2 | PR #261 head `4b756246` / Skill Tests #1454 | 新增目标测试，尚未修改 Runtime；修正 Requirement Source 后重跑同一 head | 3 tests / 2 failures：两个交互场景 `readline_calls 0 != 1`；非交互/显式/POSIX/源码模式用例通过 | 真实 Red：当前实现缺少 Windows 交互无参数失败停留，同时不应等待边界测试本身有效 |
+| V3 | head `a1947abd` / Skill Tests #1458 | 实现 + docs + canonical Contract 后 full self-contained regression | 561 tests 中仅 1 failure：route context 553894 > 553342；目标 pause 测试已 Green | 核心行为修复有效；canonical Contract 说明过长造成独立上下文预算回归 |
+| V4 | head `3edce941` / Skill Tests #1459 | ref13 收敛到 main +17 bytes 后重新运行 full regression | 561 self-contained tests 全部 success；Requirement Source、compile、CLI smoke、current Change readiness 检查 success；仅因 Change 尚为 proposed 被 Ready enforcement fail-closed | Green：目标行为、既有 installer/CLI/release/context 回归全部通过，不抬预算制造通过 |
+| V5 | 当前 branch diff + Review | #260 AC1-AC6 → `main...fix/windows-install-error-pause` 独立审查 | ahead 7 / behind 0；6 个预期路径；无未解决 thread；NO_FINDINGS_WITHIN_SCOPE | 实现未放宽安装 fail-closed，自动化边界与文档一致 |
 
 ## 未验证内容与剩余风险
 
-Red/Green、最终 package、PR、merge、main fresh、archive 尚未完成。
+Red #1454、实现 Green #1459、文档同步与独立 Review 已完成。最终 Ready head 的三平台 package、merge、main fresh、archive 与 Issue Closure 尚未执行。
 
 ## 交付状态
 
-- 提交：仅 Change carrier 待创建。
-- 拉取请求：未创建。
-- CI：未运行。
+- 提交：任务分支已包含 Change、Red 测试、Runtime 实现、canonical Contract 与文档同步；下一提交只更新 Change Ready 证据。
+- 拉取请求：PR #261 已创建并绑定 `Requirement-Source: #260`。
+- CI：Red #1454 已确认 2 个目标失败；#1459 的 561 tests/compile/CLI smoke 已 Green，最终 package 等待 Change Ready 后新 head。
 - 合并：未执行。
 - Change 归档：未执行。
 - 发布 / 部署：不适用，本次不创建 Release。
