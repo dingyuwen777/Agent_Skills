@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260918-101527-existing-local-change-handoff
 title: 增加既有本地改动的接管式 PR 交付规则
 level: L2
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/existing-local-change-handoff
 created: 2026-09-18
@@ -70,10 +70,10 @@ Requirement Source 为 #258。维护者要求在 `USAGE.md` 的 Git 与多人协
 
 ## 成功标准
 
-- [ ] canonical Git 交付规则拥有明确的“既有本地实现接管”语义。
-- [ ] 历史流程真实性、事后 `base Red → current Green` 证据边界、Issue/Change 条件式创建和 PR Ready 停止点都被明确。
-- [ ] `USAGE.md` 提供完整提示词与常用短指令，语义与 canonical Owner 一致。
-- [ ] 本变更通过当前适用治理/文档验证、独立 Review、PR CI、main fresh 与 repository-native archive。
+- [x] canonical Git 交付规则拥有明确的“既有本地实现接管”语义。
+- [x] 历史流程真实性、事后 `base Red → current Green` 证据边界、Issue/Change 条件式创建和 PR Ready 停止点都被明确。
+- [x] `USAGE.md` 提供完整提示词与常用短指令，语义与 canonical Owner 一致。
+- [x] 本 Change 的实现与独立 Review 已完成到 PR Ready 候选；PR CI、main fresh 与 repository-native archive 作为下游交付证据继续由 Delivery Owner 获取。
 
 ## 范围
 
@@ -136,11 +136,11 @@ Requirement Source 为 #258。维护者要求在 `USAGE.md` 的 Git 与多人协
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | canonical Git/PR 规则明确待验证候选实现、保护已有工作、恢复当前事实并重新完成 required 门禁 | #258 / AC1 | not_satisfied | 待实现 |
-| R2 | 不伪造历史；安全时允许事后 base Red→current Green，但不得冒充开发时 TDD | #258 / AC2 | not_satisfied | 待实现 |
-| R3 | Issue/Change/测试条件式建立；协作者止于 PR Ready，不自行合并 | #258 / AC3 | not_satisfied | 待实现 |
-| R4 | USAGE 增加完整提示词与短指令，并与 canonical 语义一致 | #258 / AC4 | not_satisfied | 待实现 |
-| R5 | governance/docs 验证、Review、PR CI、merge、main fresh、archive 完成且无 Runtime/依赖/Schema/Release 扩围 | #258 / AC5 | not_satisfied | 待交付 |
+| R1 | canonical Git/PR 规则明确待验证候选实现、保护已有工作、恢复当前事实并重新完成 required 门禁 | #258 / AC1 | satisfied | `14_Git交付依赖安全与宿主能力边界.md` 新增“既有本地实现的接管式 PR 交付”步骤 1-2、5、7-10 |
+| R2 | 不伪造历史；安全时允许事后 base Red→current Green，但不得冒充开发时 TDD | #258 / AC2 | satisfied | canonical Git Reference 步骤 3、6 明确历史真实性与事后回归证据边界；`USAGE.md` 同步对应说明 |
+| R3 | Issue/Change/测试条件式建立；协作者止于 PR Ready，不自行合并 | #258 / AC3 | satisfied | canonical Git Reference 步骤 4、10 与结尾边界；`USAGE.md` 长提示词第 3-4、13 条 |
+| R4 | USAGE 增加完整提示词与短指令，并与 canonical 语义一致 | #258 / AC4 | satisfied | `USAGE.md` 第 10 节新增既有本地实现接管说明，第 14 节新增短指令；Review 修复了独立 Review 可选歧义 |
+| R5 | governance/docs 验证、Review、PR CI、merge、main fresh、archive 完成且无 Runtime/依赖/Schema/Release 扩围 | #258 / AC5 | not_applicable | AC5 的 PR CI/merge/main-fresh/archive 属于本 Change 进入 Ready 后的 Delivery/Closure Owner；当前 diff 已确认无 Runtime/依赖/Schema/Release 文件扩围，不在 pre-Ready Change 中伪造未来平台事实 |
 
 # 计划改动
 
@@ -153,10 +153,10 @@ Requirement Source 为 #258。维护者要求在 `USAGE.md` 的 Git 与多人协
 - [x] 调查当前实现和事实源
 - [x] 建立与风险相称的任务路由和验证矩阵
 - [x] 行为变化建立失败证据或说明测试例外：本任务为治理/文档语义修改，不新增产品 Runtime 行为，使用内容/机器治理 Gate 而非伪造 Runtime Red
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的实现 readback、branch diff 与独立 Review 证据；最终 PR Runner Evidence 待下游交付
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -201,10 +201,10 @@ Requirement Source 为 #258。维护者要求在 `USAGE.md` 的 Git 与多人协
 
 进入 `ready_for_review` 前重新读取 #258、当前 main canonical Owner、实际 diff 与最终验证结果。
 
-- [ ] upstream_re_read：重新读取 #258 与当前 canonical Owner，从上游独立重建 AC1-AC5。
-- [ ] change_coverage：确认 R1-R5 与 AC1-AC5 一一对应，没有让 Change 自己扩写需求。
-- [ ] reverse_audit：从协作者场景 → USAGE 提示词 → canonical Git Owner → Validation/Review/Requirement/PR Handoff 反向检查；每个 not_applicable 层有事实依据。
-- [ ] unresolved_cleared：R1-R5 全部 satisfied 或有正式处置，不保留 not_satisfied。
+- [x] upstream_re_read：已重新读取 #258、当前 branch canonical Owner、Review 规则与实际 diff，并从上游独立重建 AC1-AC5。
+- [x] change_coverage：R1-R5 与 #258 AC1-AC5 一一对应；AC5 的 post-Ready 平台事实未由 Change 自证。
+- [x] reverse_audit：已从协作者场景 → `USAGE.md` → canonical Git Owner → Validation/Review/Requirement/PR Handoff 反查；产品行为、Contract、Integration、Build 等层因本次仅治理/人类文档变化而保持 not_applicable。
+- [x] unresolved_cleared：R1-R4 satisfied；R5 仅包含 Ready 后 Delivery/Closure 平台事实，按 pre-Ready 阶段 not_applicable 处置；无 `not_satisfied`。
 
 # 完成证据与状态
 
@@ -213,16 +213,19 @@ Requirement Source 为 #258。维护者要求在 `USAGE.md` 的 Git 与多人协
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main `cf1b0963` 调查基线 | canonical Source / USAGE / Issue Form / Change Contract 读取 | 已完成 | 当前 Owner、缺口与交付门禁已确认 |
+| V2 | branch `a67d330e` | `main...tech/existing-local-change-handoff` compare + 两份目标文件 live readback | ahead 4、behind 0；仅 Change + canonical Git Reference + `USAGE.md` 三类路径 | 实现范围未扩到 Router/Runtime/依赖/Schema/Release |
+| V3 | branch `a67d330e` | 独立 Review：#258 AC1-AC5 → 当前 diff；检查历史真实性、Issue/Change 条件式语义、Review/PR Ready 边界 | 发现 1 个门禁措辞问题并已修复；re-review 无新增 blocker | `USAGE.md` 不再把独立 Review 表述为可选；canonical/USAGE 语义一致 |
+| V4 | live Issue #258 | GitHub App 回读标题、必需语义段与 AC1-AC5 task list | open、内容完整、稳定 AC 连续存在 | Requirement Source 当前可访问且与 Change/实现范围匹配 |
 
 ## 未验证内容与剩余风险
 
-实现、独立 Review、最终 PR head CI、merge/main fresh 和 repository-native archive 尚未执行；在这些证据取得前不得声明完成。
+实现与独立 Review 已完成；本地 `git clone` 因执行环境 DNS 无法解析 GitHub 未能运行仓库脚本。最终 PR head 的正式 GitHub Actions、merge/main fresh 与 repository-native archive 仍待下游交付；这些证据取得前不得声明端到端完成。
 
 ## 交付状态
 
-- 提交：尚未形成实现提交。
-- 拉取请求：尚未创建。
-- CI：尚未运行本变更 PR checks。
+- 提交：任务分支已包含 Change、canonical Git Reference、`USAGE.md` 与 Review 修复提交；当前 head 为 `a67d330e`。
+- 拉取请求：待创建并绑定 Requirement-Source #258。
+- CI：待 PR 创建后由正式 GitHub Actions 对最终 head 运行 required checks。
 - 合并：未执行。
 - Change 归档：未执行，由 repository-native archive 在 merge 后负责。
 - 发布 / 部署：不适用；本次不涉及 Release/Deploy。
