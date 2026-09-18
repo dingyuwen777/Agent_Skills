@@ -225,6 +225,8 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 ## 新鲜证据
 
+第六轮 PR #263 Skill Tests #1469 已使 backend L2、方案路由、metadata/compiler、Bundle exact-text、Source/Runtime parity、Planning/USAGE 回归全部通过；仅复杂历史组合仍超预算 868B。当前只把 Ref09/Ref14 的重复解释收敛成执行硬规则，并恢复普通 Ref05 原有行为/能力工作分解，不改变四项能力或路由。
+
 第五轮 PR #263 Skill Tests #1467 已将预算回归收敛到 backend L2 +154B、复杂组合 +1.3KB；新增 Reference 路由/metadata/Bundle/parity 继续通过。另有一个既有 Planning Contract 断言要求保留“工作分解”原词。当前删除普通 Ref05 的重复专项导航、压缩 Ref09/Ref14 的重复解释，并恢复原 Planning 关键词；详细方法仍由专项 Reference 与 USAGE 完整承载。
 
 第四轮 PR #263 Skill Tests #1466 将失败继续收敛：新增 Reference 路由/metadata/Bundle/parity 与既有规划契约均通过；只剩 backend L2 +235B、复杂组合 +1.6KB，以及自有冲突规则措辞断言。当前最后去除 Ref09/Ref14 重复解释并恢复 `Primary Requirement Source` / `ours / theirs` 精确语义；仍不提高预算。
@@ -248,7 +250,7 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 - 提交：当前 head 为首轮实现 `fe5ef7f9`；本次 corrective commit 将新增专项 Reference 并压回普通 L2 上下文。
 - 拉取请求：Change Ready 后创建；pre-Ready 阶段尚未创建。
-- CI：#1462–#1467 按真实 Context Budget 单调收敛；#1467 仅剩 backend L2 +154B、复杂组合 +1.3KB 和 1 条既有“工作分解”措辞断言。当前删除重复导航/说明并恢复既有关键词，不调高预算。
+- CI：#1469 已除复杂历史组合 +868B 外全部 selected tests 通过；当前只去除 Ref09/Ref14 与专项/既有规则的重复说明，不调高预算。
 - 合并：未执行。
 - Change 归档：未执行，由 repository-native automation 在 merge 后负责。
 - 发布 / 部署：不适用；本次不涉及 Release/Deploy。
