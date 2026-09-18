@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260918-163300-architecture-planning-guidance
 title: 强化架构设计、任务拆分与方案落地流程
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/architecture-planning-guidance
 created: 2026-09-18
@@ -76,14 +76,14 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 ## 成功标准
 
-- [ ] Architecture / Codebase Design 方法进入现有设计 Owner，且不制造无关重构。
-- [ ] Vertical Slice + blocker DAG / frontier 和 Wide Refactor 例外进入规划/协作 Owner。
-- [ ] Large-task Progressive Planning 有明确条件和停止条件。
-- [ ] 外部/既有方案按当前事实重新核验后实施，而不是盲信或全部推翻。
-- [ ] Merge/Rebase 冲突按双方原始意图解决且不扩大 Git 授权。
-- [ ] `USAGE.md` 提供全部关键场景的可复制指令。
-- [ ] 路由、Stable ID、Runtime/MCP/Payload/install Contract 保持不变。
-- [ ] PR/current-head、Review、main-fresh、Change Archive 和 Requirement Closure 按现有门禁完成。
+- [x] Architecture / Codebase Design 方法进入现有设计 Owner，且不制造无关重构。
+- [x] Vertical Slice + blocker DAG / frontier 和 Wide Refactor 例外进入规划/协作 Owner。
+- [x] Large-task Progressive Planning 有明确条件和停止条件。
+- [x] 外部/既有方案按当前事实重新核验后实施，而不是盲信或全部推翻。
+- [x] Merge/Rebase 冲突按双方原始意图解决且不扩大 Git 授权。
+- [x] `USAGE.md` 提供全部关键场景的可复制指令。
+- [x] 路由、Stable ID、Runtime/MCP/Payload/install Contract 保持不变。
+- [x] 当前实现、文档与独立 Review 已达到 PR Ready 候选；PR/current-head、main-fresh、Change Archive 和 Requirement Closure 继续由下游交付门禁持有，当前 Change 不伪造未来平台事实。
 
 ## 范围
 
@@ -141,14 +141,14 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Architecture / Codebase Design 可执行且不强迫术语/无关重构 | #262 / AC1 | not_satisfied | 实现与 Review 后补证据 |
-| R2 | Vertical Slice + blocker DAG/frontier + Wide Refactor 例外 | #262 / AC2 | not_satisfied | 实现与 Review 后补证据 |
-| R3 | 条件式 Large-task Progressive Planning | #262 / AC3 | not_satisfied | 实现与 Review 后补证据 |
-| R4 | 外部/既有方案先按当前事实核验再实施 | #262 / AC4 | not_satisfied | 实现与 Review 后补证据 |
-| R5 | intent-based Merge/Rebase conflict 且不扩大授权 | #262 / AC5 | not_satisfied | 实现与 Review 后补证据 |
-| R6 | USAGE 提供全部指定场景的可复制指令 | #262 / AC6 | not_satisfied | 实现与文档复核后补证据 |
-| R7 | 不增加 Skill/Reference/路由/Runtime/Payload/install Contract 变化 | #262 / AC7 | not_satisfied | branch diff / Impact Audit |
-| R8 | PR final head、Review、main fresh、archive、Closure 完整交付 | #262 / AC8 | not_satisfied | 下游 Delivery/Closure 证据 |
+| R1 | Architecture / Codebase Design 可执行且不强迫术语/无关重构 | #262 / AC1 | satisfied | `05_设计实施与根因调试.md` 已加入职责集中、接口负担、pass-through、shotgun surgery、真实变化点、Locality/Leverage 与 design-it-twice 条件，并明确项目术语优先、相邻技术债不扩 Scope |
+| R2 | Vertical Slice + blocker DAG/frontier + Wide Refactor 例外 | #262 / AC2 | satisfied | `05` 默认 Vertical Slice；`09` 定义 blocker DAG/frontier，并对 Wide Refactor 使用 expand → migrate batches → contract |
+| R3 | 条件式 Large-task Progressive Planning | #262 / AC3 | satisfied | `05` 仅对跨多会话/多阶段且路径不可见的任务启用 Destination / Decisions So Far / Current Frontier / Blocked / Not Yet Specifiable / Out of Scope，并在路径清晰后退出 |
+| R4 | 外部/既有方案先按当前事实核验再实施 | #262 / AC4 | satisfied | `05` 将其他聊天/同事/文档/工具等方案定义为 Proposal，按仍成立/已过时/冲突/需 Owner 决策分类并映射当前实现；`USAGE.md` 提供实施入口 |
+| R5 | intent-based Merge/Rebase conflict 且不扩大授权 | #262 / AC5 | satisfied | `14` 先恢复 merge/rebase 状态与双方 Requirement/Issue/PR/Change/commit 意图，逐 hunk 处理，允许安全 abort，并把后续 Git 动作留在既有授权门禁 |
+| R6 | USAGE 提供全部指定场景的可复制指令 | #262 / AC6 | satisfied | `USAGE.md` 已覆盖方案讨论、确认后实施、外部方案落地、纵向切片、大型任务、架构审视、Merge/Rebase 冲突及短指令 |
+| R7 | 不增加 Skill/Reference/路由/Runtime/Payload/install Contract 变化 | #262 / AC7 | satisfied | main `46a872cb` → branch `b9095018` compare 仅含 3 个既有 Reference、USAGE、1 个既有测试文件与当前 Change；无 SKILL/frontmatter/routing/Runtime/Payload/install 文件变化 |
+| R8 | PR final head、Review、main fresh、archive、Closure 完整交付 | #262 / AC8 | not_applicable | 本行只对 pre-Ready Change 状态记 not_applicable：PR current-head CI、guarded merge、main fresh、repository-native archive 与 Issue Closure 按既有 Delivery/Closure 生命周期在 Ready 之后执行，仍是 end_to_end 完成硬门禁 |
 
 # 计划改动
 
@@ -164,10 +164,10 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 - [x] 调查当前实现和事实源
 - [x] 建立与风险相称的任务路由和验证矩阵
 - [x] 行为变化建立失败证据或说明测试例外：本次为治理方法/文档增强，增加规则可达性回归，不伪造产品 Runtime Red
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -212,10 +212,10 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 进入 `ready_for_review` 前重新读取 #262、当前 branch 的三个 canonical Owner、`USAGE.md`、实际 diff、测试与 Review Evidence，并从上游独立重建 AC1-AC8。
 
-- [ ] upstream_re_read：重新读取上游正式事实源并独立重建完成定义。
-- [ ] change_coverage：确认 R1-R8 覆盖全部 AC，没有让 Change 自证需求。
-- [ ] reverse_audit：从用户场景 → USAGE → canonical Owner → 测试/Review/Delivery 反查，并复核 Validation Matrix。
-- [ ] unresolved_cleared：R1-R7 满足；R8 的 post-Ready Delivery/Closure 事实按阶段正确处理，无未解释 not_satisfied。
+- [x] upstream_re_read：已重新读取 live #262、当前 main/branch、三个受影响 canonical Owner、`USAGE.md` 与实际 diff，独立重建 AC1-AC8。
+- [x] change_coverage：R1-R8 与 #262 AC1-AC8 一一绑定；Change 只保存施工与证据，不作为 Requirement Source。
+- [x] reverse_audit：已从方案讨论/外部方案/切片/大型任务/架构审视/冲突场景反查 `USAGE.md` → 现有 Owner → 回归测试/Delivery；无新顶层 Skill、routing 或 Runtime 边界。
+- [x] unresolved_cleared：R1-R7 均 satisfied；R8 只在 pre-Ready Change 记阶段性 not_applicable，真实 PR/main/archive/Closure 仍由 end_to_end 门禁强制执行；无 not_satisfied。
 
 # 完成证据与状态
 
@@ -224,19 +224,19 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main `46a872cb` | canonical Source / Maintenance / affected Owner / Issue #262 回读 | 已完成 | 当前 Owner、范围、Requirement Source 与非目标已确认 |
-| V2 | 当前任务分支 | GitHub readback + compare | 待执行 | 实际 diff 与预期范围一致 |
-| V3 | 当前任务分支 | 独立 Review + changed-scope GitHub Actions | 待执行 | 需求、内容守恒、回归与机器门禁 |
-| V4 | merge 后 main | main fresh CI + repository-native Change archive + Issue Closure Audit | 待执行 | 端到端交付完成 |
+| V2 | branch `b9095018` | GitHub commit/file readback + `46a872cb...b9095018` compare | ahead 2 / behind 0；仅 6 个预期路径 | 实际修改只落在 3 个既有 Reference、USAGE、回归测试与当前 Change，无 Router/Runtime/metadata 扩围 |
+| V3 | branch `b9095018` | #262 AC1-AC7 → 当前 diff 独立 Review；检查普通任务不过度规划、外部方案不盲信/全推翻、冲突不越权 | `NO_FINDINGS_WITHIN_SCOPE`；另修复 1 个 USAGE 代码块间距后 re-read | 当前实现语义与上游要求一致；真实机器回归继续由 PR current-head Actions 证明 |
+| V4 | Ready 后 Delivery | PR current-head CI、guarded merge、main fresh、repository-native Change archive、Issue Closure Audit | pre-Ready 阶段不复制未来平台事实 | 这些证据仍是端到端完成硬门禁，由 PR/Actions/Requirement Source 真实持有 |
 
 ## 未验证内容与剩余风险
 
-当前仍处于实现阶段；GitHub Actions、独立 Review、merge/main fresh、Change archive 与 Issue Closure 均未执行，不能宣称完成。
+当前实现与独立语义 Review 已完成到 PR Ready 候选；本地 `git clone` 因 DNS 不可用，因此没有伪造本地测试成功。PR current-head GitHub Actions、merge/main fresh、Change archive 与 Issue Closure 仍需实际执行，取得这些证据前不能宣称端到端完成。
 
 ## 交付状态
 
-- 提交：当前任务分支待写入。
-- 拉取请求：未创建。
-- CI：未运行当前任务 revision。
+- 提交：任务分支当前 head `b9095018b21f31459d7d3c762a4bf67d16d62658`，包含原子实现 commit 与 USAGE 格式修复 commit。
+- 拉取请求：Change Ready 后创建；pre-Ready 阶段尚未创建。
+- CI：真实机器回归由即将创建的 PR current-head GitHub Actions 执行；当前不冒充本地测试结果。
 - 合并：未执行。
 - Change 归档：未执行，由 repository-native automation 在 merge 后负责。
 - 发布 / 部署：不适用；本次不涉及 Release/Deploy。
