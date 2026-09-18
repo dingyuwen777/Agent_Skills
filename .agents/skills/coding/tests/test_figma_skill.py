@@ -121,6 +121,46 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         ):
             self.assertIn(marker, mapping)
 
+
+    def test_figma_ready_requires_systematic_owner_ladder_and_nocode_prototype_acceptance(self) -> None:
+        """正式 Figma 基线必须保护系统化 Owner 层级，并支持不写前端代码的完整 Prototype 交互验收。"""
+        skill = self._read(FIGMA_ROOT / "SKILL.md")
+        components = self._read(FIGMA_ROOT / "references/03_设计系统与组件复用审计.md")
+        prototype = self._read(FIGMA_ROOT / "references/04_Prototype状态与交互审计.md")
+        handoff = self._read(FIGMA_ROOT / "references/05_Design-to-Code交付门禁.md")
+
+        for marker in (
+            "系统化 Design Ownership Ladder",
+            "Page Template / Page Pattern",
+            "Formal Screen / State Frame（Consumer）",
+            "最近且正确的真实 Owner",
+        ):
+            self.assertIn(marker, components)
+
+        for marker in (
+            "Prototype Interaction Completeness / No-code Acceptance Gate",
+            "enabled + 可操作外观",
+            "不依赖前端代码",
+            "Interaction Coverage Audit",
+            "次级或低频管理操作",
+        ):
+            self.assertIn(marker, prototype)
+
+        for marker in (
+            "视觉上 enabled 的死按钮/死控件",
+            "Design Ownership Ladder",
+            "No-code Acceptance",
+            "Prototype Acceptance Flow / Interaction Coverage",
+        ):
+            self.assertIn(marker, handoff)
+
+        for marker in (
+            "所有视觉上可操作且 enabled 的控件",
+            "Design System / Page Template / Feature/Page Owner",
+            "Prototype Interaction Completeness / 无代码验收",
+        ):
+            self.assertIn(marker, skill)
+
     def test_owner_first_figma_mutation_uses_real_component_owner(self) -> None:
         """修改 Figma 前必须先找真实组件 Owner，公共语义改源组件，局部差异不污染 Shared。"""
         components = self._read(FIGMA_ROOT / "references/03_设计系统与组件复用审计.md")

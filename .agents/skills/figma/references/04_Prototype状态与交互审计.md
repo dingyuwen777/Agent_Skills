@@ -47,6 +47,80 @@ Destination Node
 
 ---
 
+## 2.1 Prototype Interaction Completeness / No-code Acceptance Gate
+
+正式 Prototype 不是静态截图集合，而是**可在生产代码出现之前验收交互设计的代表性执行规格**。只要某个控件在正式原型中视觉上表达为“当前可操作 / enabled”，就必须有与当前产品语义一致的有效 Reaction 或等价交互；不能留下“看起来能点、演示时没有任何反应”的死控件。
+
+至少覆盖当前页面真实存在的：
+
+```text
+Primary / Secondary / 低频管理按钮
+Link / Row Action / Table Action
+Tab / Segment / Filter / Search / Reset
+Select / Radio / Checkbox / Switch
+Pagination / Sort / Expand / Collapse
+Open / Close / Back
+Modal / Drawer / Sheet
+Save / Cancel / Confirm / Retry
+Archive / Restore / Delete
+以及其它视觉上明确表示可交互的控件
+```
+
+处理规则：
+
+- **enabled + 可操作外观** → 必须有有效 Reaction，且 destination / overlay / variant / variable action 可达；
+- **disabled / readonly** → 可以没有点击动作，但必须从视觉或状态规格明确表达不可操作；不能只是“忘了连线”却保持 enabled 外观；
+- 纯展示文本、装饰图标、非交互容器不因为存在于页面就机械增加 Reaction；
+- 某动作依赖真实远端系统时，Prototype 可以跳到代表性的 Pending / Success / Error / Disabled 状态，但仍遵守“Representative State ≠ 真实执行结果”；
+- 当前系统或已批准需求没有该能力时，不通过假 Reaction 伪造产品能力；应修设计、标记 Future / implementation_required，或进入 NOT_READY。
+
+### 无代码验收
+
+正式交付原型应让产品、业务、设计或其他验收者**不依赖前端代码**，从明确 Starting Point 实际走通本次范围内的关键用户流程。
+
+关键流程按真实任务至少覆盖：
+
+```text
+进入 / 定位目标页面
+→ 主操作
+→ 必要输入 / 选择
+→ 确认 / 取消
+→ Drawer / Modal / Overlay 打开与关闭
+→ 次级或低频管理操作
+→ 代表性成功 / 失败 / 空 / 禁用状态（适用时）
+→ 返回 / 收起 / 关闭 / 回到可继续操作的位置
+```
+
+不要求把后台系统所有状态空间都复制成 Prototype，但不能只给“主按钮”连线而让编辑、复制、归档、恢复、删除、分页、筛选、取消等正式可见操作成为死路。一个真实用户任务涉及的关键分支应存在可进入、可退出、可返回或明确终止的代表性路径。
+
+### Interaction Coverage Audit
+
+baseline-ready 或 review-and-fix 完成前，至少执行一次交互覆盖审计：
+
+```text
+正式 Screen / State
+→ 枚举视觉上可操作且 enabled 的控件
+→ Reaction 是否存在
+→ Action 类型是否符合语义
+→ Destination / Overlay / Variant 是否有效
+→ 是否能返回 / 关闭 / 取消
+→ Owner 是公共 Component 还是页面局部实例
+→ 公共 Owner 的 Reaction 是否被正式消费者正确继承
+```
+
+优先把稳定公共交互定义在真实 Component / Variant Owner 上，让消费者继承；页面实例只承载页面特有 Flow。修改公共 Owner 后必须抽查正式消费者，不能只证明源组件本身有 Reaction。
+
+出现以下情况时应形成 Finding：
+
+- enabled 控件 `reactions=[]` 或等价无动作；
+- Reaction 指向历史/删除/错误状态；
+- 同一个公共操作在多个页面手工维护不同连线且发生漂移；
+- 可以进入 Modal/Drawer/子状态但无法关闭、取消或返回；
+- 主流程可点击，但正式次级/低频操作无法演示验收。
+
+---
+
+
 # 3. Prototype Variable 默认值
 
 默认值必须与当前正式 Data State 一致。
