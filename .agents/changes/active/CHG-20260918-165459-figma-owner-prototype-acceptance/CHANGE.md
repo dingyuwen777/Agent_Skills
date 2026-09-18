@@ -7,7 +7,7 @@ status: ready_for_review
 owner: dingyuwen777
 branch: feature/figma-owner-prototype-acceptance
 created: 2026-09-18T16:54:59+08:00
-updated: 2026-09-18T17:08:00+08:00
+updated: 2026-09-18T17:16:00+08:00
 completion_gate: required
 depends_on: []
 affected_areas:
@@ -139,7 +139,7 @@ Requirement Source 为 Issue #264。需求来自真实设计审查经验，但�
 | R6 | 保持 Representative State 边界 | #264 / AC6 | satisfied | 04 保留并强化 Representative State ≠ 真实执行结果；系统不存在的能力不得用假 Reaction 伪造 |
 | R7 | baseline-ready 纳入硬门禁 | #264 / AC7 | satisfied | 05 NOT_READY 与 Baseline Ready Checklist 已纳入 Design Ownership Ladder、enabled Reaction 与 No-code Acceptance |
 | R8 | SKILL 薄入口，03/04/05 唯一维护 | #264 / AC8 | satisfied | SKILL 只增加硬门禁入口；03/04/05 分别继续唯一维护 Owner、Prototype、READY 细则；未新增 Reference |
-| R9 | route metadata 不变且测试/CI 通过 | #264 / AC9 | explicitly_deferred | 03/04/05/SKILL routing block 与 main 精确相同；Draft PR #265 Skill Tests #1468 selected semantic tests 562/562 通过且上下文预算回归通过。required CI 只有 Change Ready 后才能取得，继续作为 merge blocker，绿后回写 satisfied |
+| R9 | route metadata 不变且测试/CI 通过 | #264 / AC9 | satisfied | 03/04/05/SKILL routing block 与 main 精确相同；PR #265 head 40f3fb8 的 Skill Tests #1473 success：562/562 semantic tests、context budget、Linux/macOS/Windows onefile Runtime build/self-test、stdio MCP Contract 与 project-only install 均通过 |
 
 # 计划改动
 
@@ -156,7 +156,7 @@ Requirement Source 为 Issue #264。需求来自真实设计审查经验，但�
 - [x] 完成最小规则修改
 - [x] selected semantic tests：562/562 passed；上下文预算保护通过
 - [x] 完成 Requirement Traceability 与 Completion Audit；仅 R9 final required CI 有正式 deferred 依据
-- [ ] 独立 Review 与 Ready PR required CI 待执行；均为 merge blockers
+- [x] 独立 Review 与 Ready PR required CI 完成：Review Finding“Page-private 被过度约束”已修复，Skill Tests #1473 全绿
 
 # 验证矩阵
 
@@ -200,9 +200,9 @@ Requirement Source 为 Issue #264。需求来自真实设计审查经验，但�
 # 完成审计
 
 - [x] upstream_re_read：已重新读取 Issue #264、Figma Skill/03/04/05、Maintenance 与 Mutation 规则。
-- [x] change_coverage：AC1–AC8 有当前实现/内容守恒证据；AC9 routing/test 已满足，final required CI 有明确 post-ready 依据。
+- [x] change_coverage：AC1–AC9 全部有当前实现、route identity、semantic tests 或 package evidence。
 - [x] reverse_audit：selected routing/skill tests 通过；Figma review/fix/baseline-ready → Router → Skill → References 可达，03/04/05 保持唯一 Owner。
-- [x] unresolved_cleared：无 not_satisfied；仅 R9 的 final required CI 为 explicitly_deferred 且继续阻塞 merge。
+- [x] unresolved_cleared：R1–R9 全部 satisfied，无 not_satisfied / explicitly_deferred / 未说明阻塞项。
 
 # 完成证据与状态
 
@@ -213,17 +213,19 @@ Requirement Source 为 Issue #264。需求来自真实设计审查经验，但�
 | V1 | main@46a872c | canonical Figma Skill / References / test / Maintenance 定向读取 | 已恢复现状 | 范围和唯一 Owner 已确认 |
 | V2 | PR #265 head bcef845 | Skill Tests #1468 selected self-contained tests | 562 tests passed / 0 failed | Figma 内容守恒、routing、portability、context budget 等选中语义通过 |
 | V3 | main ↔ branch | 03/04/05/SKILL agent-routing block 精确比较 + 项目特定词扫描 | routingUnchanged=true；AIMA_UGC/TikHub/采集策略/声音广场/docs/blueprint 均 0 命中；live Figma rules 总长度比 main 少 1349 字符 | Stable ID/路由身份未变，规则未携带业务事实且未膨胀 Runtime Context |
+| V4 | PR #265 head 40f3fb8 | Skill Tests #1473 | success：Agent Skills Gate、Runtime Package Gate、Linux/macOS/Windows package jobs 全绿 | 562/562 semantic tests、context budget、三平台 Runtime package/self-test、stdio MCP Contract、project-only install 均通过 |
+| V5 | PR #265 Review | Issue #264 → diff → tests/content conservation 独立 A1/A2 Review | NO_FINDINGS_WITHIN_SCOPE；Review 中发现的 Page-private 过度约束已修复并 re-review | 通用规则未机械组件化、未携带业务事实、未产生第二 Owner |
 
 ## 未验证内容与剩余风险
 
-规则实现和 selected semantic tests 已完成。剩余：独立 Review、Ready PR current-head required CI；二者完成前不得 merge。
+规则实现、独立 Review 与 required CI 已完成。剩余只有 Git 交付决策：用户尚未授权 merge，因此 PR 保持 Ready 等待合并指令。
 
 ## 交付状态
 
 - 提交：a16bffb（Change 初始化）+ 5b23376（规则实现）+ bcef845（上下文预算收敛）
 - 拉取请求：Draft PR #265
-- CI：Draft Skill Tests #1468 的 selected semantic tests 562/562 通过；Change readiness 按预期 fail-closed，待 Ready 后重跑 required CI
-- 合并：未授权且 required CI/Review 未完成，本任务不自动 merge
+- CI：Ready PR head 40f3fb8 的 Skill Tests #1473 success；Agent Skills Gate / Runtime Package Gate / Linux/macOS/Windows package 全绿
+- 合并：required CI/Review 已完成，但用户未授权 merge；PR #265 保持 Ready，等待明确合并指令
 - Change 归档：仅在 implementation merge 后由 repository-native automation 处理
 - 发布 / 部署：不适用
 
