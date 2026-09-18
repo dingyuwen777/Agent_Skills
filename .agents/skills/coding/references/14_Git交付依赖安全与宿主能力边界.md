@@ -4,7 +4,7 @@
 
 # Git、交付、依赖、安全与宿主能力边界
 
-本文件是 Git / PR / Release / Delivery、依赖、安全、交付报告与宿主能力边界的详细 Owner；Coding 主 `SKILL.md` 保留硬触发入口。命中时必须读本文件，不凭导航补流程。
+本文件拥有 Git/PR/Release/Delivery、依赖、安全、交付报告与宿主边界；Coding 主 `SKILL.md` 只保留触发，命中时必须读本文件。
 
 ## 1. Git、依赖与安全的通用边界
 
@@ -17,12 +17,11 @@
 - CI 失败、冲突、保护规则或结果未确认时不强行推进；
 - Git 提交信息必须中文；项目可增格式、前缀或工单号，不得覆盖中文要求；
 - 本地 Git 路径可用时，开工顺序：`最新目标分支 → 本地任务分支 → 本地 Change / 失败测试 / 最小治理提交 → 首个本地提交 → 首次 push 创建远程跟踪分支 → 早期 PR`；不得先创建远程空分支。仅有托管平台 API 时按下文语义等价路径执行，不把本地 clone/commit 当作远端写入的固定前置条件。
+- 既有本地实现接管：保留工作、不伪造历史；以当前 revision 按 Requirement Source 与现有 Change/Validation/Review/Git 门禁做到 PR Ready；可安全复现的 `base Red → current Green` 仅作事后回归证据，Issue/Change/测试仍按既有触发。
 
 ### Requested Action 与 Effective Authorization
 
-**Requested Action** 是用户请求，**Effective Authorization** 仍须结合项目规则、authenticated principal、当前保护规则/Ruleset 和宿主能力核验；Git 能力存在不授予任务权限。
-
-硬规则：
+**Requested Action** 是用户请求；**Effective Authorization** 仍须核验项目规则、authenticated principal、保护规则/Ruleset 和宿主能力；Git 能力不等于任务权限。
 
 - 用户请求 merge、Release、Deploy、生产 Migration/数据动作不能提升当前 principal 的真实权限；
 - Requested Action 超出 Effective Authorization 时，在安全且已授权范围内完成最大可交付结果，例如开发到 PR Ready，并把未执行动作明确报告为 `BLOCKED_BY_AUTHORIZATION`；
@@ -32,7 +31,7 @@
 
 ### 语义等价能力发现与恢复
 
-**单一路径失败不等于仓库不可写。** 所有模型须先发现宿主等价能力；授权连续性按 Router，不因换路径重复确认。
+**单一路径失败不等于仓库不可写。** 先发现宿主等价能力；授权连续性按 Router，换路径不重复确认。
 
 1. 明确操作目标并保留错误；区分网络/DNS、工具/参数、结果不明、限流、并发与授权/保护/门禁拒绝，不只凭 HTTP 状态判断。
 2. 超时、解析/查询错误或断连后先回读 blob/commit/ref、PR/run；已生效不重复，无法消歧只阻塞该写动作。
@@ -49,7 +48,7 @@ API 基于核验的 base tree/parent，保留未改文件/mode，先建真实改
 
 ### 模式与宿主无关的能力判据
 
-治理读取通道与仓库执行通道分别核验：Source Mode 可通过已授权仓库连接器读取完整 canonical 源码，不要求本地 clone；Runtime 的本地 MCP 只加载同版本规则，不提供或授予 Git 写入。网页、CLI、模型厂商/新旧和工具名称均不能代替当前 schema、实际权限与操作结果。没有本地 shell 只排除依赖该 shell 的路径。
+治理读取与仓库执行分别核验：Source Mode 可由已授权仓库连接器读取完整 canonical 源码，无需本地 clone；Runtime 本地 MCP 只加载同版本规则，不提供/授予 Git 写入。网页、CLI、模型或工具名称不能替代当前 schema、实际权限与结果；无本地 shell 只排除依赖该路径。
 
 | 已确认事实 | 下一步与停止边界 |
 | --- | --- |
@@ -59,7 +58,7 @@ API 基于核验的 base tree/parent，保留未改文件/mode，先建真实改
 | 当前 PR/push 已能触发正式 CI，宿主没有手动 dispatch | 读取对应 revision 的既有 Run/Job/日志；不把 dispatch 缺失等同于无法验证 |
 | 权限/保护拒绝，或缺少当前动作必需的 revision guard | 保持相应 blocker；不改身份、force 或绕过 required gate |
 
-能力发现记录只保留本任务必要的目标、实际能力、所选路径、保障和排除依据，不造新协议或永久工具清单。测试/Runner 只使用目标仓库正式允许的执行入口；不得为弥补宿主缺口擅自新增临时 Workflow、泄露凭据或扩大外部副作用。
+能力发现只记录本任务必要的目标、实际能力、所选路径、保障和排除依据，不造新协议/永久工具清单；测试/Runner 只用仓库正式入口，不为宿主缺口新增临时 Workflow、泄露凭据或扩大外部副作用。
 
 ### GitHub PR 零人工交付兼容策略
 
@@ -157,4 +156,4 @@ Draft/普通 PR 按上述条件汇合后：
 - 准备声明 Ready、完成、可合并、可发布、可部署或形成最终交付报告；
 - 当前宿主缺少持久文件、终端、Git、测试环境、device、数据库、容器或外部服务能力，需要明确降级边界。
 
-本文件只承接详细边界，不替代主 `SKILL.md` 的四维任务路由、Change、TDD、Validation Matrix、Completion Audit、Docs 或 Review。需要网络下载源时仍按 [03_编程语言与工具链适配规则.md](03_编程语言与工具链适配规则.md)；修改永久 CI/Workflow 时仍按 [07_通用验证与证据策略.md](07_通用验证与证据策略.md) 的 Workflow Responsibility Audit / Evidence Preservation Mapping。
+本文件不替代主 `SKILL.md` 的四维路由、Change、TDD、Validation Matrix、Completion Audit、Docs/Review；网络下载源按 [03_编程语言与工具链适配规则.md](03_编程语言与工具链适配规则.md)，永久 CI/Workflow 按 [07_通用验证与证据策略.md](07_通用验证与证据策略.md) 的 Workflow Responsibility Audit / Evidence Preservation Mapping。
