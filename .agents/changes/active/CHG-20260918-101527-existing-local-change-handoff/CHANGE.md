@@ -111,7 +111,7 @@ Requirement Source 为 #258。维护者要求在 `USAGE.md` 的 Git 与多人协
 
 ## 最小充分方案
 
-1. 在 canonical Git 交付 Reference 的 Git 通用边界之后增加“既有本地实现的接管式 PR 交付”小节：
+1. 在 canonical Git 交付 Reference 的既有 Git 小节中增加最小的“既有本地实现接管”组合规则，并复用 Requirement/Validation/Review/Git 现有 Owner：
    - 先保护工作区并恢复 base/head/diff/Requirement Source；
    - 把当前实现视为待验证候选实现；
    - 不伪造历史流程；
@@ -136,9 +136,9 @@ Requirement Source 为 #258。维护者要求在 `USAGE.md` 的 Git 与多人协
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | canonical Git/PR 规则明确待验证候选实现、保护已有工作、恢复当前事实并重新完成 required 门禁 | #258 / AC1 | satisfied | `14_Git交付依赖安全与宿主能力边界.md` 新增“既有本地实现的接管式 PR 交付”步骤 1-2、5、7-10 |
-| R2 | 不伪造历史；安全时允许事后 base Red→current Green，但不得冒充开发时 TDD | #258 / AC2 | satisfied | canonical Git Reference 步骤 3、6 明确历史真实性与事后回归证据边界；`USAGE.md` 同步对应说明 |
-| R3 | Issue/Change/测试条件式建立；协作者止于 PR Ready，不自行合并 | #258 / AC3 | satisfied | canonical Git Reference 步骤 4、10 与结尾边界；`USAGE.md` 长提示词第 3-4、13 条 |
+| R1 | canonical Git/PR 规则明确待验证候选实现、保护已有工作、恢复当前事实并重新完成 required 门禁 | #258 / AC1 | satisfied | `14_Git交付依赖安全与宿主能力边界.md` Git 小节新增既有实现接管规则：保留工作、当前 revision 候选、Requirement Source + base/head/diff + 既有 Owner 的 required 门禁 |
+| R2 | 不伪造历史；安全时允许事后 base Red→current Green，但不得冒充开发时 TDD | #258 / AC2 | satisfied | canonical Git Rule 明确“不伪造历史 TDD/Issue/Change/Review/测试”及 `base Red→current Green` 仅作事后回归证据；`USAGE.md` 同步展开 |
+| R3 | Issue/Change/测试条件式建立；协作者止于 PR Ready，不自行合并 | #258 / AC3 | satisfied | canonical Git Rule 明确 Issue/Change/测试按既有触发、PR 如实披露、普通协作者止于 PR Ready；`USAGE.md` 长提示词同步展开 |
 | R4 | USAGE 增加完整提示词与短指令，并与 canonical 语义一致 | #258 / AC4 | satisfied | `USAGE.md` 第 10 节新增既有本地实现接管说明，第 14 节新增短指令；Review 修复了独立 Review 可选歧义 |
 | R5 | governance/docs 验证、Review、PR CI、merge、main fresh、archive 完成且无 Runtime/依赖/Schema/Release 扩围 | #258 / AC5 | not_applicable | AC5 的 PR CI/merge/main-fresh/archive 属于本 Change 进入 Ready 后的 Delivery/Closure Owner；当前 diff 已确认无 Runtime/依赖/Schema/Release 文件扩围，不在 pre-Ready Change 中伪造未来平台事实 |
 
@@ -146,7 +146,7 @@ Requirement Source 为 #258。维护者要求在 `USAGE.md` 的 Git 与多人协
 
 | 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
 | --- | --- | --- | --- |
-| `.agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md` | 新增既有本地实现接管式 PR 交付规则 | canonical Owner | R1-R3 / E2-E3 |
+| `.agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md` | 在既有 Git/Auth 表达内收敛加入既有本地实现接管规则 | canonical Owner；同时遵守路由上下文预算 | R1-R3 / E2-E3 |
 | `USAGE.md` | 第 10 节新增完整提示词；第 14 节新增短指令 | 最终用户可直接使用 | R4 / E1 |
 | 本 Change / Issue / PR | 保存追溯、验证与交付证据 | Maintenance 门禁 | R5 / E4-E5 |
 
@@ -213,19 +213,21 @@ Requirement Source 为 #258。维护者要求在 `USAGE.md` 的 Git 与多人协
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main `cf1b0963` 调查基线 | canonical Source / USAGE / Issue Form / Change Contract 读取 | 已完成 | 当前 Owner、缺口与交付门禁已确认 |
-| V2 | branch `a67d330e` | `main...tech/existing-local-change-handoff` compare + 两份目标文件 live readback | ahead 4、behind 0；仅 Change + canonical Git Reference + `USAGE.md` 三类路径 | 实现范围未扩到 Router/Runtime/依赖/Schema/Release |
-| V3 | branch `a67d330e` | 独立 Review：#258 AC1-AC5 → 当前 diff；检查历史真实性、Issue/Change 条件式语义、Review/PR Ready 边界 | 发现 1 个门禁措辞问题并已修复；re-review 无新增 blocker | `USAGE.md` 不再把独立 Review 表述为可选；canonical/USAGE 语义一致 |
+| V2 | 当前任务分支 | `main...tech/existing-local-change-handoff` compare + 两份目标文件 live readback | behind 0；仅 Change + canonical Git Reference + `USAGE.md` 三类路径 | 实现范围未扩到 Router/Runtime/依赖/Schema/Release |
+| V3 | 当前任务分支 | 独立 Review：#258 AC1-AC5 → 当前 diff；检查历史真实性、Issue/Change 条件式语义、Review/PR Ready 边界 | 初审发现 1 个门禁措辞问题并已修复；CI 后 re-review 同步检查上下文/用户面约束 | `USAGE.md` 不把独立 Review 表述为可选；canonical/USAGE 语义一致 |
 | V4 | live Issue #258 | GitHub App 回读标题、必需语义段与 AC1-AC5 task list | open、内容完整、稳定 AC 连续存在 | Requirement Source 当前可访问且与 Change/实现范围匹配 |
+| V5 | PR #259 run #1448 / head `dc992c58` | GitHub Actions `Agent Skills Gate`（Python 3.14.7） | Requirement Source / changed-scope / compile / CLI smoke 通过；558 tests 中 2 failures | 暴露 `USAGE.md` 内部名词泄漏与 canonical Context 预算增长，未把失败当 Green |
+| V6 | CI 修复后的当前分支 | release-surface forbidden-term 等价扫描 + ref14 UTF-8 大小对比 | `USAGE.md` forbidden hits=0；ref14 14865→14669 bytes（-196） | 直接修复 #1448 两个根因，不放宽测试/selector；等待最终 current-head CI 复证 |
 
 ## 未验证内容与剩余风险
 
-实现与独立 Review 已完成；本地 `git clone` 因执行环境 DNS 无法解析 GitHub 未能运行仓库脚本。最终 PR head 的正式 GitHub Actions、merge/main fresh 与 repository-native archive 仍待下游交付；这些证据取得前不得声明端到端完成。
+实现与独立 Review 已完成；本地 `git clone` 因执行环境 DNS 无法解析 GitHub 未能运行仓库脚本。PR #259 的首轮 current-head CI run #1448 真实失败并已按失败日志修复；最终新 head 的 GitHub Actions、merge/main fresh 与 repository-native archive 仍待下游交付，这些证据取得前不得声明端到端完成。
 
 ## 交付状态
 
-- 提交：任务分支已包含 Change、canonical Git Reference、`USAGE.md` 与 Review 修复提交；当前 head 为 `a67d330e`。
-- 拉取请求：待创建并绑定 Requirement-Source #258。
-- CI：待 PR 创建后由正式 GitHub Actions 对最终 head 运行 required checks。
+- 提交：任务分支已包含 Change、canonical Git Reference、`USAGE.md`、Review 修复和 CI 根因修复；以 PR #259 当前 head 为交付 revision。
+- 拉取请求：PR #259 已创建并 live 回读，`Requirement-Source: #258` 正确。
+- CI：run #1448 在 `dc992c58` 上失败（558 tests / 2 failures），根因已修复；等待 PR #259 最新 head 的 required checks。
 - 合并：未执行。
 - Change 归档：未执行，由 repository-native archive 在 merge 后负责。
 - 发布 / 部署：不适用；本次不涉及 Release/Deploy。
