@@ -21,13 +21,7 @@
 
 ### Merge / Rebase 冲突：按意图解决
 
-发生 in-progress merge / rebase conflict 时，不把 `ours / theirs`、当前分支或较新的提交自动当成正确答案：
-
-1. 先读取当前 merge/rebase 状态、base/current/other revision、冲突文件和 hunk，保护未提交用户工作；
-2. 对每一侧恢复能取得的 Primary Requirement Source、Issue/PR/Change、commit message 和相关实现，明确双方各自想保留的行为与约束；
-3. 逐 hunk 判断：兼容意图尽量同时保留；当前正式 Requirement 已明确取代旧行为时按新事实收敛；如果双方真正冲突且会改变业务、public Contract、Schema/数据、安全/权限或重大路线，回到现有决策门禁，不由冲突解决过程发明第三种行为；
-4. `abort` 不是禁用动作。只有在当前 merge/rebase 本身目标错误、基线/方向选错、继续会危及用户工作，且能安全恢复到操作前状态时才按 Git 实际语义退出；普通可解冲突不要用 abort 逃避理解双方意图；
-5. 解决后先运行覆盖双方受影响边界的 targeted validation / regression，再按现有授权决定是否 stage、continue、commit、push、PR 或 merge。解决冲突本身不自动授予后续 Git 权限。
+in-progress merge/rebase 先恢复 base/current/other revision、冲突 hunk 和双方可取得的 Primary Requirement Source、Issue/PR/Change/commit 意图，不把 `ours/theirs` 或“更新”自动当正确。兼容意图尽量同时保留；正式 Requirement 已明确取代旧行为时按当前事实收敛；真正涉及业务、public Contract、Schema/数据、安全/权限或重大路线冲突时回到既有决策门禁，不在冲突处理中发明第三种行为。操作目标/方向本身错误或继续会危及用户工作时允许安全 `abort`，普通可解冲突不靠 abort 逃避。解决后运行双方受影响边界的 targeted regression；stage/continue/commit/push/PR/merge 仍需原有授权。
 
 ### Requested Action 与 Effective Authorization
 

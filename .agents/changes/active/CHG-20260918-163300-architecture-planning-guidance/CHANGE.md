@@ -22,6 +22,7 @@ affected_paths:
   - .agents/skills/coding/references/09_多人和多智能体并行协作.md
   - .agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md
   - .agents/skills/coding/tests/test_development_guidance.py
+  - .agents/skills/coding/tests/test_router_skill_migration.py
   - USAGE.md
   - .agents/changes/active/CHG-20260918-163300-architecture-planning-guidance/CHANGE.md
 contracts: []
@@ -224,6 +225,8 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 ## 新鲜证据
 
+第二轮 PR #263 Skill Tests #1463 证明专项 Reference 的显式方案/技术方案正反路由测试通过；剩余失败为 backend L2 仍超预算 743B、复杂历史组合超约 3.8KB，以及历史“方案 + unknown project shape”精确 expected-set 尚未加入新 Reference。当前修正通过进一步压薄普通 Ref05/Ref09/Ref14，并只对该历史方案用例加入 `coding.reference.31` 精确期望；不提高 Context Budget。
+
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main `46a872cb` | canonical Source / Maintenance / affected Owner / Issue #262 回读 | 已完成 | 当前 Owner、范围、Requirement Source 与非目标已确认 |
@@ -239,7 +242,7 @@ Agent 仍可能机械照搬旧方案、按前后端水平切分造成长反馈�
 
 - 提交：当前 head 为首轮实现 `fe5ef7f9`；本次 corrective commit 将新增专项 Reference 并压回普通 L2 上下文。
 - 拉取请求：Change Ready 后创建；pre-Ready 阶段尚未创建。
-- CI：PR #263 Skill Tests #1462 已失败于 2 个 Context Budget/历史路由增长断言；正在按根因修正，不降低测试或预算。
+- CI：#1462 暴露第一版 Context Budget 回归；#1463 已证明新 Reference 路由测试通过，但仍有 2 个预算断言和 1 个历史方案 expected-set 需修正。当前继续压缩常驻 Context，并精确更新已批准的新方案路由期望；不降低预算。
 - 合并：未执行。
 - Change 归档：未执行，由 repository-native automation 在 merge 后负责。
 - 发布 / 部署：不适用；本次不涉及 Release/Deploy。

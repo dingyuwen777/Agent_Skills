@@ -48,6 +48,7 @@ RUNTIME_V3_UNKNOWN_REQUIRED = {
     "coding.reference.07",
     "coding.reference.08",
     "coding.reference.17",
+    "coding.reference.31",
 }
 RUNTIME_V3_UNKNOWN_SKILLS = {"coding", "router"}
 FIGMA_REVIEW_ONLY_REQUIRED = {
