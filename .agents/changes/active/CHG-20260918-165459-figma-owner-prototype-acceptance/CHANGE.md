@@ -3,11 +3,11 @@ schema: coding-change/v1
 id: CHG-20260918-165459-figma-owner-prototype-acceptance
 title: Figma 系统化 Owner 与无代码 Prototype 验收通用规则
 level: L2
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: feature/figma-owner-prototype-acceptance
 created: 2026-09-18T16:54:59+08:00
-updated: 2026-09-18T16:54:59+08:00
+updated: 2026-09-18T17:08:00+08:00
 completion_gate: required
 depends_on: []
 affected_areas:
@@ -131,15 +131,15 @@ Requirement Source 为 Issue #264。需求来自真实设计审查经验，但�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 建立 Design Ownership Ladder | #264 / AC1 | not_satisfied | 待实现 |
-| R2 | 禁止正式页面制造第二 Owner | #264 / AC2 | not_satisfied | 待实现 |
-| R3 | 正式 Prototype 支持无代码验收 | #264 / AC3 | not_satisfied | 待实现 |
-| R4 | enabled 控件必须有 Reaction | #264 / AC4 | not_satisfied | 待实现 |
-| R5 | 主/次级/低频操作及返回路径完整 | #264 / AC5 | not_satisfied | 待实现 |
-| R6 | 保持 Representative State 边界 | #264 / AC6 | not_satisfied | 待实现 |
-| R7 | baseline-ready 纳入硬门禁 | #264 / AC7 | not_satisfied | 待实现 |
-| R8 | SKILL 薄入口，03/04/05 唯一维护 | #264 / AC8 | not_satisfied | 待实现 |
-| R9 | route metadata 不变且测试/CI 通过 | #264 / AC9 | not_satisfied | 待验证 |
+| R1 | 建立 Design Ownership Ladder | #264 / AC1 | satisfied | 03 Reference 已定义 Foundation/Token → Shared → Page Template/Pattern → Feature/Page Public → Formal Screen/State Consumer，并允许按项目真实层级跳过/映射 |
+| R2 | 禁止正式页面制造第二 Owner | #264 / AC2 | satisfied | 03 Owner-first 明确 Formal Screen/State 只消费真实 Owner，禁止 Detach/复制/重画/外覆制造第二 Owner，并要求复核受影响消费者 |
+| R3 | 正式 Prototype 支持无代码验收 | #264 / AC3 | satisfied | 04 新增 Prototype Interaction Completeness / No-code Acceptance Gate，要求从 Starting Point 在不依赖前端代码时走通关键任务 |
+| R4 | enabled 控件必须有 Reaction | #264 / AC4 | satisfied | 04 明确 enabled + 可操作外观必须有有效 Reaction；disabled/readonly 可无动作但必须显式；reactions=[] 属 Finding |
+| R5 | 主/次级/低频操作及返回路径完整 | #264 / AC5 | satisfied | 04 覆盖主操作、次级/低频管理、筛选/分页/展开收起、Open/Close/Back、Confirm/Cancel/Retry，并要求返回/关闭/取消可达 |
+| R6 | 保持 Representative State 边界 | #264 / AC6 | satisfied | 04 保留并强化 Representative State ≠ 真实执行结果；系统不存在的能力不得用假 Reaction 伪造 |
+| R7 | baseline-ready 纳入硬门禁 | #264 / AC7 | satisfied | 05 NOT_READY 与 Baseline Ready Checklist 已纳入 Design Ownership Ladder、enabled Reaction 与 No-code Acceptance |
+| R8 | SKILL 薄入口，03/04/05 唯一维护 | #264 / AC8 | satisfied | SKILL 只增加硬门禁入口；03/04/05 分别继续唯一维护 Owner、Prototype、READY 细则；未新增 Reference |
+| R9 | route metadata 不变且测试/CI 通过 | #264 / AC9 | explicitly_deferred | 03/04/05/SKILL routing block 与 main 精确相同；Draft PR #265 Skill Tests #1468 selected semantic tests 562/562 通过且上下文预算回归通过。required CI 只有 Change Ready 后才能取得，继续作为 merge blocker，绿后回写 satisfied |
 
 # 计划改动
 
@@ -153,10 +153,10 @@ Requirement Source 为 Issue #264。需求来自真实设计审查经验，但�
 
 - [x] 调查当前实现和事实源
 - [x] 建立验证矩阵
-- [ ] 完成最小规则修改
-- [ ] 运行目标测试
-- [ ] 完成追溯与 Completion Audit
-- [ ] 完成独立 Review 与 required CI
+- [x] 完成最小规则修改
+- [x] selected semantic tests：562/562 passed；上下文预算保护通过
+- [x] 完成 Requirement Traceability 与 Completion Audit；仅 R9 final required CI 有正式 deferred 依据
+- [ ] 独立 Review 与 Ready PR required CI 待执行；均为 merge blockers
 
 # 验证矩阵
 
@@ -199,10 +199,10 @@ Requirement Source 为 Issue #264。需求来自真实设计审查经验，但�
 
 # 完成审计
 
-- [ ] upstream_re_read：重新读取 Issue #264、Figma Skill/03/04/05、Maintenance 与 Mutation 规则。
-- [ ] change_coverage：AC1–AC9 全部有实现/验证证据。
-- [ ] reverse_audit：Figma review/fix/baseline-ready → Router → Skill → References 可达，无第二 Owner。
-- [ ] unresolved_cleared：R1–R9 清零。
+- [x] upstream_re_read：已重新读取 Issue #264、Figma Skill/03/04/05、Maintenance 与 Mutation 规则。
+- [x] change_coverage：AC1–AC8 有当前实现/内容守恒证据；AC9 routing/test 已满足，final required CI 有明确 post-ready 依据。
+- [x] reverse_audit：selected routing/skill tests 通过；Figma review/fix/baseline-ready → Router → Skill → References 可达，03/04/05 保持唯一 Owner。
+- [x] unresolved_cleared：无 not_satisfied；仅 R9 的 final required CI 为 explicitly_deferred 且继续阻塞 merge。
 
 # 完成证据与状态
 
@@ -211,17 +211,19 @@ Requirement Source 为 Issue #264。需求来自真实设计审查经验，但�
 | 证据 | 版本 / 环境 | 检查 | 结果 | 证明 |
 | --- | --- | --- | --- | --- |
 | V1 | main@46a872c | canonical Figma Skill / References / test / Maintenance 定向读取 | 已恢复现状 | 范围和唯一 Owner 已确认 |
+| V2 | PR #265 head bcef845 | Skill Tests #1468 selected self-contained tests | 562 tests passed / 0 failed | Figma 内容守恒、routing、portability、context budget 等选中语义通过 |
+| V3 | main ↔ branch | 03/04/05/SKILL agent-routing block 精确比较 + 项目特定词扫描 | routingUnchanged=true；AIMA_UGC/TikHub/采集策略/声音广场/docs/blueprint 均 0 命中；live Figma rules 总长度比 main 少 1349 字符 | Stable ID/路由身份未变，规则未携带业务事实且未膨胀 Runtime Context |
 
 ## 未验证内容与剩余风险
 
-规则实现、targeted test、required CI、Review 尚未执行。
+规则实现和 selected semantic tests 已完成。剩余：独立 Review、Ready PR current-head required CI；二者完成前不得 merge。
 
 ## 交付状态
 
-- 提交：待创建任务分支
-- 拉取请求：待创建
-- CI：待执行
-- 合并：未授权，本任务不自动 merge
+- 提交：a16bffb（Change 初始化）+ 5b23376（规则实现）+ bcef845（上下文预算收敛）
+- 拉取请求：Draft PR #265
+- CI：Draft Skill Tests #1468 的 selected semantic tests 562/562 通过；Change readiness 按预期 fail-closed，待 Ready 后重跑 required CI
+- 合并：未授权且 required CI/Review 未完成，本任务不自动 merge
 - Change 归档：仅在 implementation merge 后由 repository-native automation 处理
 - 发布 / 部署：不适用
 
