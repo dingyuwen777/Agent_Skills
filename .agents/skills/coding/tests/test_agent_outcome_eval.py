@@ -112,7 +112,7 @@ class AgentOutcomeEvalTest(unittest.TestCase):
         for marker in ("invariant", "policy", "heuristic", "technique", "模型升级不是自动删规则的授权"):
             self.assertIn(marker, rule)
         self.assertIn("意图=Agent效果评测", mutation)
-        self.assertIn("纯文字澄清且不改变可观察 Agent 行为时不追加该意图", mutation)
+        self.assertIn("纯文字澄清不追加", mutation)
         self.assertIn("模型/Provider/版本不是 Router 维度", router)
         self.assertNotIn('"Skill Mutation"', rule.split("<!-- agent-routing:v1", 1)[1].split("-->", 1)[0])
 
