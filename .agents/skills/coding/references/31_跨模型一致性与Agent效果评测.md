@@ -1,5 +1,5 @@
 <!-- agent-routing:v1
-{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.32","触发":{"包含":{"维度":"意图","取值":["Skill Mutation","Skill Mutation Audit","Skill Mutation Apply","Agent效果评测"]}},"依赖":["coding.reference.02"]}
+{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.32","触发":{"包含":{"维度":"意图","取值":["Agent效果评测"]}},"依赖":["coding.reference.02"]}
 -->
 
 # 跨模型一致性、Rule Effectiveness 与 Agent Outcome Eval
