@@ -125,6 +125,17 @@ Requirement Source 为 GitHub Issue #272。用户要求本次直接完成新增�
 - 项目事实和更高优先级指令优先；
 - 权限、Fresh Evidence、Completion Scope 与模型无关行为 Contract。
 
+# 约束与意图决策
+
+| 决策维度 | 当前决定 | 依据 | 影响 |
+| --- | --- | --- | --- |
+| 范围与负责人边界 | 新增 Analysis / Research 独立 Owner，现有工程 Owner 不变 | #272 AC1-AC9 | 非工程分析不误入 Coding |
+| 接口与契约 | 只扩展 canonical routing vocabulary / dynamic catalog，不改 Runtime 六 Tool | #272 AC7/AC11/AC13 | 保持 MCP 公共面 |
+| 数据与迁移 | 不适用；无 Schema/持久数据变更 | 当前任务事实 | 无 Migration |
+| 错误与失败语义 | 证据不足/无法联网/来源冲突时显式降级，不得编造确定性 | #272 AC4-AC6 | Research fail-closed |
+| 兼容性 | 现有 Skill/Reference Stable ID、工程路由和用户项目事实优先级保持 | current main | 不破坏既有任务 |
+| 部署与回滚 | merge 后进入现有 Runtime 动态分发；回滚为 revert PR | E2 | 无独立部署机制 |
+
 # 修改方案与决策依据
 
 ## 最小充分方案
@@ -163,6 +174,24 @@ Requirement Source 为 GitHub Issue #272。用户要求本次直接完成新增�
 | R13 | 保持六 Tool/无 Planner/无 SEP-2640 | #272 / AC13 | not_satisfied | 待验证 |
 | R14 | 完整交付闭环 | #272 / AC14 | not_satisfied | 待交付 |
 
+# 计划改动
+
+| 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
+| --- | --- | --- | --- |
+| analysis/ | Core、References、host metadata | 通用推理/决策 Owner | R1-R3/R7-R9 |
+| research/ | Core、References、host metadata | 最新外部证据 Owner | R4-R9 |
+| router/SKILL.md | 通用回答契约、Owner 选择与组合 | 防误路由 | R2/R7 |
+| evals/ + tests | Analysis/Research cases、负例、routing/context/runtime projection | 可回归证明 | R8-R11 |
+| README.md / USAGE.md | 使用方式与薄 Bootstrap 说明 | 最终用户可用 | R12 |
+
+- [x] 调查当前实现和事实源
+- [x] 建立 Change 与 Red 目标
+- [ ] 建立可证明缺口的失败回归
+- [ ] 完成最小实现
+- [ ] 同步长期文档
+- [ ] 取得 current-head 验证
+- [ ] 完成独立 Review 与 Completion Audit
+
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
@@ -183,6 +212,14 @@ Requirement Source 为 GitHub Issue #272。用户要求本次直接完成新增�
 - 数据/Migration：不适用，无数据变更。
 - 部署/运行：新增 Skill 会进入 Runtime Project Payload，需现有动态分发测试/required package gate。
 - 回滚：revert Implementation PR；无外部不可逆数据。
+
+# 文档、依赖、部署与发布影响
+
+- **长期文档**：README/USAGE 需要同步新增通用 Analysis/Research 的使用方式和薄全局 Bootstrap；不建立第二套完整规则。
+- **依赖 / Runtime**：不新增第三方依赖；Runtime 继续依赖动态 Catalog/Project Payload。
+- **配置 / Secret**：不新增配置或 Secret；Research 不把 Provider 凭据写入规则/仓库。
+- **部署 / Release**：不创建正式 Release；是否需要三平台 package evidence 由当前 changed-scope classifier/required gate 决定。
+- **兼容 / 消费方通知**：现有工程任务自然语言和 Runtime 六 Tool 不变；新增通用任务路由词汇。
 
 # 完成审计
 
