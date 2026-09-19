@@ -62,6 +62,12 @@ Runtime / Package
 
 profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required checks、PR/main/Release 归当前项目 CI Owner。维护本仓时依 [`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md) 与当前 Workflow/classifier，不复制 scope 列表；targeted-first 不绕过 required check，不授权无关昂贵验证。
 
+### 跨模型效果与 Rule Effectiveness
+
+只要 Mutation 会改变 Agent 的方法、触发、路由、上下文组织、长任务状态、Handoff 或完成行为，还必须读取 [31_跨模型一致性与Agent效果评测.md](31_跨模型一致性与Agent效果评测.md)，判断本次规则属于 invariant / policy / heuristic / technique，并决定是否需要新增或重跑最小 Outcome Eval case。**不得因为新模型能力更强就直接删减详细规则，也不得因为弱模型可能需要就让全部细节常驻 Core**；应通过精确路由把完整规则在命中场景按需加载，再用同一 Eval Contract 验证不同模型/宿主结果。
+
+纯文字澄清且不改变可观察 Agent 行为时可以记录 Outcome Eval not_applicable；不能为了形式新增 case。
+
 ## 1. 规则完整性维护
 
 后续如果要再次“精简”“拆分”“合并”本 Skill：
