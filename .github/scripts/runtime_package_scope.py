@@ -51,6 +51,7 @@ _CONTENT_EXACT_PATHS = {
 
 _CHANGE_ONLY_PREFIX = ".agents/changes/"
 _TEST_PREFIX = ".agents/skills/coding/tests/"
+_EVAL_PREFIX = ".agents/evals/"
 _ISSUE_TEMPLATE_PREFIX = ".github/ISSUE_TEMPLATE/"
 
 _CI_SELF_TESTS = {
@@ -123,6 +124,10 @@ _GROUP_TEST_FILES: dict[str, tuple[str, ...]] = {
     "review_skill": (
         "test_review_skill.py",
         "test_review_test_adequacy_owner_reachability.py",
+    ),
+    "agent_eval": (
+        "test_agent_outcome_eval.py",
+        "test_routing_conformance.py",
     ),
     "ci_self": tuple(sorted(_CI_SELF_TESTS)),
 }
@@ -217,6 +222,12 @@ class _SelectionBuilder:
             return
 
         if normalized.startswith(_CHANGE_ONLY_PREFIX):
+            return
+
+        if normalized.startswith(_EVAL_PREFIX):
+            self.promote_scope("content")
+            self.add_groups("agent_eval")
+            self.runtime_dependencies_required = True
             return
 
         if normalized in _HUMAN_DOC_PATHS:
