@@ -18,7 +18,7 @@ Runtime 还必须建立**模式感知的信息披露边界**：Source Mode 直�
 
 - 构建、Release、安装或升级 `agent-skills`；
 - 修改 Runtime Bundle、Project Payload、动态 Skill Catalog、Shared Entry、Runtime Skill Projection、install-state 或宿主 MCP 配置；
-- 修改路由 metadata/Stable ID、加密格式、MCP Tool Contract、`source_digest`、`routing_digest`、`payload_digest` 或 Builder/Release identity；
+- 修改路由 metadata/Stable ID、加密格式、MCP Tool Contract、结构化 Task State、`source_digest`、`routing_digest`、`payload_digest` 或 Builder/Release identity；
 - 调试 Task Route → private Routing Manifest → required canonical Context；
 - 修改 Runtime 用户可见进度、治理原文防披露或 MCP 公共返回字段；
 - 修改 onefile 安装、rollback、fail-closed ownership 或三平台分发合同。
@@ -60,7 +60,9 @@ Project-local Runtime
 → .agents/runtime/agent-skills[.exe]
 → local stdio MCP
 → 当前任务 required Context 才按需解密
-→ 不写 key/security/Reference/ownership sidecar
+→ 结构化 Task State 由 MCP 显式 round-trip，宿主需要时自行保存并在新 Runtime 显式恢复
+→ Task State 不参与路由、权限或完成判定
+→ 不写 key/security/Reference/ownership/task-state sidecar
 ```
 
 Local MCP 必须继续让用户只用自然语言提出任务；宿主模型恢复项目事实、建立 Task Route，Runtime 只做确定性校验/求值/加载，不扫描项目替模型猜架构，也不成为第二个 Coding Agent。
@@ -79,7 +81,7 @@ Project Payload 会保留正式 Skill 自己真正需要的运行资产，例如
 - 不承诺抵御 Owner/admin、Debugger、Memory dump、Hook、MCP traffic observation 或专业逆向；
 - 不引入 Remote KMS、License Server、TEE、TPM、DPAPI、Secure Enclave、Rust/C++ loader 或 Nuitka；
 - 不把 Remote MCP / secure tunnel 混进当前本地 stdio Runtime；
-- 不用 SQLite、注册表、隐藏 JSON 等替代 sidecar 保存 ownership；
+- 不用 SQLite、注册表、隐藏 JSON 等替代 sidecar 保存 ownership 或 Task State；
 - 本次 Bundle v3 加固不以历史 Bundle v2 已安装 Runtime → v3 的迁移兼容作为验收条件。
 
 ## 3. 动态正式 Skill Catalog
@@ -254,7 +256,7 @@ UNKNOWN 只扩大真正依赖该未知维度的候选，再执行依赖与风险
 
 公共 route contract 只提供构造 Task Route 所需的维度/合法词汇，不公开 Reference mapping。Runtime MCP 可以拒绝**明显合成的高基数“所有公开词汇全部填满”探测 route**，但 guard 必须有足够词汇/维度门槛，不能因为小型合法 Contract 恰好覆盖全部值就拒绝，也不能按最终 required 数量粗暴阻止真实复杂任务。合法任务可以随真实项目事实单次或逐步单调扩展 required Context。
 
-同一 task 后续 `submit_route` 仍与此前 required Context 取并集；只有显式 `start_task` 才清空任务状态。
+同一 task 后续 `submit_route` 仍与此前 required Context 取并集。显式 `start_task` 总是建立新的 task nonce/generation 并清空旧 route/required/loaded capability 状态；问题求解 Task State 默认重新建立，也可以由宿主提交经过当前 schema 校验的状态显式恢复。**恢复 Task State 绝不能恢复旧 route token、required/loaded 集合或任何授权。**
 
 ## 10. 加密与真实安全边界
 
@@ -292,7 +294,7 @@ agent_skills_checkpoint
 
 ### `agent_skills_status`
 
-只返回 Release 版本、当前任务/约束是否建立和是否加载完成、MCP Contract 与用户可见进度规则。不得公开 Skill Catalog、Reference identity/count、source/routing/payload digest 或内部计数。
+只返回 Release 版本、当前任务是否存在、结构化任务状态是否存在、当前约束是否建立和是否加载完成、MCP Contract 与用户可见进度规则。不得公开 Task State 正文、Skill Catalog、Reference identity/count、source/routing/payload digest 或内部计数。
 
 ### `agent_skills_route_contract`
 
@@ -301,6 +303,10 @@ agent_skills_checkpoint
 ### `agent_skills_start_task`
 
 显式开始/重置 task，清空此前 route/required/loaded 状态并建立新的 task nonce/generation 边界。切换 task 不能靠提交不同 ID 静默发生。
+
+参数保持 `任务标识`、可选 `阶段`，并增加可选 `任务状态`。没有提交状态时 Runtime 建立最小默认 Task State；提交状态时必须按当前 **Agent Skills 任务状态/v1** 完整校验后恢复。公共响应返回当前结构化 `任务状态`，使宿主可以在上下文压缩、会话切换或 Runtime 重建后显式保存/恢复问题求解摘要。
+
+**start_task 恢复 Task State 只恢复语义摘要，不恢复旧 capability。** 新 Runtime / 新 task generation 必须重新提交当前项目事实的 Task Route，并重新取得 required Context。
 
 ### `agent_skills_submit_route`
 
@@ -322,7 +328,45 @@ Runtime 校验当前 task 和 Task Route，用唯一 evaluator 求值并单调�
 
 ### `agent_skills_checkpoint`
 
-只根据内部 required/loaded 状态返回 task、是否通过、当前阶段和用户可见进度规则。它不能替代 Requirement Traceability、Completion Audit、Review、Docs、测试或 CI。
+只根据内部 required/loaded 状态判断“当前 required Context 是否已完整加载”，并返回 task、是否通过、当前阶段、结构化 `任务状态` 与用户可见进度规则。可选 `阶段` 继续更新工程阶段；可选 `任务状态` 在同一次调用中经过完整 schema/大小校验后原子替换当前状态。
+
+checkpoint 的 `通过=true` **只表示 required Context 已加载**。Task State 中即使出现“允许发布”“已完成”“测试通过”等文字，也不产生 Authorization、Requirement satisfied、Review/CI Green、merge/release/deploy 权限或任何完成事实。它不能替代 Requirement Traceability、Completion Audit、Review、Docs、测试、CI 或交付 readback。
+
+### 结构化 Task State v1
+
+当前协议：
+
+```text
+Agent Skills 任务状态/v1
+```
+
+固定字段：
+
+```text
+协议
+目标
+成功标准[]
+已确认决定[]
+已完成切片[
+  {切片, 证据[]}
+]
+当前前沿[]
+阻塞项[]
+失败假设[]
+未验证风险[]
+下一步[]
+非目标[]
+```
+
+约束：
+
+- 顶层字段必须精确匹配当前 schema；未知字段 fail closed；
+- 每个文本项非空且有界；当前单项最多 2000 字符、各列表最多 64 项、规范化 UTF-8 JSON 总大小最多 32768 bytes；
+- 已完成切片必须至少包含一条 Evidence，防止把无证据的“完成”写成 durable fact；
+- Task State 只保存完成长任务恢复所需的**最小问题求解摘要**，不能塞完整聊天、完整工具输出、Secret/Token/密码、敏感 Raw/PII、canonical Reference plaintext 或其他大对象；
+- Runtime 不自动把 Task State 写入项目或用户目录，不新增 task-state sidecar、数据库、注册表或隐藏状态文件；
+- 宿主如需跨 Runtime 持久化，应使用其自身受控会话/状态能力保存 checkpoint 返回对象，并在新的 start_task 显式提交；
+- Task State 不参与 Task Route evaluator、required Reference 求值、route capability HMAC、授权或完成判定。
 
 ### `self-test`
 
@@ -450,7 +494,7 @@ release_version / source_commit
 5. facts-complete route 与既有 evaluator 语义保持，unknown tri-state 不漏相关候选且 unknown-induced full corpus fail closed；
 6. 高基数 public-vocabulary saturation guard 拦截明显合成探测，但小型合法 Contract 与真实复杂任务不误伤；
 7. Project Payload 不含 Reference/Stub/Private Routing Manifest；project-facing Entry/Core/agent prompt 无 Reference identity、`agent-routing:v1`、内部组织或防披露自说明，同时保留宿主发现和高价值工程语义；
-8. MCP `tools/list` 恰为六 Tool，Context envelope 只含 `完整原文`，伪造/stale/cross-task token 失败；
+8. MCP `tools/list` 恰为六 Tool，Context envelope 只含 `完整原文`，伪造/stale/cross-task token 失败；start_task/checkpoint 的 Task State round-trip、schema/大小/无 Evidence 完成失败关闭，跨 Runtime 恢复状态后旧 capability 仍失效并必须重新 route/load；
 9. Source/Runtime private execution parity 对代表性任务保持 matched Skill、required risk、dependency closure、required Context 一致，Runtime Context 与 canonical exact bytes 一致；公共进度规则只描述项目工程过程，不枚举内部实现身份；
 10. Linux/Windows/macOS 各自在对应 Runner 完成 onefile build/status/self-test/real MCP/首次安装/当前版本重复安装；Windows 额外验证无参数 `.exe` 以 binary parent 为项目根、DeepSeek overlay 与根 launcher，POSIX 无参数继续使用 cwd 且不生成 Windows launcher；
 11. 四 Host 项目配置均使用可移植项目相对语义，不固化安装机器绝对路径；DeepSeek 不修改 `$DSH_HOME`，专用 marker 冲突与写入失败能 fail closed/rollback；
@@ -527,14 +571,15 @@ Source Mode 是明文维护/直读模式；有源码访问权的维护者可以�
 目标项目 AGENTS managed block / 真实事实
 → project-facing Entry / Router/专业 Skill Projection
 → agent_skills_route_contract
-→ agent_skills_start_task
-→ 宿主提交 Task Route
+→ agent_skills_start_task（新任务或显式恢复经过校验的 Task State）
+→ 宿主提交当前项目事实的 Task Route
 → agent_skills_submit_route
 → private Routing Manifest / evaluator 求值
 → agent_skills_load_required_context(路由令牌)
 → Runtime lazy decrypt 当前 required exact-text
 → 事实变化时追加 submit_route / 只加载新增 Context
-→ agent_skills_checkpoint
+→ agent_skills_checkpoint（检查 Context + 更新/回读 Task State）
+→ 宿主按需保存 Task State；Runtime/会话重建后经新 start_task 显式恢复
 → 专业 Skill Handoff / 真实门禁
 ```
 
@@ -542,7 +587,7 @@ Source Mode 是明文维护/直读模式；有源码访问权的维护者可以�
 
 Runtime Mode 对用户可以继续说明检查了哪些**目标项目**代码/配置/测试、修改了什么、是否同步文档、运行了哪些验证、Review/CI/Git 状态以及为什么这些工程动作必要；普通进度文本直接描述这些工程事实，不把内部 Skill/Reference、Stable ID、route capability、命中集合或 Context 加载计数作为过程播报，也不通过列举这些内部身份来解释“防披露”。治理原文防披露不代表对控制本机的用户提供密码学隔离。
 
-授权信号不产生权限；checkpoint 不产生完成事实；Runtime 不执行 Git/PR/Release/部署/数据库副作用。
+授权信号不产生权限；Task State 不产生权限、路由或完成事实；checkpoint 的通过不产生完成事实；Runtime 不执行 Git/PR/Release/部署/数据库副作用。
 
 ## 21. ChatGPT 网页端边界
 
