@@ -400,7 +400,7 @@ P0/P1/P2、Finding 证据、修复 Owner、review-and-fix re-review 和 Ready �
 | review-only 基础 | 00 + 01 + 06；再按页面真实边界追加 02/03/04/07 |
 | review-and-fix | 00 + 01 + 03 + 06 + 07；涉及业务/Prototype 时追加 02/04 |
 | baseline-ready | 00 + 01 + 02 + 03 + 04 + 05 + 07；Finding 输出同时使用 06 |
-| Figma → Code | 先按 baseline-ready 取得 READY / READY_WITH_NOTES，再由 05 形成 Coding handoff |
+| Figma → Code 初始 | 00 + 01 + 02 + 03 + 05；05 要求先进入 baseline-ready，随后按新任务事实追加 baseline-ready 专项规则；READY / READY_WITH_NOTES 后再 Coding handoff |
 | Design-only、无实现仓库 | 仍按真实设计边界审查；不存在的系统事实标记 implementation_required，不虚构 API/数据库/Route |
 
 Reference 的 canonical routing metadata 继续负责 Runtime Mode 的 required Context fixed-point；本表只提供 Source Mode 人类可读入口，不是第二份静态分发白名单。

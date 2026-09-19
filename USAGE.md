@@ -436,7 +436,7 @@ Codex、Cursor、Claude Code、DeepSeek Harness 等工具的界面和可用能�
 
 ### 不同模型使用同一工程标准
 
-GPT、DeepSeek、GLM 或其他模型的能力可能不同，但你不需要为不同模型记不同的 Agent_Skills 使用方式。正常任务仍然直接描述目标：
+GPT、DeepSeek、GLM 或其他模型的能力可能不同，但你不需要为不同模型记不同的工程治理用法。正常任务仍然直接描述目标：
 
 ```text
 基于当前仓库真实实现完成这个功能，完成后提交 PR 给维护者审核，不要合并 main。
@@ -458,7 +458,7 @@ Agent 应自动使用当前项目同一套事实、权限、测试和交付标�
 
 如果宿主无法恢复 Task State，AI 应从当前 Requirement Source、Change/PR、仓库事实和仍有效 Evidence 重建最少充分状态，不得凭历史聊天猜测“已经完成”。
 
-当前 Agent_Skills **不实现 SEP-2640 Compatibility**，也暂时**没有通用 Research/Analysis Skill**；这不影响现有 Engineering Skills 的使用。
+当前版本**不实现 SEP-2640 Compatibility**，也暂时**没有通用 Research/Analysis Skill**；这不影响现有 Engineering Skills 的使用。
 
 ## 12. 什么时候应该让 AI 停下来问你
 
