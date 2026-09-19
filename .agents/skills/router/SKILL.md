@@ -24,6 +24,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - **事实恢复 / 核验**：默认由 Agent 自行查；能查出的不问。只有条款明确要求“提请用户 / Owner 决策 / 批准”且答案会实质改变业务/public Contract、Schema/数据、安全/权限、不可逆动作或重大技术路线时才问；已固化决定**不重复确认**。
 - **Non-material Ambiguity Default**：未达到上述门槛时不阻塞、不提问；按“**项目既有模式 → 最小范围 → 最小副作用 → 最可逆 → 最少新机制**”自行决定，证据推翻后局部 re-plan。
 - **Authorization Continuity**：已明确且未撤销的授权仅在**同目标、同范围、同副作用等级**跨 Handoff 延续，不重复确认。只读 < 测试资产写 < 生产代码写 < commit/push/PR < merge < Release < Deploy/生产变更；更高等级**不得继承升级**，必须已有对应 Requested Action + Effective Authorization。
+- **Cross-model Behavior Contract**：模型名称、版本、推理强弱或宿主差异**不成为治理路由维度**。同一任务事实必须得到同一 Owner / required Context / risk floor / Authorization / Evidence / Completion Contract；模型可以采用不同推理与工具顺序，但不能因“模型更强/更弱”自动降低或另建一套工程标准。具体 Outcome Eval 与规则有效性生命周期由 Coding 专项 Reference 按需承担。
 - **Fresh Evidence Contract**：Evidence 绑定当前 **environment / Contract / Scope 与被验证的相关实现 revision**，未发生影响结论的变化即可复用；**不是由当前 Agent 启动**本身**不构成重新执行理由**。只有相关实现/Contract/输入/依赖/配置/环境/外部事实变化、现有证据不覆盖结论，或 **required gate** 明确要求 current-head/current-revision 时才重跑对应层；Change/Issue/PR 描述、Evidence 记录、排版等**不影响已验证边界的载体变化**不使开发侧 Evidence 失效。
 - `完整验证证据 / 完整命令 / 完整输出` 只表示完整执行并检查**已选择的风险匹配 Evidence**，**不表示运行全仓测试、全部测试层或所有平台验证**；仍按 targeted-first 单调升级。
 - **阻塞按依赖边界传播**：单一路径失败先回读结果并核验宿主等价能力，不直接判定仓库不可写；Git 细则归 Coding 交付 Reference。仅阻塞确实缺少事实/Context/工具/环境/权限的依赖动作及声明，其他已授权工作继续；不绕过权限或质量门禁。required gate 受阻时整体才 `blocked/incomplete`。
