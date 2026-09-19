@@ -236,6 +236,7 @@ Requirement Source 为 GitHub Issue #272。用户要求本次直接完成新增�
 | --- | --- | --- | --- | --- |
 | V1 | main 42d6e150 | canonical reread + #272 | 已确认 | 写入前 Requirement/Ownership 新鲜 |
 | V2 | 2026-09-19 web | OpenAI / Anthropic / Agent Skills / mattpocock research | 已核对 | 当前最佳实践约束 |
+| V3 | PR #273 run #1543/#1545 | PR Requirement Source / Change machine contract | 失败后已修正元数据；未冒充产品 Red | 现有治理 fail-closed 正常，下一轮才验证功能 Red |
 
 ## 未验证内容与剩余风险
 
