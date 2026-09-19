@@ -345,7 +345,7 @@ Agent_Skills 不为 GPT、DeepSeek、GLM 或其他模型维护不同的工程规
 - Provider Secret、用户数据、私有工具负载不为 Eval 强制提交仓库；
 - Rule Effectiveness Gate 把规则区分为 `invariant / policy / heuristic / technique`：invariant/policy 不能因模型升级静默降低；heuristic/technique 可以在真实 Outcome Eval 支持下条件化、降级或删除。
 
-核心 Eval case 当前覆盖 Feature、Bug、Review/Testing、方案/长任务、Figma/Design-to-Code、Git Delivery 与 should-not-trigger 负例。新增规则优先复用已有 case；只有出现新的独立失败模式才补最小 case。
+核心 Eval case 当前覆盖 Feature、Bug、Review/Testing、方案/长任务、Figma/Design-to-Code、Git Delivery、通用 Analysis、外部 Research 与 should-not-trigger 负例。新增规则优先复用已有 case；只有出现新的独立失败模式才补最小 case。
 
 ## 长任务状态恢复
 
