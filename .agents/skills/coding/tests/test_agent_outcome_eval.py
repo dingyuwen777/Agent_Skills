@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import unittest
 
+from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime.routing import ROUTE_DIMENSIONS
 
 
@@ -94,6 +96,13 @@ class AgentOutcomeEvalTest(unittest.TestCase):
         self.assertNotIn("模型", ROUTE_DIMENSIONS)
         self.assertNotIn("Provider", ROUTE_DIMENSIONS)
         self.assertNotIn("model", {item.casefold() for item in ROUTE_DIMENSIONS})
+
+    def test_eval_assets_are_maintenance_only_and_never_enter_project_payload(self) -> None:
+        """Outcome Eval schema/case/fixture 属维护侧 Evidence，不作为 Runtime 项目安装资产分发。"""
+        payload = build_project_payload(ROOT, build_bundle(ROOT))
+        paths = {str(entry["path"]) for entry in payload["files"]}
+        self.assertFalse(any(path.startswith("evals/") or "/evals/" in path for path in paths))
+        self.assertFalse(any("sample_runs" in path for path in paths))
 
     def test_fixture_runs_score_but_never_claim_verified_compatibility(self) -> None:
         """确定性 fixture 可验证 grader，但真实模型运行=false 时兼容性必须保持 unverified。"""
