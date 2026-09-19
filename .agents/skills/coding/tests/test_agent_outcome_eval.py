@@ -104,6 +104,18 @@ class AgentOutcomeEvalTest(unittest.TestCase):
         self.assertFalse(any(path.startswith("evals/") or "/evals/" in path for path in paths))
         self.assertFalse(any("sample_runs" in path for path in paths))
 
+    def test_rule_effectiveness_gate_is_model_neutral_and_progressively_disclosed(self) -> None:
+        """Rule Effectiveness 必须保护 invariant/policy，并让行为性 Mutation 显式追加 Eval 意图。"""
+        rule = (ROOT / ".agents/skills/coding/references/31_跨模型一致性与Agent效果评测.md").read_text(encoding="utf-8")
+        mutation = (ROOT / ".agents/skills/coding/references/15_规则内容守恒与Skill维护.md").read_text(encoding="utf-8")
+        router = (ROOT / ".agents/skills/router/SKILL.md").read_text(encoding="utf-8")
+        for marker in ("invariant", "policy", "heuristic", "technique", "模型升级不是自动删规则的授权"):
+            self.assertIn(marker, rule)
+        self.assertIn("意图=Agent效果评测", mutation)
+        self.assertIn("纯文字澄清且不改变可观察 Agent 行为时不追加该意图", mutation)
+        self.assertIn("模型/Provider/版本不是 Router 维度", router)
+        self.assertNotIn('"Skill Mutation"', rule.split("<!-- agent-routing:v1", 1)[1].split("-->", 1)[0])
+
     def test_fixture_runs_score_but_never_claim_verified_compatibility(self) -> None:
         """确定性 fixture 可验证 grader，但真实模型运行=false 时兼容性必须保持 unverified。"""
         records = [
