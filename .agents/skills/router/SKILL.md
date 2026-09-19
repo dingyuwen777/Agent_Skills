@@ -15,20 +15,6 @@ description: Agent_Skills 的唯一跨 Skill 控制面。每个任务先进入�
 
 Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或调度开发任务**，不维护任务队列/Worker，**不接管专业 Skill**，也不执行代码/设计/文档/测试/Git/CI/发布/部署；多 Skill 只声明并集、顺序与交接。
 
-## 0.1 通用回答 Contract
-
-只要任务进入 Agent_Skills，下面这些原则对分析、研究和工程工作都成立；它们只保留不可延迟的不变量，专业方法由命中的 Owner 继续细化：
-
-- **先回答真正的问题。** 不绕开用户目标，不为了展示方法论堆背景；能直接给结论时先给结论，再补足必要依据。
-- **不默认用户前提正确。** 发现事实错误、概念混淆、逻辑跳跃或约束冲突时直接指出，再基于修正后的事实继续。
-- **结论与证据分层。** 需要时明确区分已确认事实、合理推断、建议 / 判断、暂时无法验证；不得把推断写成事实。
-- **不编造。** 不虚构数字、日期、人物、引用、来源、API、命令、执行结果、测试结果或工具返回。
-- **事实时效匹配问题。** 外部事实可能变化、用户要求最新、主题陌生/专业/高风险或当前性会影响结论时，进入 Research；除非用户明确要求历史资料或禁止联网，不用旧知识冒充当前事实。
-- **分析服从实际约束。** 需要系统推理、比较、诊断或方案时进入 Analysis；从第一性原理和当前真实约束出发，不用框架、术语或“大而全方案”替代问题本身。
-- **方案最小充分。** 默认优先能解决当下问题、可执行、可验证、可逆的方案；只有确有价值时再区分“当前方案”和“更完整 / 理想方案”，并说明阶段关系。
-- **停止条件。** 当新增搜索、拆解或解释预计不会实质改变结论、决策或下一步时停止；不要重复同一观点制造篇幅。
-- **简单问答 Fast Path。** 简单、明确、无需专项分析/研究/工程方法的问题直接回答，不为了形式加载专业 Owner 或扩大上下文。
-
 ## 1. 项目事实与确定性执行边界
 
 先读目标项目及上级适用的 `AGENTS.md`、`CONTRIBUTING` 等规则，再按需读真实代码、Manifest/lock、Contract、Schema/Migration、配置、测试、CI、正式文档和设计事实。**项目自己的**事实优先；语言、Runtime、框架、数据库、Owner、API/ABI/CLI、Schema、Provider、部署、Design Token/业务字段不得猜，**不能单凭文件名推出 React、FastAPI、PostgreSQL**。
@@ -52,8 +38,8 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 | Skill | 职责 | 入口 |
 | --- | --- | --- |
 | `router` | 路由 | [`.agents/skills/router/SKILL.md`](SKILL.md) |
-| `analysis` | 通用分析 / 决策 / 方案 | [`.agents/skills/analysis/SKILL.md`](../analysis/SKILL.md) |
-| `research` | 外部研究 / 当前事实核验 | [`.agents/skills/research/SKILL.md`](../research/SKILL.md) |
+| `analysis` | 通用分析 | [`.agents/skills/analysis/SKILL.md`](../analysis/SKILL.md) |
+| `research` | 外部研究 | [`.agents/skills/research/SKILL.md`](../research/SKILL.md) |
 | `coding` | 研发/Git | [`.agents/skills/coding/SKILL.md`](../coding/SKILL.md) |
 | `testing` | 测试 | [`.agents/skills/testing/SKILL.md`](../testing/SKILL.md) |
 | `review` | 审查 | [`.agents/skills/review/SKILL.md`](../review/SKILL.md) |
@@ -66,7 +52,7 @@ Runtime/Project Payload/manifest/测试/Release 也动态发现；Review 判充�
 
 1. 恢复最少充分事实；
 2. 按任务对象/专业意图选 Owner；其余维度只细化已命中 Owner；
-3. 通用推理、比较、决策、问题诊断或非工程方案 → Analysis；依赖外部资料、当前时效、来源核验或深度检索 → Research；实现/调试/TDD/CI/Git/Release → Coding；测试策略/功能/黑盒/Journey/探索式/Regression/独立验证 → Testing；源码/PR/diff 审查 → Coding + Review；Figma → Figma；技术文档 → Docs。Analysis / Research 可以与工程 Owner 组合，但普通非工程问题不能因为 `执行模式=只读分析/方案` 自动进入 Coding；共享 `审查/验证`、`能力=测试/Figma/Git` 不制造无关 Owner；
+3. 通用分析/决策 → Analysis；外部资料/当前事实核验 → Research；研发/Git/Release → Coding；独立测试 → Testing；源码/PR/diff Review → Coding + Review；Figma → Figma；技术文档 → Docs。共享 `审查/验证`、`能力=测试/Figma/Git` 不制造无关 Owner；
 4. 仅在已命中 Owner 内匹配 Reference；显式 dependency 可跨 Skill；
 5. 命中 Reference 必须在执行前取得**完整原文**；
 6. 不机械读全部 Skills/References。
@@ -114,13 +100,6 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 
 | 案例 | 命中原因与叠加 | Source Mode 读取 | Runtime Mode 任务信号 |
 | --- | --- | --- | --- |
-| 简单明确问答 | 无专项 Owner | Router 即可 | 不提交专业意图；直接回答 |
-| 通用问题分析 | 前提/因果/判断 | Analysis | `执行模式=只读分析；意图=通用分析` |
-| 第一性原理 / 根因 | 深入分析 | Analysis | `执行模式=只读分析；意图=第一性原理分析/根因分析` |
-| 方案 / 决策比较 | 基于真实约束给最小充分方案 | Analysis | `执行模式=方案；意图=方案分析/决策分析` |
-| 最新事实核验 | 当前外部资料 | Research | `执行模式=只读分析；意图=最新资料/事实核验` |
-| 深度研究 + 判断 | 先取证再分析 | Research + Analysis | `执行模式=只读分析；意图=深度研究,通用分析` |
-| 最新技术资料 + 实施 | 先核当前资料，再按项目实施 | Research + Coding | `执行模式=方案,实现；意图=最新资料,技术方案` |
 | L1 机械修改 | — | Coding | `执行模式=实现；风险=L1` |
 | L2 Feature | 最小充分任务契约 | Coding | `执行模式=实现；阶段=功能开发；风险=L2` |
 | L3 public API | — | Coding | `执行模式=方案,实现；风险=L3；范围=公共契约,API` |
@@ -145,23 +124,6 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 | Skill Mutation Apply | 写入 | Maintenance + Mutation | `执行模式=实现；意图=Skill Mutation Apply；治理=要求完成门禁；风险=L2/L3` |
 | Greenfield | — | Coding | `执行模式=方案；项目形态=Greenfield；阶段=仓库初始化；风险=L2` |
 | 复杂多 Skill 叠加 | 多 Owner | 命中并集 | 提交真实模式/范围/意图/治理/授权 |
-
-## 5.1 Analysis 路由
-
-- 触发：需要系统推理、第一性原理、前提审计、因果/根因、比较、决策或非工程方案；简单事实问答不触发。
-- 必须动作：先恢复用户真实目标、已确认事实、约束和未知项；必要时把事实 / 推断 / 建议 / 未验证项分开，再选择最小充分分析方法。
-- 方案要求：优先解决当前问题；只有当长期结构确实影响当前决策时，再给更完整 / 理想方案并明确阶段边界，不能用宏大架构替代可执行下一步。
-- 交接：分析依赖当前外部事实 → Research；进入真实仓库修改/测试/交付 → 对应工程 Owner。
-- 失败关闭：关键事实不足但不影响方向时标注假设继续；只有缺口会实质改变业务、公共 Contract、数据、安全、不可逆动作或重大路线时才提请决策。
-
-## 5.2 Research 路由
-
-- 触发：问题依赖外部资料、最新/当前事实、陌生或高变化主题、来源核验、专业/高风险事实或用户明确要求研究。
-- 默认时效：除非用户明确要求历史资料、旧版本、指定时间点，或明确禁止联网，否则以**当前最新且适用**的资料为目标，并核对发布日期、事件日期、版本和适用范围。
-- 来源要求：优先一手/权威来源；关键结论需要时交叉核验；来源冲突时说明冲突和证据强弱，不自行抹平。
-- 输出要求：事实与分析分离，重要当前事实可追溯到来源；搜索不足时明确未验证边界，不能靠模型记忆补齐。
-- 交接：取得事实后需要推理/决策 → Analysis；研究用于工程实现 → 对应工程 Owner。
-- 停止：新增搜索预计不会实质改变关键结论、决策或风险边界时停止，不以搜索数量代表质量。
 
 ## 6. Bootstrap / Runtime 专项路由
 
