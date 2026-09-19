@@ -77,14 +77,9 @@ profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required c
 
 ### 1.1 Rule Effectiveness Gate
 
-Mutation 先判规则职责，避免把“更多文字”误当效果：
+Mutation 先分类：**invariant**=不可随模型能力降低的正确性/安全/权限/Contract/Evidence/完成硬约束；**policy**=Owner 明确的长期工程政策；**heuristic**=补偿已观察模型失败的经验规则；**technique**=仅在真实问题需要时加载的方法。
 
-- **invariant**：正确性、安全、权限、Contract、数据、Evidence、完成门禁等硬约束；
-- **policy**：维护者/团队明确的长期工程政策；
-- **heuristic**：补偿已观察模型失败的经验规则；新增/强化/退役优先绑定失败证据、Finding 或 **Outcome Eval**；
-- **technique**：按真实问题边界选用的 Architecture / 调试 / 测试等方法，不升级成所有任务固定流程。
-
-**不能因模型更强**静默削弱 invariant / policy，也不为较弱模型复制模型专属 canonical Skill。模型能力变化只通过真实 Outcome Eval 重新验证 heuristic；没有真实 Eval 时，“已经不需要”只是待验证假设。heuristic/technique 加载条件变化同时保留正例、负例、内容守恒与路由证据。
+**不能因模型更强**削弱 invariant/policy 或复制模型专属 canonical Skill。heuristic 新增/强化/退役优先绑定失败证据、Finding 或 **Outcome Eval**；没有真实 Eval 时只能标记待验证。heuristic/technique 加载条件变化必须保留正例、负例、内容守恒与路由证据。
 
 ## 2. 允许移动，不允许语义降级
 

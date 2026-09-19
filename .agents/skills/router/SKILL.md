@@ -32,7 +32,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 ### 1.2 跨模型一致性 Contract
 
-**模型身份不是治理路由维度。** 不同模型在相同项目事实、Task Route、授权和 Requested Outcome 下必须遵守**同一工程契约**：canonical Context、风险、权限、Evidence 与 Completion Gate 不随模型品牌改变。模型可以增加调查/实验/自检，但不得降低门禁或建立模型专属 canonical 分支；模型/宿主标签只进入**真实 Outcome Eval**、Trace 或运行环境元数据，**未实际运行**的模型只能标记 `unverified`。
+**模型身份不是治理路由维度。** 相同项目事实、授权和 Requested Outcome 必须使用**同一工程契约**；模型/宿主标签只进入**真实 Outcome Eval**、Trace 或环境元数据，**未实际运行**只能标记 `unverified`。模型强弱不得降低门禁或产生模型专属 canonical 分支。
 
 ## 2. 正式 Skill Catalog
 
