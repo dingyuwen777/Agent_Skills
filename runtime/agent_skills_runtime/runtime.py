@@ -1,4 +1,4 @@
-"""维护 Agent Skills Runtime 的中文 Task Route、按需原文上下文与任务能力状态。"""
+"""维护 Agent Skills Runtime 的中文 Task Route、按需原文上下文与可恢复任务状态。"""
 
 from __future__ import annotations
 
@@ -18,20 +18,128 @@ from .routing import evaluate_route, public_route_contract, validate_task_route
 
 MCP_TOOL_CONTRACT_PROTOCOL = "Agent Skills MCP工具契约/v3"
 MCP_ROUTE_CONTRACT_PROTOCOL = "Agent Skills MCP公共路由契约/v2"
+TASK_STATE_PROTOCOL = "Agent Skills 任务状态/v1"
 _RISK_ORDER = {"L1": 1, "L2": 2, "L3": 3}
 _CAPABILITY_DOMAIN = "agent-skills/runtime-v3/route-capability"
 _MIN_SATURATION_DIMENSIONS = 3
 _MIN_SATURATION_VALUES = 8
+_MAX_TASK_STATE_BYTES = 32_768
+_MAX_TASK_STATE_ITEMS = 64
+_MAX_TASK_STATE_TEXT = 2_000
+_TASK_STATE_FIELDS = {
+    "协议",
+    "目标",
+    "成功标准",
+    "已确认决定",
+    "已完成切片",
+    "当前前沿",
+    "阻塞项",
+    "失败假设",
+    "未验证风险",
+    "下一步",
+    "非目标",
+}
+_COMPLETED_SLICE_FIELDS = {"切片", "证据"}
 
 
 def _canonical_json(value: Any) -> bytes:
-    """把内部 capability material 编码为确定性 UTF-8 JSON。"""
+    """把内部 capability material 编码为确定性 UTF-8 JSON 字节。"""
     return json.dumps(
         value,
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
+
+
+def _bounded_text(value: Any, label: str, *, allow_empty: bool = False) -> str:
+    """校验任务状态文本长度，避免把完整会话或任意大对象塞入 Runtime 状态。"""
+    if not isinstance(value, str):
+        raise ValueError(f"{label} 必须是字符串")
+    normalized = value.strip()
+    if not allow_empty and not normalized:
+        raise ValueError(f"{label} 不能为空")
+    if len(normalized) > _MAX_TASK_STATE_TEXT:
+        raise ValueError(f"{label} 超过最大长度 {_MAX_TASK_STATE_TEXT}")
+    return normalized
+
+
+def _bounded_text_list(value: Any, label: str) -> list[str]:
+    """校验任务状态中的有界文本列表并拒绝重复项。"""
+    if not isinstance(value, list) or len(value) > _MAX_TASK_STATE_ITEMS:
+        raise ValueError(f"{label} 必须是最多 {_MAX_TASK_STATE_ITEMS} 项的列表")
+    normalized = [_bounded_text(item, f"{label} 项") for item in value]
+    if len(normalized) != len(set(normalized)):
+        raise ValueError(f"{label} 不能包含重复项")
+    return normalized
+
+
+def default_task_state(task_id: str) -> dict[str, Any]:
+    """为新任务建立最小可恢复状态；任务标识只作为初始目标，不产生完成或授权事实。"""
+    target = _bounded_text(task_id, "任务标识")
+    return {
+        "协议": TASK_STATE_PROTOCOL,
+        "目标": target,
+        "成功标准": [],
+        "已确认决定": [],
+        "已完成切片": [],
+        "当前前沿": [],
+        "阻塞项": [],
+        "失败假设": [],
+        "未验证风险": [],
+        "下一步": [],
+        "非目标": [],
+    }
+
+
+def validate_task_state(raw: Mapping[str, Any], *, task_id: str | None = None) -> dict[str, Any]:
+    """校验并规范化显式 Task State；状态只保存问题求解摘要，不参与权限、路由或完成判定。"""
+    if not isinstance(raw, Mapping) or set(raw) != _TASK_STATE_FIELDS:
+        raise ValueError("任务状态字段不合法或缺失")
+    if raw.get("协议") != TASK_STATE_PROTOCOL:
+        raise ValueError(f"任务状态协议不受支持：{raw.get('协议')!r}")
+    target = _bounded_text(raw["目标"], "任务状态/目标")
+    if task_id is not None and not str(task_id).strip():
+        raise ValueError("任务标识不能为空")
+
+    completed = raw["已完成切片"]
+    if not isinstance(completed, list) or len(completed) > _MAX_TASK_STATE_ITEMS:
+        raise ValueError(f"任务状态/已完成切片 必须是最多 {_MAX_TASK_STATE_ITEMS} 项的列表")
+    normalized_completed: list[dict[str, Any]] = []
+    seen_slices: set[str] = set()
+    for index, item in enumerate(completed, start=1):
+        if not isinstance(item, Mapping) or set(item) != _COMPLETED_SLICE_FIELDS:
+            raise ValueError(f"任务状态/已完成切片 #{index} 字段不合法")
+        name = _bounded_text(item["切片"], f"任务状态/已完成切片 #{index}/切片")
+        if name in seen_slices:
+            raise ValueError(f"任务状态/已完成切片 重复：{name}")
+        seen_slices.add(name)
+        evidence = _bounded_text_list(item["证据"], f"任务状态/已完成切片 {name}/证据")
+        if not evidence:
+            raise ValueError(f"任务状态/已完成切片 {name} 必须至少包含一条 Evidence")
+        normalized_completed.append({"切片": name, "证据": evidence})
+
+    normalized = {
+        "协议": TASK_STATE_PROTOCOL,
+        "目标": target,
+        "成功标准": _bounded_text_list(raw["成功标准"], "任务状态/成功标准"),
+        "已确认决定": _bounded_text_list(raw["已确认决定"], "任务状态/已确认决定"),
+        "已完成切片": normalized_completed,
+        "当前前沿": _bounded_text_list(raw["当前前沿"], "任务状态/当前前沿"),
+        "阻塞项": _bounded_text_list(raw["阻塞项"], "任务状态/阻塞项"),
+        "失败假设": _bounded_text_list(raw["失败假设"], "任务状态/失败假设"),
+        "未验证风险": _bounded_text_list(raw["未验证风险"], "任务状态/未验证风险"),
+        "下一步": _bounded_text_list(raw["下一步"], "任务状态/下一步"),
+        "非目标": _bounded_text_list(raw["非目标"], "任务状态/非目标"),
+    }
+    if len(_canonical_json(normalized)) > _MAX_TASK_STATE_BYTES:
+        raise ValueError(f"任务状态超过最大 UTF-8 JSON 大小 {_MAX_TASK_STATE_BYTES} bytes")
+    return normalized
+
+
+def _clone_task_state(state: Mapping[str, Any]) -> dict[str, Any]:
+    """复制已验证 JSON 状态，防止调用者修改 Runtime 内部引用。"""
+    return json.loads(json.dumps(state, ensure_ascii=False))
 
 
 def _bundle_identity(bundle: Mapping[str, Any] | EncryptedBundleStore) -> dict[str, Any]:
@@ -98,7 +206,7 @@ def runtime_integrity_fingerprint(
 
 
 class RuntimeStore:
-    """持有私有路由与加密 Reference store，并只按当前 task capability 解密 required Context。"""
+    """持有私有路由、加密 Reference store 与当前任务的可恢复语义状态。"""
 
     def __init__(
         self,
@@ -123,6 +231,7 @@ class RuntimeStore:
         self._task_nonce: str | None = None
         self._task_id: str | None = None
         self._phase: str | None = None
+        self._task_state: dict[str, Any] | None = None
         self._route_token: str | None = None
         self._route_generation = 0
         self._required_ids: set[str] = set()
@@ -133,7 +242,7 @@ class RuntimeStore:
 
     def _require_task(self) -> None:
         """确认调用发生在显式建立的当前任务中。"""
-        if self._task_id is None or self._task_nonce is None:
+        if self._task_id is None or self._task_nonce is None or self._task_state is None:
             raise ValueError("尚未开始当前任务；请先建立任务上下文")
 
     def _require_current_token(self, route_token: str) -> None:
@@ -175,6 +284,7 @@ class RuntimeStore:
                 "协议": MCP_TOOL_CONTRACT_PROTOCOL,
                 "Release版本": self._release_version,
                 "当前任务存在": self._task_id is not None,
+                "当前任务状态存在": self._task_state is not None,
                 "当前约束已建立": route_ready,
                 "当前约束已加载完成": constraints_loaded,
                 "用户可见进度规则": USER_VISIBLE_PROGRESS_RULE,
@@ -201,18 +311,29 @@ class RuntimeStore:
         contract["用户可见进度规则"] = USER_VISIBLE_PROGRESS_RULE
         return contract
 
-    def start_task(self, task_id: str, phase: str = "规划") -> dict[str, Any]:
-        """开始或显式重置任务，清空此前 task 的路由、capability 与披露状态。"""
+    def start_task(
+        self,
+        task_id: str,
+        phase: str = "规划",
+        task_state: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """开始或显式恢复任务；清空旧路由状态，并校验可选的结构化问题求解摘要。"""
         normalized_task = str(task_id).strip()
         normalized_phase = str(phase).strip()
         if not normalized_task:
             raise ValueError("任务标识不能为空")
         if not normalized_phase:
             raise ValueError("阶段不能为空")
+        normalized_state = (
+            default_task_state(normalized_task)
+            if task_state is None
+            else validate_task_state(task_state, task_id=normalized_task)
+        )
         with self._lock:
             self._task_id = normalized_task
             self._task_nonce = secrets.token_hex(24)
             self._phase = normalized_phase
+            self._task_state = normalized_state
             self._route_token = None
             self._route_generation = 0
             self._required_ids.clear()
@@ -223,6 +344,7 @@ class RuntimeStore:
             return {
                 "任务标识": self._task_id,
                 "当前阶段": self._phase,
+                "任务状态": _clone_task_state(self._task_state),
                 "当前约束已建立": False,
                 "用户可见进度规则": USER_VISIBLE_PROGRESS_RULE,
             }
@@ -278,8 +400,13 @@ class RuntimeStore:
                 "用户可见进度规则": USER_VISIBLE_PROGRESS_RULE,
             }
 
-    def checkpoint(self, route_token: str, phase: str | None = None) -> dict[str, Any]:
-        """依据 Runtime 内部 required/loaded 状态执行阶段检查，不公开内部集合身份。"""
+    def checkpoint(
+        self,
+        route_token: str,
+        phase: str | None = None,
+        task_state: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """检查 required Context，并可原子替换/回读结构化 Task State；状态不产生权限或完成事实。"""
         with self._lock:
             self._require_task()
             self._require_current_token(route_token)
@@ -288,9 +415,12 @@ class RuntimeStore:
                 if not normalized_phase:
                     raise ValueError("阶段不能为空")
                 self._phase = normalized_phase
+            if task_state is not None:
+                self._task_state = validate_task_state(task_state, task_id=self._task_id)
             return {
                 "任务标识": self._task_id,
                 "通过": not (self._required_ids - self._loaded_ids),
                 "当前阶段": self._phase,
+                "任务状态": _clone_task_state(self._task_state),
                 "用户可见进度规则": USER_VISIBLE_PROGRESS_RULE,
             }
