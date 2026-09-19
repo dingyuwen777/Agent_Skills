@@ -28,7 +28,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - `完整验证证据 / 完整命令 / 完整输出` 只表示完整执行并检查**已选择的风险匹配 Evidence**，**不表示运行全仓测试、全部测试层或所有平台验证**；仍按 targeted-first 单调升级。
 - **阻塞按依赖边界传播**：单一路径失败先回读结果并核验宿主等价能力，不直接判定仓库不可写；Git 细则归 Coding 交付 Reference。仅阻塞确实缺少事实/Context/工具/环境/权限的依赖动作及声明，其他已授权工作继续；不绕过权限或质量门禁。required gate 受阻时整体才 `blocked/incomplete`。
 - **Requested Outcome = Completion Scope**：**能力存在不等于继续追求更远阶段**。只读审查/测试/Mutation Audit 止于结论；提 PR→`允许开发并提交PR`（PR Ready）；合并主分支→`允许端到端交付`；审查后合并→`允许审查后交付`。先按真实命令归一化再路由，commit/push、引述或否定不升级授权；完整范围与收尾归[交付规则](../coding/references/23_端到端交付与合并后收尾.md)。
-- **Model-neutral Contract**：模型/Provider/版本**不是 Router 维度**；同一项目事实、风险、授权和 Requested Outcome 使用同一治理/Evidence/Completion Contract。宿主真实能力仍按既有能力/工具链/授权细化；不得因模型品牌降低 required gate。效果评测见 [跨模型一致性与 Agent Outcome Eval](../coding/references/31_跨模型一致性与Agent效果评测.md)。
+- **Model-neutral**：模型/Provider/版本不是 Router 维度；同一事实、风险、授权和 Requested Outcome 不因模型品牌改变治理或 required gate。宿主能力仍按既有维度细化；效果评测按 [专门规则](../coding/references/31_跨模型一致性与Agent效果评测.md)。
 - **Task-owned Cleanup**：Completion Scope 结束前删除本任务创建且无后续用途的临时/scratch/debug 产物；保留预存在/用户所有/仍作证据、交付物或输入的内容。未改变交付状态/运行输入时，不使既有 Green Evidence 失效。
 
 ## 2. 正式 Skill Catalog
