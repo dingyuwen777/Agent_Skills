@@ -124,6 +124,9 @@ _GROUP_TEST_FILES: dict[str, tuple[str, ...]] = {
         "test_review_skill.py",
         "test_review_test_adequacy_owner_reachability.py",
     ),
+    "agent_eval": (
+        "test_cross_model_outcome_eval.py",
+    ),
     "ci_self": tuple(sorted(_CI_SELF_TESTS)),
 }
 
@@ -217,6 +220,12 @@ class _SelectionBuilder:
             return
 
         if normalized.startswith(_CHANGE_ONLY_PREFIX):
+            return
+
+        if normalized.startswith("evals/"):
+            self.promote_scope("content")
+            self.add_groups("agent_eval", "router")
+            self.runtime_dependencies_required = True
             return
 
         if normalized in _HUMAN_DOC_PATHS:
