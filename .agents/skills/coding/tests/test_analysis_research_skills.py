@@ -123,6 +123,23 @@ class AnalysisResearchSkillsTest(unittest.TestCase):
         )
         self.assertEqual(set(result["命中Skill"]), {"analysis", "research", "router"})
 
+    def test_research_can_compose_with_coding_and_figma(self) -> None:
+        """Research 必须能给工程/设计提供外部 Evidence，而不接管专业 Owner。"""
+        coding = self._route(
+            {"执行模式": ["实现"], "风险": ["L2"], "意图": ["最新资料"]}
+        )
+        self.assertTrue({"coding", "research", "router"}.issubset(coding["命中Skill"]))
+        figma = self._route(
+            {"风险": ["L2"], "意图": ["Figma baseline-ready", "外部研究"], "能力": ["Figma"]}
+        )
+        self.assertTrue({"figma", "research", "router"}.issubset(figma["命中Skill"]))
+        self.assertNotIn("coding", figma["命中Skill"])
+
+    def test_simple_question_does_not_force_specialist_owner(self) -> None:
+        """只有风险等 refinement fact 时不得机械加载 Analysis/Research/Coding。"""
+        result = self._route({"风险": ["L1"]})
+        self.assertEqual(set(result["命中Skill"]), {"router"})
+
     def test_engineering_l1_does_not_load_general_analysis_or_research(self) -> None:
         """普通工程实现继续沿现有 Coding Fast Path，不因新增通用 Owner 增加 Context。"""
         result = self._route({"执行模式": ["实现"], "风险": ["L1"]})

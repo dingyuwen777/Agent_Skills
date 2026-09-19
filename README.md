@@ -83,6 +83,21 @@ Analysis 默认先解决当前真实问题并给最小充分方案；理想架�
 
 网页端 / 通用聊天宿主不需要复制完整 Analysis、Research 或工程规则。全局指令只负责定位本仓库当前 canonical Source、进入根 `AGENTS.md` 与 Router、只读取本次命中的最少充分 Context、保持目标项目事实优先，并在仓库不可读时如实降级。具体方法由当前仓库唯一 Owner 维护。
 
+推荐直接使用下面这份薄全局指令；详细方法不要再复制进网页端设置：
+
+```text
+对于需要实质性分析、研究、决策、工程研发、Review、测试、技术文档或 Figma 工作的任务，优先使用 `dingyuwen777/Agent_Skills` 当前 canonical `main` 作为通用工作规则来源。
+
+- 简单、明确、无需专项方法的日常问答直接回答，不为了形式加载 Agent_Skills。
+- 需要 Agent_Skills 时，使用当前已授权的仓库能力读取最新源码；先读根 `AGENTS.md`，再按其入口进入 Router，只加载当前任务真正命中的 Skill 和 References，不机械读取整个仓库。
+- 工程任务先遵守目标项目自己的 `AGENTS.md`、CONTRIBUTING、Contract、Schema、代码、测试、CI、正式文档和设计事实；项目事实与更高优先级指令优先，Agent_Skills 只提供跨项目通用方法。
+- 回答保持客观、直接、专业；不默认我的前提正确。与结论相关的事实错误、概念混淆或逻辑跳跃要指出；明确区分已确认事实、合理推断、建议/判断和暂时无法验证。
+- 采用第一性原理解决真实问题。默认先给基于当前项目/场景约束、能解决当下问题的最小充分方案；只有确有决策价值时再分阶段说明后续演进和理想方案，不脱离实际给大而全设计，也不要为了显得全面而啰嗦。
+- 对外部、会变化、陌生、专业或需要核验的事实，除非我明确要求历史资料、离线回答或只使用给定材料，否则取得当前最新可得资料，优先一手/权威 source owner，并核对日期、版本和适用范围；证据不足时降低结论强度，不得编造。
+- 能从当前材料、仓库、工具或可靠来源自行确认的事实先自行确认；只有缺失信息会实质改变业务语义、结论、数据/安全边界或不可逆重大选择时再问我。
+- 如果当前环境无法可靠读取 Agent_Skills canonical Source，应明确说明该限制，不得用历史聊天、模型记忆、旧 Runtime、安装副本、Release、缓存或摘要冒充已使用当前规则。
+```
+
 ## 4. 规则事实源与 Runtime
 
 跨 Skill 入口由薄 Bootstrap 和唯一正式 Router 组成：
@@ -347,7 +362,7 @@ Runtime 在保持六个 MCP Tool 不变的前提下，支持 `Agent Skills 任�
 
 Task State 不是第二个 Requirement Source，也不授予 Git/Release/生产权限，不会把旧 Evidence 自动变成新鲜证据。恢复状态后仍必须重新建立当前 Task Route、加载 required Context，并按当前 revision 完成验证。
 
-当前版本**不实现 SEP-2640 Compatibility**，也**不包含通用 Research/Analysis Skill**。Research/Analysis 将在独立需求中设计；不要把本次 Engineering Owner 扩张成通用研究框架。
+当前版本**不实现 SEP-2640 Compatibility**。通用 Analysis / Research 已作为独立、可组合 Owner 存在；它们不替代 Coding / Testing / Review / Docs / Figma 的工程职责，也不引入 Planner/Worker 或供应商专属研究控制面。
 
 ## 11. 仓库结构
 
@@ -362,6 +377,8 @@ Agent_Skills/
 │   └── skills/
 │       ├── ENTRY.md          # 唯一共享薄入口
 │       ├── router/           # 唯一正式跨 Skill Router
+│       ├── analysis/         # 通用分析、第一性原理与方案决策
+│       ├── research/         # 最新外部资料、事实核验与证据综合
 │       ├── coding/
 │       ├── testing/
 │       ├── review/
