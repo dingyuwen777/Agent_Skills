@@ -366,7 +366,16 @@ class RuntimeStore:
         contract["用户可见进度规则"] = USER_VISIBLE_PROGRESS_RULE
         return contract
 
-    def start_task(\n        self,\n        task_id: str,\n        phase: str = "规划",\n        task_state: Mapping[str, Any] | None = None,\n    ) -> dict[str, Any]:\n        """开始/重置任务，可显式恢复经过校验的语义状态；路由与 capability 仍重新建立。"""\n        normalized_task = str(task_id).strip()\n        normalized_phase = str(phase).strip()\n        normalized_state = normalize_task_state(task_state)
+    def start_task(
+        self,
+        task_id: str,
+        phase: str = "规划",
+        task_state: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """开始/重置任务，可显式恢复经过校验的语义状态；路由与 capability 仍重新建立。"""
+        normalized_task = str(task_id).strip()
+        normalized_phase = str(phase).strip()
+        normalized_state = normalize_task_state(task_state)
         if not normalized_task:
             raise ValueError("任务标识不能为空")
         if not normalized_phase:
@@ -442,7 +451,13 @@ class RuntimeStore:
                 "用户可见进度规则": USER_VISIBLE_PROGRESS_RULE,
             }
 
-    def checkpoint(\n        self,\n        route_token: str,\n        phase: str | None = None,\n        task_state_patch: Mapping[str, Any] | None = None,\n    ) -> dict[str, Any]:\n        """检查 required Context，并可原子更新当前可恢复 Task State。"""
+    def checkpoint(
+        self,
+        route_token: str,
+        phase: str | None = None,
+        task_state_patch: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """检查 required Context，并可原子更新当前可恢复 Task State。"""
         with self._lock:
             self._require_task()
             self._require_current_token(route_token)

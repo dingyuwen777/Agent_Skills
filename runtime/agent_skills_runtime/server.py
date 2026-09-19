@@ -139,7 +139,13 @@ def create_mcp_server():
         return _load_embedded_store().route_contract()
 
     @mcp.tool()
-    def agent_skills_start_task(\n        任务标识: str,\n        阶段: str = "规划",\n        任务状态: dict[str, Any] | None = None,\n    ) -> dict[str, Any]:\n        """开始/重置当前任务；可传入经过 Runtime 校验的 Task State 进行显式恢复。"""\n        return _load_embedded_store().start_task(任务标识, 阶段, 任务状态)
+    def agent_skills_start_task(
+        任务标识: str,
+        阶段: str = "规划",
+        任务状态: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """开始/重置当前任务；可传入经过 Runtime 校验的 Task State 进行显式恢复。"""
+        return _load_embedded_store().start_task(任务标识, 阶段, 任务状态)
 
     @mcp.tool()
     def agent_skills_submit_route(任务标识: str, 任务路由: dict[str, Any]) -> dict[str, Any]:
@@ -152,7 +158,13 @@ def create_mcp_server():
         return _load_embedded_store().load_required_context(路由令牌, reload=重新加载)
 
     @mcp.tool()
-    def agent_skills_checkpoint(\n        路由令牌: str,\n        阶段: str | None = None,\n        任务状态更新: dict[str, Any] | None = None,\n    ) -> dict[str, Any]:\n        """检查 required Context，并可更新可恢复 Task State；状态不产生权限或完成事实。"""\n        return _load_embedded_store().checkpoint(路由令牌, 阶段, 任务状态更新)
+    def agent_skills_checkpoint(
+        路由令牌: str,
+        阶段: str | None = None,
+        任务状态更新: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """检查 required Context，并可更新可恢复 Task State；状态不产生权限或完成事实。"""
+        return _load_embedded_store().checkpoint(路由令牌, 阶段, 任务状态更新)
 
     return mcp
 
