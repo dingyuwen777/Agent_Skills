@@ -1,0 +1,120 @@
+{
+  "协议": "Agent Skills Figma Core迁移/v1",
+  "源路径": ".agents/skills/figma/SKILL.md",
+  "源修订": "7d252cd5dd1ad76d8577f0826201b5d3676cb89c",
+  "说明": "原 Core 第5–18节按完整原文字节迁移；SHA256/字节数覆盖每节 rstrip(换行) 后 UTF-8 内容。",
+  "段落": [
+    {
+      "章节": 5,
+      "标题": "# 5. 事实分类与真实系统映射",
+      "目标": ".agents/skills/figma/references/08_核心事实组件Prototype与状态细则.md",
+      "下一标题": "# 6. 页面尺寸、布局、美观和真实可用性",
+      "SHA256": "5d2cd9a17eb968df1861cd7c4faced511ed83d9fa91625dabe55e22559029c9d",
+      "字节数": 1928
+    },
+    {
+      "章节": 6,
+      "标题": "# 6. 页面尺寸、布局、美观和真实可用性",
+      "目标": ".agents/skills/figma/references/08_核心事实组件Prototype与状态细则.md",
+      "下一标题": "# 7. 公共组件与可复用业务逻辑",
+      "SHA256": "817ee6df8554516934bdf5b1e34a673f0db0a5254fd27082d3aeb535827deec7",
+      "字节数": 1625
+    },
+    {
+      "章节": 7,
+      "标题": "# 7. 公共组件与可复用业务逻辑",
+      "目标": ".agents/skills/figma/references/08_核心事实组件Prototype与状态细则.md",
+      "下一标题": "# 8. Component Property、Token 和结构",
+      "SHA256": "08c6211f4de7c32f0e3485a1942ae4f4b4cd1ae3dd15859f92d94fa26e593bb2",
+      "字节数": 1653
+    },
+    {
+      "章节": 8,
+      "标题": "# 8. Component Property、Token 和结构",
+      "目标": ".agents/skills/figma/references/08_核心事实组件Prototype与状态细则.md",
+      "下一标题": "# 9. Prototype 审计",
+      "SHA256": "ac11886ac41cc58aa91b02a28086ca18704352a2901eda77fd404a6f8591dba2",
+      "字节数": 502
+    },
+    {
+      "章节": 9,
+      "标题": "# 9. Prototype 审计",
+      "目标": ".agents/skills/figma/references/08_核心事实组件Prototype与状态细则.md",
+      "下一标题": "# 10. 状态完整性",
+      "SHA256": "fc441477e9b055660fa5090b8153d35f03e9f97dbe4892c61a96f7d33578f227",
+      "字节数": 599
+    },
+    {
+      "章节": 10,
+      "标题": "# 10. 状态完整性",
+      "目标": ".agents/skills/figma/references/08_核心事实组件Prototype与状态细则.md",
+      "下一标题": "# 11. 产品语言与用户习惯",
+      "SHA256": "d25a85cde8dfecd154960570a71929f4f9d5fe501af89ff28a586a1c00d06d20",
+      "字节数": 332
+    },
+    {
+      "章节": 11,
+      "标题": "# 11. 产品语言与用户习惯",
+      "目标": ".agents/skills/figma/references/08_核心事实组件Prototype与状态细则.md",
+      "下一标题": "# 12. 动态数据和 Annotation",
+      "SHA256": "1a52e093658e99296f06c9656e28a5079ddfe491127aaf205393666835ffbb60",
+      "字节数": 503
+    },
+    {
+      "章节": 12,
+      "标题": "# 12. 动态数据和 Annotation",
+      "目标": ".agents/skills/figma/references/08_核心事实组件Prototype与状态细则.md",
+      "下一标题": null,
+      "SHA256": "2b8aa518d238d582f9a66e64244ad581a9555cc578095d30ae025859c218abbf",
+      "字节数": 2093
+    },
+    {
+      "章节": 13,
+      "标题": "# 13. Design-to-Code / 实现交付",
+      "目标": ".agents/skills/figma/references/09_DesignToCode与BaselineReady细则.md",
+      "下一标题": "# 14. Baseline Ready 硬门禁",
+      "SHA256": "ceefc7b61bcac519a96a1cfa1148869681b13b43eca7e997a260ef18ac97eb0c",
+      "字节数": 2282
+    },
+    {
+      "章节": 14,
+      "标题": "# 14. Baseline Ready 硬门禁",
+      "目标": ".agents/skills/figma/references/09_DesignToCode与BaselineReady细则.md",
+      "下一标题": null,
+      "SHA256": "3bcfbf820a8bfc9a1c1d72fda43436c646f9b7b1d7f9919310a17797b49fb1ec",
+      "字节数": 2342
+    },
+    {
+      "章节": 15,
+      "标题": "# 15. Findings",
+      "目标": ".agents/skills/figma/references/10_Findings修复输出与禁止事项.md",
+      "下一标题": "# 16. review-and-fix 原则",
+      "SHA256": "2f6c7daeb4792b89c97c1dc56d236f143099150700348296a955882531564004",
+      "字节数": 644
+    },
+    {
+      "章节": 16,
+      "标题": "# 16. review-and-fix 原则",
+      "目标": ".agents/skills/figma/references/10_Findings修复输出与禁止事项.md",
+      "下一标题": "# 17. 正式输出",
+      "SHA256": "af3e60d40baab467b009e4d188c43b75d11b1964356e34242125454a4bab0589",
+      "字节数": 1245
+    },
+    {
+      "章节": 17,
+      "标题": "# 17. 正式输出",
+      "目标": ".agents/skills/figma/references/10_Findings修复输出与禁止事项.md",
+      "下一标题": "# 18. 常见禁止事项",
+      "SHA256": "63046dd8a7599b6238a18f615c30e2c00fa03838123d8b8f808523ffa280e77a",
+      "字节数": 1995
+    },
+    {
+      "章节": 18,
+      "标题": "# 18. 常见禁止事项",
+      "目标": ".agents/skills/figma/references/10_Findings修复输出与禁止事项.md",
+      "下一标题": null,
+      "SHA256": "b40061a92ceab30cbecfe51132c10d025c36bd6d9fbf6d5fd8f50e85f7ed155e",
+      "字节数": 1893
+    }
+  ]
+}

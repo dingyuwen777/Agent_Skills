@@ -22,11 +22,13 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         return path.read_text(encoding="utf-8")
 
     def test_formal_figma_skill_keeps_complete_reference_structure(self) -> None:
-        """正式 Figma Skill 保留主文件、元数据和 00–07 references，不依赖 README。"""
+        """正式 Figma Skill 保留主文件、元数据和 00–10 references，不依赖 README。"""
         expected = {
             "00_通用适用性与项目形态.md", "01_事实源与审查流程.md", "02_业务能力与真实系统映射.md",
             "03_设计系统与组件复用审计.md", "04_Prototype状态与交互审计.md", "05_Design-to-Code交付门禁.md",
             "06_Findings与修复优先级.md", "07_页面布局与真实可用性审计.md",
+            "08_核心事实组件Prototype与状态细则.md", "09_DesignToCode与BaselineReady细则.md",
+            "10_Findings修复输出与禁止事项.md",
         }
         self.assertTrue((FIGMA_ROOT / "SKILL.md").is_file())
         self.assertFalse((FIGMA_ROOT / "README.md").exists())
