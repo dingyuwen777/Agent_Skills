@@ -105,6 +105,10 @@ CASES = [
     _case("Project Payload", {"执行模式": ["实现"], "风险": ["L3"], "工具链": ["已确认"], "范围": ["Runtime", "Project Payload"], "意图": ["Project Payload"]}, RUNTIME_CORE, ["coding"], "L3"),
     _case("Skill Mutation", {"执行模式": ["实现"], "风险": ["L2"], "意图": ["Skill Mutation"]}, GATED_L2_CORE + ["coding.reference.11", "coding.reference.16"], ["coding"], "L2"),
     _case("Agent Outcome Eval", {"执行模式": ["验证"], "风险": ["L2"], "意图": ["Agent Outcome Eval"]}, LIGHT_L2_CORE + ["coding.reference.32"], ["coding"], "L2"),
+    _case("General Analysis", {"风险": ["L1"], "意图": ["通用分析"]}, ["analysis.reference.01", "analysis.reference.04"], ["analysis"], "L1", forbidden_references=["coding.reference.02", "research.reference.01"]),
+    _case("First-principles Analysis", {"风险": ["L1"], "意图": ["第一性原理分析"]}, ["analysis.reference.01", "analysis.reference.02"], ["analysis"], "L1", forbidden_references=["coding.reference.02", "research.reference.01"]),
+    _case("Current Research", {"风险": ["L1"], "意图": ["外部研究"]}, ["research.reference.01", "research.reference.02", "research.reference.03", "research.reference.04"], ["research"], "L1", forbidden_references=["coding.reference.02", "analysis.reference.01"]),
+    _case("Research + Analysis", {"风险": ["L1"], "意图": ["外部研究", "方案分析"]}, ["analysis.reference.01", "analysis.reference.03", "research.reference.01", "research.reference.02", "research.reference.03", "research.reference.04"], ["analysis", "research"], "L1", forbidden_references=["coding.reference.02"]),
     _case("Security / Permission", {"执行模式": ["方案"], "风险": ["L3"], "意图": ["安全与权限"], "授权": ["允许只读"]}, GATED_L2_CORE + ["coding.reference.03", "coding.reference.11", "coding.reference.15"], ["coding"], "L3"),
     _case("CLI package manifest 不推断 Browser/PostgreSQL", {"执行模式": ["只读分析"], "项目形态": ["CLI"], "风险": ["L1"], "工具链": ["JavaScript"]}, ["coding.reference.02", "coding.reference.03"], ["coding"], "L1", forbidden_references=["coding.reference.08", "coding.reference.17", "coding.reference.19", "coding.reference.21", "figma.reference.00"]),
     _case("Backend Python 不推断 FastAPI/PostgreSQL", {"执行模式": ["只读分析"], "项目形态": ["后端服务"], "风险": ["L1"], "工具链": ["Python"]}, ["coding.reference.02", "coding.reference.03", "coding.reference.07", "coding.reference.08"], ["coding"], "L1", forbidden_references=["coding.reference.17", "coding.reference.19", "coding.reference.21", "figma.reference.00"]),
@@ -155,7 +159,8 @@ class RoutingConformanceTest(unittest.TestCase):
             "Docs not_applicable", "Docs targeted", "Docs full", "Review-only", "Review-and-test",
             "Review-and-fix", "Multi-Agent", "Multiple Active Changes", "Dependency Upgrade", "CI Workflow Change",
             "Git Delivery", "PR Ready", "Release", "Runtime Install", "Runtime Upgrade", "Runtime Bundle",
-            "Project Payload", "Skill Mutation", "Agent Outcome Eval", "Security / Permission", "Unknown facts", "复杂多条件叠加",
+            "Project Payload", "Skill Mutation", "Agent Outcome Eval", "General Analysis", "First-principles Analysis",
+            "Current Research", "Research + Analysis", "Security / Permission", "Unknown facts", "复杂多条件叠加",
         }
         self.assertTrue(mandatory.issubset(names), mandatory - names)
 

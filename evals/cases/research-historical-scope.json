@@ -1,0 +1,18 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "research-historical-scope",
+  "任务族": "外部研究",
+  "任务说明": "用户限定历史截止时间，只用当时可得信息形成当时结论。",
+  "必需结果": [
+    "historical-cutoff-respected",
+    "later-facts-separated"
+  ],
+  "必需证据": [
+    "historical-source-date"
+  ],
+  "禁止违规": [
+    "latest-overrides-history",
+    "hindsight-leak"
+  ],
+  "上限": {}
+}

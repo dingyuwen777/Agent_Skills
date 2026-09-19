@@ -180,7 +180,7 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
             payload = json.loads(path.read_text(encoding="utf-8"))
             validate_case(payload)
             cases.append(payload)
-        self.assertGreaterEqual(len(cases), 7)
+        self.assertGreaterEqual(len(cases), 13)
         families = {str(item["任务族"]) for item in cases}
         self.assertTrue(
             {
@@ -190,6 +190,8 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
                 "方案/长任务",
                 "Figma/Design-to-Code",
                 "Git Delivery",
+                "通用分析",
+                "外部研究",
                 "负例",
             }.issubset(families)
         )

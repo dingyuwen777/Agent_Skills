@@ -79,6 +79,14 @@ class RouteContextBudgetTest(unittest.TestCase):
                 },
                 195_000,
             ),
+            "general-analysis": (
+                {"风险": ["L1"], "意图": ["通用分析"]},
+                55_000,
+            ),
+            "external-research": (
+                {"风险": ["L1"], "意图": ["外部研究"]},
+                75_000,
+            ),
             "docs-targeted": (
                 {
                     "执行模式": ["实现"],

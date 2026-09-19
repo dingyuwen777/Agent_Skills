@@ -33,7 +33,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 ## 2. 正式 Skill Catalog
 
-正式 Skill 从 `.agents/skills/*/SKILL.md` 动态发现；下表只作导航，**不是分发白名单**。
+正式 Skill 按 `.agents/skills/*/SKILL.md` 动态发现；下表仅导航，**不是分发白名单**。
 
 | Skill | 职责 | 入口 |
 | --- | --- | --- |
@@ -44,13 +44,13 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 | `docs` | 文档 | [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md) |
 | `figma` | 设计 | [`.agents/skills/figma/SKILL.md`](../figma/SKILL.md) |
 
-Runtime/Project Payload/manifest/测试/Release 也动态发现；Review 判充分性，测试方法归 Testing。
+Runtime/Project Payload/Release 也动态发现；Review 判充分性，Testing 管测试。
 
 ## 3. Owner-gated 固定入口
 
 1. 恢复最少充分事实；
 2. 按任务对象/专业意图选 Owner；其余维度只细化已命中 Owner；
-3. 实现/调试/TDD/CI/Git/Release → Coding；测试策略/功能/黑盒/Journey/探索式/Regression/独立验证 → Testing；源码/PR/diff 审查 → Coding + Review；Figma → Figma；技术文档 → Docs。共享 `审查/验证`、`能力=测试/Figma/Git` 不制造无关 Owner；
+3. 第一性原理/因果/方案 → Analysis；外部最新/核验 → Research；研发/Git/CI/Release → Coding；黑盒/Journey/Regression → Testing；代码/PR 审查 → Coding + Review；Figma → Figma；文档 → Docs。Research 可组合 Analysis/Coding/Figma；共享字样/能力不制造 Owner；
 4. 仅在已命中 Owner 内匹配 Reference；显式 dependency 可跨 Skill；
 5. 命中 Reference 必须在执行前取得**完整原文**；
 6. 不机械读全部 Skills/References。

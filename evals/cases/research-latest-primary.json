@@ -1,0 +1,21 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "research-latest-primary",
+  "任务族": "外部研究",
+  "任务说明": "回答会变化的当前事实，取得最新适用资料并追到一手 source owner。",
+  "必需结果": [
+    "current-scope",
+    "primary-source-priority",
+    "date-version-scope",
+    "stop-rule"
+  ],
+  "必需证据": [
+    "source-citations"
+  ],
+  "禁止违规": [
+    "stale-as-current",
+    "snippet-as-source",
+    "fabricated-citation"
+  ],
+  "上限": {}
+}
