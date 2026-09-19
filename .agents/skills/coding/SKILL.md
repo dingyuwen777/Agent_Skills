@@ -150,7 +150,7 @@ CMakeLists.txt ≠ Linux-only
 | Runtime Bundle/Routing Manifest/Task Route/MCP/Project Payload/安装升级或 Release identity | [13_本地MCP_Runtime分发与原文上下文加载.md](references/13_本地MCP_Runtime分发与原文上下文加载.md) |
 | Git/PR/Release/Delivery、依赖变化、安全边界、最终交付报告或宿主能力降级 | [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md) |
 | Skill/reference/模板/项目 Overlay 的精简、重组、拆分、合并、改名、迁移或通用化 | [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md) |
-| Skill Mutation 的跨模型效果复核，或显式 Agent 效果评测 / 模型升级非回归 | [31_跨模型一致性与Agent效果评测.md](references/31_跨模型一致性与Agent效果评测.md) |
+| Agent 效果评测 | [31_跨模型一致性与Agent效果评测.md](references/31_跨模型一致性与Agent效果评测.md) |
 
 不要要求用户重复提供能够从仓库、缓存或工具确认的信息。只读取当前任务真正需要的事实和 reference，不用“全仓全部读一遍”替代理解调用链。
 
