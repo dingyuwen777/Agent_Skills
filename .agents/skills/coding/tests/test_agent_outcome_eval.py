@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import unittest
 
+from runtime.agent_skills_runtime.routing import ROUTE_DIMENSIONS
+
 
 ROOT = Path(__file__).resolve().parents[4]
 EVAL_ROOT = ROOT / ".agents" / "evals"
@@ -86,6 +88,12 @@ class AgentOutcomeEvalTest(unittest.TestCase):
         serialized = json.dumps(self.cases_raw, ensure_ascii=False).casefold()
         for model_brand in ("gpt-5", "gpt-6", "deepseek", "glm"):
             self.assertNotIn(model_brand, serialized)
+
+    def test_model_identity_is_not_a_task_route_dimension(self) -> None:
+        """模型/Provider 只能作为 Eval 标签，不能进入 canonical Router 形成治理分叉。"""
+        self.assertNotIn("模型", ROUTE_DIMENSIONS)
+        self.assertNotIn("Provider", ROUTE_DIMENSIONS)
+        self.assertNotIn("model", {item.casefold() for item in ROUTE_DIMENSIONS})
 
     def test_fixture_runs_score_but_never_claim_verified_compatibility(self) -> None:
         """确定性 fixture 可验证 grader，但真实模型运行=false 时兼容性必须保持 unverified。"""
