@@ -62,6 +62,9 @@ Runtime / Package
 
 profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required checks、PR/main/Release 归当前项目 CI Owner。维护本仓时依 [`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md) 与当前 Workflow/classifier，不复制 scope 列表；targeted-first 不绕过 required check，不授权无关昂贵验证。
 
+行为性 Mutation 追加 `意图=Agent效果评测` 后重路由。
+
+
 ## 1. 规则完整性维护
 
 后续如果要再次“精简”“拆分”“合并”本 Skill：

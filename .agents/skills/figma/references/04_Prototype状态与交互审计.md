@@ -1,5 +1,5 @@
 <!-- agent-routing:v1
-{"协议":"Agent Skills Reference路由/v1","标识":"figma.reference.04","触发":{"包含":{"维度":"意图","取值":["Prototype 审计","Figma baseline-ready"]}},"依赖":["figma.reference.01"]}
+{"协议":"Agent Skills Reference路由/v1","标识":"figma.reference.04","触发":{"包含":{"维度":"意图","取值":["Prototype 审计","Figma review-only","Figma review-and-fix","Figma baseline-ready","设计转代码"]}},"依赖":["figma.reference.01"]}
 -->
 
 # Figma Prototype 状态与交互审计

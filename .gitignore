@@ -30,3 +30,7 @@ desktop.ini
 
 # Agent local disposable cache
 .agents/project-context.json
+
+# Agent Outcome Eval real run/report artifacts
+.agents/evals/runs/
+.agents/evals/reports/

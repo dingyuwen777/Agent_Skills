@@ -203,17 +203,22 @@ agent_skills_load_required_context
 agent_skills_checkpoint
 ```
 
-当前 MCP Tool Contract 为 v3，公共路由 Contract 为 v2。工具调用顺序保持兼容，但公共返回面收窄为完成宿主协作所需的最少信息：
+当前 MCP Tool Contract 为 v3，公共路由 Contract 为 v2。工具名称仍恰好六个；Task State 通过现有 `start_task` / `checkpoint` 的**可选参数**扩展，不新增第七 Tool：
 
-- `status` 只返回 Release 版本、当前任务/约束是否建立和是否加载完成，以及用户可见进度边界；不公开 Skill Catalog、Reference 身份、source/routing/payload digest 或内部计数；
+- `status` 只返回 Release 版本、当前任务/结构化任务状态/约束是否建立和是否加载完成，以及用户可见进度边界；不返回 Task State 正文，不公开 Skill Catalog、Reference 身份、source/routing/payload digest 或内部计数；
 - `route_contract` 继续提供宿主构造中文 Task Route 所需的维度/词汇，但不公开 Skill Catalog 或 Reference mapping；
+- `start_task` 默认建立最小 `Agent Skills 任务状态/v1`，也可接收宿主显式保存的合法 Task State 进行恢复；无论是否恢复状态，都生成新的 task nonce/generation 并清空旧 route/required/loaded capability；
 - `submit_route` 仍由唯一 evaluator 在 Runtime 内部计算并单调扩展 required Context，但只返回不透明 route capability、是否还需加载约束和是否仍存在未确认任务事实，不公开命中 Skill、Reference 数量或内部风险结果；capability 内部绑定当前 process/session、task、route digest、累积 required-set digest 与 generation，新一轮 submit、切换 task 或伪造 token 均使旧凭据失败关闭；
 - `load_required_context` 只接受当前 route capability，默认只返回尚未加载的 required 完整原文；每个公开 context envelope 只含 `完整原文`，不附带 Stable ID、Skill、文件名、路径、SHA256、字节数或 locator，也不接受任意 ID/filename/path/Catalog/glob/dump 参数；
-- `checkpoint` 只返回当前阶段和是否通过，不公开 required/loaded 集合详情。
+- `checkpoint` 判断 required Context 是否已经完整加载，并可原子更新/回读结构化 Task State；它不公开 required/loaded 集合详情。
+
+Task State 固定保存目标、成功标准、已确认决定、已完成切片+Evidence、当前前沿、阻塞项、失败假设、未验证风险、下一步和非目标。当前边界为：文本单项最多 2000 字符、列表最多 64 项、规范化 JSON 最多 32768 bytes；未知字段、超限状态和没有 Evidence 的“已完成切片”失败关闭。
+
+Runtime **不持久化 Task State sidecar**。宿主需要跨上下文或 Runtime 进程恢复时，保存 checkpoint 返回对象并在新的 start_task 显式提交；恢复后旧 route token 仍然无效，必须基于当前项目事实重新 submit/load。Task State 中的“允许发布”“已完成”“测试通过”等文字只是一段用户/Agent 摘要，不产生授权、Requirement satisfied、Review/CI Green、merge/release/deploy 权限或完成事实。
 
 事实充分、`未知项=[]` 的 Task Route 继续使用原有二值 fixed-point 语义。存在未知维度时，Runtime evaluator 使用 TRUE/FALSE/UNKNOWN 三值逻辑：UNKNOWN 只保守扩大真正依赖该未知维度的候选 Context，再展开依赖与风险 fixed-point；不得因为任一未知事实直接把全库设为 required。如果仅由未知事实把候选扩大到 full corpus，而事实充分部分本身并不需要全库，则 fail closed 并要求宿主先恢复更多当前项目事实。
 
-这些变化只收窄**公共 envelope 与不充分事实的过宽导出路径**，不改变事实充分任务的 canonical 路由语义、加密 Bundle 内部 provenance、hash/size、依赖图、风险下限或 canonical exact-text。`checkpoint` 仍不能替代 Requirement Traceability、Completion Audit、Review、Docs Impact 或真实测试。Task Route 的授权字段只是数据，不能产生 Git、发布或部署权限。
+这些变化只收窄**公共 envelope 与不充分事实的过宽导出路径**，不改变事实充分任务的 canonical 路由语义、加密 Bundle 内部 provenance、hash/size、依赖图、风险下限或 canonical exact-text。`checkpoint` 的通过仍只表示 required Context 已加载，不能替代 Requirement Traceability、Completion Audit、Review、Docs Impact 或真实测试。Task Route 的授权字段和 Task State 都只是数据，不能产生 Git、发布或部署权限。
 
 内部 `__install-state --json` 不是第七个 MCP Tool，也不加入普通 CLI help；它只服务后续 Runtime 安装器恢复 previous ownership。Runtime 给宿主的每个关键 MCP 返回仍携带同一 project-facing 用户进度规则：允许说明真实工程活动及其原因，并在约束不可可靠取得时阻止依赖动作和完成结论。内部组织、routing 和加载身份继续只用于执行，不需要在这段公共规则里枚举或解释。
 

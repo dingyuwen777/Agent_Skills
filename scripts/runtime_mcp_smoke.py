@@ -31,10 +31,10 @@ EXPECTED_TOOLS = {
 EXPECTED_PROPERTIES = {
     "agent_skills_status": set(),
     "agent_skills_route_contract": set(),
-    "agent_skills_start_task": {"任务标识", "阶段"},
+    "agent_skills_start_task": {"任务标识", "阶段", "任务状态"},
     "agent_skills_submit_route": {"任务标识", "任务路由"},
     "agent_skills_load_required_context": {"路由令牌", "重新加载"},
-    "agent_skills_checkpoint": {"路由令牌", "阶段"},
+    "agent_skills_checkpoint": {"路由令牌", "阶段", "任务状态"},
 }
 
 
@@ -235,6 +235,11 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
             )
         )
         _assert_progress_rule(started, "MCP start_task")
+        task_state = started.get("任务状态")
+        if not isinstance(task_state, dict) or task_state.get("协议") != "Agent Skills 任务状态/v1":
+            raise RuntimeError("MCP start_task 未返回合法结构化任务状态")
+        if task_state.get("目标") != "runtime-smoke":
+            raise RuntimeError("MCP start_task 默认任务状态目标与 task 不一致")
         submitted = _structured_result(
             await client.call_tool(
                 "agent_skills_submit_route",
@@ -290,15 +295,27 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
             "stale capability",
         )
 
+        updated_state = dict(task_state)
+        updated_state["成功标准"] = ["required Context 已完整加载"]
+        updated_state["已完成切片"] = [
+            {"切片": "Runtime MCP smoke", "证据": ["required Context exact-text matched"]}
+        ]
+        updated_state["下一步"] = ["执行后续交付门禁"]
         checkpoint = _structured_result(
             await client.call_tool(
                 "agent_skills_checkpoint",
-                {"路由令牌": new_token, "阶段": "完成前检查"},
+                {
+                    "路由令牌": new_token,
+                    "阶段": "完成前检查",
+                    "任务状态": updated_state,
+                },
             )
         )
         _assert_progress_rule(checkpoint, "MCP checkpoint")
         if checkpoint.get("通过") is not True:
             raise RuntimeError("MCP checkpoint 未识别已经加载的 required Context")
+        if checkpoint.get("任务状态") != updated_state:
+            raise RuntimeError("MCP checkpoint 未原样回读已验证的结构化任务状态")
         for forbidden in ("最低风险", "缺失上下文数量", "已加载上下文数量"):
             if forbidden in checkpoint:
                 raise RuntimeError(f"MCP checkpoint 泄露内部状态：{forbidden}")

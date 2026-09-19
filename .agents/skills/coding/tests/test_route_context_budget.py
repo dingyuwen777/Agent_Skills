@@ -95,6 +95,15 @@ class RouteContextBudgetTest(unittest.TestCase):
                 },
                 275_000,
             ),
+            "figma-review-only": (
+                {
+                    "执行模式": ["审查"],
+                    "风险": ["L2"],
+                    "意图": ["Figma review-only"],
+                    "能力": ["Figma"],
+                },
+                100_000,
+            ),
             "figma-baseline-ready": (
                 {
                     "执行模式": ["方案"],
@@ -102,7 +111,7 @@ class RouteContextBudgetTest(unittest.TestCase):
                     "意图": ["Figma baseline-ready"],
                     "能力": ["Figma"],
                 },
-                340_000,
+                145_000,
             ),
         }
         full_corpus = self._full_governance_bytes()

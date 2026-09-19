@@ -108,6 +108,40 @@ Source / Runtime 是治理规则的取得方式，不是 Git 执行能力。实�
 
 源码与二进制严格比较必须绑定同一 source revision、任务事实和环境。旧安装不会因为 canonical `main` 更新而自动热更新；需要严格复现时，应使用 Runtime identity 对应的 Release tag / source commit。
 
+### 跨模型一致性与 Agent Outcome Eval
+
+GPT、DeepSeek、GLM 或其他模型可以使用不同内部推理和工具选择，但 **模型名称不是 Task Route 维度**。同一项目事实、风险、授权和 Requested Outcome 必须使用同一 canonical Skill/Reference、Evidence、Review、CI 和 Completion Contract；宿主真实能力差异继续由现有能力/工具链/授权事实处理，不为模型品牌复制第二套规则。
+
+仓库维护 model-neutral Outcome Eval：
+
+```text
+.agents/evals/
+├── agent_outcome_eval.py
+├── cases.json
+└── fixtures/sample_runs.jsonl
+```
+
+deterministic fixture 只验证 evaluator/grader，本身**不能**证明任何真实模型兼容。只有 model + host 对当前全部兼容必测 case 都有真实运行、相同评分门槛通过且没有阻塞禁止项时，报告才允许标记 `verified`；否则保持 `unverified`。
+
+维护者可执行：
+
+```bash
+python .agents/evals/agent_outcome_eval.py validate-cases --cases .agents/evals/cases.json
+python .agents/evals/agent_outcome_eval.py compare \
+  --cases .agents/evals/cases.json \
+  --runs <真实或fixture JSONL>
+```
+
+真实运行的 trace/run/report 默认不提交 Git，仓库只维护 schema、case、deterministic fixture、grader 与永久回归。无法取得的 token/cost/time 等指标必须写 `unavailable`，不得猜测。
+
+规则维护还区分 `invariant / policy / heuristic / technique`：模型升级只能在同一 Outcome Eval 证明非回归后调整 heuristic/technique；权限、安全、Contract、Fresh Evidence、required gate 等 invariant，以及维护者明确 policy，不能因为“模型更强”静默降低。
+
+### 长任务连续性
+
+Runtime 保持现有六个 MCP Tool，但 `start_task` / `checkpoint` 支持结构化 **Agent Skills 任务状态/v1** round-trip。状态只保存目标、成功标准、已确认决定、已完成切片及 Evidence、Current Frontier、Blockers、失败假设、未验证风险、下一步和非目标。宿主可在上下文压缩或 Runtime 重建后保存并显式恢复这份摘要；恢复后仍必须重新 route/load，旧 capability、权限和完成结论不会随状态恢复。
+
+当前版本明确**不采用 SEP-2640 Compatibility**，也**不包含通用 Research/Analysis Skill**；后者属于未来独立需求，不在本次工程治理能力中提前占位。
+
 ## 5. AI 与维护入口职责
 
 ### 根入口

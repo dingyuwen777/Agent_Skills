@@ -135,6 +135,25 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
                 self.assertTrue(selected.compile_required)
                 self.assertTrue(selected.cli_smoke_required)
 
+    def test_agent_eval_assets_use_targeted_content_evidence_without_runtime_package(self) -> None:
+        """Eval case/grader 变化只运行统一 Eval/路由回归，不因目录未知机械触发三平台 package。"""
+        for path in (
+            ".agents/evals/agent_outcome_eval.py",
+            ".agents/evals/cases.json",
+            ".agents/evals/fixtures/sample_runs.jsonl",
+        ):
+            with self.subTest(path=path):
+                selected = _selection(path)
+                self.assertEqual(selected.runtime_scope, "content")
+                self.assertEqual(selected.semantic_profile, "content_targeted")
+                self.assertEqual(set(selected.semantic_groups), {"agent_eval"})
+                self.assertIn("test_agent_outcome_eval.py", selected.test_files)
+                self.assertIn("test_routing_conformance.py", selected.test_files)
+                self.assertTrue(selected.runtime_dependencies_required)
+                self.assertFalse(selected.compile_required)
+                self.assertFalse(selected.cli_smoke_required)
+                self.assertFalse(selected.full_required)
+
     def test_change_carrier_alone_uses_change_only_without_semantic_tests(self) -> None:
         selected = _selection(".agents/changes/active/CHG-example/CHANGE.md")
         self.assertEqual(selected.runtime_scope, "change_only")
