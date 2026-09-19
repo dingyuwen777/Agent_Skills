@@ -86,7 +86,18 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         design_to_code = route("设计转代码", "实现")
         complete = {f"figma.reference.0{index}" for index in range(8)}
         self.assertTrue(complete.issubset(baseline))
-        self.assertTrue(complete.issubset(design_to_code))
+        self.assertTrue(
+            {
+                "figma.reference.00",
+                "figma.reference.01",
+                "figma.reference.02",
+                "figma.reference.03",
+                "figma.reference.04",
+                "figma.reference.05",
+            }.issubset(design_to_code)
+        )
+        self.assertNotIn("figma.reference.06", design_to_code)
+        self.assertNotIn("figma.reference.07", design_to_code)
 
     def test_moved_core_domains_remain_in_specialist_references(self) -> None:
         """从旧 Core 移出的布局、组件、Prototype、状态、Ready、Findings 与输出细则仍由唯一 Owner 完整承载。"""
