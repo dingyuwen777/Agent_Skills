@@ -75,6 +75,19 @@ profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required c
 7. 项目特定规则迁回项目 Overlay 前，先证明已有新的正式承载；
 8. 完成后从旧入口反向检查每条高价值规则是否仍可达，并执行与本次 Evidence Profile 匹配的 portability / preservation 回归与人工内容守恒 Review。
 
+### 1.1 Rule Effectiveness Gate
+
+Skill Mutation 不能把“规则更多”当成效果更好。每条新增、强化、拆分或拟删除规则先按真实职责归类：
+
+- **invariant**：正确性、安全、权限、Contract、数据、Evidence、完成门禁等无论模型能力如何都不能降低的硬约束；
+- **policy**：维护者/团队明确要求长期执行的工程政策；只有 Owner 改变政策时才能修改，不能因模型更强自行删除；
+- **heuristic**：用于补偿常见模型失败模式的经验规则；新增或强化时优先绑定真实失败、Review Finding 或 Outcome Eval case，模型升级后可以用同一 Eval 证明后再条件化、降级或删除；
+- **technique**：Architecture、调试、分析、测试等可选方法；只有当前问题边界真实需要时按需加载，不升级为所有任务的固定流水线。
+
+**不能因模型更强**就静默削弱 invariant / policy，也不能因为某个较弱模型需要额外提示就复制一套模型专属 canonical Skill。跨模型差异进入真实 Outcome Eval / Trace；同一任务仍执行同一工程 Contract。没有真实 Eval 时，对 heuristic 的“已经不需要”只能作为待验证假设，不能直接删规则。
+
+规则迁移/精简若改变 heuristic/technique 的加载条件，必须同时检查代表性正例和“不应加载”的负例；只有 Outcome、路由和内容守恒证据共同支持，才允许把上下文减少描述为有效优化。
+
 ## 2. 允许移动，不允许语义降级
 
 主 `SKILL.md` 迁入 reference 时还必须：

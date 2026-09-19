@@ -52,6 +52,8 @@ _CONTENT_EXACT_PATHS = {
 _CHANGE_ONLY_PREFIX = ".agents/changes/"
 _TEST_PREFIX = ".agents/skills/coding/tests/"
 _ISSUE_TEMPLATE_PREFIX = ".github/ISSUE_TEMPLATE/"
+_EVAL_PREFIX = "evals/"
+_OUTCOME_EVAL_SCRIPT = "scripts/agent_outcome_eval.py"
 
 _CI_SELF_TESTS = {
     "test_archive_ci_runtime_lifecycle.py",
@@ -124,6 +126,10 @@ _GROUP_TEST_FILES: dict[str, tuple[str, ...]] = {
         "test_review_skill.py",
         "test_review_test_adequacy_owner_reachability.py",
     ),
+    "outcome_eval": (
+        "test_agent_outcome_eval.py",
+        "test_cross_model_consistency.py",
+    ),
     "ci_self": tuple(sorted(_CI_SELF_TESTS)),
 }
 
@@ -187,6 +193,11 @@ class _SelectionBuilder:
 
         if normalized.startswith("runtime/") and normalized != "runtime/README.md":
             self.require_full(package=True)
+            return
+
+        if normalized == _OUTCOME_EVAL_SCRIPT or normalized.startswith(_EVAL_PREFIX):
+            self.promote_scope("content")
+            self.add_groups("outcome_eval")
             return
 
         if normalized.startswith("scripts/"):

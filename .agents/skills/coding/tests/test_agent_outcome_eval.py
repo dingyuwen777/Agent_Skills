@@ -112,6 +112,22 @@ class AgentOutcomeEvalTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.module.validate_run(broken, self.suite)
 
+    def test_eval_paths_use_content_evidence_without_forcing_runtime_package(self) -> None:
+        """Eval 资产自身只触发 Outcome Eval 语义组，不机械构建三平台 Runtime。"""
+        selector_path = ROOT / ".github/scripts/runtime_package_scope.py"
+        spec = importlib.util.spec_from_file_location("runtime_package_scope_for_eval", selector_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        selector = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(selector)
+        for path in ("scripts/agent_outcome_eval.py", "evals/cases/core.json"):
+            with self.subTest(path=path):
+                selection = selector.select_evidence([path])
+                self.assertEqual(selection.runtime_scope, "content")
+                self.assertIn("outcome_eval", selection.semantic_groups)
+                self.assertFalse(selection.full_required)
+                self.assertIn("test_agent_outcome_eval.py", selection.test_files)
+
     def test_compare_reports_divergence_without_selecting_a_winner(self) -> None:
         """比较器只报告相同 case 的结果差异，不按模型品牌做 winner/ranking。"""
         case = self.suite["用例"][0]

@@ -85,6 +85,12 @@ Agent_Skills 规定“怎样可靠工作”；目标项目规定“这个项目�
 
 这些事实只能来自目标项目当前 `AGENTS.md`、CONTRIBUTING、README、Spec/ADR、Design Guide/System、Manifest/lock、Contract/Schema/Migration、代码、测试、CI 和当前正式 Figma。
 
+### 跨模型一致性与真实效果证据
+
+Agent_Skills 的 canonical 工程语义不得按 GPT、DeepSeek、GLM 或其他模型品牌复制多套版本。**模型身份不是治理路由维度**；不同模型使用**同一工程契约**、同一项目事实、权限、Evidence 与 Completion Gate。模型能力差异只允许表现为调查/工具/迭代成本差异和 Outcome Eval 结果差异。
+
+声称“某模型兼容/效果一致”必须有该模型在当前 Outcome Eval Contract 下的真实运行产物；**未实际运行**一律保持 `unverified`。fixture、静态单元测试、其他模型结果和模型厂商能力描述都不能替代对应模型的真实 Outcome Evidence。
+
 ## 4. 源码保密与正式分发边界
 
 如果完整 `SKILL.md` / canonical `references/*.md` 只允许维护者查看，**仓库访问控制必须由 GitHub Private Repository 保证**。Runtime 加密不是源仓库权限替代品。

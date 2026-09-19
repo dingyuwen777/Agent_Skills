@@ -30,6 +30,16 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - **Requested Outcome = Completion Scope**：**能力存在不等于继续追求更远阶段**。只读审查/测试/Mutation Audit 止于结论；提 PR→`允许开发并提交PR`（PR Ready）；合并主分支→`允许端到端交付`；审查后合并→`允许审查后交付`。先按真实命令归一化再路由，commit/push、引述或否定不升级授权；完整范围与收尾归[交付规则](../coding/references/23_端到端交付与合并后收尾.md)。
 - **Task-owned Cleanup**：Completion Scope 结束前删除本任务创建且无后续用途的临时/scratch/debug 产物；保留预存在/用户所有/仍作证据、交付物或输入的内容。未改变交付状态/运行输入时，不使既有 Green Evidence 失效。
 
+### 1.2 跨模型一致性 Contract
+
+**模型身份不是治理路由维度。** GPT、DeepSeek、GLM 或其他模型可以采用不同推理策略、工具调用次数和内部工作方式，但相同的项目事实、Task Route、授权和 Requested Outcome 必须进入**同一工程契约**：同一 canonical Skill/Reference、风险下限、权限边界、Evidence 与 Completion Gate。
+
+- 更强模型不能因为“已经会了”跳过 invariant、项目事实、权限或 required Evidence；
+- 较弱模型可以增加调查、实验或自检，但不能降低 Contract、把猜测升级成事实，或要求项目维护另一套模型专属规则；
+- 宿主缺少必要工具/权限/上下文时按 blocker 传播，不把模型品牌当 fallback 路由；
+- 模型/宿主名称只可作为**真实 Outcome Eval**、Tracing 或运行环境元数据；不得新增“GPT 专用 / DeepSeek 专用 / GLM 专用” canonical 治理分支；
+- 某模型只有在对应任务套件上存在真实运行 Evidence 时才能描述为已验证兼容；**未实际运行**只能标记 `unverified`，不能用静态规则或其他模型结果代替。
+
 ## 2. 正式 Skill Catalog
 
 正式 Skill 从 `.agents/skills/*/SKILL.md` 动态发现；下表只作导航，**不是分发白名单**。

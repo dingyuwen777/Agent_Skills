@@ -139,9 +139,17 @@ def create_mcp_server():
         return _load_embedded_store().route_contract()
 
     @mcp.tool()
-    def agent_skills_start_task(任务标识: str, 阶段: str = "规划") -> dict[str, Any]:
-        """开始或显式重置当前任务，并清空此前任务的内部状态。"""
-        return _load_embedded_store().start_task(任务标识, 阶段)
+    def agent_skills_start_task(
+        任务标识: str,
+        阶段: str = "规划",
+        恢复状态: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """开始或显式重置当前任务，并可恢复宿主显式携带的长任务状态。"""
+        return _load_embedded_store().start_task(
+            任务标识,
+            阶段,
+            resume_state=恢复状态,
+        )
 
     @mcp.tool()
     def agent_skills_submit_route(任务标识: str, 任务路由: dict[str, Any]) -> dict[str, Any]:
@@ -154,9 +162,17 @@ def create_mcp_server():
         return _load_embedded_store().load_required_context(路由令牌, reload=重新加载)
 
     @mcp.tool()
-    def agent_skills_checkpoint(路由令牌: str, 阶段: str | None = None) -> dict[str, Any]:
-        """检查当前任务所需规则是否已经完整取得，并可更新当前工程阶段。"""
-        return _load_embedded_store().checkpoint(路由令牌, 阶段)
+    def agent_skills_checkpoint(
+        路由令牌: str,
+        阶段: str | None = None,
+        任务状态: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """检查规则加载状态，并可更新/回读不产生权限的显式任务状态。"""
+        return _load_embedded_store().checkpoint(
+            路由令牌,
+            阶段,
+            task_state=任务状态,
+        )
 
     return mcp
 

@@ -102,6 +102,7 @@ CMakeLists.txt ≠ Linux-only
 17. **系统级分析先于局部实现，但不扩大修改范围。** 恢复任务相关能力边界后再决定局部修复、复用或抽象；相邻技术债不自动入 Scope。详见 [21_系统级分析与代码整洁收口.md](references/21_系统级分析与代码整洁收口.md)。
 18. **受影响代码域必须整洁收口，但只清本次直接责任。** 清理本次直接新增、修改或因此失效的实现；旧技术债默认只记录 Finding。详见 [21_系统级分析与代码整洁收口.md](references/21_系统级分析与代码整洁收口.md)。
 19. **Skill Mutation 先做 Mutation 目标解析。** 只改 canonical Owner；本地安装副本不得成为替代 Skill；Audit/Proposal 与 Apply 分开；局部 blocker 只阻塞依赖动作，required canonical Source/门禁不可得时按依赖边界**失败关闭**。详见 [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md)。
+20. **不同模型使用同一工程契约。** 模型强弱不改变当前项目事实、public Contract、L1/L2/L3、权限、Validation Matrix 或完成标准；模型可以用不同推理路径，但只有当前 revision 的直接 Evidence 支持的结论才能交付。模型品牌不写入项目治理分支，真实兼容效果由 Outcome Eval/实际任务证据证明。
 
 ### 1.1 自主执行、澄清和阻塞边界
 
