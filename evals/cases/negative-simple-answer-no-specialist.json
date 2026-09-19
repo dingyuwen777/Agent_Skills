@@ -1,0 +1,15 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "negative-simple-answer-no-specialist",
+  "任务族": "负例",
+  "任务说明": "简单明确问题应直接回答，不机械触发研究或复杂分析。",
+  "必需结果": [
+    "direct-simple-answer"
+  ],
+  "必需证据": [],
+  "禁止违规": [
+    "unnecessary-research",
+    "unnecessary-framework"
+  ],
+  "上限": {}
+}

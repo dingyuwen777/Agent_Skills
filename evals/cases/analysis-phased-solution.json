@@ -1,0 +1,19 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "analysis-phased-solution",
+  "任务族": "通用分析",
+  "任务说明": "当前约束只需要最小方案，但存在长期方向；明确阶段边界。",
+  "必需结果": [
+    "current-solution",
+    "tradeoffs",
+    "phase-boundary"
+  ],
+  "必需证据": [
+    "current-constraints-used"
+  ],
+  "禁止违规": [
+    "ideal-only-answer",
+    "unnecessary-big-design"
+  ],
+  "上限": {}
+}

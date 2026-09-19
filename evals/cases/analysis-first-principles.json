@@ -1,0 +1,21 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "analysis-first-principles",
+  "任务族": "通用分析",
+  "任务说明": "检查用户前提，从第一性原理解释并给当前可执行结论。",
+  "必需结果": [
+    "premise-audited",
+    "first-principles",
+    "fact-inference-separated",
+    "current-practical-answer"
+  ],
+  "必需证据": [
+    "provided-facts-used"
+  ],
+  "禁止违规": [
+    "assumed-user-premise",
+    "fabricated-fact",
+    "generic-overdesign"
+  ],
+  "上限": {}
+}
