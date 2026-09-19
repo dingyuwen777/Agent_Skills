@@ -36,6 +36,9 @@ class ManagedBootstrapProjectFacingTest(unittest.TestCase):
             "首次接入",
             "完整性无法确认",
             "本区块由安装/升级流程维护",
+            "上下文压缩",
+            "已完成切片及证据",
+            "该状态不产生权限",
         ):
             self.assertIn(required, managed)
 

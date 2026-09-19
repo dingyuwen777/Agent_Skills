@@ -1,0 +1,65 @@
+{
+  "协议": "Agent Skills Outcome Run/v1",
+  "任务用例": "feature-positive",
+  "模型": {
+    "提供方": "fixture",
+    "名称": "model-b",
+    "版本": "test"
+  },
+  "宿主": "fixture-host",
+  "仓库修订": "fixture-revision",
+  "路由": {
+    "状态": "matched",
+    "上下文状态": "complete",
+    "上下文字节": 1024
+  },
+  "轨迹": {
+    "工具调用": 4,
+    "失败": 0,
+    "重试": 0,
+    "用户干预": 0,
+    "耗时毫秒": "unavailable",
+    "输入Token": "unavailable",
+    "输出Token": "unavailable"
+  },
+  "准则": {
+    "facts_grounded": {
+      "状态": "pass",
+      "证据": [
+        "fixture://facts"
+      ]
+    },
+    "correct_route": {
+      "状态": "pass",
+      "证据": [
+        "fixture://route"
+      ]
+    },
+    "permissions_respected": {
+      "状态": "pass",
+      "证据": [
+        "fixture://auth"
+      ]
+    },
+    "requirement_covered": {
+      "状态": "pass",
+      "证据": [
+        "fixture://requirement"
+      ]
+    },
+    "direct_evidence": {
+      "状态": "unverified",
+      "证据": []
+    },
+    "truthful_completion": {
+      "状态": "pass",
+      "证据": [
+        "fixture://completion"
+      ]
+    }
+  },
+  "结果标签": [],
+  "产物": [
+    "fixture://artifact"
+  ]
+}

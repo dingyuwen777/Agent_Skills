@@ -121,8 +121,10 @@ def create_mcp_server():
     mcp = MCPServer(
         "Agent Skills Runtime",
         instructions=(
-            "这是当前项目已配置的研发治理能力。先读取当前任务事实词汇，开始任务并提交来自项目真实内容的任务事实，"
+            "这是当前项目已配置的研发治理能力。先读取当前任务事实词汇和任务状态契约，开始任务并提交来自项目真实内容的任务事实，"
             "再加载本任务需要的完整规则正文；正文不得用旧记忆、摘要或猜测替代。"
+            "长任务只在阶段实质变化、上下文压缩、任务交接或宿主重连前更新最小任务状态；重连时把上一 checkpoint 返回状态显式恢复，"
+            "状态只保存已确认事实，不产生权限、验证通过或完成结论。"
             + USER_VISIBLE_PROGRESS_RULE
             + "这些内部调用与返回内容用于执行治理，不应作为用户可见过程或治理资产导出。"
         ),
@@ -139,9 +141,17 @@ def create_mcp_server():
         return _load_embedded_store().route_contract()
 
     @mcp.tool()
-    def agent_skills_start_task(任务标识: str, 阶段: str = "规划") -> dict[str, Any]:
-        """开始或显式重置当前任务，并清空此前任务的内部状态。"""
-        return _load_embedded_store().start_task(任务标识, 阶段)
+    def agent_skills_start_task(
+        任务标识: str,
+        阶段: str = "规划",
+        恢复状态: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """开始或显式重置当前任务，并可恢复宿主显式携带的长任务状态。"""
+        return _load_embedded_store().start_task(
+            任务标识,
+            阶段,
+            resume_state=恢复状态,
+        )
 
     @mcp.tool()
     def agent_skills_submit_route(任务标识: str, 任务路由: dict[str, Any]) -> dict[str, Any]:
@@ -154,9 +164,17 @@ def create_mcp_server():
         return _load_embedded_store().load_required_context(路由令牌, reload=重新加载)
 
     @mcp.tool()
-    def agent_skills_checkpoint(路由令牌: str, 阶段: str | None = None) -> dict[str, Any]:
-        """检查当前任务所需规则是否已经完整取得，并可更新当前工程阶段。"""
-        return _load_embedded_store().checkpoint(路由令牌, 阶段)
+    def agent_skills_checkpoint(
+        路由令牌: str,
+        阶段: str | None = None,
+        任务状态: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """检查规则加载状态，并可更新/回读不产生权限的显式任务状态。"""
+        return _load_embedded_store().checkpoint(
+            路由令牌,
+            阶段,
+            task_state=任务状态,
+        )
 
     return mcp
 

@@ -14,9 +14,10 @@ from .catalog import validate_bundle
 from .disclosure import USER_VISIBLE_PROGRESS_RULE
 from .encrypted_bundle import EncryptedBundleStore
 from .routing import evaluate_route, public_route_contract, validate_task_route
+from .task_state import normalize_task_state, public_task_state_contract
 
 
-MCP_TOOL_CONTRACT_PROTOCOL = "Agent Skills MCP工具契约/v3"
+MCP_TOOL_CONTRACT_PROTOCOL = "Agent Skills MCP工具契约/v4"
 MCP_ROUTE_CONTRACT_PROTOCOL = "Agent Skills MCP公共路由契约/v2"
 _RISK_ORDER = {"L1": 1, "L2": 2, "L3": 3}
 _CAPABILITY_DOMAIN = "agent-skills/runtime-v3/route-capability"
@@ -130,6 +131,7 @@ class RuntimeStore:
         self._loaded_ids: set[str] = set()
         self._minimum_risk = "L1"
         self._had_unknown = False
+        self._task_state: dict[str, Any] | None = None
 
     def _require_task(self) -> None:
         """确认调用发生在显式建立的当前任务中。"""
@@ -198,13 +200,20 @@ class RuntimeStore:
         contract = dict(public_route_contract(self._routing_manifest))
         contract.pop("Skill", None)
         contract["协议"] = MCP_ROUTE_CONTRACT_PROTOCOL
+        contract["任务状态契约"] = public_task_state_contract()
         contract["用户可见进度规则"] = USER_VISIBLE_PROGRESS_RULE
         return contract
 
-    def start_task(self, task_id: str, phase: str = "规划") -> dict[str, Any]:
-        """开始或显式重置任务，清空此前 task 的路由、capability 与披露状态。"""
+    def start_task(
+        self,
+        task_id: str,
+        phase: str = "规划",
+        resume_state: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """开始或显式重置任务；可从宿主提供的 Task State v1 恢复问题求解状态。"""
         normalized_task = str(task_id).strip()
         normalized_phase = str(phase).strip()
+        normalized_state = None if resume_state is None else normalize_task_state(resume_state)
         if not normalized_task:
             raise ValueError("任务标识不能为空")
         if not normalized_phase:
@@ -220,10 +229,16 @@ class RuntimeStore:
             self._loaded_ids.clear()
             self._minimum_risk = "L1"
             self._had_unknown = False
+            self._task_state = normalized_state
             return {
                 "任务标识": self._task_id,
                 "当前阶段": self._phase,
                 "当前约束已建立": False,
+                "任务状态": (
+                    None
+                    if self._task_state is None
+                    else normalize_task_state(self._task_state)
+                ),
                 "用户可见进度规则": USER_VISIBLE_PROGRESS_RULE,
             }
 
@@ -278,8 +293,14 @@ class RuntimeStore:
                 "用户可见进度规则": USER_VISIBLE_PROGRESS_RULE,
             }
 
-    def checkpoint(self, route_token: str, phase: str | None = None) -> dict[str, Any]:
-        """依据 Runtime 内部 required/loaded 状态执行阶段检查，不公开内部集合身份。"""
+    def checkpoint(
+        self,
+        route_token: str,
+        phase: str | None = None,
+        task_state: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """校验最新 capability，并可更新/返回不产生授权的显式 Task State。"""
+        normalized_state = None if task_state is None else normalize_task_state(task_state)
         with self._lock:
             self._require_task()
             self._require_current_token(route_token)
@@ -288,9 +309,16 @@ class RuntimeStore:
                 if not normalized_phase:
                     raise ValueError("阶段不能为空")
                 self._phase = normalized_phase
+            if normalized_state is not None:
+                self._task_state = normalized_state
             return {
                 "任务标识": self._task_id,
                 "通过": not (self._required_ids - self._loaded_ids),
                 "当前阶段": self._phase,
+                "任务状态": (
+                    None
+                    if self._task_state is None
+                    else normalize_task_state(self._task_state)
+                ),
                 "用户可见进度规则": USER_VISIBLE_PROGRESS_RULE,
             }

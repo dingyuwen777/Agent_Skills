@@ -30,6 +30,8 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - **Requested Outcome = Completion Scope**：**能力存在不等于继续追求更远阶段**。只读审查/测试/Mutation Audit 止于结论；提 PR→`允许开发并提交PR`（PR Ready）；合并主分支→`允许端到端交付`；审查后合并→`允许审查后交付`。先按真实命令归一化再路由，commit/push、引述或否定不升级授权；完整范围与收尾归[交付规则](../coding/references/23_端到端交付与合并后收尾.md)。
 - **Task-owned Cleanup**：Completion Scope 结束前删除本任务创建且无后续用途的临时/scratch/debug 产物；保留预存在/用户所有/仍作证据、交付物或输入的内容。未改变交付状态/运行输入时，不使既有 Green Evidence 失效。
 
+- **跨模型一致性**：模型身份不是治理路由维度；同一事实/授权/Requested Outcome → **同一工程契约**。模型/宿主名仅用于**真实 Outcome Eval**/Trace；**未实际运行**=`unverified`，不得降低门禁或分叉 canonical。
+
 ## 2. 正式 Skill Catalog
 
 正式 Skill 从 `.agents/skills/*/SKILL.md` 动态发现；下表只作导航，**不是分发白名单**。

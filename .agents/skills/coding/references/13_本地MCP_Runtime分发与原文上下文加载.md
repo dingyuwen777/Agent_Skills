@@ -273,7 +273,7 @@ Local Hardened Runtime v3 使用 HKDF-SHA256 + AES-256-GCM authenticated encrypt
 
 不能据此宣称：本机管理员无法恢复 key/root material、内存永远没有明文、投影 Core 不可查看、Hook/MCP traffic observation/反编译无法取得合法解密后的 Context，或 Prompt/managed block 是机密安全边界。canonical 源码访问控制必须由 **Private Repository 权限**承担。
 
-## 11. MCP Tool Contract v3 与用户可见披露
+## 11. MCP Tool Contract v4 与用户可见披露
 
 本地 Runtime 使用 stdio MCP。稳定公开 Tool 必须恰好为：
 
@@ -302,6 +302,8 @@ agent_skills_checkpoint
 
 显式开始/重置 task，清空此前 route/required/loaded 状态并建立新的 task nonce/generation 边界。切换 task 不能靠提交不同 ID 静默发生。
 
+可选 `恢复状态` 使用 `Agent Skills 任务状态/v1`。它只承载宿主已经确认的问题求解状态：目标、成功标准、已确认决定、已完成切片及 Evidence、当前前沿、阻塞项、失败假设、未验证风险、下一步和非目标。状态不能生成授权、路由、风险等级、测试通过或完成事实；未知/缺失字段、非法类型或超出大小上限必须 fail closed。Runtime 不为 Task State 新增磁盘 sidecar；跨压缩/重连由宿主把上一 checkpoint 回读状态显式传回 start_task。
+
 ### `agent_skills_submit_route`
 
 Runtime 校验当前 task 和 Task Route，用唯一 evaluator 求值并单调扩展 required Context。公共响应只返回 task、不透明 `路由令牌`、是否需加载约束、是否仍有未确认任务事实和用户可见进度规则。
@@ -322,7 +324,9 @@ Runtime 校验当前 task 和 Task Route，用唯一 evaluator 求值并单调�
 
 ### `agent_skills_checkpoint`
 
-只根据内部 required/loaded 状态返回 task、是否通过、当前阶段和用户可见进度规则。它不能替代 Requirement Traceability、Completion Audit、Review、Docs、测试或 CI。
+仍先根据当前 route capability 与内部 required/loaded 状态判断 task 是否通过；可选 `任务状态` 经过 Task State v1 validator 后更新，并在响应中回读当前规范化状态。没有状态时保持现有无状态调用方式。
+
+Task State 不影响 required Context 集合，也不能产生 Git/发布/部署权限或把未满足门禁改成通过。checkpoint 不能替代 Requirement Traceability、Completion Audit、Review、Docs、测试或 CI。
 
 ### `self-test`
 

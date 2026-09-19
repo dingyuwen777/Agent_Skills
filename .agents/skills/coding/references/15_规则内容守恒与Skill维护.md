@@ -75,7 +75,11 @@ profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required c
 7. 项目特定规则迁回项目 Overlay 前，先证明已有新的正式承载；
 8. 完成后从旧入口反向检查每条高价值规则是否仍可达，并执行与本次 Evidence Profile 匹配的 portability / preservation 回归与人工内容守恒 Review。
 
-## 2. 允许移动，不允许语义降级
+### 1.1 Rule Effectiveness Gate
+
+**invariant / policy** 不能因模型更强降低；**heuristic** 的新增/强化/退役必须有失败、Finding 或 **Outcome Eval**，无真实 Eval 时只能待验证；**technique** 只按真实问题加载。禁止模型专属 canonical Skill；加载条件变化保留正/负例、内容守恒与路由证据。
+
+## 2. 允许移动，不允许语义降级## 2. 允许移动，不允许语义降级
 
 主 `SKILL.md` 迁入 reference 时还必须：
 
