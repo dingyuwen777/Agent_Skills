@@ -189,6 +189,8 @@ def validate_run(run: Any, cases: Mapping[str, Mapping[str, Any]]) -> dict[str, 
     revision = run["源码Revision"]
     if revision != UNAVAILABLE:
         _nonempty_text(revision, "Run 源码Revision")
+    elif run["真实模型运行"] is True:
+        raise OutcomeEvalError("真实模型运行必须绑定可追溯的源码Revision")
 
     route = run["任务路由"]
     if route != UNAVAILABLE and not isinstance(route, Mapping):
@@ -289,6 +291,7 @@ def grade_run(run: Mapping[str, Any], cases: Mapping[str, Mapping[str, Any]]) ->
         "用例": normalized["用例"],
         "模型": normalized["模型"],
         "宿主": normalized["宿主"],
+        "源码Revision": normalized["源码Revision"],
         "真实模型运行": normalized["真实模型运行"],
         "分数": score,
         "通过": passed,
@@ -304,14 +307,18 @@ def compare_runs(runs: Sequence[Mapping[str, Any]], cases: Mapping[str, Mapping[
     if not runs:
         raise OutcomeEvalError("compare 至少需要一条 run")
     required_cases = {case_id for case_id, case in cases.items() if bool(case["兼容必测"])}
-    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
     for run in runs:
         report = grade_run(run, cases)
-        key = (str(report["模型"]), str(report["宿主"]))
+        key = (
+            str(report["模型"]),
+            str(report["宿主"]),
+            str(report["源码Revision"]),
+        )
         grouped.setdefault(key, []).append(report)
 
     summaries: list[dict[str, Any]] = []
-    for (model, host), reports in sorted(grouped.items()):
+    for (model, host, revision), reports in sorted(grouped.items()):
         real_reports = [report for report in reports if report["真实模型运行"] is True]
         real_passed_cases = {str(report["用例"]) for report in real_reports if report["通过"] is True}
         real_failed_cases = sorted({str(report["用例"]) for report in real_reports if report["通过"] is False})
@@ -322,6 +329,7 @@ def compare_runs(runs: Sequence[Mapping[str, Any]], cases: Mapping[str, Mapping[
             {
                 "模型": model,
                 "宿主": host,
+                "源码Revision": revision,
                 "兼容性状态": compatibility,
                 "真实运行数": len(real_reports),
                 "全部运行数": len(reports),
