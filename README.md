@@ -307,7 +307,7 @@ Agent_Skills 不为 GPT、DeepSeek、GLM 或其他模型维护不同的工程规
 维护规则：
 
 - 模型身份不进入 Router 维度；
-- 没有真实 run artifact 的模型只能标记 `unverified`，不能因为模型更强或同系列就宣称已验证；
+- `actual` run 才能形成真实模型验证证据；`fixture` 只用于验证 case/grader/compare 机器契约，即使评分通过也不能把模型标记为 `verified`；没有真实 run artifact 的模型只能标记 `unverified`；
 - Token、耗时、Context bytes 等取不到时写 `unavailable`，不得估算后冒充遥测；
 - Provider Secret、用户数据、私有工具负载不为 Eval 强制提交仓库；
 - Rule Effectiveness Gate 把规则区分为 `invariant / policy / heuristic / technique`：invariant/policy 不能因模型升级静默降低；heuristic/technique 可以在真实 Outcome Eval 支持下条件化、降级或删除。
