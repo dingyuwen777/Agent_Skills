@@ -137,7 +137,7 @@ UI / 产品语义
 → 数据或动作的真实 Owner
 → 当前 Contract / SDK / generated client / Store / Runtime 入口
 → 默认值 / 可见选项 / 保存资格
-→ Loading / Empty / Error / Permission
+→ Normal / Loading / Empty / Error / Disabled / Permission
 → 时间语义（适用时）
 ```
 
