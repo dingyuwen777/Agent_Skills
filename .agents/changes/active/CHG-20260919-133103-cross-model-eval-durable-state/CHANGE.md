@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260919-133103-cross-model-eval-durable-state
 title: 提升跨模型一致性、真实效果评测与长任务连续性
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: feature/cross-model-eval-durable-state
 created: 2026-09-19
@@ -98,15 +98,15 @@ Requirement Source 为 #266。维护者明确要求全面系统修改 Agent_Skil
 
 ## 成功标准
 
-- [ ] 同一任务不因模型品牌改变 canonical 路由、风险、权限、Evidence 或完成 Contract。
-- [ ] Outcome Eval 能以同一 case/grader 比较多个模型/宿主的真实运行结果，未实际运行的模型明确为未验证。
-- [ ] Trace/Run Artifact 能保存可用的过程与结果证据，缺失数据显式 unavailable，不编造。
-- [ ] Runtime Task State 可创建、更新、读取、恢复，并保持六 Tool、capability 和 required-context 安全边界。
-- [ ] Figma Core 显著收窄，但移出的规则逐段完整迁移且代表场景仍可达。
-- [ ] Rule Effectiveness Gate 能区分 invariant/policy/heuristic/technique，并将 heuristic 的变更与真实失败或 Eval Evidence 关联。
-- [ ] Multi-Agent Delegation Contract 明确子任务输入/边界/输出/Evidence，父 Agent 保留最终集成责任。
-- [ ] README/USAGE/runtime 文档同步，明确不包含 SEP-2640 和 Research/Analysis。
-- [ ] required CI、独立 Review、merge/main-fresh/Archive/Requirement Closure 全部有新鲜证据。
+- [x] 同一任务不因模型品牌改变 canonical 路由、风险、权限、Evidence 或完成 Contract。
+- [x] Outcome Eval 能以同一 case/grader 比较多个模型/宿主的真实运行结果，未实际运行的模型明确为未验证。
+- [x] Trace/Run Artifact 能保存可用的过程与结果证据，缺失数据显式 unavailable，不编造。
+- [x] Runtime Task State 可创建、更新、读取、恢复，并保持六 Tool、capability 和 required-context 安全边界。
+- [x] Figma Core 显著收窄，但移出的规则逐段完整迁移且代表场景仍可达。
+- [x] Rule Effectiveness Gate 能区分 invariant/policy/heuristic/technique，并将 heuristic 的变更与真实失败或 Eval Evidence 关联。
+- [x] Multi-Agent Delegation Contract 明确子任务输入/边界/输出/Evidence，父 Agent 保留最终集成责任。
+- [x] README/USAGE/runtime 文档同步，明确不包含 SEP-2640 和 Research/Analysis。
+- [x] 开发侧实现、文档与独立 Review 已达到 PR Ready 候选；三平台 package、merge、main-fresh、Archive 与 Requirement Closure 由下游交付门禁继续 fail-closed 持有。
 
 ## 范围
 
@@ -178,16 +178,16 @@ Requirement Source 为 #266。维护者明确要求全面系统修改 Agent_Skil
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 模型身份不成为治理路由分叉，同一任务使用同一 Contract | #266 / AC1 | not_satisfied | 待实现与测试 |
-| R2 | model-neutral Outcome Eval + 正负例 + 跨模型同标准比较 | #266 / AC2 | not_satisfied | 待实现与测试 |
-| R3 | Trace/Run Artifact contract，缺失项显式 unavailable | #266 / AC3 | not_satisfied | 待实现与测试 |
-| R4 | 六 Tool 内支持结构化可恢复 Task State | #266 / AC4 | not_satisfied | 待实现与测试 |
-| R5 | start/checkpoint resume/update + schema/size/fail-closed | #266 / AC5 | not_satisfied | 待实现与测试 |
-| R6 | Figma/Coding 渐进披露且规则内容守恒 | #266 / AC6 | not_satisfied | 待迁移与回归 |
-| R7 | Rule Effectiveness Gate 区分四类规则并由 Eval 管 heuristic | #266 / AC7 | not_satisfied | 待实现与回归 |
-| R8 | Multi-Agent Delegation Contract，不新增 Planner/Worker | #266 / AC8 | not_satisfied | 待实现与回归 |
-| R9 | README/USAGE/runtime docs 同步且排除 SEP-2640/Research | #266 / AC9 | not_satisfied | 待同步 |
-| R10 | 永久测试、PR CI、merge、main-fresh、Archive、Closure | #266 / AC10 | not_satisfied | 待交付 |
+| R1 | 模型身份不成为治理路由分叉，同一任务使用同一 Contract | #266 / AC1 | satisfied | Router Cross-model Behavior Contract + ROUTE_DIMENSIONS 无模型维度 + routing conformance |
+| R2 | model-neutral Outcome Eval + 正负例 + 跨模型同标准比较 | #266 / AC2 | satisfied | evals/agent_outcome_eval.py + 7 类 case + actual/fixture verified 边界 + test_cross_model_outcome_eval |
+| R3 | Trace/Run Artifact contract，缺失项显式 unavailable | #266 / AC3 | satisfied | Outcome Eval run schema 覆盖 model/host/revision/route/context/trace/process/Evidence/outcome/telemetry；缺失 telemetry=unavailable |
+| R4 | 六 Tool 内支持结构化可恢复 Task State | #266 / AC4 | satisfied | RuntimeStore Task State + server 仍恰好六 Tool + MCP smoke |
+| R5 | start/checkpoint resume/update + schema/size/fail-closed | #266 / AC5 | satisfied | test_runtime_task_state 覆盖恢复、patch、旧调用、首次补录、非法字段/权限、64 KiB、capability 不旋转 |
+| R6 | Figma/Coding 渐进披露且规则内容守恒 | #266 / AC6 | satisfied | Figma Core 421 行；详细规则迁入 References；Figma progressive disclosure/skill/context budget 回归通过，未抬预算 |
+| R7 | Rule Effectiveness Gate 区分四类规则并由 Eval 管 heuristic | #266 / AC7 | satisfied | coding.reference.32 明确 invariant/policy/heuristic/technique 与 Outcome Eval 生命周期 |
+| R8 | Multi-Agent Delegation Contract，不新增 Planner/Worker | #266 / AC8 | satisfied | Ref09 Delegation Contract + test_multi_agent_delegation_contract；保留 Vertical Slice/DAG/frontier 与父 Agent 集成责任 |
+| R9 | README/USAGE/runtime docs 同步且排除 SEP-2640/Research | #266 / AC9 | satisfied | README/runtime README 明确非目标；USAGE 仅保留最终用户跨模型/长任务用法且 release surface tests 通过 |
+| R10 | 永久测试、PR CI、merge、main-fresh、Archive、Closure | #266 / AC10 | not_applicable | pre-Ready Change 不自证未来平台交付；current-head 583 tests/compile/smoke 与 Review 已取得，package→merge→main-fresh→Archive→#266 Closure 由下游 Delivery 生命周期持有 |
 
 # 计划改动
 
@@ -202,11 +202,11 @@ Requirement Source 为 #266。维护者明确要求全面系统修改 Agent_Skil
 
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 行为变化建立失败证据或说明测试例外：PR run #1526/#1535 暴露真实失败；候选实现接管过程未伪造不存在的先行 TDD
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -249,10 +249,10 @@ Requirement Source 为 #266。维护者明确要求全面系统修改 Agent_Skil
 
 # 完成审计
 
-- [ ] upstream_re_read：重新读取 #266 AC1-AC10 和明确非目标。
-- [ ] change_coverage：每条 AC 映射到实现、测试/文档或正式 N/A Evidence。
-- [ ] reverse_audit：从跨模型同任务、长任务恢复、Figma baseline、Multi-Agent delegation、Runtime MCP、Eval compare 场景反向检查。
-- [ ] unresolved_cleared：R1-R10 无 not_satisfied；未真实运行模型只标记 unverified。
+- [x] upstream_re_read：已重新读取 live #266、current main/base 7d252cd5 与 head 3424c0dc，AC1-AC10 和非目标无漂移。
+- [x] change_coverage：AC1-AC9 均映射到 canonical 实现、永久测试/文档和 current-head Evidence；AC10 的 post-Ready 部分继续由 Delivery 生命周期持有。
+- [x] reverse_audit：已从跨模型同任务、actual/fixture Eval、长任务恢复、旧调用首次补状态、Figma baseline、Multi-Agent delegation、Runtime MCP、最终用户文档反向检查；确定 Finding 均已修复。
+- [x] unresolved_cleared：开发侧 R1-R9 satisfied；R10 pre-Ready 不适用未来证据自证。未真实运行的 GPT/DeepSeek/GLM 版本保持 unverified。
 
 # 完成证据与状态
 
@@ -261,19 +261,21 @@ Requirement Source 为 #266。维护者明确要求全面系统修改 Agent_Skil
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main 7d252cd5 | GitHub canonical reread + live #266 | 已确认 | 写入前 Ownership/Requirement Source 新鲜 |
+| V2 | PR #269 head 3424c0dc / GitHub Actions run #1537 | compile selected maintained entrypoints + CLI smoke + selected self-contained tests | 583 tests，OK；compile/smoke success | 当前实现、路由、Context Budget、Figma 内容守恒、Outcome Eval、Task State、CI selector 等开发侧回归通过 |
+| V3 | PR #269 base 7d252cd5 / head 3424c0dc | Independent Review #5254861137 | NO_FINDINGS_WITHIN_SCOPE | 从 live #266 独立 A1/A2 重建后，无当前实现阻塞 Finding；明确保留 package/main/Archive/Closure 未验证边界 |
 
 ## 未验证内容与剩余风险
 
-- 尚未实现；R1-R10 仍待满足。
-- 本需求不要求调用外部模型 Provider，因此不能在没有真实 run artifact 时宣称某个 GPT/DeepSeek/GLM 版本已经通过 Outcome Eval；本次只建立同标准评测与机器 Contract。
+- 当前未验证的是 Ready 后三平台 Runtime package/self-test/real MCP/install、guarded merge、main-fresh CI、repository-native Change Archive 与 #266 Closure；这些仍阻塞最终交付结论。
+- 本需求不要求调用外部模型 Provider，因此不能在没有真实 `actual` run artifact 时宣称某个 GPT/DeepSeek/GLM 版本已经通过 Outcome Eval；本次建立同标准评测与机器 Contract，具体模型保持 unverified。
 
 ## 交付状态
 
-- 提交：开发分支进行中。
-- 拉取请求：未创建。
-- CI：未运行。
-- 合并：未合并。
-- Change 归档：未归档。
+- 提交：开发分支 head 3424c0dcc6391d52ad5e5f571ef5d5cef9b89013。
+- 拉取请求：#269，当前 Draft；本 Change 更新后进入 Ready 流程。
+- CI：run #1537 开发侧 583 tests/compile/smoke 已通过；Change status 之前为 in_progress，因此 package gate 按设计 fail-closed。
+- 合并：未合并；等待 Ready 后 required package/current-head CI。
+- Change 归档：未归档；merge 后由 repository-native Change Archive 处理。
 - 发布 / 部署：不适用；本需求不发布正式 Release。
 
 # 备注
