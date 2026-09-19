@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260919-151144-general-analysis-research-skills
 title: 增加通用 Analysis 与 Research Skills
 level: L3
-status: proposed
+status: in_progress
 owner: dingyuwen777
 branch: feature/general-analysis-research-skills
 created: 2026-09-19
@@ -208,11 +208,11 @@ data_changes: none
 
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
-| V1 | 待填写 | 待填写 | 待填写 | 待填写 |
+| V1 | PR head 290809c40dd1fe7a9a183a8503856794a377e4d1 / GitHub Actions | Skill Tests Run #1541：Verify PR Requirement Source | failure：初始 PR body 缺少 Requirement-Source；其余验证 fail-closed 未运行 | 证明仓库需求追溯门禁真实生效；PR body 已按模板修正，需新 head 触发新事件验证 |
 
 ## 未验证内容与剩余风险
 
-尚未实施和验证。
+实现已进入分支；第一轮 CI 仅完成治理入口 Red，功能与 Runtime 验证仍待新 head CI。
 
 ## 交付状态
 
