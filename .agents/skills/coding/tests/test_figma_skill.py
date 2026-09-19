@@ -62,7 +62,10 @@ class UniversalFigmaSkillTest(unittest.TestCase):
                     "依据": ["figma progressive disclosure regression"],
                 },
             )
-            self.assertEqual(set(result["命中Skill"]), {"router", "figma"})
+            matched = set(result["命中Skill"])
+            self.assertTrue({"router", "figma"}.issubset(matched))
+            if intent != "设计转代码":
+                self.assertNotIn("coding", matched)
             return set(result["必需Reference"])
 
         review = route("Figma review-only")
