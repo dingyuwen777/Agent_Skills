@@ -171,6 +171,25 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         )
         self.assertNotIn("coding.reference.31", ordinary["必需Reference"])
 
+    def test_multi_agent_delegation_contract_is_minimal_and_non_escalating(self) -> None:
+        """子 Agent 派发必须显式边界/Evidence，且不能建立 Planner/Worker 第二控制面。"""
+        collaboration = self._read(".agents/skills/coding/references/09_多人和多智能体并行协作.md")
+        router = self._read(".agents/skills/router/SKILL.md")
+        for marker in (
+            "Delegation Contract",
+            "允许读取范围",
+            "允许写入范围",
+            "必须返回的 Evidence",
+            "明确禁止的副作用",
+            "不继承父 Agent 没有的权限",
+            "不等于父任务集成完成",
+            "模型名称不是 Delegation Contract 的业务字段",
+        ):
+            self.assertIn(marker, collaboration)
+        for marker in ("不创建子 Agent", "不维护任务队列/Worker"):
+            self.assertIn(marker, router)
+        self.assertFalse((ROOT / ".agents/skills/planner/SKILL.md").exists())
+
     def test_core_tdd_debugging_and_completion_rules_remain(self) -> None:
         """通用化不得删除 TDD、根因调试、Traceability 和 Completion Audit。"""
         skill = self._read(".agents/skills/coding/SKILL.md")
