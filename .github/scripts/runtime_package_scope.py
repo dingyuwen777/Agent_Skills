@@ -53,7 +53,7 @@ _CHANGE_ONLY_PREFIX = ".agents/changes/"
 _TEST_PREFIX = ".agents/skills/coding/tests/"
 _ISSUE_TEMPLATE_PREFIX = ".github/ISSUE_TEMPLATE/"
 _EVAL_PREFIX = "evals/"
-_OUTCOME_EVAL_SCRIPT = "scripts/agent_outcome_eval.py"
+_OUTCOME_EVAL_SCRIPT = ".agents/skills/coding/scripts/agent_outcome_eval.py"
 
 _CI_SELF_TESTS = {
     "test_archive_ci_runtime_lifecycle.py",

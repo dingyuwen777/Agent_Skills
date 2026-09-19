@@ -32,13 +32,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 ### 1.2 跨模型一致性 Contract
 
-**模型身份不是治理路由维度。** GPT、DeepSeek、GLM 或其他模型可以采用不同推理策略、工具调用次数和内部工作方式，但相同的项目事实、Task Route、授权和 Requested Outcome 必须进入**同一工程契约**：同一 canonical Skill/Reference、风险下限、权限边界、Evidence 与 Completion Gate。
-
-- 更强模型不能因为“已经会了”跳过 invariant、项目事实、权限或 required Evidence；
-- 较弱模型可以增加调查、实验或自检，但不能降低 Contract、把猜测升级成事实，或要求项目维护另一套模型专属规则；
-- 宿主缺少必要工具/权限/上下文时按 blocker 传播，不把模型品牌当 fallback 路由；
-- 模型/宿主名称只可作为**真实 Outcome Eval**、Tracing 或运行环境元数据；不得新增“GPT 专用 / DeepSeek 专用 / GLM 专用” canonical 治理分支；
-- 某模型只有在对应任务套件上存在真实运行 Evidence 时才能描述为已验证兼容；**未实际运行**只能标记 `unverified`，不能用静态规则或其他模型结果代替。
+**模型身份不是治理路由维度。** 不同模型在相同项目事实、Task Route、授权和 Requested Outcome 下必须遵守**同一工程契约**：canonical Context、风险、权限、Evidence 与 Completion Gate 不随模型品牌改变。模型可以增加调查/实验/自检，但不得降低门禁或建立模型专属 canonical 分支；模型/宿主标签只进入**真实 Outcome Eval**、Trace 或运行环境元数据，**未实际运行**的模型只能标记 `unverified`。
 
 ## 2. 正式 Skill Catalog
 

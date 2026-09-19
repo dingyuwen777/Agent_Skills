@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 import unittest
 
 
 ROOT = Path(__file__).resolve().parents[4]
-SCRIPT = ROOT / "scripts" / "agent_outcome_eval.py"
+SCRIPT = ROOT / ".agents" / "skills" / "coding" / "scripts" / "agent_outcome_eval.py"
 SUITE = ROOT / "evals" / "cases" / "core.json"
 
 
@@ -119,8 +120,9 @@ class AgentOutcomeEvalTest(unittest.TestCase):
         self.assertIsNotNone(spec)
         self.assertIsNotNone(spec.loader)
         selector = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = selector
         spec.loader.exec_module(selector)
-        for path in ("scripts/agent_outcome_eval.py", "evals/cases/core.json"):
+        for path in (".agents/skills/coding/scripts/agent_outcome_eval.py", "evals/cases/core.json"):
             with self.subTest(path=path):
                 selection = selector.select_evidence([path])
                 self.assertEqual(selection.runtime_scope, "content")
