@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260919-145000-analysis-research-skills
 title: 增加通用 Analysis / Research Skills 与薄全局 Bootstrap
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: feature/analysis-research-skills
 created: 2026-09-19
