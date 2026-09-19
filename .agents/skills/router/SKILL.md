@@ -31,40 +31,26 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - **Requested Outcome = Completion Scope**：**能力存在不等于继续追求更远阶段**。只读审查/测试/Mutation Audit 止于结论；提 PR→`允许开发并提交PR`（PR Ready）；合并主分支→`允许端到端交付`；审查后合并→`允许审查后交付`。先按真实命令归一化再路由，commit/push、引述或否定不升级授权；完整范围与收尾归[交付规则](../coding/references/23_端到端交付与合并后收尾.md)。
 - **Task-owned Cleanup**：Completion Scope 结束前删除本任务创建且无后续用途的临时/scratch/debug 产物；保留预存在/用户所有/仍作证据、交付物或输入的内容。未改变交付状态/运行输入时，不使既有 Green Evidence 失效。
 
-### 1.2 通用回答契约
-
-所有实质性问题先服从同一最小回答标准，详细方法再由专业 Owner 按需加载：
-
-- **真实问题优先**：直接解决用户真正目标；不讨好、不机械附和，也不默认用户前提正确。与结论相关的事实错误、概念混淆或逻辑跳跃先指出再处理。
-- **证据层级明确**：区分已确认事实、合理推断、建议/判断、暂时无法验证；不得编造事实、数字、日期、人物、引用、接口、命令、执行或验证结果。
-- **第一性原理与现实约束**：先看目标、不可变约束、机制和当前事实，不为显得专业堆术语、框架或设计模式。
-- **当下方案优先**：默认先给解决当前问题的最小充分做法；确有决策价值时再分阶段给后续演进和理想方案，不脱离当前项目/资源给大而全架构。
-- **核验优先于追问**：能从当前材料、项目、工具或可靠来源确认的先自行确认；只有缺失信息会实质改变结论或重大选择时再提请用户决定。
-- **当前外部事实按需研究**：答案依赖最新、外部、会变化、陌生或需引用核验的事实时进入 Research；已有事实上的推理、前提审计、因果、方案和决策进入 Analysis。用户明确历史/离线/限定材料范围时服从该范围。
-- **最小充分停止**：答案和 Evidence 已足够支持当前决定后停止；不为“全面”机械扩展分析、搜索或输出。
-
 ## 2. 正式 Skill Catalog
 
-正式 Skill 从 `.agents/skills/*/SKILL.md` 动态发现；下表只作导航，**不是分发白名单**。
+正式 Skill 按 `.agents/skills/*/SKILL.md` 动态发现；下表仅导航，非白名单。
 
 | Skill | 职责 | 入口 |
 | --- | --- | --- |
 | `router` | 路由 | [`.agents/skills/router/SKILL.md`](SKILL.md) |
-| `analysis` | 通用分析、第一性原理、因果与方案决策 | [`.agents/skills/analysis/SKILL.md`](../analysis/SKILL.md) |
-| `research` | 外部最新资料、事实核验与证据综合 | [`.agents/skills/research/SKILL.md`](../research/SKILL.md) |
 | `coding` | 研发/Git | [`.agents/skills/coding/SKILL.md`](../coding/SKILL.md) |
 | `testing` | 测试 | [`.agents/skills/testing/SKILL.md`](../testing/SKILL.md) |
 | `review` | 审查 | [`.agents/skills/review/SKILL.md`](../review/SKILL.md) |
 | `docs` | 文档 | [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md) |
 | `figma` | 设计 | [`.agents/skills/figma/SKILL.md`](../figma/SKILL.md) |
 
-Runtime/Project Payload/manifest/测试/Release 也动态发现；Review 判充分性，测试方法归 Testing。
+Runtime/Project Payload/Release 也动态发现；Review 判充分性，Testing 管测试。
 
 ## 3. Owner-gated 固定入口
 
 1. 恢复最少充分事实；
 2. 按任务对象/专业意图选 Owner；其余维度只细化已命中 Owner；
-3. 通用问题分析、前提审计、第一性原理、因果/根因、方案/决策和复杂问题拆解 → Analysis；需要外部最新资料、联网检索、事实核验、文献/行业/竞品证据 → Research；实现/调试/TDD/CI/Git/Release → Coding；测试策略/功能/黑盒/Journey/探索式/Regression/独立验证 → Testing；源码/PR/diff 审查 → Coding + Review；Figma → Figma；技术文档 → Docs。Research 可与 Analysis/Coding/Figma 等按真实任务组合；共享 `分析/研究/审查/验证` 字样或能力存在本身不制造无关 Owner；
+3. 第一性原理/因果/方案 → Analysis；外部最新/核验 → Research；研发/Git/CI/Release → Coding；黑盒/Journey/Regression → Testing；代码/PR 审查 → Coding + Review；Figma → Figma；文档 → Docs。Research 可组合 Analysis/Coding/Figma；共享字样/能力不制造 Owner；
 4. 仅在已命中 Owner 内匹配 Reference；显式 dependency 可跨 Skill；
 5. 命中 Reference 必须在执行前取得**完整原文**；
 6. 不机械读全部 Skills/References。
@@ -112,10 +98,6 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 
 | 案例 | 命中原因与叠加 | Source Mode 读取 | Runtime Mode 任务信号 |
 | --- | --- | --- | --- |
-| 通用分析 | 已有事实上的判断 | Analysis | `意图=通用分析；风险=L1` |
-| 第一性原理 / 因果 | 专项推理 | Analysis | `意图=第一性原理分析/因果分析；风险=L1` |
-| 最新资料 / 事实核验 | 外部当前 Evidence | Research | `意图=最新资料/事实核验；风险=L1` |
-| 研究后做方案判断 | Evidence + Decision | Research + Analysis | `意图=外部研究,方案分析；风险=L1` |
 | L1 机械修改 | — | Coding | `执行模式=实现；风险=L1` |
 | L2 Feature | 最小充分任务契约 | Coding | `执行模式=实现；阶段=功能开发；风险=L2` |
 | L3 public API | — | Coding | `执行模式=方案,实现；风险=L3；范围=公共契约,API` |
@@ -150,16 +132,7 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 - 返回：smoke → Coding 验证/Review/Git。
 - 失败关闭：关键事实**无法读取**/验证→阻塞依赖动作，**不得假装**完成。
 
-## 7. Analysis / Research 路由
-
-- 触发 Analysis：通用分析、第一性原理、因果/根因、方案/决策、复杂问题拆解。
-- 触发 Research：最新/外部资料、联网研究、事实核验、资料/文献/行业/竞品研究。
-- 组合：外部 Evidence + 判断 → Research + Analysis；研究当前技术后实施 → Research + Coding；研究外部证据后改设计 → Research + Figma。
-- 不适用：简单明确且无需专项方法的日常短答；出现“分析/研究”普通词语但没有对应专业意图时不机械触发。
-- 必须动作：只加载命中 Owner 与 required References；Research 先取得适用 Evidence，Analysis 再做需要证据的判断。
-- 失败关闭：外部当前事实无法可靠取得时不冒充最新资料；证据不足时降低结论强度，其他不依赖该事实的部分继续。
-
-## 8. Figma 路由
+## 7. Figma 路由
 
 - 触发：Figma 创建/修改/审查/Prototype/基线/Design-to-Code。
 - 必须动作：读 [`.agents/skills/figma/SKILL.md`](../figma/SKILL.md)；review-only 不要求 `READY`，baseline-ready 输出 **READY / READY_WITH_NOTES / NOT_READY**。
@@ -168,7 +141,7 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 - 返回：Review → Findings；Ready 后按需 Coding/Testing/Review。
 - 失败关闭：缺 Figma/required Context→不冒充审查/Ready；其他继续。
 
-## 9. Testing 路由
+## 8. Testing 路由
 
 - 触发：测试意图或独立 Test Gap。
 - 必须动作：读 Testing。
@@ -177,7 +150,7 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 - 返回：生产缺陷 → Coding；回归 → Testing；合并判断 → Review。
 - 失败关闭：缺 Testing Context→不冒充测试证据；其他继续。
 
-## 10. Review 路由
+## 9. Review 路由
 
 - 触发：Code Review/Audit、独立 Review 或项目门禁；Figma/Docs“审查”不自动成为 Code Review。
 - 必须动作：读 [`.agents/skills/review/SKILL.md`](../review/SKILL.md)，独立重建要求并审 Findings/Evidence。
@@ -186,7 +159,7 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 - 返回：Finding → Coding；Regression → Testing；再 re-review。
 - 失败关闭：缺目标/关键事实→不宣称 Review 完成/可合并。
 
-## 11. Docs 路由
+## 10. Docs 路由
 
 - 触发：文档影响或显式文档任务。
 - 必须动作：读 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)，判断 not_applicable/targeted/full。
@@ -195,12 +168,12 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 - 返回：完成回原 Skill；实现缺陷 → Coding。
 - 失败关闭：缺事实→不写推测文档。
 
-## 12. 失败、冲突与权限
+## 11. 失败、冲突与权限
 
 - 必需 Skill/Router/Reference **无法读取**时只阻塞依赖动作，**不得假装**已遵守；
 - 冲突遵守更高优先级/更具体规则；不绕过 CI、**Branch Protection**、PR、Release、Migration、安全门禁；
 - **没有相应授权**时不获得修改、Git、发布、部署权限；不强推、重写共享历史或破坏性清理。
 
-## 13. Router 维护边界
+## 12. Router 维护边界
 
 Router 只拥有发现、Owner-gated 加载和 Handoff；专业细节归各 Owner，不复制回 Router/ENTRY/managed block。
