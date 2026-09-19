@@ -122,6 +122,14 @@ class RuntimeTaskStateTest(unittest.TestCase):
         self.assertEqual(checked["任务状态"]["目标"], "补录当前任务状态")
         self.assertEqual(checked["任务状态"]["下一步"], ["继续实现"])
 
+    def test_state_rejects_oversized_payload(self) -> None:
+        """Task State 总体积超过机器上限时必须失败关闭。"""
+        store = RuntimeStore(self.bundle)
+        oversized = _state()
+        oversized["成功标准"] = [f"AC-{index}-" + ("x" * 900) for index in range(80)]
+        with self.assertRaises(ValueError):
+            store.start_task("state-task", "规划", oversized)
+
     def test_state_does_not_rotate_route_capability(self) -> None:
         """只更新问题求解状态不能偷偷改变 route capability 或 required Context。"""
         store = RuntimeStore(self.bundle)
