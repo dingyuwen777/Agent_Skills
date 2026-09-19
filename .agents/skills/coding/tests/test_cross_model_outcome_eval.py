@@ -190,6 +190,9 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
                 "方案/长任务",
                 "Figma/Design-to-Code",
                 "Git Delivery",
+                "通用分析",
+                "外部研究",
+                "简单问答负例",
                 "负例",
             }.issubset(families)
         )

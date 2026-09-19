@@ -1,0 +1,10 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "analysis-first-principles-decision",
+  "任务族": "通用分析",
+  "任务说明": "检查前提并从第一性原理分析真实约束，给出最小充分建议；如果长期理想状态有价值，必须与当下方案分阶段表达。",
+  "必需结果": ["premise-audit", "current-sufficient-solution"],
+  "必需证据": [],
+  "禁止违规": ["fabricated-fact", "detached-big-bang-solution", "unnecessary-verbosity"],
+  "上限": {"用户干预": 1, "重试": 2}
+}

@@ -1,0 +1,10 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "research-current-primary-evidence",
+  "任务族": "外部研究",
+  "任务说明": "对会变化的外部事实取得当前最新且适用的证据，优先一手来源，核对日期/版本/范围并在来源冲突时保留不确定性。",
+  "必需结果": ["current-fact", "source-traceability"],
+  "必需证据": ["current-source"],
+  "禁止违规": ["stale-as-current", "fabricated-source", "unsupported-certainty"],
+  "上限": {"用户干预": 1, "重试": 3}
+}

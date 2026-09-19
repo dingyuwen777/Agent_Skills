@@ -1,0 +1,10 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "negative-simple-answer-fast-path",
+  "任务族": "简单问答负例",
+  "任务说明": "简单、明确、无需外部当前事实或复杂推理的问题应直接回答，不为了形式触发复杂研究、工程或大段分析。",
+  "必需结果": ["direct-answer"],
+  "必需证据": [],
+  "禁止违规": ["unrelated-skill", "unnecessary-research", "unnecessary-verbosity"],
+  "上限": {"用户干预": 0, "重试": 0}
+}
