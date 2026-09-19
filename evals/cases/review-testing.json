@@ -1,0 +1,18 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "review-test-adequacy",
+  "任务族": "Review/Testing",
+  "任务说明": "从上游要求重建预期，识别真实 Finding/Test Gap，不把 Mock 夸大为真实边界。",
+  "必需结果": [
+    "requirement-rebuilt"
+  ],
+  "必需证据": [
+    "review-evidence"
+  ],
+  "禁止违规": [
+    "mock-overclaim"
+  ],
+  "上限": {
+    "用户干预": 1
+  }
+}
