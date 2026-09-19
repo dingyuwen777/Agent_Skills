@@ -105,6 +105,20 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
                 self.assertFalse(selected.full_required)
                 self.assertNotEqual(selected.test_files, ("*",))
 
+    def test_agent_eval_assets_are_targeted_content_not_runtime_package(self) -> None:
+        """Outcome Eval case/harness 只触发跨模型与路由语义回归，不机械构建三平台 Runtime。"""
+        for path in ("evals/agent_outcome_eval.py", "evals/cases/feature.json"):
+            with self.subTest(path=path):
+                selected = _selection(path)
+                self.assertEqual(selected.runtime_scope, "content")
+                self.assertEqual(selected.semantic_profile, "content_targeted")
+                self.assertEqual(set(selected.semantic_groups), {"agent_eval", "router"})
+                self.assertIn("test_cross_model_outcome_eval.py", selected.test_files)
+                self.assertTrue(selected.runtime_dependencies_required)
+                self.assertFalse(selected.compile_required)
+                self.assertFalse(selected.cli_smoke_required)
+                self.assertFalse(selected.full_required)
+
     def test_coding_router_and_entry_keep_broad_semantic_fail_closed(self) -> None:
         for path in (
             ".agents/skills/ENTRY.md",

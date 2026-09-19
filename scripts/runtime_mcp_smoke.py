@@ -17,6 +17,7 @@ if str(SOURCE_ROOT) not in sys.path:
 
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, evaluate_route
+from runtime.agent_skills_runtime.runtime import TASK_STATE_PROTOCOL
 
 
 EXPECTED_TOOLS = {
@@ -31,10 +32,10 @@ EXPECTED_TOOLS = {
 EXPECTED_PROPERTIES = {
     "agent_skills_status": set(),
     "agent_skills_route_contract": set(),
-    "agent_skills_start_task": {"任务标识", "阶段"},
+    "agent_skills_start_task": {"任务标识", "阶段", "任务状态"},
     "agent_skills_submit_route": {"任务标识", "任务路由"},
     "agent_skills_load_required_context": {"路由令牌", "重新加载"},
-    "agent_skills_checkpoint": {"路由令牌", "阶段"},
+    "agent_skills_checkpoint": {"路由令牌", "阶段", "任务状态更新"},
 }
 
 
@@ -228,13 +229,29 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
         }
         expected_route = evaluate_route(expected_bundle["路由清单"], task_route)
 
+        initial_task_state = {
+            "协议": TASK_STATE_PROTOCOL,
+            "目标": "验证 Runtime MCP Task State",
+            "成功标准": ["required Context 完整加载"],
+            "已确认决定": ["保持六 Tool"],
+            "已完成切片": [],
+            "当前前沿": ["加载 required Context"],
+            "阻塞项": [],
+            "失败假设": [],
+            "未验证风险": ["尚未完成 checkpoint"],
+            "下一步": ["提交 Task Route"],
+            "非目标": ["不新增第七个 Tool"],
+            "最后验证版本": "unavailable",
+        }
         started = _structured_result(
             await client.call_tool(
                 "agent_skills_start_task",
-                {"任务标识": "runtime-smoke", "阶段": "验证"},
+                {"任务标识": "runtime-smoke", "阶段": "验证", "任务状态": initial_task_state},
             )
         )
         _assert_progress_rule(started, "MCP start_task")
+        if started.get("任务状态") != initial_task_state:
+            raise RuntimeError("MCP start_task 未逐字段恢复合法 Task State")
         submitted = _structured_result(
             await client.call_tool(
                 "agent_skills_submit_route",
@@ -293,22 +310,39 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
         checkpoint = _structured_result(
             await client.call_tool(
                 "agent_skills_checkpoint",
-                {"路由令牌": new_token, "阶段": "完成前检查"},
+                {
+                    "路由令牌": new_token,
+                    "阶段": "完成前检查",
+                    "任务状态更新": {
+                        "当前前沿": ["输出恢复状态"],
+                        "未验证风险": [],
+                        "下一步": ["跨 task 恢复验证"],
+                    },
+                },
             )
         )
         _assert_progress_rule(checkpoint, "MCP checkpoint")
         if checkpoint.get("通过") is not True:
             raise RuntimeError("MCP checkpoint 未识别已经加载的 required Context")
+        checkpoint_state = checkpoint.get("任务状态")
+        if not isinstance(checkpoint_state, dict) or checkpoint_state.get("当前前沿") != ["输出恢复状态"]:
+            raise RuntimeError("MCP checkpoint 未返回更新后的 Task State")
         for forbidden in ("最低风险", "缺失上下文数量", "已加载上下文数量"):
             if forbidden in checkpoint:
                 raise RuntimeError(f"MCP checkpoint 泄露内部状态：{forbidden}")
 
-        _structured_result(
+        resumed = _structured_result(
             await client.call_tool(
                 "agent_skills_start_task",
-                {"任务标识": "runtime-smoke-next", "阶段": "验证"},
+                {
+                    "任务标识": "runtime-smoke-next",
+                    "阶段": "验证",
+                    "任务状态": checkpoint_state,
+                },
             )
         )
+        if resumed.get("任务状态") != checkpoint_state:
+            raise RuntimeError("MCP start_task 跨 task 显式恢复 Task State 失败")
         await _expect_tool_failure(
             client,
             "agent_skills_load_required_context",

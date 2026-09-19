@@ -378,6 +378,8 @@ Figma Frame 是设计基准，不自动等于生产固定像素。
 
 # 12. Baseline Ready Checklist
 
+正式状态覆盖必须检查 `Normal / Loading / Empty / Error`；其它状态按真实业务覆盖。不存在某个状态时按当前 Requirement/Contract 给出不适用依据，不能为了画齐四种状态制造系统不存在的行为。
+
 ```text
 [ ] Project Shape / Target User / Task 明确
 [ ] 当前项目事实已重新读取

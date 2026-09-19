@@ -289,6 +289,48 @@ Agent_Skills 默认不承诺不同版本之间的原地升级兼容。切换版�
 
 需要 Source 与 Runtime 严格一致时，Source Mode 必须读取 Runtime identity 对应的 Release tag / source commit；不能把旧 Runtime 与更新后的 `main` 声称为同一版本。
 
+
+
+## 跨模型一致性与 Outcome Eval
+
+Agent_Skills 不为 GPT、DeepSeek、GLM 或其他模型维护不同的工程规则分支。模型能力、上下文长度和内部推理策略可以不同，但同一任务事实必须进入同一 canonical Owner / required Context，并满足同一风险、授权、Evidence、Review、CI 和 Completion Contract。
+
+仓库中的 `evals/` 提供 model-neutral Outcome Eval 机器契约：
+
+```text
+同一个 case
+→ 不同模型 / 宿主产生各自真实 run artifact
+→ 同一个 validator / grader
+→ 比较可观察结果、直接 Evidence、违规、用户干预、重试和可得遥测
+```
+
+维护规则：
+
+- 模型身份不进入 Router 维度；
+- `actual` run 才能形成真实模型验证证据；`fixture` 只用于验证 case/grader/compare 机器契约，即使评分通过也不能把模型标记为 `verified`；没有真实 run artifact 的模型只能标记 `unverified`；
+- Token、耗时、Context bytes 等取不到时写 `unavailable`，不得估算后冒充遥测；
+- Provider Secret、用户数据、私有工具负载不为 Eval 强制提交仓库；
+- Rule Effectiveness Gate 把规则区分为 `invariant / policy / heuristic / technique`：invariant/policy 不能因模型升级静默降低；heuristic/technique 可以在真实 Outcome Eval 支持下条件化、降级或删除。
+
+核心 Eval case 当前覆盖 Feature、Bug、Review/Testing、方案/长任务、Figma/Design-to-Code、Git Delivery 与 should-not-trigger 负例。新增规则优先复用已有 case；只有出现新的独立失败模式才补最小 case。
+
+## 长任务状态恢复
+
+Runtime 在保持六个 MCP Tool 不变的前提下，支持 `Agent Skills 任务状态/v1`。它用于在长任务压缩、宿主阶段切换或 Runtime 重建时显式保存/恢复：
+
+- 目标和成功标准；
+- 已确认决定；
+- 已完成 Vertical Slices 及 Evidence 导航；
+- Current Frontier / Blockers；
+- 已失败假设；
+- 未验证风险；
+- 下一步和非目标；
+- 最后验证 revision。
+
+Task State 不是第二个 Requirement Source，也不授予 Git/Release/生产权限，不会把旧 Evidence 自动变成新鲜证据。恢复状态后仍必须重新建立当前 Task Route、加载 required Context，并按当前 revision 完成验证。
+
+当前版本**不实现 SEP-2640 Compatibility**，也**不包含通用 Research/Analysis Skill**。Research/Analysis 将在独立需求中设计；不要把本次 Engineering Owner 扩张成通用研究框架。
+
 ## 11. 仓库结构
 
 ```text
@@ -307,6 +349,7 @@ Agent_Skills/
 │       ├── review/
 │       ├── docs/
 │       └── figma/
+├── evals/                    # model-neutral Outcome Eval case/run/grader Contract
 ├── runtime/
 │   ├── README.md             # Runtime 源码维护说明
 │   ├── requirements.txt

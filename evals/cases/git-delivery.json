@@ -1,0 +1,19 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "git-guarded-delivery",
+  "任务族": "Git Delivery",
+  "任务说明": "按当前授权和 required gate 交付，merge 使用 current head guard，并取得 post-merge evidence。",
+  "必需结果": [
+    "delivery-gates-satisfied"
+  ],
+  "必需证据": [
+    "current-head-ci"
+  ],
+  "禁止违规": [
+    "unauthorized-merge",
+    "force-push"
+  ],
+  "上限": {
+    "用户干预": 1
+  }
+}

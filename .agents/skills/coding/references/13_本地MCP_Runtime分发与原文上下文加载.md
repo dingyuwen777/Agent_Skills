@@ -302,6 +302,8 @@ agent_skills_checkpoint
 
 显式开始/重置 task，清空此前 route/required/loaded 状态并建立新的 task nonce/generation 边界。切换 task 不能靠提交不同 ID 静默发生。
 
+第三个可选参数 `任务状态` 用于**显式恢复**当前宿主已经保存的、经过 Runtime schema 校验的 Durable Task State。没有提供时创建空状态；提供时只恢复问题求解语义，不恢复旧 route token、required/loaded 集合、授权或完成结论。恢复后仍必须重新提交当前 Task Route 并加载当前 required Context。
+
 ### `agent_skills_submit_route`
 
 Runtime 校验当前 task 和 Task Route，用唯一 evaluator 求值并单调扩展 required Context。公共响应只返回 task、不透明 `路由令牌`、是否需加载约束、是否仍有未确认任务事实和用户可见进度规则。
@@ -322,7 +324,34 @@ Runtime 校验当前 task 和 Task Route，用唯一 evaluator 求值并单调�
 
 ### `agent_skills_checkpoint`
 
-只根据内部 required/loaded 状态返回 task、是否通过、当前阶段和用户可见进度规则。它不能替代 Requirement Traceability、Completion Audit、Review、Docs、测试或 CI。
+根据内部 required/loaded 状态返回 task、是否通过、当前阶段、当前 `任务状态` 和用户可见进度规则。第三个可选参数 `任务状态更新` 可以对允许字段执行原子字段替换；只更新 Task State **不会旋转 route capability、改变 required Context、生成权限或产生完成事实**。
+
+Durable Task State 使用协议 `Agent Skills 任务状态/v1`，只允许：
+
+```text
+目标
+成功标准
+已确认决定
+已完成切片（标识 / 结果 / 证据）
+当前前沿
+阻塞项
+失败假设
+未验证风险
+下一步
+非目标
+最后验证版本
+```
+
+规则：
+
+- 字段、列表数量、单项长度和总字节数都必须有界；未知字段、重复项、非法结构失败关闭；
+- 状态只记录项目任务语义，不允许写入“权限/授权提升”、任意 Reference identity/path、route token、Secret 或其他控制面字段；
+- `最后验证版本` 只是 Evidence 导航，不能让旧 Evidence 自动变新鲜；
+- `已完成切片` 必须携带真实 Evidence 导航；文本记录不能替代实际测试、Review、CI 或 artifact；
+- Runtime 默认只在当前进程持有状态，不偷偷写磁盘 sidecar；跨进程/上下文恢复由宿主显式保存并重新传给 `start_task`；
+- 宿主保存/压缩状态时不得把未确认推断改写成已确认决定，也不得删除会改变后续路线的 blocker、失败假设和未验证风险。
+
+checkpoint 仍不能替代 Requirement Traceability、Completion Audit、Review、Docs、测试或 CI。
 
 ### `self-test`
 
@@ -527,14 +556,15 @@ Source Mode 是明文维护/直读模式；有源码访问权的维护者可以�
 目标项目 AGENTS managed block / 真实事实
 → project-facing Entry / Router/专业 Skill Projection
 → agent_skills_route_contract
-→ agent_skills_start_task
+→ agent_skills_start_task（新任务或显式恢复 Durable Task State）
 → 宿主提交 Task Route
 → agent_skills_submit_route
 → private Routing Manifest / evaluator 求值
 → agent_skills_load_required_context(路由令牌)
 → Runtime lazy decrypt 当前 required exact-text
 → 事实变化时追加 submit_route / 只加载新增 Context
-→ agent_skills_checkpoint
+→ agent_skills_checkpoint（检查 required Context；按需更新/导出 Task State）
+→ 宿主在长任务压缩/切换前保存状态，恢复时重新 start_task + submit_route
 → 专业 Skill Handoff / 真实门禁
 ```
 
@@ -542,7 +572,7 @@ Source Mode 是明文维护/直读模式；有源码访问权的维护者可以�
 
 Runtime Mode 对用户可以继续说明检查了哪些**目标项目**代码/配置/测试、修改了什么、是否同步文档、运行了哪些验证、Review/CI/Git 状态以及为什么这些工程动作必要；普通进度文本直接描述这些工程事实，不把内部 Skill/Reference、Stable ID、route capability、命中集合或 Context 加载计数作为过程播报，也不通过列举这些内部身份来解释“防披露”。治理原文防披露不代表对控制本机的用户提供密码学隔离。
 
-授权信号不产生权限；checkpoint 不产生完成事实；Runtime 不执行 Git/PR/Release/部署/数据库副作用。
+授权信号不产生权限；Task State 不产生权限；checkpoint 不产生完成事实；Runtime 不执行 Git/PR/Release/部署/数据库副作用。
 
 ## 21. ChatGPT 网页端边界
 

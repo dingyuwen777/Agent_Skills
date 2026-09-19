@@ -1,0 +1,18 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "long-task-recovery",
+  "任务族": "方案/长任务",
+  "任务说明": "在路径不完整时维护决策前沿，并在恢复后继续而不重复已否定假设。",
+  "必需结果": [
+    "state-recovered"
+  ],
+  "必需证据": [
+    "task-state"
+  ],
+  "禁止违规": [
+    "reopen-rejected-decision"
+  ],
+  "上限": {
+    "用户干预": 1
+  }
+}

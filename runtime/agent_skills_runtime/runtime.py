@@ -22,6 +22,29 @@ _RISK_ORDER = {"L1": 1, "L2": 2, "L3": 3}
 _CAPABILITY_DOMAIN = "agent-skills/runtime-v3/route-capability"
 _MIN_SATURATION_DIMENSIONS = 3
 _MIN_SATURATION_VALUES = 8
+TASK_STATE_PROTOCOL = "Agent Skills 任务状态/v1"
+TASK_STATE_UNAVAILABLE = "unavailable"
+_TASK_STATE_FIELDS = {
+    "协议",
+    "目标",
+    "成功标准",
+    "已确认决定",
+    "已完成切片",
+    "当前前沿",
+    "阻塞项",
+    "失败假设",
+    "未验证风险",
+    "下一步",
+    "非目标",
+    "最后验证版本",
+}
+_TASK_STATE_PATCH_FIELDS = _TASK_STATE_FIELDS - {"协议"}
+_TASK_STATE_SLICE_FIELDS = {"标识", "结果", "证据"}
+_TASK_STATE_LIST_LIMIT = 128
+_TASK_STATE_SLICE_LIMIT = 128
+_TASK_STATE_TEXT_LIMIT = 4096
+_TASK_STATE_ITEM_LIMIT = 1024
+_TASK_STATE_MAX_BYTES = 65536
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -32,6 +55,147 @@ def _canonical_json(value: Any) -> bytes:
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
+
+
+def _task_state_text(
+    value: Any,
+    *,
+    label: str,
+    allow_empty: bool = False,
+    max_length: int = _TASK_STATE_TEXT_LIMIT,
+) -> str:
+    """校验 Task State 文本字段，避免空值和无界状态膨胀。"""
+    if not isinstance(value, str):
+        raise ValueError(f"{label} 必须是字符串")
+    normalized = value.strip()
+    if not normalized and not allow_empty:
+        raise ValueError(f"{label} 不能为空")
+    if len(normalized) > max_length:
+        raise ValueError(f"{label} 超过最大长度 {max_length}")
+    return normalized
+
+
+def _task_state_list(value: Any, *, label: str) -> list[str]:
+    """校验 Task State 的有序去重文本列表。"""
+    if not isinstance(value, list):
+        raise ValueError(f"{label} 必须是列表")
+    if len(value) > _TASK_STATE_LIST_LIMIT:
+        raise ValueError(f"{label} 项数超过上限 {_TASK_STATE_LIST_LIMIT}")
+    normalized = [
+        _task_state_text(
+            item,
+            label=f"{label}[]",
+            max_length=_TASK_STATE_ITEM_LIMIT,
+        )
+        for item in value
+    ]
+    if len(normalized) != len(set(normalized)):
+        raise ValueError(f"{label} 不能包含重复项")
+    return normalized
+
+
+def _task_state_slices(value: Any) -> list[dict[str, Any]]:
+    """校验已完成 Vertical Slice 及其直接 Evidence。"""
+    if not isinstance(value, list):
+        raise ValueError("已完成切片必须是列表")
+    if len(value) > _TASK_STATE_SLICE_LIMIT:
+        raise ValueError(f"已完成切片项数超过上限 {_TASK_STATE_SLICE_LIMIT}")
+    normalized: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for index, item in enumerate(value):
+        if not isinstance(item, Mapping) or set(item) != _TASK_STATE_SLICE_FIELDS:
+            raise ValueError(f"已完成切片[{index}] 字段不合法")
+        slice_id = _task_state_text(
+            item.get("标识"),
+            label=f"已完成切片[{index}].标识",
+            max_length=128,
+        )
+        if slice_id in seen:
+            raise ValueError("已完成切片标识不能重复")
+        seen.add(slice_id)
+        normalized.append(
+            {
+                "标识": slice_id,
+                "结果": _task_state_text(
+                    item.get("结果"),
+                    label=f"已完成切片[{index}].结果",
+                    max_length=_TASK_STATE_ITEM_LIMIT,
+                ),
+                "证据": _task_state_list(
+                    item.get("证据"),
+                    label=f"已完成切片[{index}].证据",
+                ),
+            }
+        )
+    return normalized
+
+
+def normalize_task_state(value: Mapping[str, Any] | None) -> dict[str, Any]:
+    """规范化可恢复的项目任务语义状态；状态本身不授予权限或产生完成事实。"""
+    if value is None:
+        return {
+            "协议": TASK_STATE_PROTOCOL,
+            "目标": "",
+            "成功标准": [],
+            "已确认决定": [],
+            "已完成切片": [],
+            "当前前沿": [],
+            "阻塞项": [],
+            "失败假设": [],
+            "未验证风险": [],
+            "下一步": [],
+            "非目标": [],
+            "最后验证版本": TASK_STATE_UNAVAILABLE,
+        }
+    if not isinstance(value, Mapping) or set(value) != _TASK_STATE_FIELDS:
+        raise ValueError("任务状态字段不合法")
+    if value.get("协议") != TASK_STATE_PROTOCOL:
+        raise ValueError("任务状态协议不受支持")
+    normalized = {
+        "协议": TASK_STATE_PROTOCOL,
+        "目标": _task_state_text(value.get("目标"), label="任务状态.目标", allow_empty=True),
+        "成功标准": _task_state_list(value.get("成功标准"), label="任务状态.成功标准"),
+        "已确认决定": _task_state_list(value.get("已确认决定"), label="任务状态.已确认决定"),
+        "已完成切片": _task_state_slices(value.get("已完成切片")),
+        "当前前沿": _task_state_list(value.get("当前前沿"), label="任务状态.当前前沿"),
+        "阻塞项": _task_state_list(value.get("阻塞项"), label="任务状态.阻塞项"),
+        "失败假设": _task_state_list(value.get("失败假设"), label="任务状态.失败假设"),
+        "未验证风险": _task_state_list(value.get("未验证风险"), label="任务状态.未验证风险"),
+        "下一步": _task_state_list(value.get("下一步"), label="任务状态.下一步"),
+        "非目标": _task_state_list(value.get("非目标"), label="任务状态.非目标"),
+        "最后验证版本": _task_state_text(
+            value.get("最后验证版本"),
+            label="任务状态.最后验证版本",
+            max_length=128,
+        ),
+    }
+    if len(_canonical_json(normalized)) > _TASK_STATE_MAX_BYTES:
+        raise ValueError(f"任务状态超过最大字节数 {_TASK_STATE_MAX_BYTES}")
+    return normalized
+
+
+def patch_task_state(
+    current: Mapping[str, Any],
+    patch: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """用字段替换语义更新 Task State；未提供字段保持，禁止借 patch 扩大控制面。"""
+    normalized_current = normalize_task_state(current)
+    if patch is None:
+        return normalized_current
+    if not isinstance(patch, Mapping) or not patch:
+        raise ValueError("任务状态更新必须是非空 object")
+    unknown = set(patch) - _TASK_STATE_PATCH_FIELDS
+    if unknown:
+        raise ValueError(f"任务状态更新包含非法字段：{', '.join(sorted(str(item) for item in unknown))}")
+    candidate = dict(normalized_current)
+    candidate.update(dict(patch))
+    candidate["协议"] = TASK_STATE_PROTOCOL
+    return normalize_task_state(candidate)
+
+
+def _copy_task_state(value: Mapping[str, Any]) -> dict[str, Any]:
+    """返回不共享可变引用的 Task State 副本。"""
+    return json.loads(json.dumps(dict(value), ensure_ascii=False))
 
 
 def _bundle_identity(bundle: Mapping[str, Any] | EncryptedBundleStore) -> dict[str, Any]:
@@ -123,6 +287,7 @@ class RuntimeStore:
         self._task_nonce: str | None = None
         self._task_id: str | None = None
         self._phase: str | None = None
+        self._task_state: dict[str, Any] = normalize_task_state(None)
         self._route_token: str | None = None
         self._route_generation = 0
         self._required_ids: set[str] = set()
@@ -201,10 +366,16 @@ class RuntimeStore:
         contract["用户可见进度规则"] = USER_VISIBLE_PROGRESS_RULE
         return contract
 
-    def start_task(self, task_id: str, phase: str = "规划") -> dict[str, Any]:
-        """开始或显式重置任务，清空此前 task 的路由、capability 与披露状态。"""
+    def start_task(
+        self,
+        task_id: str,
+        phase: str = "规划",
+        task_state: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """开始/重置任务，可显式恢复经过校验的语义状态；路由与 capability 仍重新建立。"""
         normalized_task = str(task_id).strip()
         normalized_phase = str(phase).strip()
+        normalized_state = normalize_task_state(task_state)
         if not normalized_task:
             raise ValueError("任务标识不能为空")
         if not normalized_phase:
@@ -213,6 +384,7 @@ class RuntimeStore:
             self._task_id = normalized_task
             self._task_nonce = secrets.token_hex(24)
             self._phase = normalized_phase
+            self._task_state = normalized_state
             self._route_token = None
             self._route_generation = 0
             self._required_ids.clear()
@@ -224,6 +396,7 @@ class RuntimeStore:
                 "任务标识": self._task_id,
                 "当前阶段": self._phase,
                 "当前约束已建立": False,
+                "任务状态": _copy_task_state(self._task_state),
                 "用户可见进度规则": USER_VISIBLE_PROGRESS_RULE,
             }
 
@@ -278,8 +451,13 @@ class RuntimeStore:
                 "用户可见进度规则": USER_VISIBLE_PROGRESS_RULE,
             }
 
-    def checkpoint(self, route_token: str, phase: str | None = None) -> dict[str, Any]:
-        """依据 Runtime 内部 required/loaded 状态执行阶段检查，不公开内部集合身份。"""
+    def checkpoint(
+        self,
+        route_token: str,
+        phase: str | None = None,
+        task_state_patch: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """检查 required Context，并可原子更新当前可恢复 Task State。"""
         with self._lock:
             self._require_task()
             self._require_current_token(route_token)
@@ -288,9 +466,12 @@ class RuntimeStore:
                 if not normalized_phase:
                     raise ValueError("阶段不能为空")
                 self._phase = normalized_phase
+            if task_state_patch is not None:
+                self._task_state = patch_task_state(self._task_state, task_state_patch)
             return {
                 "任务标识": self._task_id,
                 "通过": not (self._required_ids - self._loaded_ids),
                 "当前阶段": self._phase,
+                "任务状态": _copy_task_state(self._task_state),
                 "用户可见进度规则": USER_VISIBLE_PROGRESS_RULE,
             }

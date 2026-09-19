@@ -35,7 +35,7 @@ agent_skills_runtime/project_installer.py
 → 无 sidecar 项目安装/升级、previous ownership、Codex/Cursor/Claude Code/DeepSeek Harness 宿主配置与回滚；legacy v3 仅作为一次迁移输入
 
 agent_skills_runtime/runtime.py
-→ 维护 task-bound route capability、单调 required Context、按需原文加载、project-facing 用户进度边界与 checkpoint
+→ 维护 task-bound route capability、单调 required Context、按需原文加载、project-facing 用户进度边界、Durable Task State 与 checkpoint
 
 agent_skills_runtime/server.py
 → CLI + stdio MCP Server；Windows onefile 无参数双击使用 EXE 所在目录，POSIX 无参数仍使用当前工作目录；另有不进入普通 help/MCP 的内部 install-state 自描述入口供下一版安装器升级使用
@@ -44,6 +44,26 @@ agent_skills_runtime/server.py
 Runtime 不重新解释专业 Skill 规则；跨 Skill 发现、trigger、dependency、risk floor 与 required Context 仍由 canonical [`.agents/skills/router/SKILL.md`](../.agents/skills/router/SKILL.md)、各 Skill canonical `SKILL.md` / `references/*.md` 以及编译后的私有 Routing Manifest 共同决定。[`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md) 仍是 Source Mode 的共享入口，但写入目标项目的是其确定性 project-facing Runtime Projection，不是源码导航原样副本。
 
 这里必须把**规则事实源、Runtime 明文视图、私有执行面**分开：Source Mode 直接使用源码仓库时，维护者可以读取 Entry、Router、Skill、Reference、路径和 routing metadata；Runtime Mode 安装 project-facing Entry、Router/专业 Core 与 agent prompt，以维持宿主原生发现和工程执行入口，但这些明文文件不是第二份人工规则。私有 Routing Manifest/evaluator 继续从 canonical metadata 编译，required Context 继续从 canonical References exact-text 加载。**Source/Runtime 同效通过 routing/risk/dependency/context parity 证明，而不是要求 Runtime 明文与 Source Core 逐字一致。**
+
+
+
+## Durable Task State 与跨模型一致性
+
+Runtime 继续只有六个公开 MCP Tool，不增加 Task Manager / Planner / Worker 控制面。长任务连续性通过现有 `agent_skills_start_task` 与 `agent_skills_checkpoint` 的可选 Task State 参数完成：
+
+```text
+start_task(task, phase, 可选任务状态)
+→ 重新建立 task nonce / route capability 边界
+→ submit_route + load_required_context
+→ checkpoint(token, phase, 可选任务状态更新)
+→ 返回当前经过 schema 校验的任务状态
+```
+
+`Agent Skills 任务状态/v1` 只保存目标、成功标准、已确认决定、已完成切片/Evidence、Current Frontier、Blockers、失败假设、未验证风险、下一步、非目标和最后验证版本。它不是权限、Requirement Source、Completion Audit 或 Evidence store；恢复状态后仍要重新路由并取得当前 required Context。
+
+模型名称、版本和宿主不进入 Router。GPT、DeepSeek、GLM 或其他模型可以采用不同推理策略，但同一项目任务必须满足同一 canonical Owner、Context、风险、授权、Evidence 和完成门禁。真实跨模型效果由仓库 `evals/` 的 model-neutral Outcome Eval case/run/grader Contract 比较：只有 `actual` run 进入真实模型验证计数，`fixture` 只验证机器契约；没有真实 run artifact 的模型只能标记 `unverified`。
+
+当前 Runtime **不实现 SEP-2640 Compatibility**；本次也不分发 Research/Analysis Skill。两者若未来需要，必须作为独立 Requirement/Change 重新设计和验证。
 
 ## 2. 三个独立完整性域
 
