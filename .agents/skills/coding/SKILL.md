@@ -4,7 +4,7 @@ description: 面向不同项目形态、研发阶段和编程语言的可靠软�
 ---
 
 <!-- agent-routing:v1
-{"协议":"Agent Skills Skill路由/v1","Skill":"coding","触发":{"任一":[{"包含":{"维度":"执行模式","取值":["Git","发布","运维"]}},{"全部":[{"包含":{"维度":"执行模式","取值":["实现","诊断"]}},{"包含":{"维度":"意图","取值":["测试策略","功能测试","黑盒测试","用户场景验收","探索式测试","回归测试","独立验证"]}}]},{"全部":[{"任一":[{"包含":{"维度":"执行模式","取值":["只读分析","诊断","方案","实现","验证"]}},{"包含":{"维度":"阶段","取值":["仓库初始化","事实恢复","需求设计","功能开发","缺陷修复","重构","性能优化","故障处置","交付"]}}]},{"非":{"包含":{"维度":"意图","取值":["测试策略","功能测试","黑盒测试","用户场景验收","探索式测试","回归测试","测试充分性验证","独立验证","Figma review-only","Figma review-and-fix","Figma baseline-ready","文档审查","文档编写","文档更新","文档同步"]}}}]},{"包含":{"维度":"意图","取值":["代码分析","技术方案","代码实现","代码审查","Review-only","Review-and-test","Review-and-fix","独立复核","设计转代码","Git 交付","依赖升级","Runtime 升级","Skill Mutation"]}},{"包含":{"维度":"项目形态","取值":["Greenfield","CLI","前端Web","后端服务","全栈应用","移动应用","桌面应用"]}},{"包含":{"维度":"风险","取值":["L1","L2","L3"]}},{"包含":{"维度":"授权","取值":["允许只读","允许修改项目","允许测试","允许 Git","允许发布"]}}]}}
+{"协议":"Agent Skills Skill路由/v1","Skill":"coding","触发":{"任一":[{"包含":{"维度":"执行模式","取值":["Git","发布","运维"]}},{"全部":[{"包含":{"维度":"执行模式","取值":["实现","诊断"]}},{"包含":{"维度":"意图","取值":["测试策略","功能测试","黑盒测试","用户场景验收","探索式测试","回归测试","独立验证"]}}]},{"全部":[{"任一":[{"包含":{"维度":"执行模式","取值":["只读分析","诊断","方案","实现","验证"]}},{"包含":{"维度":"阶段","取值":["仓库初始化","事实恢复","需求设计","功能开发","缺陷修复","重构","性能优化","故障处置","交付"]}}]},{"非":{"包含":{"维度":"意图","取值":["测试策略","功能测试","黑盒测试","用户场景验收","探索式测试","回归测试","测试充分性验证","独立验证","Figma review-only","Figma review-and-fix","Figma baseline-ready","文档审查","文档编写","文档更新","文档同步"]}}}]},{"包含":{"维度":"意图","取值":["代码分析","技术方案","代码实现","代码审查","Review-only","Review-and-test","Review-and-fix","独立复核","设计转代码","Git 交付","依赖升级","Runtime 升级","Skill Mutation","Agent Outcome Eval"]}},{"包含":{"维度":"项目形态","取值":["Greenfield","CLI","前端Web","后端服务","全栈应用","移动应用","桌面应用"]}},{"包含":{"维度":"风险","取值":["L1","L2","L3"]}},{"包含":{"维度":"授权","取值":["允许只读","允许修改项目","允许测试","允许 Git","允许发布"]}}]}}
 -->
 
 # Coding
@@ -102,6 +102,7 @@ CMakeLists.txt ≠ Linux-only
 17. **系统级分析先于局部实现，但不扩大修改范围。** 恢复任务相关能力边界后再决定局部修复、复用或抽象；相邻技术债不自动入 Scope。详见 [21_系统级分析与代码整洁收口.md](references/21_系统级分析与代码整洁收口.md)。
 18. **受影响代码域必须整洁收口，但只清本次直接责任。** 清理本次直接新增、修改或因此失效的实现；旧技术债默认只记录 Finding。详见 [21_系统级分析与代码整洁收口.md](references/21_系统级分析与代码整洁收口.md)。
 19. **Skill Mutation 先做 Mutation 目标解析。** 只改 canonical Owner；本地安装副本不得成为替代 Skill；Audit/Proposal 与 Apply 分开；局部 blocker 只阻塞依赖动作，required canonical Source/门禁不可得时按依赖边界**失败关闭**。详见 [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md)。
+20. **跨模型结果一致性。** GPT、DeepSeek、GLM 或其他模型/宿主只允许在内部推理、工具顺序和局部写法上不同；同一项目事实和授权必须使用同一 canonical Owner、required Context、风险、Evidence 与 Completion 标准。模型身份不得成为 Router 新维度；重要 Skill/规则变更的真实效果用 [31_跨模型效果评测与规则有效性.md](references/31_跨模型效果评测与规则有效性.md) 的 Outcome Eval 与 Rule Effectiveness Gate 验证，未实际运行的模型不得声称已验证兼容。
 
 ### 1.1 自主执行、澄清和阻塞边界
 
@@ -148,6 +149,7 @@ CMakeLists.txt ≠ Linux-only
 | 显式 Review/Audit、持久 Change/PR Ready、Git/Release 交付或项目明确要求独立复核 | [11_两阶段复核与完成前验证.md](references/11_两阶段复核与完成前验证.md) |
 | 首次安装/升级 Agent_Skills、创建/补充目标项目 AGENTS、首次 Project Governance Bootstrap、治理事实漂移校准或修复 managed block | [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) + [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md) |
 | Runtime Bundle/Routing Manifest/Task Route/MCP/Project Payload/安装升级或 Release identity | [13_本地MCP_Runtime分发与原文上下文加载.md](references/13_本地MCP_Runtime分发与原文上下文加载.md) |
+| Agent Outcome Eval / 跨模型规则效果 / Skill heuristic 生命周期 | [31_跨模型效果评测与规则有效性.md](references/31_跨模型效果评测与规则有效性.md) |
 | Git/PR/Release/Delivery、依赖变化、安全边界、最终交付报告或宿主能力降级 | [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md) |
 | Skill/reference/模板/项目 Overlay 的精简、重组、拆分、合并、改名、迁移或通用化 | [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md) |
 
