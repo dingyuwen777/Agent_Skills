@@ -134,6 +134,23 @@ class AgentOutcomeEvalTest(unittest.TestCase):
             self.assertEqual(summary["未覆盖兼容必测"], [])
             self.assertEqual(summary["真实失败用例"], [])
 
+    def test_verified_compatibility_is_revision_bound_and_real_runs_require_revision(self) -> None:
+        """不同源码 revision 的 runs 不能拼成同一 verified 结论，真实 run 也不能缺 revision。"""
+        required_cases = [case for case in self.cases.values() if case["兼容必测"]]
+        split_runs: list[dict] = []
+        for index, case in enumerate(required_cases):
+            run = _passing_run(self.module, case, "model-a")
+            run["源码Revision"] = ("a" if index % 2 == 0 else "b") * 40
+            split_runs.append(run)
+        comparison = self.module.compare_runs(split_runs, self.cases)
+        self.assertEqual(len(comparison["结果"]), 2)
+        self.assertTrue(all(item["兼容性状态"] == "unverified" for item in comparison["结果"]))
+
+        no_revision = _passing_run(self.module, required_cases[0], "model-a")
+        no_revision["源码Revision"] = self.module.UNAVAILABLE
+        with self.assertRaisesRegex(self.module.OutcomeEvalError, "源码Revision"):
+            self.module.validate_run(no_revision, self.cases)
+
     def test_blocking_forbidden_result_forces_zero_even_when_acceptance_is_full(self) -> None:
         """命中阻塞禁止项时不得用高验收覆盖分数制造兼容 Green。"""
         case = self.cases["feature-l2"]
