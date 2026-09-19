@@ -32,6 +32,7 @@ _RUN_REQUIRED_FIELDS = {
     "协议",
     "运行标识",
     "用例标识",
+    "运行类型",
     "任务",
     "模型",
     "路由结果",
@@ -51,6 +52,7 @@ _LIMIT_FIELDS = _PROCESS_FIELDS | {"上下文字节"}
 _TRACE_EVENT_FIELDS = {"类型", "名称", "状态", "说明"}
 _ROUTE_RESULT_FIELDS = {"状态", "命中Skill", "最低风险", "存在未知项"}
 _CONTEXT_RESULT_FIELDS = {"状态", "字节数"}
+_RUN_TYPES = {"actual", "fixture"}
 _REVISION_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -188,6 +190,9 @@ def validate_run(run: Mapping[str, Any]) -> dict[str, Any]:
         key: _nonempty_string(model.get(key), label=f"模型.{key}", max_length=256)
         for key in ("名称", "版本", "宿主")
     }
+    run_type = _nonempty_string(run.get("运行类型"), label="运行类型", max_length=32)
+    if run_type not in _RUN_TYPES:
+        raise ValueError("运行类型只允许 actual/fixture")
 
     revision = _nonempty_string(run.get("revision"), label="revision", max_length=64)
     if revision != UNAVAILABLE and _REVISION_PATTERN.fullmatch(revision) is None:
@@ -213,6 +218,7 @@ def validate_run(run: Mapping[str, Any]) -> dict[str, Any]:
         "协议": RUN_PROTOCOL,
         "运行标识": _nonempty_string(run.get("运行标识"), label="运行标识", max_length=128),
         "用例标识": _nonempty_string(run.get("用例标识"), label="用例标识", max_length=128),
+        "运行类型": run_type,
         "任务": _nonempty_string(run.get("任务"), label="任务"),
         "模型": normalized_model,
         "revision": revision,
@@ -273,6 +279,7 @@ def grade_run(case: Mapping[str, Any], run: Mapping[str, Any]) -> dict[str, Any]
         "协议": REPORT_PROTOCOL,
         "用例标识": normalized_case["用例标识"],
         "运行标识": normalized_run["运行标识"],
+        "运行类型": normalized_run["运行类型"],
         "模型": normalized_run["模型"],
         "通过": passed,
         "分数": score,
@@ -292,16 +299,18 @@ def compare_runs(
     """比较已经真实存在的 run artifact；没有 run 的模型只能标记 unverified。"""
     normalized_case = validate_case(case)
     grades = [grade_run(normalized_case, run) for run in runs]
-    seen_models = {str(item["模型"]["名称"]) for item in grades}
-    expected = [str(item).strip() for item in (expected_models or sorted(seen_models))]
+    actual_grades = [item for item in grades if item["运行类型"] == "actual"]
+    seen_models = {str(item["模型"]["名称"]) for item in actual_grades}
+    all_models = {str(item["模型"]["名称"]) for item in grades}
+    expected = [str(item).strip() for item in (expected_models or sorted(all_models))]
     if any(not item for item in expected) or len(expected) != len(set(expected)):
         raise ValueError("expected_models 必须是唯一非空模型名")
 
     return {
         "协议": REPORT_PROTOCOL,
         "用例标识": normalized_case["用例标识"],
-        "已验证运行数": len(grades),
-        "通过运行数": sum(1 for item in grades if item["通过"]),
+        "已验证运行数": len(actual_grades),
+        "通过运行数": sum(1 for item in actual_grades if item["通过"]),
         "模型状态": {
             model: ("verified" if model in seen_models else "unverified")
             for model in expected
