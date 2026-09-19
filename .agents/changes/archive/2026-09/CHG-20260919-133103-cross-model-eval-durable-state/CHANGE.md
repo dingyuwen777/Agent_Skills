@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260919-133103-cross-model-eval-durable-state
 title: 提升跨模型一致性、真实效果评测与长任务连续性
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: feature/cross-model-eval-durable-state
 created: 2026-09-19
