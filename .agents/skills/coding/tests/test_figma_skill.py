@@ -104,7 +104,7 @@ class UniversalFigmaSkillTest(unittest.TestCase):
             "Figma 位置 / 用户能力 / 当前系统证据 / 正式 Owner / 缺失或冲突层（不存在则 not_applicable） / 分类 / 阻塞性 / 最小动作",
         ):
             self.assertIn(marker, handoff)
-        self.assertIn("Capability Gap Inventory", skill)
+        self.assertIn("05_Design-to-Code交付门禁.md", skill)
 
     def test_annotation_development_readiness_repairs_and_deduplicates_annotations(self) -> None:
         """正式基线必须审计注释覆盖率，能修时补齐错误/缺失注释，同时合并重复说明。"""
@@ -224,8 +224,8 @@ class UniversalFigmaSkillTest(unittest.TestCase):
             "Pending Figma Sync", "必须输出",
         ):
             self.assertIn(marker, handoff)
-        for marker in ("Figma Sync & Human Review", "SYNCHRONIZED_PENDING_HUMAN_REVIEW"):
-            self.assertIn(marker, skill)
+        self.assertIn("Figma Sync & Human Review", skill)
+        self.assertIn("SYNCHRONIZED_PENDING_HUMAN_REVIEW", handoff)
 
     def test_canvas_geometry_audit_distinguishes_intentional_overlap(self) -> None:
         """Canvas 几何审计必须机器识别非预期相交，同时允许有明确语义的浮层重叠。"""
@@ -236,25 +236,35 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         ):
             self.assertIn(marker, layout)
 
-    def test_figma_skill_exposes_real_system_handoff_hard_gates(self) -> None:
-        """主 Skill 必须显式暴露 Contract、运行时时间和 Annotation 充分性三个高价值门禁入口。"""
+    def test_figma_skill_routes_real_system_handoff_hard_gates_to_canonical_owners(self) -> None:
+        """Core 只保留硬入口，Contract/时间/Annotation 详细门禁必须继续由 canonical References 完整承担。"""
         skill = self._read(FIGMA_ROOT / "SKILL.md")
+        mapping = self._read(FIGMA_ROOT / "references/02_业务能力与真实系统映射.md")
+        handoff = self._read(FIGMA_ROOT / "references/05_Design-to-Code交付门禁.md")
+        self.assertIn("02_业务能力与真实系统映射.md", skill)
+        self.assertIn("05_Design-to-Code交付门禁.md", skill)
+        combined = mapping + "\n" + handoff
         for marker in (
             "不得由 Figma / Design Context / Annotation 创建生产 Contract / API",
             "DatePicker / DateRange / Today / Now",
             "真实 Runtime / Contract 时间语义",
-            "baseline-ready 必须执行 Annotation Sufficiency Review",
+            "Annotation Sufficiency",
         ):
-            self.assertIn(marker, skill)
+            self.assertIn(marker, combined)
 
-    def test_figma_skill_exposes_annotation_owner_and_post_implementation_gates(self) -> None:
-        """主 Skill 必须暴露注释开发就绪、Owner-first 修改和实现后一致性回验三个入口。"""
+    def test_figma_skill_routes_annotation_owner_and_post_implementation_gates(self) -> None:
+        """Core 必须路由到 Annotation/Owner/实现回验 Owner，而详细规则不再常驻 Core。"""
         skill = self._read(FIGMA_ROOT / "SKILL.md")
+        components = self._read(FIGMA_ROOT / "references/03_设计系统与组件复用审计.md")
+        handoff = self._read(FIGMA_ROOT / "references/05_Design-to-Code交付门禁.md")
+        self.assertIn("03_设计系统与组件复用审计.md", skill)
+        self.assertIn("05_Design-to-Code交付门禁.md", skill)
+        combined = skill + "\n" + components + "\n" + handoff
         for marker in (
             "Annotation Development Readiness", "Owner-first Figma Mutation",
             "Implementation ↔ Figma Conformance",
         ):
-            self.assertIn(marker, skill)
+            self.assertIn(marker, combined)
 
     def test_figma_skill_does_not_embed_business_facts(self) -> None:
         """Figma live 规则不能携带业务仓库、Provider、Stage 或 Blueprint 事实。"""

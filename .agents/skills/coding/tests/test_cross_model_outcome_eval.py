@@ -88,6 +88,28 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
         self.assertEqual(comparison["已验证运行数"], 2)
         self.assertEqual(comparison["通过运行数"], 2)
 
+    def test_repository_cases_cover_required_task_families(self) -> None:
+        """仓库必须持续保留核心任务族和关键负例，且全部满足同一 case Contract。"""
+        case_dir = ROOT / "evals/cases"
+        cases = []
+        for path in sorted(case_dir.glob("*.json")):
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            validate_case(payload)
+            cases.append(payload)
+        self.assertGreaterEqual(len(cases), 7)
+        families = {str(item["任务族"]) for item in cases}
+        self.assertTrue(
+            {
+                "功能开发",
+                "缺陷修复",
+                "Review/Testing",
+                "方案/长任务",
+                "Figma/Design-to-Code",
+                "Git Delivery",
+                "负例",
+            }.issubset(families)
+        )
+
     def test_unrun_model_must_not_be_reported_as_verified(self) -> None:
         """比较报告只能声明实际存在 run artifact 的模型已验证。"""
         case = {
