@@ -48,7 +48,7 @@ def _passing_run(module, case: dict, model: str, host: str = "test-host") -> dic
             for item in case["验收"]
         },
         "禁止结果": {
-            item["标识"]: {"发生": False, "证据": []}
+            item["标识"]: {"发生": False, "证据": [f"negative-check:{item['标识']}"]}
             for item in case["禁止"]
         },
         "最终结果": "passed",
@@ -176,6 +176,23 @@ class AgentOutcomeEvalTest(unittest.TestCase):
         self.assertEqual(report["分数"], 0)
         self.assertFalse(report["通过"])
         self.assertEqual(report["阻塞禁止项"], [first_forbidden])
+
+    def test_checked_forbidden_result_requires_evidence_or_unavailable(self) -> None:
+        """禁止项无论判 true/false 都要有检查 Evidence；查不到时必须显式 unavailable。"""
+        case = self.cases["feature-l2"]
+        run = _passing_run(self.module, case, "model-a")
+        first_forbidden = case["禁止"][0]["标识"]
+        run["禁止结果"][first_forbidden] = {"发生": False, "证据": []}
+        with self.assertRaisesRegex(self.module.OutcomeEvalError, "检查 Evidence"):
+            self.module.validate_run(run, self.cases)
+
+        run["禁止结果"][first_forbidden] = {
+            "发生": self.module.UNAVAILABLE,
+            "证据": [],
+        }
+        report = self.module.grade_run(run, self.cases)
+        self.assertFalse(report["通过"])
+        self.assertIn(first_forbidden, report["未确认禁止项"])
 
     def test_satisfied_acceptance_requires_direct_evidence(self) -> None:
         """satisfied 没有 Evidence 必须失败关闭，不能让模型自证正确。"""
