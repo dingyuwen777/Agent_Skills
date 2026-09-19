@@ -436,3 +436,14 @@ Release 页面说明继续使用 [`USAGE.md`](USAGE.md)，每个正式 ZIP 也�
 - Runtime 源码维护：[`runtime/README.md`](runtime/README.md)
 - Runtime 构建：[`scripts/build_runtime.py`](scripts/build_runtime.py)
 - 正式发布：[`.github/workflows/release.yml`](.github/workflows/release.yml)
+
+## 通用 Analysis / Research 能力
+
+Agent_Skills 除工程研发能力外，也提供两个通用问题求解 Owner：
+
+- **Analysis**：处理需要第一性原理、前提审计、因果/根因、比较、决策和方案设计的问题。默认基于用户与项目真实约束给**最小充分、可执行**的结论；复杂目标只有在确有价值时才拆成“解决当下问题的方案”和“更完整 / 理想方案”，避免脱离现状给大而全架构。
+- **Research**：处理依赖外部资料、当前时效、来源核验、陌生/高变化主题和深度研究的问题。除非用户明确指定历史资料、旧版本或具体时间点，默认核验**当前最新且适用**的信息；优先一手来源，必要时交叉核验，并保留发布日期、版本、适用范围、冲突和不确定性。
+
+简单、明确、无需专项方法的日常问答不机械进入 Analysis/Research。需要“最新资料 + 判断”时组合 Research + Analysis；需要“最新资料 + 工程实施”时组合 Research + 对应工程能力。不同模型仍执行相同事实、证据和完成标准，不建立模型专属规则。
+
+维护时不要把宿主侧长全局提示词整体搬入 Core。跨宿主长期规则以本仓库当前源码为事实源，宿主只保留薄 Bootstrap；具体分析/研究方法继续按需加载，Outcome Eval 用统一 case 验证实际效果。

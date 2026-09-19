@@ -120,6 +120,8 @@ class RuntimeSkillProjectionTest(unittest.TestCase):
         texts = _payload_texts(payload)
         required_by_skill = {
             "router/SKILL.md": ("name: router", "当前项目", "L1", "L2", "L3", "Fresh Evidence Contract"),
+            "analysis/SKILL.md": ("name: analysis", "第一性原理", "最小充分", "当下方案", "理想方案"),
+            "research/SKILL.md": ("name: research", "最新", "一手", "引用", "停止"),
             "coding/SKILL.md": ("name: coding", "Red", "Completion Audit", "Git", "CI"),
             "docs/SKILL.md": ("name: docs", "Docs Impact", "targeted", "full"),
             "review/SKILL.md": ("name: review", "Findings", "review-only", "re-review"),

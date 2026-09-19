@@ -157,6 +157,8 @@ class RuntimeProjectFacingProjectionTest(unittest.TestCase):
     def test_project_facing_projection_preserves_high_value_engineering_semantics(self) -> None:
         """隐藏内部组织不能把 Runtime Core 变空壳；真实工程风险、验证与专业语义仍可直接触达。"""
         required_by_path = {
+            "analysis/SKILL.md": ("第一性原理", "已确认事实", "最小充分", "当下方案", "理想方案"),
+            "research/SKILL.md": ("最新", "一手", "引用", "停止"),
             "coding/SKILL.md": ("L1", "L2", "L3", "Red", "Completion Audit", "Git", "CI"),
             "testing/SKILL.md": ("测试", "回归", "用户", "验证"),
             "review/SKILL.md": ("Findings", "review-only", "re-review"),
