@@ -419,7 +419,7 @@ AI 不应因为换了会话步骤或完成了一个子批次就把原任务静�
 
 ## 11. 不同 AI Agent 和模型
 
-Codex、Cursor、Claude Code、DeepSeek Harness 等工具的界面和可用能力可能不同；它们使用的具体模型也可能不同。不要以“模型更强 / 更弱”作为降低工程标准的理由，也不需要为 GPT、DeepSeek、GLM 等模型手工选择不同的 Agent_Skills 规则集。
+Codex、Cursor、Claude Code、DeepSeek Harness 等工具的界面和可用能力可能不同；它们使用的具体模型也可能不同。不要以“模型更强 / 更弱”作为降低工程标准的理由，也不需要为 GPT、DeepSeek、GLM 等模型手工选择不同的开发规则集。
 
 相同项目事实、任务范围和授权应使用同一工程 Contract。模型可以采用不同的推理方式、调查次数和工具顺序，但不能改变公共接口、风险等级、权限、测试/Review/CI 门禁或“什么证据才算完成”。
 

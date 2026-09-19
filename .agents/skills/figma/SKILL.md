@@ -356,14 +356,9 @@ Prototype Starting Point
 
 # 5. 渐进披露与详细规则入口
 
-原 Core 第 5–18 节已**完整原文迁移**；不得用摘要替代：所有 Figma 模式读取 [08_核心事实组件Prototype与状态细则.md](references/08_核心事实组件Prototype与状态细则.md) + [10_Findings修复输出与禁止事项.md](references/10_Findings修复输出与禁止事项.md)，`baseline-ready` / `设计转代码` 再读取 [09_DesignToCode与BaselineReady细则.md](references/09_DesignToCode与BaselineReady细则.md)。逐节 byte-preservation 由 `assets/core-progressive-disclosure-v1.json` 验证。
+所有模式必须加载 [08_核心事实组件Prototype与状态细则.md](references/08_核心事实组件Prototype与状态细则.md) + [10_Findings修复输出与禁止事项.md](references/10_Findings修复输出与禁止事项.md)；`baseline-ready` / `设计转代码` 再加载 [09_DesignToCode与BaselineReady细则.md](references/09_DesignToCode与BaselineReady细则.md)。原 Core 5–18 节完整原文由 `assets/core-progressive-disclosure-v1.json` 校验，禁止摘要替代。
 
-不可延迟硬门禁：
-
-- 不得由 Figma / Design Context / Annotation 创建生产 Contract / API；机器事实回到当前代码/Contract/SDK。
-- DatePicker / DateRange / Today / Now 服从真实 Runtime / Contract 时间语义。
-- baseline-ready 必须执行 Annotation Sufficiency Review；Annotation Development Readiness、Prototype Interaction Completeness 和 required Evidence 不足时不得 `READY`。
-- Figma 写入遵循 Owner-first Figma Mutation；`NOT_READY` 不得写入生产代码规避。
-- Design-to-Code 前形成 Capability Gap Inventory；实现后执行 Implementation ↔ Figma Conformance。
-- 正式 Drift 回写输出 Figma Sync & Human Review；自动同步最多 `SYNCHRONIZED_PENDING_HUMAN_REVIEW`。
-- Canvas-level Review、Fresh Screenshot、Machine/Prototype Audit 及其完整例外/失败处理继续以 required References 原文为准。
+- 不得由 Figma / Design Context / Annotation 创建生产 Contract / API；DatePicker / DateRange / Today / Now 服从真实 Runtime / Contract 时间语义。
+- baseline-ready 必须执行 Annotation Sufficiency Review；Annotation Development Readiness / Prototype Interaction Completeness / required Evidence 不足时不得 `READY`。
+- Figma 写入遵循 Owner-first Figma Mutation；`NOT_READY` 不得写入生产代码规避；Design-to-Code 前形成 Capability Gap Inventory，实现后执行 Implementation ↔ Figma Conformance。
+- 正式 Drift 回写输出 Figma Sync & Human Review；自动同步最多 `SYNCHRONIZED_PENDING_HUMAN_REVIEW`。其余 Canvas/Prototype/Ready 例外与失败处理以 required References 原文为准。

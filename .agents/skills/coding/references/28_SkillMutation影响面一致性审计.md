@@ -32,7 +32,6 @@ Rule / Contract changed?
 → CLI affected?
 → CI affected?
 → Tests affected?
-→ Outcome Eval affected?
 → Runtime / Source parity affected?
 ```
 
@@ -49,7 +48,6 @@ Rule / Contract changed?
 
 - Change/Issue/PR 字段、状态或生命周期语义变化：至少反查模板、Parser/Validator、CLI/Workflow、永久回归；
 - Reference trigger、Stable ID、dependency、Owner 变化：至少反查 Router/evaluator、Runtime Bundle/required Context、Source/Runtime exact-text/hash、Context Budget；
-- invariant/policy/heuristic/technique 变化：反查 Outcome Eval；heuristic 效果不得只靠关键词存在性证明；
 - Runtime/Project Payload/Installer/Bundle 协议变化：至少反查构建脚本、安装/升级/失败边界、三平台 package/smoke；
 - 仅说明性文字且没有改变任何可执行 Contract：可以把机器资产记为 not_applicable；当直接 diff + metadata/依赖未变已经足以证明时使用上面的 grouped N/A，不为了“逐项完成”打开无关文件。
 
