@@ -62,9 +62,7 @@ Runtime / Package
 
 profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required checks、PR/main/Release 归当前项目 CI Owner。维护本仓时依 [`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md) 与当前 Workflow/classifier，不复制 scope 列表；targeted-first 不绕过 required check，不授权无关昂贵验证。
 
-### 跨模型效果与 Rule Effectiveness
-
-行为性 Mutation（方法/路由/上下文/长任务状态/Handoff/完成）追加 `意图=Agent效果评测` 并加载 [31_跨模型一致性与Agent效果评测.md](31_跨模型一致性与Agent效果评测.md)；纯文字澄清不追加。不得按模型强弱删约束或让详细规则常驻所有 Core。
+行为性 Mutation 追加 `意图=Agent效果评测`；纯文字澄清不追加。完整 Rule Effectiveness / model-neutral 规则由 [31](31_跨模型一致性与Agent效果评测.md) 承担。
 
 
 ## 1. 规则完整性维护
