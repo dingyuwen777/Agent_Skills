@@ -5,7 +5,12 @@ from pathlib import Path
 
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime.project_payload import build_project_payload
-from runtime.agent_skills_runtime.routing import public_route_contract
+from runtime.agent_skills_runtime.routing import (
+    TASK_ROUTE_PROTOCOL,
+    compile_routing,
+    evaluate_route,
+    public_route_contract,
+)
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -32,6 +37,94 @@ class UniversalFigmaSkillTest(unittest.TestCase):
         self.assertFalse((FIGMA_ROOT / "README.md").exists())
         self.assertTrue((FIGMA_ROOT / "agents/openai.yaml").is_file())
         self.assertEqual({path.name for path in (FIGMA_ROOT / "references").glob("*.md")}, expected)
+
+    def test_figma_core_is_thin_and_modes_load_complete_owner_context(self) -> None:
+        """Core 只保留模式/硬门禁；详细规则按模式加载，轻审查不退化为完整 baseline Context。"""
+        skill = self._read(FIGMA_ROOT / "SKILL.md")
+        self.assertLessEqual(len(skill.splitlines()), 400)
+        self.assertLessEqual(len(skill.encode("utf-8")), 24_000)
+
+        manifest = compile_routing(ROOT)
+
+        def route(intent: str, mode: str = "审查") -> set[str]:
+            """按正式 evaluator 返回当前 Figma 模式的 required Reference 集合。"""
+            result = evaluate_route(
+                manifest,
+                {
+                    "协议": TASK_ROUTE_PROTOCOL,
+                    "信号": {
+                        "执行模式": [mode],
+                        "风险": ["L2"],
+                        "意图": [intent],
+                        "能力": ["Figma"],
+                    },
+                    "未知项": [],
+                    "依据": ["figma progressive disclosure regression"],
+                },
+            )
+            self.assertEqual(set(result["命中Skill"]), {"router", "figma"})
+            return set(result["必需Reference"])
+
+        review = route("Figma review-only")
+        self.assertTrue(
+            {
+                "figma.reference.00",
+                "figma.reference.01",
+                "figma.reference.03",
+                "figma.reference.04",
+                "figma.reference.06",
+                "figma.reference.07",
+            }.issubset(review)
+        )
+        self.assertNotIn("figma.reference.02", review)
+        self.assertNotIn("figma.reference.05", review)
+
+        baseline = route("Figma baseline-ready", "方案")
+        design_to_code = route("设计转代码", "实现")
+        complete = {f"figma.reference.0{index}" for index in range(8)}
+        self.assertTrue(complete.issubset(baseline))
+        self.assertTrue(complete.issubset(design_to_code))
+
+    def test_moved_core_domains_remain_in_specialist_references(self) -> None:
+        """从旧 Core 移出的布局、组件、Prototype、状态、Ready、Findings 与输出细则仍由唯一 Owner 完整承载。"""
+        owners = {
+            "03_设计系统与组件复用审计.md": (
+                "Owner-first Figma Mutation Gate",
+                "Component Property",
+                "Design Token",
+                "Page-private Composition",
+            ),
+            "04_Prototype状态与交互审计.md": (
+                "Prototype Interaction Completeness / No-code Acceptance Gate",
+                "SET_VARIABLE",
+                "Interaction Coverage Audit",
+                "不能因为工具写入返回成功就宣称 Prototype 已修好",
+            ),
+            "05_Design-to-Code交付门禁.md": (
+                "Normal / Data",
+                "Annotation Development Readiness Gate",
+                "Baseline Ready Checklist",
+                "Implementation ↔ Figma Conformance Gate",
+                "Figma Sync & Human Review",
+            ),
+            "06_Findings与修复优先级.md": (
+                "P0 — 阻塞正式开发基线",
+                "P1 — 应在正式交付前修复",
+                "P2 — 非阻塞体验优化",
+                "review-and-fix 后的 re-review",
+            ),
+            "07_页面布局与真实可用性审计.md": (
+                "页面尺寸必须来自真实使用环境",
+                "Geometry Collision Audit",
+                "每次 Figma 写操作后必须执行 Canvas-level Review",
+                "页面布局 Ready 门禁",
+            ),
+        }
+        for filename, markers in owners.items():
+            text = self._read(FIGMA_ROOT / "references" / filename)
+            for marker in markers:
+                with self.subTest(filename=filename, marker=marker):
+                    self.assertIn(marker, text)
 
     def test_high_value_figma_rules_remain_actionable(self) -> None:
         """Canvas、Prototype、Owner、状态、Ready、失败处理和写后复核不能因删 README 被摘要。"""
