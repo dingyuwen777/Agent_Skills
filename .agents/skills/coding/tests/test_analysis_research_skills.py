@@ -80,6 +80,29 @@ class AnalysisResearchSkillsTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, text)
 
+    def test_specialized_methods_live_in_references(self) -> None:
+        """Core 只留不可延迟契约，详细方法必须由按需 Reference 承载。"""
+        expected = {
+            "analysis": {
+                "01_问题定义与前提审计.md": ("澄清门槛", "审计前提"),
+                "02_第一性原理与因果根因.md": ("反事实", "根因"),
+                "03_方案比较与阶段化决策.md": ("当下方案", "后续演进"),
+                "04_复杂问题拆解与结论强度.md": ("结论强度", "控制分析深度"),
+            },
+            "research": {
+                "01_研究问题与检索策略.md": ("发现 → 追源 → 核验", "历史"),
+                "02_来源质量与一手事实.md": ("Source owner", "独立性"),
+                "03_时效版本与历史范围.md": ("后见之明", "版本"),
+                "04_证据冲突不确定性与停止.md": ("停止规则", "证据不足"),
+            },
+        }
+        for skill, references in expected.items():
+            for filename, markers in references.items():
+                text = (SKILLS / skill / "references" / filename).read_text(encoding="utf-8")
+                for marker in markers:
+                    with self.subTest(skill=skill, filename=filename, marker=marker):
+                        self.assertIn(marker, text)
+
     def test_general_analysis_routes_without_coding(self) -> None:
         """非工程通用分析不能因为“分析”二字反向加载 Coding。"""
         result = self._route({"风险": ["L1"], "意图": ["通用分析"]})

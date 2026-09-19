@@ -44,6 +44,8 @@ GitHub Release
 | Skill | 职责 | 正式入口 |
 | --- | --- | --- |
 | `router` | 所有任务的无条件入口、动态 Catalog、跨 Skill 选择、上下文与 Handoff | [`.agents/skills/router/SKILL.md`](.agents/skills/router/SKILL.md) |
+| `analysis` | 通用问题分析、前提审计、第一性原理、因果/根因、方案比较与复杂决策 | [`.agents/skills/analysis/SKILL.md`](.agents/skills/analysis/SKILL.md) |
+| `research` | 当前外部资料、事实核验、一手来源与证据综合 | [`.agents/skills/research/SKILL.md`](.agents/skills/research/SKILL.md) |
 | `coding` | 研发、调试、开发期验证治理、Git/CI 与交付 | [`.agents/skills/coding/SKILL.md`](.agents/skills/coding/SKILL.md) |
 | `testing` | 测试策略、黑盒/User Journey、探索式、Integration/Workflow/Regression 与独立测试执行 | [`.agents/skills/testing/SKILL.md`](.agents/skills/testing/SKILL.md) |
 | `review` | 独立 Code Review、Findings 与测试充分性/Evidence 审查 | [`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md) |
@@ -64,6 +66,22 @@ Review
 ```
 
 这些名称只是当前事实，不是永久白名单。正式 Skill 始终从 `.agents/skills/*/SKILL.md` 动态发现；新增合法正式 Skill 后，Runtime、Project Payload、安装和 Release 不应要求再维护一份固定名称列表。
+
+### 通用问题求解与研究
+
+```text
+已有事实上的推理、前提审计、第一性原理、因果、方案和决策 → Analysis
+答案依赖外部、最新、会变化或需要可核验证据 → Research
+先研究事实再做判断 → Research + Analysis
+```
+
+Analysis 默认先解决当前真实问题并给最小充分方案；理想架构只有在会帮助当前决策时作为后续阶段展开。Research 默认取得当前适用资料并优先追到一手 / source owner；用户明确历史截止时间、离线或限定资料时服从该范围。两者都遵守“证据足够即停止”。
+
+当前设计只吸收跨模型可复用原则：渐进式披露、短而明确的触发描述、just-in-time 高信号 Context、从真实 Eval 迭代规则、一手来源优先。供应商专属 Agent 编排、后台 Worker 或项目特定工作流不升级为通用默认。
+
+### 网页端薄 Bootstrap
+
+网页端 / 通用聊天宿主不需要复制完整 Analysis、Research 或工程规则。全局指令只负责定位本仓库当前 canonical Source、进入根 `AGENTS.md` 与 Router、只读取本次命中的最少充分 Context、保持目标项目事实优先，并在仓库不可读时如实降级。具体方法由当前仓库唯一 Owner 维护。
 
 ## 4. 规则事实源与 Runtime
 

@@ -119,6 +119,8 @@ class RuntimeSkillProjectionTest(unittest.TestCase):
         payload = build_project_payload(ROOT, build_bundle(ROOT))
         texts = _payload_texts(payload)
         required_by_skill = {
+            "analysis/SKILL.md": ("name: analysis", "第一性原理", "解决当下问题", "已确认事实"),
+            "research/SKILL.md": ("name: research", "最新", "一手来源", "证据不足", "停止条件"),
             "router/SKILL.md": ("name: router", "当前项目", "L1", "L2", "L3", "Fresh Evidence Contract"),
             "coding/SKILL.md": ("name: coding", "Red", "Completion Audit", "Git", "CI"),
             "docs/SKILL.md": ("name: docs", "Docs Impact", "targeted", "full"),
