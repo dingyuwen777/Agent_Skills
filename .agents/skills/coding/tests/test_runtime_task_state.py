@@ -104,6 +104,24 @@ class RuntimeTaskStateTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             store.start_task("state-task", "规划", invalid)
 
+    def test_legacy_task_can_begin_recording_state_at_checkpoint(self) -> None:
+        """旧调用先建立空状态后，第一次 checkpoint 仍可补入目标等语义字段。"""
+        store = RuntimeStore(self.bundle)
+        store.start_task("state-task", "规划")
+        token = self._route_token(store)
+        checked = store.checkpoint(
+            token,
+            "实现",
+            {
+                "目标": "补录当前任务状态",
+                "成功标准": ["后续 checkpoint 可继续维护状态"],
+                "下一步": ["继续实现"],
+            },
+        )
+        self.assertTrue(checked["通过"])
+        self.assertEqual(checked["任务状态"]["目标"], "补录当前任务状态")
+        self.assertEqual(checked["任务状态"]["下一步"], ["继续实现"])
+
     def test_state_does_not_rotate_route_capability(self) -> None:
         """只更新问题求解状态不能偷偷改变 route capability 或 required Context。"""
         store = RuntimeStore(self.bundle)
