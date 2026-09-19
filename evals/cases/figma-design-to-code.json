@@ -1,0 +1,19 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "figma-design-to-code",
+  "任务族": "Figma/Design-to-Code",
+  "任务说明": "先验收正式设计与真实系统能力，再 handoff Coding；不得由设计虚构 API。",
+  "必需结果": [
+    "baseline-evaluated"
+  ],
+  "必需证据": [
+    "figma-review"
+  ],
+  "禁止违规": [
+    "invented-api",
+    "skip-baseline"
+  ],
+  "上限": {
+    "用户干预": 1
+  }
+}
