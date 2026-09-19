@@ -64,7 +64,7 @@ profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required c
 
 ### 跨模型效果与 Rule Effectiveness
 
-Mutation 若改变 Agent 的方法、触发、路由、上下文组织、长任务状态、Handoff 或完成行为，先把 Task Route 追加 `意图=Agent效果评测`，再按 [31_跨模型一致性与Agent效果评测.md](31_跨模型一致性与Agent效果评测.md) 取得完整 model-neutral / Rule Effectiveness / Outcome Eval 规则；纯文字澄清且不改变可观察 Agent 行为时不追加该意图。不得因模型更强直接删规则，也不得让弱模型所需细节常驻所有 Core。
+行为性 Mutation（方法/路由/上下文/长任务状态/Handoff/完成）追加 `意图=Agent效果评测` 并加载 [31_跨模型一致性与Agent效果评测.md](31_跨模型一致性与Agent效果评测.md)；纯文字澄清不追加。不得按模型强弱删约束或让详细规则常驻所有 Core。
 
 
 ## 1. 规则完整性维护
