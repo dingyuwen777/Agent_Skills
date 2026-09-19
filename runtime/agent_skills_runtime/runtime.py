@@ -153,7 +153,7 @@ def normalize_task_state(value: Mapping[str, Any] | None) -> dict[str, Any]:
         raise ValueError("任务状态协议不受支持")
     normalized = {
         "协议": TASK_STATE_PROTOCOL,
-        "目标": _task_state_text(value.get("目标"), label="任务状态.目标"),
+        "目标": _task_state_text(value.get("目标"), label="任务状态.目标", allow_empty=True),
         "成功标准": _task_state_list(value.get("成功标准"), label="任务状态.成功标准"),
         "已确认决定": _task_state_list(value.get("已确认决定"), label="任务状态.已确认决定"),
         "已完成切片": _task_state_slices(value.get("已完成切片")),
