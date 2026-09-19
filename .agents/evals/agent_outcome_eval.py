@@ -239,8 +239,8 @@ def validate_run(run: Any, cases: Mapping[str, Mapping[str, Any]]) -> dict[str, 
         if occurred != UNAVAILABLE and not isinstance(occurred, bool):
             raise OutcomeEvalError(f"Run 禁止结果 {item_id} 发生必须是 boolean 或 unavailable")
         evidence = _evidence_list(result["证据"], f"Run 禁止结果 {item_id} 证据")
-        if occurred is True and not evidence:
-            raise OutcomeEvalError(f"Run 禁止结果 {item_id} 发生时必须有 Evidence")
+        if occurred != UNAVAILABLE and not evidence:
+            raise OutcomeEvalError(f"Run 禁止结果 {item_id} 已判定 true/false 时必须有检查 Evidence")
     if run["最终结果"] not in _ALLOWED_FINAL:
         raise OutcomeEvalError(f"Run 最终结果非法：{run['最终结果']!r}")
 
@@ -303,7 +303,7 @@ def grade_run(run: Mapping[str, Any], cases: Mapping[str, Mapping[str, Any]]) ->
 
 
 def compare_runs(runs: Sequence[Mapping[str, Any]], cases: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
-    """按模型+宿主聚合 run；只有真实模型覆盖全部兼容必测 case 且通过时标记 verified。"""
+    """按模型+宿主+源码 revision 聚合 run；只有真实运行完整覆盖同一 revision 必测 case 才标记 verified。"""
     if not runs:
         raise OutcomeEvalError("compare 至少需要一条 run")
     required_cases = {case_id for case_id, case in cases.items() if bool(case["兼容必测"])}
