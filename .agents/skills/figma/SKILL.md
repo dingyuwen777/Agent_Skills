@@ -112,7 +112,7 @@ implementation_issue_detected
 
 ## `review-only`
 
-在没有更具体的正式开发基线验收意图时，用于普通设计审查；无论是否存在对应代码仓库，**普通“全面检查 / 审查 / 找问题”默认 `review-only`**。有仓库时照样读取必要实现/Contract/状态事实来判断设计是否合理，但不因为“仓库存在”自动升级成正式基线验收。
+在没有更具体的正式开发基线验收意图时，用于普通设计审查；无论是否存在对应代码仓库，**普通“全面检查 / 审查 / 找问题”默认 `review-only`**。有仓库时照样读取必要实现/Contract/状态事实来判断设计是否合理，但不因为“仓库存在”默认 `baseline-ready` 或自动升级成正式基线验收。
 
 允许读取 Figma、仓库/需求事实、截图、Metadata、Prototype、Design Context，并输出 Findings。
 
@@ -279,7 +279,7 @@ Design-only 原型中尚不存在的实现边界标记 `implementation_required`
 
 ## 5.3 Baseline / Design-to-Code
 
-baseline-ready 必须执行 **Annotation Sufficiency Review** 与 **Annotation Development Readiness**；缺失、错误、过期或误导实现的关键机器事实未闭环时不得 `READY`。
+baseline-ready 必须执行 Annotation Sufficiency Review 与 **Annotation Development Readiness**；缺失、错误、过期或误导实现的关键机器事实未闭环时不得 `READY`。
 
 Baseline 需要的状态、布局、Owner、Prototype、真实系统、Capability Gap Inventory、Fresh Screenshot、Machine Audit、Design Context 等完整 Checklist 只在 [05_Design-to-Code交付门禁.md](references/05_Design-to-Code交付门禁.md) 维护，本 Core 不复制第二份。
 
