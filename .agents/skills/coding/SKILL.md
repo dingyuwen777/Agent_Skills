@@ -26,23 +26,9 @@ description: 面向不同项目形态、研发阶段和编程语言的可靠软�
 
 ### 简单代码 Fast Path
 
-如果用户只是要求一段**一次性简单代码 / snippet / scratch code / 小脚本示例**，并且当前已确认：
+一次性 snippet / scratch code / 小脚本只在**无目标仓库持久修改、无 public/data/security/依赖/build/release 变化、无真实外部副作用、无正式交付门禁**时使用 Scratch Fast Path。完整前提、退出条件和“仓库持久修改不自动等于 L2/L3”的规则由 [02_跨项目研发任务路由.md](references/02_跨项目研发任务路由.md) §1.1–1.2 完整承担；进入 Repository L1 后再读取 [20_L1轻量实现与验证路径.md](references/20_L1轻量实现与验证路径.md)。
 
-- 不对目标仓库做持久修改；
-- 不改变 public API/ABI/CLI、Schema、数据格式、权限、安全、依赖、构建、部署或发布边界；
-- 不对真实生产系统、外部 Provider、数据库、文件或其他资源执行有持久副作用的操作；
-- 没有正式 Docs、Review、PR、Release 或可审计交付要求；
-
-则不为了形式启动完整仓库治理。最小路径是：
-
-```text
-确认最少上下文与输入/输出
-→ 直接实现最小代码
-→ 使用最便宜且能直接证明目标的解析 / 编译 / 运行 / targeted test
-→ 如实报告验证证据和限制
-```
-
-这类任务不为形式创建 Change、扫描仓库文档、进入独立 Review 或启动 Git 流程。**Fast Path 不是降风险漏洞**：一旦发现需要持久改仓库，先退出 Scratch Fast Path 并按当前项目事实重新判断 L1/L2/L3；如果仍是行为不变机械修改或边界明确、影响隔离的极小修复，则进入 [20_L1轻量实现与验证路径.md](references/20_L1轻量实现与验证路径.md) 的 `Repository L1 Fast Path`，不因“持久修改仓库”本身预付完整 Feature/Bug/Docs/Review 流程。只有发现公共/数据/安全/依赖/运行时边界、真实外部副作用或正式交付要求时，才按对应事实单调升级。
+最小路径仍是“最少输入/输出与运行约束 → 最小代码 → 最便宜的直接验证 → 如实报告证据/限制”。一旦发现不再满足 Scratch/L1 前提，立即按新事实重新路由，不能用 Fast Path 降低真实风险。
 
 本 Skill 不是 Python、Web、Backend 或 PostgreSQL 专用流程。它的固定部分是“怎样可靠研发”；具体语言、框架、数据库、目录、包管理器、CI 和部署方式必须来自当前项目事实或 Greenfield 阶段经确认的新建工程决策。
 
@@ -102,7 +88,6 @@ CMakeLists.txt ≠ Linux-only
 17. **系统级分析先于局部实现，但不扩大修改范围。** 恢复任务相关能力边界后再决定局部修复、复用或抽象；相邻技术债不自动入 Scope。详见 [21_系统级分析与代码整洁收口.md](references/21_系统级分析与代码整洁收口.md)。
 18. **受影响代码域必须整洁收口，但只清本次直接责任。** 清理本次直接新增、修改或因此失效的实现；旧技术债默认只记录 Finding。详见 [21_系统级分析与代码整洁收口.md](references/21_系统级分析与代码整洁收口.md)。
 19. **Skill Mutation 先做 Mutation 目标解析。** 只改 canonical Owner；本地安装副本不得成为替代 Skill；Audit/Proposal 与 Apply 分开；局部 blocker 只阻塞依赖动作，required canonical Source/门禁不可得时按依赖边界**失败关闭**。详见 [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md)。
-20. **跨模型结果一致性。** GPT、DeepSeek、GLM 或其他模型/宿主只允许在内部推理、工具顺序和局部写法上不同；同一项目事实和授权必须使用同一 canonical Owner、required Context、风险、Evidence 与 Completion 标准。模型身份不得成为 Router 新维度；重要 Skill/规则变更的真实效果用 [31_跨模型效果评测与规则有效性.md](references/31_跨模型效果评测与规则有效性.md) 的 Outcome Eval 与 Rule Effectiveness Gate 验证，未实际运行的模型不得声称已验证兼容。
 
 ### 1.1 自主执行、澄清和阻塞边界
 
