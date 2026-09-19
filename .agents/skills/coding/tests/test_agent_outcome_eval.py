@@ -113,7 +113,7 @@ class AgentOutcomeEvalTest(unittest.TestCase):
             self.assertIn(marker, rule)
         self.assertIn("意图=Agent效果评测", mutation)
         self.assertIn("纯文字澄清不追加", mutation)
-        self.assertIn("模型/Provider/版本不是 Router 维度", router)
+        self.assertIn("模型身份不是 Router 维度", router)
         self.assertNotIn('"Skill Mutation"', rule.split("<!-- agent-routing:v1", 1)[1].split("-->", 1)[0])
 
     def test_fixture_runs_score_but_never_claim_verified_compatibility(self) -> None:
