@@ -33,7 +33,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 ## 2. 正式 Skill Catalog
 
-正式 Skill 按 `.agents/skills/*/SKILL.md` 动态发现；下表仅导航，非白名单。
+正式 Skill 按 `.agents/skills/*/SKILL.md` 动态发现；下表仅导航，**不是分发白名单**。
 
 | Skill | 职责 | 入口 |
 | --- | --- | --- |
