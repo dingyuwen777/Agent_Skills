@@ -91,6 +91,25 @@ class RuntimeTaskStateTest(unittest.TestCase):
         self.assertTrue(checkpoint["通过"])
         self.assertEqual(checkpoint["任务状态"], updated)
 
+        contract = store.route_contract()["任务状态契约"]
+        self.assertEqual(contract["协议"], TASK_STATE_PROTOCOL)
+        self.assertEqual(
+            contract["字段"],
+            [
+                "目标",
+                "成功标准",
+                "已确认决定",
+                "已完成切片",
+                "当前前沿",
+                "阻塞项",
+                "失败假设",
+                "未验证风险",
+                "下一步",
+                "非目标",
+            ],
+        )
+        self.assertIn("上下文压缩前", contract["维护时机"])
+
         reset = store.start_task("next-task", "规划")
         self.assertIsNone(reset["任务状态"])
 

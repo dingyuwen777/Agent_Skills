@@ -181,7 +181,8 @@ v1、v2、未知或损坏 legacy manifest 直接失败；旧 Runtime 不存在�
 宿主打开项目 / 建立 MCP 连接
 → 启动项目 Runtime `serve`
 → stdio 连接期间保持进程
-→ 可在同一连接内复用 task、route capability 与已加载 Context
+→ 可在同一连接内复用 task、route capability、已加载 Context 与当前 Task State
+→ 长任务在阶段实质变化/压缩/交接/重连前 checkpoint 最小问题求解状态
 → 宿主关闭/重载项目或断开 stdio/stdin
 → Runtime 进程退出
 ```
@@ -203,13 +204,16 @@ agent_skills_load_required_context
 agent_skills_checkpoint
 ```
 
-当前 MCP Tool Contract 为 v3，公共路由 Contract 为 v2。工具调用顺序保持兼容，但公共返回面收窄为完成宿主协作所需的最少信息：
+当前 MCP Tool Contract 为 v4，公共路由 Contract 为 v2。稳定 Tool 名称仍然只有上述六个；v4 在现有 `start_task` / `checkpoint` 上增加可选 Task State，不新增第七个 Tool。公共返回面继续只提供宿主协作所需的最少信息：
 
 - `status` 只返回 Release 版本、当前任务/约束是否建立和是否加载完成，以及用户可见进度边界；不公开 Skill Catalog、Reference 身份、source/routing/payload digest 或内部计数；
-- `route_contract` 继续提供宿主构造中文 Task Route 所需的维度/词汇，但不公开 Skill Catalog 或 Reference mapping；
+- `route_contract` 继续提供宿主构造中文 Task Route 所需的维度/词汇，并返回最小 Task State 字段契约；不公开 Skill Catalog 或 Reference mapping；
+- `start_task` 可选接收宿主保存的 `Agent Skills 任务状态/v1`，用于在压缩/交接/重连后恢复已确认的问题求解状态；不提供状态时仍按普通新任务使用；
 - `submit_route` 仍由唯一 evaluator 在 Runtime 内部计算并单调扩展 required Context，但只返回不透明 route capability、是否还需加载约束和是否仍存在未确认任务事实，不公开命中 Skill、Reference 数量或内部风险结果；capability 内部绑定当前 process/session、task、route digest、累积 required-set digest 与 generation，新一轮 submit、切换 task 或伪造 token 均使旧凭据失败关闭；
 - `load_required_context` 只接受当前 route capability，默认只返回尚未加载的 required 完整原文；每个公开 context envelope 只含 `完整原文`，不附带 Stable ID、Skill、文件名、路径、SHA256、字节数或 locator，也不接受任意 ID/filename/path/Catalog/glob/dump 参数；
-- `checkpoint` 只返回当前阶段和是否通过，不公开 required/loaded 集合详情。
+- `checkpoint` 仍先校验最新 route capability 和 required/loaded 状态；可选更新并回读规范化 Task State，但不公开 required/loaded 集合详情。
+
+Task State 的机器事实由 [`runtime/agent_skills_runtime/task_state.py`](agent_skills_runtime/task_state.py) 负责。它只允许目标/成功标准、已确认决定、已完成切片及 Evidence、当前前沿、阻塞项、失败假设、未验证风险、下一步和非目标等固定字段，并限制字段类型、长度和整体字节数。状态不产生授权、路由、测试通过或完成结论；Runtime 不为它创建磁盘 sidecar。需要跨进程恢复时，由宿主把上一 checkpoint 返回状态显式带回 `start_task`。
 
 事实充分、`未知项=[]` 的 Task Route 继续使用原有二值 fixed-point 语义。存在未知维度时，Runtime evaluator 使用 TRUE/FALSE/UNKNOWN 三值逻辑：UNKNOWN 只保守扩大真正依赖该未知维度的候选 Context，再展开依赖与风险 fixed-point；不得因为任一未知事实直接把全库设为 required。如果仅由未知事实把候选扩大到 full corpus，而事实充分部分本身并不需要全库，则 fail closed 并要求宿主先恢复更多当前项目事实。
 
@@ -291,7 +295,7 @@ dist/agent-skills.exe
 python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 ```
 
-该 smoke 使用真实 stdio MCP client 验证六个 Tool、中文 input schema、project-facing 公共进度 Contract、去标识化公共 envelope、route contract、submit、required Context exact-text、stale/伪造/跨 task capability、unknown-induced full-corpus fail-closed 和 checkpoint，不用内部 Python 函数调用冒充 MCP 边界。**Smoke 不要求公共进度文本重复“不得暴露/不得复述/高保真重建”等防披露措辞；它同时验证 project-facing 文本和私有执行 parity，防止为满足输出检查损害 exact Context。** hash/size/source/routing 等完整性仍在维护侧 Bundle/Builder 验证，不要求通过公共 context envelope 暴露。
+该 smoke 使用真实 stdio MCP client 验证六个 Tool、中文 input schema、project-facing 公共进度 Contract、去标识化公共 envelope、route contract、Task State 恢复/更新、submit、required Context exact-text、stale/伪造/跨 task capability、unknown-induced full-corpus fail-closed 和 checkpoint，不用内部 Python 函数调用冒充 MCP 边界。**Smoke 不要求公共进度文本重复“不得暴露/不得复述/高保真重建”等防披露措辞；它同时验证 project-facing 文本和私有执行 parity，防止为满足输出检查损害 exact Context。** hash/size/source/routing 等完整性仍在维护侧 Bundle/Builder 验证，不要求通过公共 context envelope 暴露。
 
 ## 7. 永久 CI
 
@@ -313,6 +317,8 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 - Windows onefile 无参数 EXE-parent 与 POSIX 无参数 cwd 语义、显式 `install --target` 优先级；
 - Builder JSON identity 与 no-sidecar Release preservation；
 - 动态 Skill Bundle + Project Payload 的源码级构建、投影确定性与内容守恒；
+- Task State schema/恢复/checkpoint 与六 Tool 不变性；
+- model-neutral Outcome Eval suite/run/score/compare Contract；fixture 只证明机器 Contract，不冒充真实模型兼容结果；
 - Active/changed Change Ready Check。
 
 `scope=package` 的平台 jobs 继续真实验证：

@@ -14,7 +14,7 @@ from .catalog import validate_bundle
 from .disclosure import USER_VISIBLE_PROGRESS_RULE
 from .encrypted_bundle import EncryptedBundleStore
 from .routing import evaluate_route, public_route_contract, validate_task_route
-from .task_state import normalize_task_state
+from .task_state import normalize_task_state, public_task_state_contract
 
 
 MCP_TOOL_CONTRACT_PROTOCOL = "Agent Skills MCP工具契约/v4"
@@ -200,6 +200,7 @@ class RuntimeStore:
         contract = dict(public_route_contract(self._routing_manifest))
         contract.pop("Skill", None)
         contract["协议"] = MCP_ROUTE_CONTRACT_PROTOCOL
+        contract["任务状态契约"] = public_task_state_contract()
         contract["用户可见进度规则"] = USER_VISIBLE_PROGRESS_RULE
         return contract
 

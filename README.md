@@ -100,11 +100,17 @@ Runtime Mode
 
 Runtime 不安装 canonical `references/` 或公开 Reference manifest，不接受任意 ID 加载。它不是第二套规则系统，也不摘要或重写 canonical References。
 
+对跨多阶段或可能发生上下文压缩、交接、重连的任务，Runtime 还提供显式 Task State：只保存目标、已确认决定、已完成切片及 Evidence、当前前沿、阻塞和下一步等问题求解状态；它不产生 Git/发布权限，也不替代测试、Review、CI 或 Completion Evidence。字段的机器事实由 [`runtime/agent_skills_runtime/task_state.py`](runtime/agent_skills_runtime/task_state.py) 负责。
+
 ### 同版本、跨宿主与模型边界
 
 Source / Runtime 是治理规则的取得方式，不是 Git 执行能力。实际仓库操作仍必须满足当前身份权限、Branch Protection / Ruleset、原子性、revision guard、Review、CI 和目标项目门禁；本地某一个 transport 失败不代表所有安全等价能力都不可用。
 
 “合并到主分支”表示完成当前已确认任务的适用端到端收尾，而不是只调用一次 merge API；“提交 PR 给我审核”则止于 PR Ready。详细语义由 [`.agents/skills/coding/references/23_端到端交付与合并后收尾.md`](.agents/skills/coding/references/23_端到端交付与合并后收尾.md) 维护，不按模型品牌复制不同流程。
+
+GPT、DeepSeek、GLM 或其他模型不会获得不同的 canonical Skill/Profile。同一任务事实、授权和 Requested Outcome 使用同一 Router、required Context、风险、Evidence 与 Completion Gate；模型能力只允许影响调查/迭代成本和实际 Outcome。维护者通过 [`evals/cases/core.json`](evals/cases/core.json) 与 [`.agents/skills/coding/scripts/agent_outcome_eval.py`](.agents/skills/coding/scripts/agent_outcome_eval.py) 使用同一标准校验真实 run artifact。fixture 只验证 Eval 机器 Contract，**不能**证明某个真实模型已经兼容；没有该模型实际运行 Evidence 时必须保持 `unverified`。
+
+当前 Runtime 继续使用仓库现有 private routing / required-context Contract；**不实现 SEP-2640 Compatibility**。当前正式 Engineering Skills 也**不包含通用 Research/Analysis Skill**；后者只有在未来存在独立需求和 Owner 边界时再单独设计。
 
 源码与二进制严格比较必须绑定同一 source revision、任务事实和环境。旧安装不会因为 canonical `main` 更新而自动热更新；需要严格复现时，应使用 Runtime identity 对应的 Release tag / source commit。
 
@@ -312,9 +318,11 @@ Agent_Skills/
 │   ├── requirements.txt
 │   ├── requirements-build.txt
 │   └── agent_skills_runtime/
+├── evals/                  # model-neutral Outcome Eval cases / deterministic fixtures
 ├── scripts/
 │   ├── build_runtime.py
-│   └── runtime_mcp_smoke.py
+│   ├── runtime_mcp_smoke.py
+│   └── sync_repository_issue_forms.py
 └── .github/workflows/
     ├── skill-tests.yml
     └── release.yml
@@ -347,6 +355,16 @@ python scripts/build_runtime.py --output-dir dist --json
 ```bash
 python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 ```
+
+验证 model-neutral Outcome Eval 契约：
+
+```bash
+python .agents/skills/coding/scripts/agent_outcome_eval.py validate-suite --suite evals/cases/core.json
+python .agents/skills/coding/scripts/agent_outcome_eval.py score-run --suite evals/cases/core.json --run <真实或fixture-run.json>
+python .agents/skills/coding/scripts/agent_outcome_eval.py compare --suite evals/cases/core.json --run <run-a.json> --run <run-b.json>
+```
+
+`compare` 只报告同一用例的 pass/fail/unverified 与差异，不选“最佳模型”。真实模型兼容结论必须由对应模型的真实 run artifact 支持，不能由仓库 fixture 代替。
 
 Completion Gate：
 
