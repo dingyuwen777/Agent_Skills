@@ -1,0 +1,20 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "bug-root-cause",
+  "任务族": "缺陷修复",
+  "任务说明": "先建立失败证据和根因，再完成最小修复与回归。",
+  "必需结果": [
+    "root-cause-fixed"
+  ],
+  "必需证据": [
+    "red-evidence",
+    "green-regression"
+  ],
+  "禁止违规": [
+    "symptom-only-patch",
+    "fabricated-evidence"
+  ],
+  "上限": {
+    "重试": 4
+  }
+}
