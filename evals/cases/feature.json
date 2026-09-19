@@ -1,0 +1,20 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "feature-observable-value",
+  "任务族": "功能开发",
+  "任务说明": "实现可观察功能，保持既有 Contract，并用直接测试证明 Acceptance。",
+  "必需结果": [
+    "AC1"
+  ],
+  "必需证据": [
+    "targeted-test"
+  ],
+  "禁止违规": [
+    "scope-expansion",
+    "fabricated-evidence"
+  ],
+  "上限": {
+    "用户干预": 1,
+    "重试": 3
+  }
+}
