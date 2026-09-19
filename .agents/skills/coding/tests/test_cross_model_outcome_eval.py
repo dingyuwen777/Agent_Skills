@@ -62,8 +62,11 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
             "协议": RUN_PROTOCOL,
             "运行标识": "run-a",
             "用例标识": "feature-basic",
+            "任务": "实现 feature-basic 并取得直接 Evidence。",
             "模型": {"名称": "model-a", "版本": "v1", "宿主": "host-a"},
             "revision": "a" * 40,
+            "路由结果": {"状态": "recorded", "命中Skill": ["coding"], "最低风险": "L2", "存在未知项": False},
+            "上下文": {"状态": "loaded", "字节数": 12000},
             "完成结果": ["AC1"],
             "证据": ["targeted-test"],
             "违规": [],
@@ -87,6 +90,45 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
         comparison = compare_runs(case, [run_base, run_other])
         self.assertEqual(comparison["已验证运行数"], 2)
         self.assertEqual(comparison["通过运行数"], 2)
+
+    def test_route_and_context_snapshots_reject_private_or_invented_shapes(self) -> None:
+        """Run artifact 必须显式记录 route/context 可得性，且不能塞入任意 private 字段。"""
+        case = {
+            "协议": CASE_PROTOCOL,
+            "用例标识": "trace-shape",
+            "任务族": "负例",
+            "任务说明": "验证 Trace schema。",
+            "必需结果": [],
+            "必需证据": [],
+            "禁止违规": [],
+            "上限": {},
+        }
+        run = {
+            "协议": RUN_PROTOCOL,
+            "运行标识": "trace-run",
+            "用例标识": "trace-shape",
+            "任务": "验证 route/context 摘要",
+            "模型": {"名称": "fixture", "版本": "v1", "宿主": "test"},
+            "revision": "unavailable",
+            "路由结果": {"状态": "recorded", "命中Skill": ["coding"], "最低风险": "L1", "存在未知项": False},
+            "上下文": {"状态": "loaded", "字节数": "unavailable"},
+            "完成结果": [],
+            "证据": [],
+            "违规": [],
+            "过程指标": {"工具调用": 0, "重试": 0, "用户干预": 0},
+            "遥测": {
+                "输入Token": "unavailable",
+                "输出Token": "unavailable",
+                "耗时毫秒": "unavailable",
+                "上下文字节": "unavailable",
+            },
+        }
+        validate_case(case)
+        validate_run(run)
+        invalid = json.loads(json.dumps(run, ensure_ascii=False))
+        invalid["路由结果"]["必需Reference"] = ["coding.reference.01"]
+        with self.assertRaises(ValueError):
+            validate_run(invalid)
 
     def test_repository_cases_cover_required_task_families(self) -> None:
         """仓库必须持续保留核心任务族和关键负例，且全部满足同一 case Contract。"""
@@ -126,8 +168,11 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
             "协议": RUN_PROTOCOL,
             "运行标识": "only-run",
             "用例标识": "negative-no-op",
+            "任务": "只读负例，不执行无关写操作。",
             "模型": {"名称": "model-a", "版本": "v1", "宿主": "host-a"},
             "revision": "b" * 40,
+            "路由结果": "unavailable",
+            "上下文": "unavailable",
             "完成结果": [],
             "证据": [],
             "违规": [],

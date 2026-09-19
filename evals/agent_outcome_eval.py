@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from collections.abc import Mapping, Sequence
@@ -31,7 +32,10 @@ _RUN_REQUIRED_FIELDS = {
     "协议",
     "运行标识",
     "用例标识",
+    "任务",
     "模型",
+    "路由结果",
+    "上下文",
     "revision",
     "完成结果",
     "证据",
@@ -45,6 +49,8 @@ _PROCESS_FIELDS = {"工具调用", "重试", "用户干预"}
 _TELEMETRY_FIELDS = {"输入Token", "输出Token", "耗时毫秒", "上下文字节"}
 _LIMIT_FIELDS = _PROCESS_FIELDS | {"上下文字节"}
 _TRACE_EVENT_FIELDS = {"类型", "名称", "状态", "说明"}
+_ROUTE_RESULT_FIELDS = {"状态", "命中Skill", "最低风险", "存在未知项"}
+_CONTEXT_RESULT_FIELDS = {"状态", "字节数"}
 _REVISION_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -111,6 +117,39 @@ def validate_case(case: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _route_result(value: Any) -> dict[str, Any] | str:
+    """校验脱敏后的路由结果；不把 private Reference identity 写入 run artifact。"""
+    if value == UNAVAILABLE:
+        return UNAVAILABLE
+    if not isinstance(value, Mapping) or set(value) != _ROUTE_RESULT_FIELDS:
+        raise ValueError("路由结果必须是 unavailable 或固定字段 object")
+    status = _nonempty_string(value.get("状态"), label="路由结果.状态", max_length=64)
+    skills = _string_list(value.get("命中Skill"), label="路由结果.命中Skill", limit=32)
+    risk = _nonempty_string(value.get("最低风险"), label="路由结果.最低风险", max_length=16)
+    if risk not in {"L1", "L2", "L3"}:
+        raise ValueError("路由结果.最低风险只允许 L1/L2/L3")
+    unknown = value.get("存在未知项")
+    if not isinstance(unknown, bool):
+        raise ValueError("路由结果.存在未知项必须是 boolean")
+    return {
+        "状态": status,
+        "命中Skill": skills,
+        "最低风险": risk,
+        "存在未知项": unknown,
+    }
+
+
+def _context_result(value: Any) -> dict[str, Any] | str:
+    """校验 required Context 加载摘要；正文不进入 Eval artifact。"""
+    if value == UNAVAILABLE:
+        return UNAVAILABLE
+    if not isinstance(value, Mapping) or set(value) != _CONTEXT_RESULT_FIELDS:
+        raise ValueError("上下文必须是 unavailable 或固定字段 object")
+    status = _nonempty_string(value.get("状态"), label="上下文.状态", max_length=64)
+    size = _telemetry_value(value.get("字节数"), label="上下文.字节数")
+    return {"状态": status, "字节数": size}
+
+
 def _validate_trace(value: Any) -> list[dict[str, str]]:
     """校验可选 Trace 事件；只保存脱敏摘要，不要求原始工具负载。"""
     if value is None:
@@ -174,8 +213,11 @@ def validate_run(run: Mapping[str, Any]) -> dict[str, Any]:
         "协议": RUN_PROTOCOL,
         "运行标识": _nonempty_string(run.get("运行标识"), label="运行标识", max_length=128),
         "用例标识": _nonempty_string(run.get("用例标识"), label="用例标识", max_length=128),
+        "任务": _nonempty_string(run.get("任务"), label="任务"),
         "模型": normalized_model,
         "revision": revision,
+        "路由结果": _route_result(run.get("路由结果")),
+        "上下文": _context_result(run.get("上下文")),
         "完成结果": _string_list(run.get("完成结果"), label="完成结果"),
         "证据": _string_list(run.get("证据"), label="证据"),
         "违规": _string_list(run.get("违规"), label="违规"),
@@ -275,3 +317,59 @@ def load_json(path: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError("JSON artifact 顶层必须是 object")
     return value
+
+
+def _print_json(value: Mapping[str, Any]) -> None:
+    """稳定输出 UTF-8 JSON，便于不同宿主和 CI 复用。"""
+    print(json.dumps(dict(value), ensure_ascii=False, sort_keys=True))
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    """构建不绑定 Provider 的 Outcome Eval CLI。"""
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    validate_case_parser = subparsers.add_parser("validate-case", help="校验 case JSON")
+    validate_case_parser.add_argument("--case", required=True)
+
+    validate_run_parser = subparsers.add_parser("validate-run", help="校验 run artifact JSON")
+    validate_run_parser.add_argument("--run", required=True)
+
+    grade_parser = subparsers.add_parser("grade", help="用统一标准评分一个真实 run artifact")
+    grade_parser.add_argument("--case", required=True)
+    grade_parser.add_argument("--run", required=True)
+
+    compare_parser = subparsers.add_parser("compare", help="比较多个已经实际运行的 artifact")
+    compare_parser.add_argument("--case", required=True)
+    compare_parser.add_argument("--run", action="append", required=True)
+    compare_parser.add_argument("--expected-model", action="append", default=[])
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """执行 validate/grade/compare；CLI 自身不调用模型或推断缺失 telemetry。"""
+    args = _build_parser().parse_args(argv)
+    if args.command == "validate-case":
+        _print_json(validate_case(load_json(args.case)))
+        return 0
+    if args.command == "validate-run":
+        _print_json(validate_run(load_json(args.run)))
+        return 0
+    if args.command == "grade":
+        _print_json(grade_run(load_json(args.case), load_json(args.run)))
+        return 0
+    if args.command == "compare":
+        expected = list(args.expected_model or [])
+        _print_json(
+            compare_runs(
+                load_json(args.case),
+                [load_json(path) for path in args.run],
+                expected_models=expected or None,
+            )
+        )
+        return 0
+    raise ValueError(f"未知命令：{args.command}")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
