@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260921-000300-runtime-license-public-keypair-recovery
 title: Public 仓库 Runtime License 产品密钥恢复
 level: L3
-status: in_progress
+status: blocked
 owner: dingyuwen777
 branch: tech/runtime-license-public-keypair-recovery
 created: 2026-09-21
@@ -239,11 +239,12 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 | --- | --- | --- | --- | --- |
 | V1 | main e0aa50ee | GitHub metadata + #283/#286 reread | confirmed | Public 状态与当前止损基线 |
 | V2 | current branch | canonical/text diff | Green | Public private-key 例外和安全降级说明已落库 |
-| V3 | PR #287 / Draft CI #1721 | Requirement Source gate | Red | Change 模板不完整；本 revision 已补齐 Contract |
+| V3 | PR #287 / Draft CI #1721 | Requirement Source gate | Red | Change 模板不完整；后续 revision 已补齐 Contract |
+| V4 | PR #287 / Draft CI #1722 | Requirement Source + compile + CLI smoke + self-contained tests | 单一 Red | Requirement Source、scope、依赖、编译、CLI smoke 均 Green；唯一失败是 test_public_repository_intentionally_tracks_product_key_pair_and_can_sign，因为 live tree 尚无 licensing/private_key.pem |
 
 ## 未验证内容与剩余风险
 
-- licensing/private_key.pem 尚未落库，当前 ChatGPT 宿主安全层阻止直接提交私钥内容；这是当前唯一实现 blocker。
+- licensing/private_key.pem 尚未落库；当前 ChatGPT 宿主安全层阻止直接提交私钥内容。CI #1722 已证明这是当前唯一实现 blocker。
 - 在该文件恢复前，product signer 和三平台 valid-License package 不能取得 Green。
 - 公开私钥本身使任何人都可自行签发，这是用户已接受的持续风险，不是待修复缺陷。
 
@@ -251,7 +252,7 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 
 - 提交：规则、文档、signer、public key 与 tests 已在任务分支
 - 拉取请求：#287 Draft
-- CI：#1721 首轮 Red 为 Change Contract；本 revision 修复后待 fresh run
+- CI：#1722 已取得精确 Red；唯一失败为 product private_key.pem 缺失，其他前置与编译/smoke 均 Green
 - 合并：未执行
 - Change 归档：未执行
 - 发布 / 部署：本任务不创建正式 Release
