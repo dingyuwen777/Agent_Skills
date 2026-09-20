@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-211210-runtime-offline-license
 title: Runtime 离线 License 授权
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/runtime-license-v1
 created: 2026-09-20
