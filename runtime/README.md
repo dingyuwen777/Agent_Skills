@@ -31,6 +31,9 @@ agent_skills_runtime/project_payload.py
 agent_skills_runtime/install_state.py
 → 从已验证 Project Payload 确定性派生 Runtime 内嵌 installation ownership；严格校验 legacy v3 migration 与安全 managed path
 
+agent_skills_runtime/licensing.py
+→ 解析固定项目 `.agents/license.lic`、用构建内嵌 Ed25519 公钥验签、缓存 verified Claims，并在每次受保护调用重新检查有效期
+
 agent_skills_runtime/project_installer.py
 → 无 sidecar 项目安装/升级、previous ownership、Codex/Cursor/Claude Code/DeepSeek Harness 宿主配置与回滚；legacy v3 仅作为一次迁移输入
 
@@ -381,6 +384,8 @@ Private Repository 承担 canonical Source 的访问控制；Runtime 加密不�
 构建时 `scripts/build_runtime.py` 只读取并验证 `licensing/public_key.pem`，把公钥嵌入临时 `_embedded_payload.py` 后生成 onefile；`licensing/private_key.pem` 只属于维护者签发面，不进入 Runtime package、Project Payload、Release ZIP、目标项目、MCP 返回、Builder JSON 或日志。
 
 Runtime verifier 由 `runtime/agent_skills_runtime/licensing.py` 单独负责。已验签 Claims 可以按 License 文件身份在进程内缓存，但每个受保护 MCP 调用都重新检查当前时间；License 文件被原子替换后自动重新读取并验签。安装器不拥有 `.agents/license.lic`，因此升级/回滚不得创建、覆盖、删除或迁移它。Source Mode 直接读取 canonical Source，不调用这层 Runtime License gate。
+
+稳定失败码为 `LICENSE_MISSING`、`LICENSE_INVALID`、`LICENSE_NOT_YET_VALID`、`LICENSE_EXPIRED`、`LICENSE_PRODUCT_MISMATCH`、`LICENSE_UNSUPPORTED_SCHEMA`。`status` 可以在没有有效 License 时返回这些最小诊断；`self-test` 和 `serve` 启动不要求 License，真正进入 route/start/submit/load/checkpoint 时统一 fail closed。
 Local Hardened Runtime v3 的目标是减少目标项目中的普通明文浏览/复制面、避免 Runtime 启动即持有全库 plaintext、检测 Manifest/record 篡改，并堵住方便的 unknown-route full-corpus export。它不是 TEE/KMS/DRM。
 
 v3 使用 encrypted private manifest、opaque record locator、HKDF-SHA256 用途隔离派生与 per-reference AES-256-GCM authenticated records。Runtime 默认只解密当前 required Context；这缩小主动 plaintext 生命周期，但 Python `bytes`/`str` 不能提供可证明的物理 zeroize，因此不得宣称离开作用域后 RAM 已立即清零。
