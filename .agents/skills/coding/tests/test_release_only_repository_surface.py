@@ -20,6 +20,8 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         usage = ROOT / "USAGE.md"
         self.assertTrue(usage.is_file(), "缺少最终 Release 用户唯一说明 USAGE.md")
         text = usage.read_text(encoding="utf-8")
+        self.assertIn("<project>/.agents/license.lic", text)
+        public_text = text.replace("<project>/.agents/license.lic", "<project>/LICENSE_FILE")
         for marker in (
             "AI 辅助开发使用说明",
             "Codex",
@@ -70,7 +72,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             "升级与回退",
             "agent-skills-v<VERSION>",
         ):
-            self.assertNotIn(maintainer_only, text)
+            self.assertNotIn(maintainer_only, public_text)
 
         readme = self._read("README.md")
         for maintainer_marker in (
@@ -151,6 +153,11 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertIn("coding/scripts/ready_check.py", paths)
 
         usage = self._read("USAGE.md")
+        self.assertIn("<project>/.agents/license.lic", usage)
+        usage_without_license_path = usage.replace(
+            "<project>/.agents/license.lic",
+            "<project>/LICENSE_FILE",
+        )
         for forbidden in (
             "安装和基础运行无需预装 Python",
             "部分 Coding 流程",
@@ -161,7 +168,7 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
             "Project Payload",
             ".agents/",
         ):
-            self.assertNotIn(forbidden, usage)
+            self.assertNotIn(forbidden, usage_without_license_path)
 
     def test_nested_maintenance_readme_is_not_distributed_but_runtime_resource_is(self) -> None:
         """源码内局部维护 README 可保留，但不能随 Project Payload 暴露；真实运行资源必须继续分发。"""
