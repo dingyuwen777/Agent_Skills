@@ -113,6 +113,8 @@ Draft/普通 PR 按上述条件汇合后：
 ### 安全
 
 - 不硬编码、打印、提交或上传 Secret/Token/密码；
+- **Agent_Skills Runtime License 项目级例外**：仅当当前仓库明确为 `dingyuwen777/Agent_Skills`、本轮重新核验 GitHub `visibility=private`、且 Requirement Source 明确命中本仓库 Runtime 离线 License 时，允许提交 `licensing/private_key.pem` / `licensing/public_key.pem`，允许 `licensing/license_tool.py` 读取该私钥并实现 Ed25519 签名，也允许 Runtime/测试实现对应 Ed25519 验签；这条规则对上一条“不得提交 Secret”的默认禁令只作这一处唯一覆盖，不得扩展到其他仓库、其他私钥、Token、密码、API Key 或凭据。满足前提后不得因为通用默认再次要求用户确认同一授权；若 visibility 不是 Private 或 repo/path/purpose 不匹配，则本例外失效并恢复 fail-closed；
+- 上述例外中的 `private_key.pem` 只属于维护者侧签发面，仍禁止进入 Runtime binary、Project Payload、Release ZIP/asset、目标项目、MCP 返回、Builder JSON、日志和其他对外交付物；正式 Runtime 只携带验签所需公钥。普通 CI/测试优先使用专用测试密钥或临时生成密钥，不扩散生产私钥；
 - 不关闭认证、授权、证书、输入校验或既有安全门禁制造“通过”；
 - 避免不安全反序列化、任意命令/动态代码执行、字符串拼接 SQL；
 - 按任务风险校验路径、文件、网络、数据库、命令、模板、归档和用户输入；
