@@ -22,8 +22,8 @@ def _job_text(workflow: str, name: str) -> str:
 class CiReadyEvidenceOrderTest(unittest.TestCase):
     """锁定 Ready-before-package 的成本边界和最终 required Gate 责任。"""
 
-    def test_core_collects_semantic_evidence_then_blocks_package_on_not_ready(self) -> None:
-        """targeted semantic 可以先跑，但昂贵 package 必须等当前 Change Ready。"""
+    def test_core_collects_semantic_evidence_without_holding_platform_build(self) -> None:
+        """Core 只负责 semantic/Ready；Linux 不再串行占据 Core。"""
         workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
         core = _job_text(workflow, "agent-skills-core")
         self.assertIn("Run selected self-contained tests", core)
@@ -42,35 +42,43 @@ class CiReadyEvidenceOrderTest(unittest.TestCase):
             core.index("Capture Coding Change readiness"),
             core.index("Enforce current Coding Change readiness"),
         )
-        self.assertLess(
-            core.index("Enforce current Coding Change readiness"),
-            core.index("Build and self-test Linux onefile Runtime"),
-        )
-        self.assertIn("steps.change-gate.outputs.ready == 'true'", core)
+        self.assertNotIn("Build and self-test Linux onefile Runtime", core)
+        self.assertNotIn("runtime_platform_smoke.py", core)
 
-    def test_platform_package_jobs_require_core_ready_signal(self) -> None:
-        """Windows/macOS Runner 不得在 current Change 未 Ready 时提前启动。"""
+    def test_platform_package_matrix_requires_core_ready_signal(self) -> None:
+        """Linux/Windows/macOS 使用同一 package Job，并且只在 Ready 后启动。"""
         workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
-        for job in ("runtime-windows-package", "runtime-macos-package"):
-            with self.subTest(job=job):
-                section = _job_text(workflow, job)
-                self.assertIn("needs: agent-skills-core", section)
-                self.assertIn("needs.agent-skills-core.outputs.runtime_scope == 'package'", section)
-                self.assertIn("needs.agent-skills-core.outputs.package_evidence_required == 'true'", section)
-                self.assertIn("needs.agent-skills-core.outputs.change_gate_ready == 'true'", section)
+        section = _job_text(workflow, "runtime-package")
+        self.assertIn("name: Runtime ${{ matrix.platform }} Package", section)
+        self.assertIn("needs: agent-skills-core", section)
+        self.assertIn("needs.agent-skills-core.outputs.runtime_scope == 'package'", section)
+        self.assertIn("needs.agent-skills-core.outputs.package_evidence_required == 'true'", section)
+        self.assertIn("needs.agent-skills-core.outputs.change_gate_ready == 'true'", section)
+        self.assertIn("runs-on: ${{ matrix.runner }}", section)
+        for marker in (
+            "platform: Linux",
+            "runner: ubuntu-24.04",
+            "platform: Windows",
+            "runner: windows-2025",
+            "platform: macOS",
+            "runner: macos-15",
+            "python scripts/runtime_platform_smoke.py",
+            "--verify-no-args",
+        ):
+            self.assertIn(marker, section)
 
     def test_final_required_gate_only_aggregates_and_fails_closed(self) -> None:
-        """Runtime Package Gate 保持 required identity，但不再重复 checkout/setup/ready_check。"""
+        """Runtime Package Gate 保持 required identity，只聚合 Core 与三平台 matrix。"""
         workflow = (ROOT / ".github/workflows/skill-tests.yml").read_text(encoding="utf-8")
         gate = _job_text(workflow, "runtime-package-gate")
         self.assertIn("name: Runtime Package Gate", gate)
         self.assertIn(
             "if: always() && needs.agent-skills-core.outputs.runtime_scope == 'package'", gate
         )
-        self.assertNotIn("RUNTIME_SCOPE", gate)
-        self.assertNotIn("change_only|governance|content", gate)
-        self.assertIn("CHANGE_GATE_READY", gate)
+        self.assertIn("runtime-package", gate)
+        self.assertIn("PACKAGE_RESULT", gate)
         self.assertIn('test "${CORE_RESULT}" = "success"', gate)
+        self.assertIn('test "${PACKAGE_RESULT}" = "success"', gate)
         self.assertIn("Runtime Package Gate remains fail-closed", gate)
         self.assertNotIn("actions/checkout", gate)
         self.assertNotIn("actions/setup-python", gate)
