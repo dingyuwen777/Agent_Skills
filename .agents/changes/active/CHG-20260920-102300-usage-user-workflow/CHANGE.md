@@ -185,10 +185,12 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 | V5 | PR #278 run #1579 | Requirement Source + selected human_docs/release_surface tests | 前置通过；测试失败 | 发现 release_surface 选中的 test_archive_ci_runtime_lifecycle.py 混入需要 mcp 的 stdio Runtime 测试，而 profile 明确不安装 Runtime dependency；确认为 CI 测试职责混放 |
 | V6 | head 2e4cbcc | USAGE 发布契约与静态复核 | 通过 | 用户侧必需短语恢复；内部术语仍 0；DeepSeek 仅 Windows；Markdown 正常 |
 | V7 | head db9b0ec / PR #278 | current-head re-review | NO_FINDINGS_WITHIN_SCOPE | stdio 测试原样迁移至独立 runtime-only 文件，生产实现/selector/断言不变，覆盖未降低 |
+| V8 | PR #278 run #1582 / head b3072a96 | full selected self-contained tests | 601 tests 中 4 个用户指南稳定入口回归失败；迁移后的 stdio 生命周期测试已通过 | 证明 CI 测试职责拆分有效，同时暴露新 USAGE 缺少 4 个既有用户入口文字 |
+| V9 | head 554a5bab | USAGE 稳定入口与敏感术语复核 | 通过 | “先确认问题和必要根因 / 先讨论方案，再决定是否实施 / 已有方案落地 / 大任务路径”均恢复；内部术语仍 0、DeepSeek 仅 Windows、Markdown 正常 |
 
 ## 未验证内容与剩余风险
 
-- 最终 current-head required CI 尚未完成；当前 head 会因修改 CI-self test 自动升级 full/package Evidence。
+- 最终 current-head required CI 尚未完成；最终 head 会因修改 CI-self test 自动升级 full/package Evidence。
 - merge/main-fresh/archive/Issue Closure 尚未完成。
 - 用户文档不涉及运行时行为变化；新增测试文件只保留原有 stdio 生命周期回归。
 
@@ -197,6 +199,6 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 - 分支：docs/user-usage-workflow
 - PR：#278（Draft，待 current-head required CI）
 - Reviewed content head：2e4cbccedf6a94a4ecb0cee16cb7b23c432c2305
-- Current re-reviewed head：db9b0ec6593ce82ddd02d198e023e56cbb9657f3
+- Current re-reviewed head：554a5bab84547c86b9feae089da0665f4a8b3bc0
 - Merge：未执行
 - Release / Deploy：不适用
