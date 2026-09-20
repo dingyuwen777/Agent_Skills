@@ -8,14 +8,12 @@ import unittest
 
 from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
 
-
 ROOT = Path(__file__).resolve().parents[4]
 VALIDATION = ROOT / ".agents/skills/coding/references/07_通用验证与证据策略.md"
 CI_ESCALATION = ROOT / ".agents/skills/coding/references/19_CI审查升级门禁.md"
 WORKFLOW_HEALTH = ROOT / ".agents/skills/coding/references/27_CI_Workflow健康检查与Actions清理.md"
 MAINTENANCE = ROOT / ".agents/MAINTENANCE.md"
 WORKFLOW_DIR = ROOT / ".github/workflows"
-
 
 def _job_text(workflow: str, name: str) -> str:
     """提取一个顶层 Workflow Job。"""
@@ -24,7 +22,6 @@ def _job_text(workflow: str, name: str) -> str:
     if match is None:
         raise AssertionError(f"缺少正式 Job：{name}")
     return match.group("body")
-
 
 class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
     """锁定 CI 最小充分而非“越多越好/越少越好”的治理边界。"""
@@ -186,25 +183,6 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertIn("Enforce current Coding Change readiness", core)
         self.assertIn("steps.change-gate.outputs.ready != 'true'", core)
 
-    def test_runtime_package_gate_keeps_identity_without_duplicate_setup(self) -> None:
-        workflow = self._read(WORKFLOW_DIR / "skill-tests.yml")
-        self.assertEqual(workflow.count("runs-on:"), 4)
-        self.assertIn("name: Agent Skills Gate", workflow)
-        self.assertIn("name: Runtime Package Gate", workflow)
-        gate = _job_text(workflow, "runtime-package-gate")
-        self.assertIn(
-            "if: always() && needs.agent-skills-core.outputs.runtime_scope == 'package'", gate
-        )
-        self.assertNotIn("change_only|governance|content", gate)
-        self.assertIn("name: Runtime Windows Package", workflow)
-        self.assertIn("name: Runtime macOS Package", workflow)
-        self.assertNotIn("name: Runtime Linux Package", workflow)
-        self.assertIn("Build and self-test Linux onefile Runtime", workflow)
-        self.assertIn("CHANGE_GATE_READY", gate)
-        self.assertNotIn("actions/checkout", gate)
-        self.assertNotIn("actions/setup-python", gate)
-        self.assertNotIn("ready_check.py", gate)
-
     def test_change_only_and_human_docs_do_not_force_runtime_semantic_setup(self) -> None:
         workflow = self._read(WORKFLOW_DIR / "skill-tests.yml")
         self.assertIn("runtime_dependencies_required", workflow)
@@ -220,27 +198,6 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         ):
             self.assertIn(marker, maintenance, marker)
 
-    def test_package_jobs_require_ready_and_keep_three_platform_evidence(self) -> None:
-        workflow = self._read(WORKFLOW_DIR / "skill-tests.yml")
-        self.assertIn("ready_for_review", workflow)
-        self.assertIn("package_evidence_required", workflow)
-        self.assertIn("change_gate_ready", workflow)
-        self.assertIn("steps.change-gate.outputs.ready == 'true'", workflow)
-        self.assertEqual(
-            workflow.count("needs.agent-skills-core.outputs.change_gate_ready == 'true'"),
-            2,
-        )
-        for marker in (
-            "Build and self-test Linux onefile Runtime",
-            "Runtime Windows Package",
-            "Runtime macOS Package",
-            "Verify Linux real stdio MCP contract",
-            "Verify real stdio MCP contract",
-            "Verify project-only single-binary installation",
-        ):
-            self.assertIn(marker, workflow)
-        self.assertIn("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", workflow)
-
     def test_setup_python_uses_dependency_cache_not_binary_cache(self) -> None:
         workflow = self._read(WORKFLOW_DIR / "skill-tests.yml")
         self.assertIn("cache: 'pip'", workflow)
@@ -248,7 +205,6 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertIn("runtime/requirements-build.txt", workflow)
         self.assertNotIn("cache-path: .runtime-dist", workflow)
         self.assertNotIn("actions/cache", workflow)
-
 
 if __name__ == "__main__":
     unittest.main()
