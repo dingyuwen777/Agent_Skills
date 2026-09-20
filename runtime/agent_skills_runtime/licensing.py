@@ -240,6 +240,7 @@ class LicenseManager:
         now = self._now_provider()
         if now.tzinfo is None or now.utcoffset() is None:
             raise RuntimeError("License 当前时间提供器必须返回 timezone-aware datetime")
+        now = now.replace(microsecond=0)
         if now < claims.not_before:
             raise LicenseError("LICENSE_NOT_YET_VALID", "License 尚未生效")
         if now > claims.expires_at:
