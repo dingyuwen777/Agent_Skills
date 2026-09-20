@@ -110,6 +110,8 @@ class ReleaseProductizationTest(unittest.TestCase):
             "runtime_mcp_smoke.py",
             "__install-state",
             "verify_no_args",
+            "reconfigure",
+            'encoding="utf-8"',
         ):
             self.assertIn(marker, source)
 
