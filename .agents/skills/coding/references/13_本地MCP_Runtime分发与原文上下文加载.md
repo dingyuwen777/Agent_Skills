@@ -503,7 +503,7 @@ Builder 不生成 artifact identity sidecar；维护侧 `scripts/build_runtime.p
 ```text
 release_version / source_commit / python_version
 artifact / artifact_sha256
-integrity_fingerprint
+integrity_fingerprint / license_public_key_sha256
 Bundle / Task Route / Routing Manifest / MCP / Project Payload protocol
 bundle_version / source_digest / routing_digest / payload_digest
 Skill 集合与聚合 context_budget
@@ -529,7 +529,7 @@ agent-skills-v<SemVer>-macos.zip
 
 每个 ZIP 根目录成员必须精确为当前平台 binary + 同版本 [`USAGE.md`](../../../../USAGE.md)。Private Routing Manifest、root material、Reference Catalog/pack、Builder JSON、checksum sidecar、独立 binary、其他平台 binary或维护资产不得成为额外正式 Release asset。
 
-三平台通过 job outputs 比较公共 identity；平台 binary SHA 各自与自己的 Builder 输出绑定，不要求跨平台 SHA 相等。发布前后都必须核验 Draft/Published Release 资产集合精确为三个平台 ZIP，不能通过宽泛通配夹带临时文件。
+三平台通过 job outputs 比较公共 identity，其中必须包含不可逆的 `license_public_key_sha256`，直接证明三个正式 Runtime 使用同一 License 验签身份；平台 binary SHA 各自与自己的 Builder 输出绑定，不要求跨平台 SHA 相等。发布前后都必须核验 Draft/Published Release 资产集合精确为三个平台 ZIP，不能通过宽泛通配夹带临时文件。
 
 ## 18. 当前版本安装与未来不兼容迁移
 
