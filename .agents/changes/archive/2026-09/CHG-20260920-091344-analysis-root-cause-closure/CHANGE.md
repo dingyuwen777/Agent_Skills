@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-091344-analysis-root-cause-closure
 title: 强化 Analysis 根因闭环与最小充分方案边界
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: feature/analysis-root-cause-closure
 created: 2026-09-20
