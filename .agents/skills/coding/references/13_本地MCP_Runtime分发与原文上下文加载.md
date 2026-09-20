@@ -563,6 +563,7 @@ Source Mode 是明文维护/直读模式；有源码访问权的维护者可以�
 ```text
 目标项目 AGENTS managed block / 真实事实
 → project-facing Entry / Router/专业 Skill Projection
+→ .agents/license.lic 离线门禁（status 可诊断）
 → agent_skills_route_contract
 → agent_skills_start_task（新任务或显式恢复 Durable Task State）
 → 宿主提交 Task Route
