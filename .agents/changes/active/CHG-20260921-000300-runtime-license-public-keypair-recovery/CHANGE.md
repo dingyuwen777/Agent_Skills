@@ -1,7 +1,7 @@
 ---
 schema: coding-change/v1
 id: CHG-20260921-000300-runtime-license-public-keypair-recovery
-title: Public 仓库 Runtime License 新密钥恢复
+title: Public 仓库 Runtime License 产品密钥恢复
 level: L3
 status: in_progress
 owner: dingyuwen777
@@ -35,7 +35,7 @@ data_changes: []
 # 变更摘要
 
 - **要解决的问题**：#286 在仓库 Public 状态下正确移除了已公开产品私钥并暂停正式签发；用户现明确接受 Public Repository 公开提交产品私钥，因此需要按新的安全边界恢复完整签发能力。
-- **拟议修改**：生成一套全新 Ed25519 key pair，公开提交 private/public key；移除 visibility=private 的产品级例外前提；恢复正式签发和三平台 valid-License smoke；同步文档，明确公开私钥意味着任何人都能自行签发合法 License，机制不再提供防伪造授权保证。
+- **拟议修改**：恢复 #284 已使用的产品 Ed25519 key pair，公开提交 private/public key；移除 visibility=private 的产品级例外前提；恢复正式签发和三平台 valid-License smoke；同步文档，明确公开私钥意味着任何人都能自行签发合法 License，机制不再提供防伪造授权保证。
 - **预期结果**：#283 AC3/AC4/AC6/AC8/AC10 重新满足；Runtime/Source/ownership/六 Tool Contract 继续保持 #284 已实现行为。
 
 # 背景、现状与问题
@@ -47,7 +47,7 @@ GitHub Issue #283。用户在 2026-09-21 明确覆盖此前 Private-only 假设�
 ## 当前事实
 
 - repository visibility 当前为 public。
-- #284 首套产品私钥已进入公开 Git 历史，永久视为 compromised，不得复用。
+- #284 首套产品私钥已进入公开 Git 历史；在此前“私钥必须保密”的模型下它被视为 compromised。用户现明确取消该保密前提并接受公开私钥，因此恢复 #284 同一产品签名身份可以保持既有 License 兼容。
 - #286 已删除 live private key、轮换 public key 到无私钥应急身份，并让正式签发 fail closed；#286 main-fresh #1720 Green。
 - Runtime 的 License verifier、五 Tool gate、external ownership、hot replace、v1 schema 等主体实现仍在 main。
 - Issue #283 已重新打开，AC3/AC4/AC6/AC8/AC10 当前未满足。
@@ -73,12 +73,12 @@ GitHub Issue #283。用户在 2026-09-21 明确覆盖此前 Private-only 假设�
 - 不改机器/项目绑定策略；
 - 不引入在线服务/KMS/Secret Manager；
 - 不重写公开 Git 历史；
-- 不复用任何已经公开过的旧私钥；
+- 不把公开私钥描述成秘密，也不宣称它提供授权防伪造；
 - 不改变六 MCP Tool、Project Payload ownership、License schema 或固定路径。
 
 # 实施方案
 
-1. 新生成从未出现过的 Ed25519 key pair；公开提交 `licensing/private_key.pem` 与替换后的 `public_key.pem`。
+1. 恢复 #284 已公开过且与既有 License 兼容的 Ed25519 product key pair；`public_key.pem` 回到 #284 产品身份，`private_key.pem` 公开跟踪。
 2. `license_tool.py` 恢复正常签发，不再因 Public visibility 假设 fail closed；仍交叉验证 key pair。
 3. 恢复 package/MCP smoke 的短期 valid License 路径，继续先验证 missing/fail-closed 再验证 valid full workflow。
 4. Maintenance/Security canonical 规则把例外条件改为“用户对 Agent_Skills Runtime License 明确授权公开提交该指定私钥”；不扩展到任何其他 Secret。
@@ -91,9 +91,9 @@ GitHub Issue #283。用户在 2026-09-21 明确覆盖此前 Private-only 假设�
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
 | R1 | Public 仓库允许指定 product private key | 用户当前明确授权 / #283 | not_satisfied | 待规则和 key 落库 |
-| R2 | 使用全新 key pair，不复用 compromised key | #286 安全事实 | not_satisfied | 待 key rotation |
+| R2 | 恢复 #284 产品 key identity 并明确公开私钥不提供 issuer exclusivity | 用户当前风险选择 / #286 历史事实 | partially_satisfied | public key 已恢复；private key 待落库 |
 | R3 | 恢复 license_tool 正常签发 | #283 AC3 | not_satisfied | 待实现与单测 |
-| R4 | Runtime 只嵌入新 public key，Release 不含 PEM/license | #283 AC4/AC8 | not_satisfied | 待三平台 package |
+| R4 | Runtime 只嵌入产品 public key，Release 不含 PEM/license | #283 AC4/AC8 | not_satisfied | 待 private key 落库与三平台 package |
 | R5 | valid-License real MCP smoke 恢复 | #283 AC8 | not_satisfied | 待 smoke/CI |
 | R6 | 文档不夸大公开私钥下的安全保证 | 用户风险接受 + #286 | not_satisfied | 待 Docs |
 | R7 | 端到端交付闭环 | #283 AC10 | not_satisfied | downstream gate |
@@ -109,7 +109,7 @@ GitHub Issue #283。用户在 2026-09-21 明确覆盖此前 Private-only 假设�
 
 # 完成审计
 
-- [ ] 重读 #283、#286 和 current main
+- [x] 重读 #283、#286 和 current main
 - [ ] R1-R6 全部 satisfied
 - [ ] 反向审计 private key source → signer → public key build → Runtime verify → package/Release
 - [ ] 独立 Review 无 blocker
