@@ -64,6 +64,55 @@ class LocalCacheAndDocsGovernanceTest(unittest.TestCase):
         ):
             self.assertIn(marker, reference)
 
+    def test_validation_asset_redundancy_gate_requires_cleanup_not_just_less_execution(self) -> None:
+        """验证资产门禁必须清理当前范围内的永久冗余，而不是只让它少跑。"""
+        reference = (
+            ROOT / ".agents/skills/coding/references/27_CI_Workflow健康检查与Actions清理.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "Validation Asset Redundancy Gate",
+            "少跑 ≠ 允许永久冗余",
+            "Owner / Contract / failure boundary / Evidence level",
+            "本次新引入、扩大、直接触及或实际暴露",
+            "不能只通过 selector、skip 或条件判断把永久冗余隐藏起来",
+            "无直接因果关系的历史冗余",
+            "clean / not_applicable / blocked",
+        ):
+            self.assertIn(marker, reference)
+
+    def test_agent_skills_completion_and_delivery_gate_validation_asset_redundancy(self) -> None:
+        """源仓库维护、完成审计和交付链必须在 Ready/merge 前关闭直接相关冗余。"""
+        maintenance = (ROOT / ".agents/MAINTENANCE.md").read_text(encoding="utf-8")
+        review = (
+            ROOT / ".agents/skills/coding/references/11_两阶段复核与完成前验证.md"
+        ).read_text(encoding="utf-8")
+        delivery = (
+            ROOT / ".agents/skills/coding/references/23_端到端交付与合并后收尾.md"
+        ).read_text(encoding="utf-8")
+
+        for marker in (
+            "Validation Asset Redundancy Gate",
+            "每次维护收尾",
+            "少跑不等于允许永久冗余",
+        ):
+            self.assertIn(marker, maintenance)
+
+        for marker in (
+            "Validation Asset Redundancy",
+            "进入 \`ready_for_review\` 前",
+            "clean / not_applicable",
+            "blocked",
+        ):
+            self.assertIn(marker, review)
+
+        for marker in (
+            "Validation Asset Redundancy Gate",
+            "PR Ready",
+            "guarded merge",
+            "blocked",
+        ):
+            self.assertIn(marker, delivery)
+
 
 if __name__ == "__main__":
     unittest.main()
