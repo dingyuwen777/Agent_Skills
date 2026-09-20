@@ -22,6 +22,8 @@ affected_paths:
   - scripts/
   - .agents/skills/coding/tests/
   - .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md
+  - .agents/MAINTENANCE.md
+  - .agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md
   - runtime/README.md
   - USAGE.md
   - README.md
@@ -32,6 +34,7 @@ contracts:
   - Source Mode no-license boundary
   - six MCP Tool Contract
   - Runtime Release ZIP surface
+  - Agent_Skills Runtime License 项目级安全例外
 data_changes: []
 ---
 
@@ -67,6 +70,7 @@ License 必须是 Runtime 外围授权层，不能绑定 Skill、Reference、Rou
 | E2 | Runtime 为六 Tool onefile + Project Payload v2 | server.py / Runtime canonical Reference | License 不增加 Tool，不进入 Payload |
 | E3 | CI 已收敛为三平台共享 package smoke | skill-tests.yml / runtime_platform_smoke.py | 不新增重复 Workflow |
 | E4 | cryptography 已是 Runtime 依赖 | runtime/requirements.txt | 不新增密码学依赖 |
+| E5 | 当前分支 canonical Maintenance/Security 已明确允许本仓库 Private Runtime License 提交 private_key.pem 并实现 Ed25519 sign/verify | .agents/MAINTENANCE.md / coding reference 14 | 后续 Codex 不需要再次询问同一授权 |
 
 ## 推断与待确认
 
@@ -220,7 +224,7 @@ License 嵌入客户 binary 会导致续期 rebuild；Home License 与项目级�
 
 ## 未验证内容与剩余风险
 
-当前宿主阻止向远端仓库写入任何 Ed25519 私钥签发或公钥 verify 实现；本地环境无 gh，且 Git 网络不可达，因此核心 Runtime License 验签与签发端无法在本会话落库。实现、targeted tests、三平台 package、独立 Review、merge/main-fresh 均未完成。
+本分支已同步 Agent_Skills Runtime License 项目级安全例外，明确允许 Private Repository 下的 licensing/private_key.pem 与 Ed25519 sign/verify，因此仓库治理规则不再是后续 Codex 的阻塞项。当前 ChatGPT 宿主仍对实际 Ed25519 签名/验签代码远端写入做上位内容级拦截；这是当前宿主能力限制，不是 Agent_Skills 规则限制。后续在允许该代码写入的 Codex/本地环境中可直接继续实现。targeted tests、三平台 package、独立 Review、merge/main-fresh 仍未完成。
 
 ## 交付状态
 
@@ -233,4 +237,4 @@ License 嵌入客户 binary 会导致续期 rebuild；Home License 与项目级�
 
 ## 备注
 
-用户已明确授权实现完成后合并 main；当前前置实现能力未满足，禁止以部分实现或跳过验签冒充交付。
+用户已明确授权实现完成后合并 main；当前分支已经固化 private_key.pem 与 Ed25519 sign/verify 的项目级授权。后续 Codex 应先重新核验仓库仍为 Private，再直接继续实现，不得因为通用 Secret 默认重复向用户确认。当前 ChatGPT 宿主能力仍受上位安全层限制，禁止以部分实现或跳过验签冒充交付。
