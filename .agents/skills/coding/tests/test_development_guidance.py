@@ -182,5 +182,37 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         self.assertIn("内容守恒优先于篇幅精简", skill)
 
 
+    def test_runtime_license_ed25519_exception_is_narrow_and_explicit(self) -> None:
+        """Agent_Skills 私有仓库的 License 私钥例外必须明确，同时不能放宽其他 Secret。"""
+        maintenance = self._read(".agents/MAINTENANCE.md")
+        delivery = self._read(
+            ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
+        )
+        for text in (maintenance, delivery):
+            for fragment in (
+                "Agent_Skills Runtime License 项目级安全例外",
+                "visibility=private",
+                "licensing/private_key.pem",
+                "licensing/public_key.pem",
+                "licensing/license_tool.py",
+                "Ed25519",
+                "Runtime binary",
+                "Project Payload",
+                "Release ZIP",
+                "目标项目",
+                "MCP 返回",
+                "Builder JSON",
+                "其他仓库",
+                "Token",
+                "密码",
+            ):
+                with self.subTest(fragment=fragment):
+                    self.assertIn(fragment, text)
+
+        self.assertIn("不需要再次向用户确认", maintenance)
+        self.assertIn("不得因为通用默认再次要求用户确认同一授权", delivery)
+        self.assertIn("只作这一处唯一覆盖", delivery)
+
+
 if __name__ == "__main__":
     unittest.main()
