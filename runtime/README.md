@@ -386,6 +386,8 @@ Private Repository 承担 canonical Source 的访问控制；Runtime 加密不�
 Runtime verifier 由 `runtime/agent_skills_runtime/licensing.py` 单独负责。已验签 Claims 可以按 License 文件身份在进程内缓存，但每个受保护 MCP 调用都重新检查当前时间；License 文件被原子替换后自动重新读取并验签。安装器不拥有 `.agents/license.lic`，因此升级/回滚不得创建、覆盖、删除或迁移它。Source Mode 直接读取 canonical Source，不调用这层 Runtime License gate。
 
 稳定失败码为 `LICENSE_MISSING`、`LICENSE_INVALID`、`LICENSE_NOT_YET_VALID`、`LICENSE_EXPIRED`、`LICENSE_PRODUCT_MISMATCH`、`LICENSE_UNSUPPORTED_SCHEMA`。`status` 可以在没有有效 License 时返回这些最小诊断；`self-test` 和 `serve` 启动不要求 License，真正进入 route/start/submit/load/checkpoint 时统一 fail closed。
+
+`agent-skills-license/v1` 是外部长期 Contract：已签 v1 License 有效期间，普通 Runtime/Skill 更新必须继续支持 v1 并保持当前产品公钥身份。v2 或公钥轮换必须单独设计迁移 Change，不能跟随普通内部 schema/Bundle 演进静默发生。
 Local Hardened Runtime v3 的目标是减少目标项目中的普通明文浏览/复制面、避免 Runtime 启动即持有全库 plaintext、检测 Manifest/record 篡改，并堵住方便的 unknown-route full-corpus export。它不是 TEE/KMS/DRM。
 
 v3 使用 encrypted private manifest、opaque record locator、HKDF-SHA256 用途隔离派生与 per-reference AES-256-GCM authenticated records。Runtime 默认只解密当前 required Context；这缩小主动 plaintext 生命周期，但 Python `bytes`/`str` 不能提供可证明的物理 zeroize，因此不得宣称离开作用域后 RAM 已立即清零。
