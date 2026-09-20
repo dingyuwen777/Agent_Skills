@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[4]
 BUILD_RUNTIME_PATH = ROOT / "scripts/build_runtime.py"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
-RUNTIME_PACKAGE_WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"
+RUNTIME_PACKAGE_WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"\nRUNTIME_PLATFORM_SMOKE = ROOT / "scripts/runtime_platform_smoke.py"
 
 
 class ReleaseProductizationTest(unittest.TestCase):
@@ -77,19 +77,41 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertIn("Release 已存在，拒绝覆盖", workflow)
         self.assertRegex(workflow, r"\^v\[0-9\]\+\\\.\[0-9\]\+\\\.\[0-9\]\+")
 
-    def test_release_builds_real_platform_artifacts_and_exact_three_zips(self) -> None:
+    def test_release_builds_real_platform_artifacts_and_uses_shared_smoke(self) -> None:
+        """Release productization 只证明真实三平台构建与 shared smoke；ZIP surface 由专门 Owner 负责。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for marker in (
-            "Release Runtime Linux", "Release Runtime Windows", "Release Runtime macOS",
-            "windows-2025", "macos-15", "ubuntu-24.04", "scripts/build_runtime.py",
-            "status --json", "self-test --json", "runtime_mcp_smoke.py", "install --target",
-            "Build platform distribution ZIPs", "ZIP 成员集合不正确", "release-runtime-linux",
-            "release-runtime-windows", "release-runtime-macos", 'expected = [binary, "USAGE.md"]',
+            "Release Runtime Linux",
+            "Release Runtime Windows",
+            "Release Runtime macOS",
+            "windows-2025",
+            "macos-15",
+            "ubuntu-24.04",
+            "scripts/build_runtime.py",
+            "python scripts/runtime_platform_smoke.py",
+            "release-runtime-linux",
+            "release-runtime-windows",
+            "release-runtime-macos",
         ):
             self.assertIn(marker, workflow)
-        self.assertIn("agent-skills-v${RELEASE_TAG#v}-linux.zip", workflow)
-        self.assertIn("agent-skills-v${RELEASE_TAG#v}-windows.zip", workflow)
-        self.assertIn("agent-skills-v${RELEASE_TAG#v}-macos.zip", workflow)
+
+    def test_ci_and_release_share_runtime_platform_smoke_owner(self) -> None:
+        """CI 与正式 Release 都必须复用同一 artifact smoke 实现，避免平台 shell 漂移。"""
+        self.assertTrue(RUNTIME_PLATFORM_SMOKE.is_file(), "缺少共享 Runtime platform smoke")
+        source = RUNTIME_PLATFORM_SMOKE.read_text(encoding="utf-8")
+        for marker in (
+            "status",
+            "self-test",
+            "runtime_mcp_smoke.py",
+            "__install-state",
+            "verify_no_args",
+        ):
+            self.assertIn(marker, source)
+
+        ci = RUNTIME_PACKAGE_WORKFLOW.read_text(encoding="utf-8")
+        release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("python scripts/runtime_platform_smoke.py", ci)
+        self.assertGreaterEqual(release.count("python scripts/runtime_platform_smoke.py"), 3)
 
     def test_release_draft_then_publish_gate_remains_atomic(self) -> None:
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
