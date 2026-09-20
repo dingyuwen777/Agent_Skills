@@ -5,9 +5,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+import shutil
 import sys
+import tempfile
 from typing import Any, Sequence
 
 
@@ -15,6 +18,7 @@ SOURCE_ROOT = Path(__file__).resolve().parents[1]
 if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
+from licensing.license_tool import issue_license
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, evaluate_route
 from runtime.agent_skills_runtime.runtime import TASK_STATE_PROTOCOL
@@ -144,8 +148,62 @@ def _assert_exact_contexts(payload: dict[str, Any], expected_texts: list[str], l
         raise RuntimeError(f"{label} 当前任务规则尚未完整加载")
 
 
+async def _assert_unlicensed_runtime(artifact: Path) -> None:
+    """验证无 License 时 status 可诊断，而第一个受保护 Tool 失败关闭。"""
+    try:
+        from mcp import Client, StdioServerParameters
+        from mcp.client.stdio import stdio_client
+    except ImportError as error:
+        raise RuntimeError("缺少 mcp；请安装 runtime/requirements.txt") from error
+
+    server = StdioServerParameters(command=str(artifact), args=["serve"])
+    async with Client(stdio_client(server)) as client:
+        status = _structured_result(await client.call_tool("agent_skills_status", {}))
+        if status.get("授权状态") != "missing" or status.get("授权错误码") != "LICENSE_MISSING":
+            raise RuntimeError("无 License 的 MCP status 未返回 missing/LICENSE_MISSING")
+        await _expect_tool_failure(
+            client,
+            "agent_skills_route_contract",
+            {},
+            "无 License route_contract",
+        )
+
+
+def _write_smoke_license(project_root: Path, source_root: Path) -> Path:
+    """使用仓库签发工具生成短期 smoke License；不把 License 纳入安装 ownership。"""
+    beijing = timezone(timedelta(hours=8), name="Asia/Shanghai")
+    today = datetime.now(beijing).date()
+    license_path = project_root / ".agents/license.lic"
+    issue_license(
+        "Agent Skills CI",
+        "Runtime smoke",
+        (today - timedelta(days=1)).isoformat(),
+        (today + timedelta(days=1)).isoformat(),
+        license_path,
+        private_key_path=source_root / "licensing/private_key.pem",
+        public_key_path=source_root / "licensing/public_key.pem",
+    )
+    return license_path
+
+
+def _prepare_project_artifact(
+    artifact: Path,
+) -> tuple[Path, Path, tempfile.TemporaryDirectory[str] | None]:
+    """确保 onefile 位于固定 <project>/.agents/runtime 路径，并返回可清理临时项目。"""
+    if artifact.parent.name == "runtime" and artifact.parent.parent.name == ".agents":
+        return artifact, artifact.parent.parent.parent, None
+
+    temporary = tempfile.TemporaryDirectory(prefix="agent-skills-license-smoke-")
+    project_root = Path(temporary.name) / "project"
+    runtime_dir = project_root / ".agents/runtime"
+    runtime_dir.mkdir(parents=True)
+    target = runtime_dir / artifact.name
+    shutil.copy2(artifact, target)
+    return target, project_root, temporary
+
+
 async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
-    """启动真实 stdio MCP 子进程，验证稳定 Tool Contract、交付规则 exact-text、capability 与 anti-export。"""
+    """启动真实 stdio MCP 子进程，验证 License 后的稳定 Tool Contract、exact-text 与 capability。"""
     try:
         from mcp import Client, StdioServerParameters
         from mcp.client.stdio import stdio_client
@@ -172,6 +230,8 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
 
         status = _structured_result(await client.call_tool("agent_skills_status", {}))
         _assert_progress_rule(status, "MCP status")
+        if status.get("授权状态") != "valid" or status.get("授权客户") != "Agent Skills CI":
+            raise RuntimeError("有效 License 的 MCP status 未返回 valid/授权客户")
         status_keys = _json_keys(status)
         for forbidden in (
             "Skill",
@@ -435,12 +495,27 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
 
 
 def run_smoke(artifact: str | Path, source_root: str | Path = SOURCE_ROOT) -> dict[str, Any]:
-    """同步执行真实 MCP smoke，供 CLI 和测试脚本重复使用。"""
+    """同步验证无 License fail-closed，再用短期外部 License 验证完整真实 MCP 工作流。"""
     artifact_path = Path(artifact).expanduser().resolve()
     source = Path(source_root).expanduser().resolve()
     if artifact_path.is_symlink() or not artifact_path.is_file():
         raise FileNotFoundError(f"Runtime artifact 不存在或不是普通文件：{artifact_path}")
-    return asyncio.run(_run_smoke(artifact_path, source))
+
+    runtime_artifact, project_root, temporary = _prepare_project_artifact(artifact_path)
+    license_path = project_root / ".agents/license.lic"
+    created_license = False
+    try:
+        if license_path.exists():
+            raise RuntimeError("MCP smoke 目标项目预先存在 license.lic，无法证明无 License failure boundary")
+        asyncio.run(_assert_unlicensed_runtime(runtime_artifact))
+        _write_smoke_license(project_root, source)
+        created_license = True
+        return asyncio.run(_run_smoke(runtime_artifact, source))
+    finally:
+        if created_license and license_path.is_file():
+            license_path.unlink()
+        if temporary is not None:
+            temporary.cleanup()
 
 
 def _build_parser() -> argparse.ArgumentParser:

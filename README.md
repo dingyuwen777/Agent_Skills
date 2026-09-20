@@ -133,6 +133,17 @@ Runtime Mode
 
 Runtime 不安装 canonical `references/` 或公开 Reference manifest，不接受任意 ID 加载。它不是第二套规则系统，也不摘要或重写 canonical References。
 
+### Runtime License（维护者）
+
+正式 Runtime Mode 使用项目级外部文件 `<project>/.agents/license.lic` 做完全离线期限授权；Source Mode 永远不检查该文件。
+
+维护者签发时打开 `licensing/license_tool.py`，只修改文件顶部的客户名称、联系人、生效日期、到期日期和输出文件，然后运行：
+
+```bash
+python licensing/license_tool.py
+```
+
+默认生成 `licensing/output/license.lic`，该目录被 Git 忽略。仓库中的 `licensing/private_key.pem` / `public_key.pem` 是长期 Ed25519 产品签名密钥对；普通续期只修改日期并重新运行签发工具，不重新生成密钥。正式 Builder 只读取/嵌入公钥，私钥不得进入 Runtime binary、Project Payload、Release、目标项目或公共输出。
 ### 同版本、跨宿主与模型边界
 
 Source / Runtime 是治理规则的取得方式，不是 Git 执行能力。实际仓库操作仍必须满足当前身份权限、Branch Protection / Ruleset、原子性、revision guard、Review、CI 和目标项目门禁；本地某一个 transport 失败不代表所有安全等价能力都不可用。

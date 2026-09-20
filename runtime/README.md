@@ -31,6 +31,9 @@ agent_skills_runtime/project_payload.py
 agent_skills_runtime/install_state.py
 → 从已验证 Project Payload 确定性派生 Runtime 内嵌 installation ownership；严格校验 legacy v3 migration 与安全 managed path
 
+agent_skills_runtime/licensing.py
+→ 解析固定项目 `.agents/license.lic`、用构建内嵌 Ed25519 公钥验签、缓存 verified Claims，并在每次受保护调用重新检查有效期
+
 agent_skills_runtime/project_installer.py
 → 无 sidecar 项目安装/升级、previous ownership、Codex/Cursor/Claude Code/DeepSeek Harness 宿主配置与回滚；legacy v3 仅作为一次迁移输入
 
@@ -261,7 +264,7 @@ scripts/build_runtime.py ... --release-version <SemVer> --json
 
 构建器读取显式版本和真实 source commit，动态发现 Skill/Reference，编译 canonical metadata，构建逻辑 Bundle v3 / source identity，从 canonical exact-text 生成 encrypted private manifest + per-reference authenticated records，并从同一 canonical Source 自动生成 no-Stub Project Payload 中的 project-facing Entry/Skill/agent prompt Projection，再生成当前平台 artifact 并执行 `status` / `self-test` 校验。由于公共 `status/self-test` 不暴露详细内部摘要，Builder 会在维护侧用同一份 Bundle、Payload、release/source 身份计算一个不可逆整体完整性指纹，并要求 artifact `self-test` 返回完全一致的指纹；这样仍能证明 artifact 与当前构建材料一致，同时不把内部身份字段重新开放给 Runtime 日常调用。
 
-Build 每次生成新的高熵 root material 与 bundle salt。完全本地、离线、零额外用户配置的 Runtime binary 必然包含或能够恢复执行解密所需的根材料；当前实现将其与 v3 encrypted container 一同嵌入 onefile 临时构建副本。该事实只能描述为 reverse-engineering hardening，不得宣称 binary 内存在本机 Owner 无法恢复的秘密。root material、派生 key、route capability 和 plaintext corpus 都不得写入日志、Release asset 或 sidecar。
+Build 每次生成新的高熵 root material 与 bundle salt。对 Bundle 解密本身不要求用户额外输入 password/key；因此完全本地的 Runtime binary 必然包含或能够恢复执行解密所需的根材料。当前实现将其与 v3 encrypted container 一同嵌入 onefile 临时构建副本。该事实只能描述为 reverse-engineering hardening，不得宣称 binary 内存在本机 Owner 无法恢复的秘密。root material、派生 key、route capability 和 plaintext corpus 都不得写入日志、Release asset 或 sidecar。
 
 **Builder 不再生成 `.manifest.json` sidecar。** `--json` 直接返回维护侧 build identity，至少包括：
 
@@ -359,7 +362,7 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 
 ```text
 release_version / source_commit / python_version
-integrity_fingerprint
+integrity_fingerprint / license_public_key_sha256
 Bundle/Task Route/Routing Manifest/MCP Tool/Project Payload protocols
 bundle_version / source_digest / routing_digest / payload_digest
 ```
@@ -372,11 +375,24 @@ Release 流程明确不生成、上传或打包任何 identity `*.manifest.json`
 
 ## 9. 安全边界
 
-Private Repository 承担 canonical Source 的访问控制；Runtime 加密不能替代仓库权限。Local Hardened Runtime v3 的目标是减少目标项目中的普通明文浏览/复制面、避免 Runtime 启动即持有全库 plaintext、检测 Manifest/record 篡改，并堵住方便的 unknown-route full-corpus export。它不是 TEE/KMS/DRM。
+Private Repository 承担 canonical Source 的访问控制；Runtime 加密不能替代仓库权限。
+
+### Runtime License
+
+正式 Runtime Mode 额外使用固定项目文件 `<project>/.agents/license.lic` 做完全离线期限授权。License Envelope 使用 `agent-skills-license/v1`，Ed25519 签名覆盖原始 payload bytes；Claims 只包含 License ID、产品、客户/联系人、签发时间、生效时间和到期时间，不绑定机器、项目、Skill、Reference、Bundle/Payload digest 或 Runtime release version。
+
+构建时 `scripts/build_runtime.py` 只读取并验证 `licensing/public_key.pem`，把公钥嵌入临时 `_embedded_payload.py` 后生成 onefile；`licensing/private_key.pem` 只属于维护者签发面，不进入 Runtime package、Project Payload、Release ZIP、目标项目、MCP 返回、Builder JSON 或日志。
+
+Runtime verifier 由 `runtime/agent_skills_runtime/licensing.py` 单独负责。已验签 Claims 可以按 License 文件身份在进程内缓存，但每个受保护 MCP 调用都重新检查当前时间；License 文件被原子替换后自动重新读取并验签。安装器不拥有 `.agents/license.lic`，因此升级/回滚不得创建、覆盖、删除或迁移它。Source Mode 直接读取 canonical Source，不调用这层 Runtime License gate。
+
+稳定失败码为 `LICENSE_MISSING`、`LICENSE_INVALID`、`LICENSE_NOT_YET_VALID`、`LICENSE_EXPIRED`、`LICENSE_PRODUCT_MISMATCH`、`LICENSE_UNSUPPORTED_SCHEMA`。`status` 可以在没有有效 License 时返回这些最小诊断；`self-test` 和 `serve` 启动不要求 License，真正进入 route/start/submit/load/checkpoint 时统一 fail closed。
+
+`agent-skills-license/v1` 是外部长期 Contract：已签 v1 License 有效期间，普通 Runtime/Skill 更新必须继续支持 v1 并保持当前产品公钥身份。v2 或公钥轮换必须单独设计迁移 Change，不能跟随普通内部 schema/Bundle 演进静默发生。
+Local Hardened Runtime v3 的目标是减少目标项目中的普通明文浏览/复制面、避免 Runtime 启动即持有全库 plaintext、检测 Manifest/record 篡改，并堵住方便的 unknown-route full-corpus export。它不是 TEE/KMS/DRM。
 
 v3 使用 encrypted private manifest、opaque record locator、HKDF-SHA256 用途隔离派生与 per-reference AES-256-GCM authenticated records。Runtime 默认只解密当前 required Context；这缩小主动 plaintext 生命周期，但 Python `bytes`/`str` 不能提供可证明的物理 zeroize，因此不得宣称离开作用域后 RAM 已立即清零。
 
-完全本地、离线、零额外用户配置意味着 binary 必然包含或能够恢复执行解密所需的根密钥材料。当前实现不再使用“一个明显完整 Bundle key + 整包 ciphertext”的 v2 结构，但这只是提高静态提取和批量导出的成本，不形成对本机 Owner 不可恢复的秘密。不得打印或发布 root material、派生 key、route capability、private manifest 或 canonical plaintext corpus。
+完全本地、离线的 Bundle 解密意味着 binary 必然包含或能够恢复执行解密所需的根密钥材料；这与项目级 `.agents/license.lic` 的使用期限授权是两个独立边界。当前实现不再使用“一个明显完整 Bundle key + 整包 ciphertext”的 v2 结构，但这只是提高静态提取和批量导出的成本，不形成对本机 Owner 不可恢复的秘密。不得打印或发布 root material、派生 key、route capability、private manifest 或 canonical plaintext corpus。
 
 MCP anti-export 同样是应用层边界：公共协议不提供按 ID/filename/path/Catalog/glob/dump 的任意读取接口；未知事实只保守扩大相关候选，unknown-induced full corpus fail closed；task-bound capability 阻止 stale、cross-task 与伪造 token。它不能阻止控制本机的用户观察合法 MCP plaintext、反复构造真实任务或 Hook Runtime。
 

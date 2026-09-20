@@ -29,6 +29,7 @@ _IDENTITY_KEYS = (
     "integrity_fingerprint",
     "artifact_sha256",
     "python_version",
+    "license_public_key_sha256",
     "bundle_schema",
     "bundle_version",
     "task_route_protocol",
@@ -217,7 +218,12 @@ def _verify_installed_project(target: Path) -> Path:
             ),
         )
 
-    _run_json([str(installed), "status", "--json"])
+    license_path = target / ".agents/license.lic"
+    if license_path.exists():
+        raise SystemExit("Runtime installer 不得创建 .agents/license.lic")
+    status = _run_json([str(installed), "status", "--json"])
+    if status.get("授权状态") != "missing" or status.get("授权错误码") != "LICENSE_MISSING":
+        raise SystemExit("未放置 License 的已安装 Runtime status 未返回 missing")
     state = _run_json([str(installed), "__install-state", "--json"])
     if state.get("schema") != "agent-skills-runtime-install-state/v1":
         raise SystemExit("Runtime install-state schema 非法")
@@ -226,6 +232,8 @@ def _verify_installed_project(target: Path) -> Path:
     if "router/SKILL.md" not in state.get("managed_files", []):
         raise SystemExit("Runtime install-state 未认领 router/SKILL.md")
     _run_json([sys.executable, str(MCP_SMOKE), "--artifact", str(installed), "--json"])
+    if license_path.exists():
+        raise SystemExit("MCP smoke 结束后不应把测试 License 留在目标项目")
     return installed
 
 
@@ -294,6 +302,9 @@ def _build_and_verify(
     fingerprint = str(payload.get("integrity_fingerprint", ""))
     if re.fullmatch(r"[0-9a-f]{64}", fingerprint) is None:
         raise SystemExit("Runtime integrity fingerprint 非法")
+    license_public_key_sha256 = str(payload.get("license_public_key_sha256", ""))
+    if re.fullmatch(r"[0-9a-f]{64}", license_public_key_sha256) is None:
+        raise SystemExit("Runtime License 公钥 SHA256 非法")
 
     artifact_value = payload.get("artifact")
     if not isinstance(artifact_value, str) or not artifact_value:

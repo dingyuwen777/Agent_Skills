@@ -14,6 +14,7 @@ from .crypto import recover_root_material
 from .encrypted_bundle import EncryptedBundleStore
 from .governance_projection import issue_form_projection_transaction
 from .install_state import INSTALL_STATE_SCHEMA, build_install_state
+from .licensing import LicenseManager, license_status, require_valid_license
 from .project_installer import install_project
 from .project_payload import validate_project_payload
 from .runtime import RuntimeStore, USER_VISIBLE_PROGRESS_RULE
@@ -23,6 +24,7 @@ _STORE: RuntimeStore | None = None
 _PROJECT_PAYLOAD: dict[str, Any] | None = None
 _RELEASE_VERSION: str | None = None
 _SOURCE_COMMIT: str | None = None
+_LICENSE_MANAGER: LicenseManager | None = None
 _COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 _INTERNAL_INSTALL_STATE_COMMAND = "__install-state"
 
@@ -38,13 +40,19 @@ def _normalise_source_commit(value: Any) -> str | None:
 
 
 def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
-    """打开 v3 加密容器的私有索引，并恢复 RuntimeStore、Project Payload 与 Release Version。"""
-    global _STORE, _PROJECT_PAYLOAD, _RELEASE_VERSION, _SOURCE_COMMIT
-    if _STORE is not None and _PROJECT_PAYLOAD is not None and _RELEASE_VERSION is not None:
+    """打开 v3 加密容器、Project Payload 和 License 公钥，并恢复进程级 Runtime 状态。"""
+    global _STORE, _PROJECT_PAYLOAD, _RELEASE_VERSION, _SOURCE_COMMIT, _LICENSE_MANAGER
+    if (
+        _STORE is not None
+        and _PROJECT_PAYLOAD is not None
+        and _RELEASE_VERSION is not None
+        and _LICENSE_MANAGER is not None
+    ):
         return _STORE, _PROJECT_PAYLOAD, _RELEASE_VERSION
     try:
         from ._embedded_payload import (
             BUNDLE_CONTAINER_B64,
+            LICENSE_PUBLIC_KEY_PEM_B64,
             PROJECT_PAYLOAD_B64,
             RELEASE_VERSION,
             RUNTIME_ROOT_SHARES_B64,
@@ -57,8 +65,9 @@ def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
         root_material = recover_root_material(root_shares)
         container = base64.b64decode(BUNDLE_CONTAINER_B64, validate=True)
         project_payload_bytes = base64.b64decode(PROJECT_PAYLOAD_B64, validate=True)
+        license_public_key_pem = base64.b64decode(LICENSE_PUBLIC_KEY_PEM_B64, validate=True)
     except ValueError as error:
-        raise RuntimeError("内嵌 Runtime/Project Payload 加密材料格式非法") from error
+        raise RuntimeError("内嵌 Runtime/Project Payload/License 公钥材料格式非法") from error
     try:
         project_payload = json.loads(project_payload_bytes.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
@@ -75,6 +84,7 @@ def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
     release_version = str(RELEASE_VERSION).strip()
     if not release_version:
         raise RuntimeError("内嵌 release_version 不能为空")
+
     _PROJECT_PAYLOAD = project_payload
     _RELEASE_VERSION = release_version
     _SOURCE_COMMIT = _normalise_source_commit(SOURCE_COMMIT)
@@ -84,12 +94,47 @@ def _load_embedded_material() -> tuple[RuntimeStore, dict[str, Any], str]:
         payload_digest=str(project_payload["payload_digest"]),
         source_commit=_SOURCE_COMMIT,
     )
+    artifact_path = Path(sys.executable).resolve() if getattr(sys, "frozen", False) else None
+    _LICENSE_MANAGER = LicenseManager(license_public_key_pem, artifact_path=artifact_path)
     return _STORE, _PROJECT_PAYLOAD, _RELEASE_VERSION
 
 
 def _load_embedded_store() -> RuntimeStore:
     """返回完成 v3 Manifest/Payload 交叉验证的进程级 RuntimeStore。"""
     return _load_embedded_material()[0]
+
+
+def _load_license_manager() -> LicenseManager:
+    """返回与当前内嵌公钥和 Runtime artifact 绑定的进程级 License Manager。"""
+    _load_embedded_material()
+    if _LICENSE_MANAGER is None:
+        raise RuntimeError("Runtime License Manager 初始化失败")
+    return _LICENSE_MANAGER
+
+
+def _require_runtime_license() -> None:
+    """只在正式 frozen Runtime Mode 对受保护能力执行项目级 License 门禁。"""
+    if not getattr(sys, "frozen", False):
+        return
+    require_valid_license(_load_license_manager())
+
+
+def _status_payload() -> dict[str, Any]:
+    """返回 Runtime 最小状态并附加不泄露签名材料的 License 诊断。"""
+    result = _load_embedded_store().status()
+    if not getattr(sys, "frozen", False):
+        result["授权状态"] = "source_mode"
+        return result
+
+    current = license_status(_load_license_manager())
+    result["授权状态"] = current["status"]
+    if current.get("customer") is not None:
+        result["授权客户"] = current["customer"]
+    if current.get("expires_at") is not None:
+        result["授权到期"] = current["expires_at"]
+    if current.get("error_code") is not None:
+        result["授权错误码"] = current["error_code"]
+    return result
 
 
 def _runtime_artifact_path() -> Path:
@@ -130,12 +175,13 @@ def create_mcp_server():
 
     @mcp.tool()
     def agent_skills_status() -> dict[str, Any]:
-        """返回完成宿主协作所需的最小运行状态，不公开治理内部身份。"""
-        return _load_embedded_store().status()
+        """返回完成宿主协作所需的最小运行状态和 License 诊断，不公开治理内部身份。"""
+        return _status_payload()
 
     @mcp.tool()
     def agent_skills_route_contract() -> dict[str, Any]:
         """返回构造当前任务事实所需的中文词汇，不公开内部分类拥有者或规则映射。"""
+        _require_runtime_license()
         return _load_embedded_store().route_contract()
 
     @mcp.tool()
@@ -145,16 +191,19 @@ def create_mcp_server():
         任务状态: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """开始/重置当前任务；可传入经过 Runtime 校验的 Task State 进行显式恢复。"""
+        _require_runtime_license()
         return _load_embedded_store().start_task(任务标识, 阶段, 任务状态)
 
     @mcp.tool()
     def agent_skills_submit_route(任务标识: str, 任务路由: dict[str, Any]) -> dict[str, Any]:
         """校验当前任务事实并建立本任务后续规则加载所需的不透明 capability。"""
+        _require_runtime_license()
         return _load_embedded_store().submit_route(任务标识, 任务路由)
 
     @mcp.tool()
     def agent_skills_load_required_context(路由令牌: str, 重新加载: bool = False) -> dict[str, Any]:
         """返回当前任务需要的完整规则正文，不返回内部身份字段，也不接受任意 Reference 查询。"""
+        _require_runtime_license()
         return _load_embedded_store().load_required_context(路由令牌, reload=重新加载)
 
     @mcp.tool()
@@ -164,6 +213,7 @@ def create_mcp_server():
         任务状态更新: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """检查 required Context，并可更新可恢复 Task State；状态不产生权限或完成事实。"""
+        _require_runtime_license()
         return _load_embedded_store().checkpoint(路由令牌, 阶段, 任务状态更新)
 
     return mcp
@@ -275,6 +325,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         internal_result = _run_internal_command(raw_argv)
         if internal_result is not None:
             return internal_result
+
         parser = _build_parser()
         arguments = parser.parse_args(raw_argv)
         command = arguments.command or "install"
@@ -282,7 +333,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             create_mcp_server().run()
             return 0
         if command == "status":
-            _print_result(_load_embedded_store().status(), arguments.json)
+            _print_result(_status_payload(), arguments.json)
             return 0
         if command == "self-test":
             _print_result(_self_test_payload(), arguments.json)
@@ -304,6 +355,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             _print_result(_public_install_result(result), as_json)
             return 0
+
         parser.error(f"未知命令：{command}")
         return 2
     except (FileNotFoundError, NotADirectoryError, OSError, RuntimeError, ValueError) as error:

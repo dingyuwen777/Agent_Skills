@@ -65,7 +65,7 @@ Project-local Runtime
 
 Local MCP 必须继续让用户只用自然语言提出任务；宿主模型恢复项目事实、建立 Task Route，Runtime 只做确定性校验/求值/加载，不扫描项目替模型猜架构，也不成为第二个 Coding Agent。
 
-最终使用者不需要：访问或 clone Agent_Skills 源仓库、为 Runtime 安装预装 Python、外部安装脚本、Runtime Kit、全局 Runtime、额外 password/API key/license key/key file，或维护 `.agents/agent-skills-install.json` / `*.manifest.json`。
+最终使用者不需要：访问或 clone Agent_Skills 源仓库、为 Runtime 安装预装 Python、外部安装脚本、Runtime Kit、全局 Runtime、额外 password/API key，或维护 `.agents/agent-skills-install.json` / `*.manifest.json`。Runtime Mode 唯一额外授权资产是项目级 `.agents/license.lic`；它由维护者离线签发，不需要登录、联网激活或 License Server。Source Mode 不读取也不校验该文件。
 
 Project Payload 会保留正式 Skill 自己真正需要的运行资产，例如 Coding helper；目标环境缺少相关工具时只能按专业规则采用明确 fallback，并把无法执行的机器门禁记为未验证。
 
@@ -260,7 +260,7 @@ UNKNOWN 只扩大真正依赖该未知维度的候选，再执行依赖与风险
 
 Local Hardened Runtime v3 使用 HKDF-SHA256 + AES-256-GCM authenticated encryption。它提高普通静态提取、批量导出与篡改的成本，但不是 TEE/KMS/DRM。
 
-完全本地、离线、零额外配置意味着：binary 必然包含或能够恢复 Runtime 解密需要的 root material。Builder 只在临时构建副本内嵌 root material、encrypted container、Project Payload 与 Release identity；不得把 root material、derived key、private Manifest 或 plaintext corpus打印到日志、sidecar、Builder Release asset 或正式 ZIP。
+对于 Bundle 解密，完全本地 onefile 不额外要求用户输入 password/key，因此 binary 必然包含或能够恢复 Runtime 解密需要的 root material；这一点与项目级 `.agents/license.lic` 的使用期限授权是两个独立边界。Builder 只在临时构建副本内嵌 root material、encrypted container、Project Payload、License 公钥与 Release identity；不得把 root material、derived key、private Manifest、License 私钥或 plaintext corpus 打印到日志、sidecar、Builder Release asset 或正式 ZIP。
 
 它能够提供：
 
@@ -292,7 +292,7 @@ agent_skills_checkpoint
 
 ### `agent_skills_status`
 
-只返回 Release 版本、当前任务/约束是否建立和是否加载完成、MCP Contract 与用户可见进度规则。不得公开 Skill Catalog、Reference identity/count、source/routing/payload digest 或内部计数。
+只返回 Release 版本、当前任务/约束是否建立和是否加载完成、MCP Contract、用户可见进度规则，以及最小 License 诊断：授权状态；有效时可包含授权客户/到期时间，失败时可包含稳定错误码。不得公开 raw payload、signature、公私钥、Skill Catalog、Reference identity/count、source/routing/payload digest 或内部计数。
 
 ### `agent_skills_route_contract`
 
@@ -377,6 +377,16 @@ Windows frozen+TTY 无参数失败：flush error 后提示 Enter 并读一次；
 Windows: .agents/runtime/agent-skills.exe
 POSIX:   .agents/runtime/agent-skills
 ```
+
+Runtime Mode 的离线 License Contract 固定为：
+
+```text
+<project>/.agents/license.lic
+```
+
+该文件是项目 Owner 管理的外部授权资产，不属于 Project Payload、managed_files、install-state、source_digest、routing_digest 或 payload_digest。install / upgrade / rollback 不创建、不覆盖、不删除、不迁移它。正式 Runtime 只内嵌 Ed25519 公钥；维护者侧 `licensing/private_key.pem` 和签发工具不进入 binary、Project Payload、Release 或目标项目。`status` / `self-test` / `serve` 启动保持可诊断，五个实际工作流 MCP Tool 在 frozen Runtime Mode 下统一要求有效 License；签名解析结果可进程内缓存，但每次受保护调用都重新比较当前时间，文件身份变化时重新读取并验签。续期只需原路径替换 `license.lic`。
+
+`agent-skills-license/v1` 是正式外部授权 Contract，不适用 Agent_Skills 普通“默认不承担历史 Runtime 兼容”的自动删除规则：至少在已经签发的 v1 License 有效期内，后续 Runtime 必须继续保留 v1 reader，并继续使用同一产品 Ed25519 公钥身份。需要引入 v2、轮换产品公钥或停止 v1 时，必须另建 Change 明确迁移、双 reader/切换窗口、回滚和已签 License 处理，不能在普通 Skill/Runtime 迭代中静默改变。
 
 项目 Host 资产：
 
@@ -495,7 +505,7 @@ Builder 不生成 artifact identity sidecar；维护侧 `scripts/build_runtime.p
 ```text
 release_version / source_commit / python_version
 artifact / artifact_sha256
-integrity_fingerprint
+integrity_fingerprint / license_public_key_sha256
 Bundle / Task Route / Routing Manifest / MCP / Project Payload protocol
 bundle_version / source_digest / routing_digest / payload_digest
 Skill 集合与聚合 context_budget
@@ -521,7 +531,7 @@ agent-skills-v<SemVer>-macos.zip
 
 每个 ZIP 根目录成员必须精确为当前平台 binary + 同版本 [`USAGE.md`](../../../../USAGE.md)。Private Routing Manifest、root material、Reference Catalog/pack、Builder JSON、checksum sidecar、独立 binary、其他平台 binary或维护资产不得成为额外正式 Release asset。
 
-三平台通过 job outputs 比较公共 identity；平台 binary SHA 各自与自己的 Builder 输出绑定，不要求跨平台 SHA 相等。发布前后都必须核验 Draft/Published Release 资产集合精确为三个平台 ZIP，不能通过宽泛通配夹带临时文件。
+三平台通过 job outputs 比较公共 identity，其中必须包含不可逆的 `license_public_key_sha256`，直接证明三个正式 Runtime 使用同一 License 验签身份；平台 binary SHA 各自与自己的 Builder 输出绑定，不要求跨平台 SHA 相等。发布前后都必须核验 Draft/Published Release 资产集合精确为三个平台 ZIP，不能通过宽泛通配夹带临时文件。
 
 ## 18. 当前版本安装与未来不兼容迁移
 
@@ -555,6 +565,7 @@ Source Mode 是明文维护/直读模式；有源码访问权的维护者可以�
 ```text
 目标项目 AGENTS managed block / 真实事实
 → project-facing Entry / Router/专业 Skill Projection
+→ .agents/license.lic 离线门禁（status 可诊断）
 → agent_skills_route_contract
 → agent_skills_start_task（新任务或显式恢复 Durable Task State）
 → 宿主提交 Task Route

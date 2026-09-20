@@ -19,7 +19,7 @@ class ReleaseProductizationTest(unittest.TestCase):
         source = BUILD_RUNTIME_PATH.read_text(encoding="utf-8")
         for marker in (
             '"artifact_sha256"', '"release_version"', '"source_commit"',
-            '"integrity_fingerprint"', '"python_version"', '"bundle_schema"',
+            '"integrity_fingerprint"', '"python_version"', '"license_public_key_sha256"', '"bundle_schema"',
             '"bundle_version"', '"task_route_protocol"', '"routing_manifest_protocol"',
             '"mcp_tool_contract_protocol"', '"project_payload_schema"', '"source_digest"',
             '"routing_digest"', '"payload_digest"',
@@ -35,7 +35,7 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertIn("GITHUB_OUTPUT", workflow)
         for output_name in (
             "release_version", "source_commit", "integrity_fingerprint", "artifact_sha256",
-            "python_version", "bundle_schema", "bundle_version", "task_route_protocol",
+            "python_version", "license_public_key_sha256", "bundle_schema", "bundle_version", "task_route_protocol",
             "routing_manifest_protocol", "mcp_tool_contract_protocol", "project_payload_schema",
             "source_digest", "routing_digest", "payload_digest",
         ):
@@ -44,6 +44,7 @@ class ReleaseProductizationTest(unittest.TestCase):
             self.assertIn(f"{platform}_INTEGRITY_FINGERPRINT", workflow)
             self.assertIn(f"{platform}_ARTIFACT_SHA256", workflow)
             self.assertIn(f"{platform}_SOURCE_COMMIT", workflow)
+            self.assertIn(f"{platform}_LICENSE_PUBLIC_KEY_SHA256", workflow)
         self.assertIn("identity != reference", workflow)
         self.assertIn("sha256sum", workflow)
         self.assertIn("check_sha", workflow)

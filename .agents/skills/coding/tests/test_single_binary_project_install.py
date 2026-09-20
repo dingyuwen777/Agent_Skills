@@ -170,6 +170,24 @@ class SingleBinaryProjectInstallTest(unittest.TestCase):
         self.assertIn("[mcp_servers.agent-skills]", codex)
         self.assertIn("agent-skills:mcp:start", codex)
 
+    def test_external_license_is_not_owned_or_modified_by_install_upgrade(self) -> None:
+        """外部 .agents/license.lic 必须在首次安装和同 binary 升级中保持字节不变。"""
+        license_path = self.target / ".agents/license.lic"
+        license_path.parent.mkdir(parents=True, exist_ok=True)
+        original = b"external-license-fixture\n"
+        license_path.write_bytes(original)
+
+        payload = self._payload()
+        first = install_project(self.target, payload, self.runtime_artifact, release_version="1.2.3")
+        second = install_project(self.target, payload, self.runtime_artifact, release_version="1.2.4")
+
+        self.assertEqual(license_path.read_bytes(), original)
+        self.assertNotIn("license.lic", first.get("managed_files", []))
+        self.assertNotIn("license.lic", first.get("shared_files", []))
+        self.assertNotIn("license.lic", second.get("managed_files", []))
+        self.assertNotIn("license.lic", second.get("shared_files", []))
+        self.assertFalse((self.target / INSTALL_MANIFEST_PATH).exists())
+
     def test_payload_build_refuses_missing_shared_entry(self) -> None:
         """共享 Entry 缺失时 Builder 必须失败，不能生成语义不完整的合法 Payload。"""
         (self.source / ENTRY_RELATIVE).unlink()
