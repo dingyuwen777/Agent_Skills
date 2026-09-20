@@ -1,0 +1,21 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "analysis-root-cause-before-minimization",
+  "任务族": "通用分析",
+  "任务说明": "问题反复且根因未知，用户希望尽量少改；先判断所需诊断深度和关键机制，再在稳定解决问题的必要条件内最小化方案。",
+  "必需结果": [
+    "root-cause-depth-assessed",
+    "problem-mechanism-closure-before-minimization",
+    "minimal-sufficient-not-minimal-change",
+    "recurrence-risk-addressed"
+  ],
+  "必需证据": [
+    "causal-evidence-or-verification-plan"
+  ],
+  "禁止违规": [
+    "premature-permanent-solution",
+    "minimal-diff-as-sufficiency",
+    "symptom-only-patch"
+  ],
+  "上限": {}
+}

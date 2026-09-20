@@ -64,6 +64,110 @@ class AnalysisResearchSkillsTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, text)
 
+    def test_analysis_problem_closure_precedes_solution_minimization(self) -> None:
+        """Analysis Core 必须先保证问题/机制闭环，再谈方案最小化。"""
+        text = (SKILLS / "analysis" / "SKILL.md").read_text(encoding="utf-8")
+        for marker in (
+            "问题闭环优先于方案最小化",
+            "最小充分 ≠ 最小改动",
+            "分析深度 ≠ 方案规模",
+            "止血 ≠ 根治",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, text)
+
+    def test_analysis_root_cause_reference_has_depth_and_resolution_gates(self) -> None:
+        """根因 Reference 必须区分继续调查、轻量闭合、止血与永久修复。"""
+        text = (
+            SKILLS
+            / "analysis"
+            / "references"
+            / "02_第一性原理与因果根因.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "根因深度门槛",
+            "Lightweight 闭合",
+            "根因尚未确认",
+            "止血 / 缓解",
+            "永久修复",
+            "主要复发路径",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, text)
+
+    def test_analysis_solution_reference_minimizes_only_after_necessary_conditions(self) -> None:
+        """方案 Reference 不得把 diff 大小当作最小充分的代理指标。"""
+        text = (
+            SKILLS
+            / "analysis"
+            / "references"
+            / "03_方案比较与阶段化决策.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "先闭环再最小化",
+            "必要解决条件",
+            "文件数",
+            "代码量",
+            "步骤数",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, text)
+
+    def test_coding_diagnostics_share_the_same_problem_closure_contract(self) -> None:
+        """Coding 不能把最小实现或临时止血误报成根因已解决。"""
+        design = (
+            SKILLS / "coding" / "references" / "05_设计实施与根因调试.md"
+        ).read_text(encoding="utf-8")
+        diagnostic = (
+            SKILLS / "coding" / "references" / "22_根因调试.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("最小充分 ≠ 最小改动", design)
+        for marker in ("止血", "永久修复", "主要复发路径"):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, diagnostic)
+
+    def test_user_guidance_keeps_root_cause_before_minimal_solution(self) -> None:
+        """README/USAGE 的长期入口不能继续诱导先最小化、后诊断。"""
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        usage = (ROOT / "USAGE.md").read_text(encoding="utf-8")
+        for marker in ("最小充分 ≠ 最小改动", "分析深度 ≠ 方案规模"):
+            with self.subTest(surface="README", marker=marker):
+                self.assertIn(marker, readme)
+        for marker in ("先确认问题和必要根因", "止血不等于根治"):
+            with self.subTest(surface="USAGE", marker=marker):
+                self.assertIn(marker, usage)
+
+    def test_outcome_eval_covers_superficial_patch_and_mitigation_failures(self) -> None:
+        """Outcome Eval 必须保护浅层补丁和止血冒充根治两类失败模式。"""
+        case_dir = ROOT / "evals" / "cases"
+        expected = {
+            "analysis-root-cause-before-minimization.json": (
+                "minimal-sufficient-not-minimal-change",
+                "symptom-only-patch",
+            ),
+            "analysis-mitigation-vs-resolution.json": (
+                "mitigation-separated-from-resolution",
+                "mitigation-reported-as-resolved",
+            ),
+        }
+        for filename, markers in expected.items():
+            payload = (case_dir / filename).read_text(encoding="utf-8")
+            for marker in markers:
+                with self.subTest(filename=filename, marker=marker):
+                    self.assertIn(marker, payload)
+
+    def test_complex_analysis_defines_decision_target_without_precommitting_answer(self) -> None:
+        """复杂问题先明确要回答什么，但不得先选答案再找证据。"""
+        core = (SKILLS / "analysis" / "SKILL.md").read_text(encoding="utf-8")
+        reference = (
+            SKILLS
+            / "analysis"
+            / "references"
+            / "04_复杂问题拆解与结论强度.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("不是先选定答案", core)
+        self.assertIn("不预设答案", reference)
+
     def test_research_core_keeps_freshness_primary_source_and_stop_contract(self) -> None:
         """Research 默认查当前资料、追到一手来源，并有明确停止条件。"""
         text = (SKILLS / "research" / "SKILL.md").read_text(encoding="utf-8")
