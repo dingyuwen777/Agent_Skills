@@ -151,19 +151,7 @@ Requirement Source 为 GitHub Issue #279。用户明确要求以后每次合并�
 | R7 | Maintenance 源仓库完成门禁 | #279 / AC7 | satisfied | MAINTENANCE.md 要求每次维护收尾执行同一 Gate，并使用 clean/not_applicable/blocked |
 | R8 | Review/Delivery Ready/merge 薄门禁 | #279 / AC8 | satisfied | reference 11 与 23 在 ready_for_review / PR Ready / guarded merge 前要求 Gate clean/not_applicable |
 | R9 | 永久回归 | #279 / AC9 | satisfied | test_docs_ci_fast_path.py 新增 detailed Owner 与 completion/delivery 两个永久回归 |
-| R10 | 完整交付且不改产品行为 | #279 / AC10 | not_applicable | pre-merge Change 不自证未来 merge/main-fresh/archive/Issue Closure；这些继续由 downstream delivery gate 持有 |ng/reference 27 | 新增详细 Redundancy Gate | 唯一详细 Owner | R1-R6 |
-| MAINTENANCE.md | 源仓库专属强制完成要求 | 每次维护自动执行 | R7 |
-| coding/reference 11 | Completion/Review 薄触发 | Ready 前关闭缺口 | R8 |
-| coding/reference 23 | submit/deliver 薄触发 | merge 前关闭缺口 | R8 |
-| test_docs_ci_fast_path.py | 增加永久回归 | 防规则回退 | R9 |
-
-- [x] 调查当前实现和事实源
-- [x] 建立与风险相称的任务路由和验证矩阵
-- [x] 行为变化建立失败证据或说明测试例外
-- [x] 完成最小实现，不静默扩大范围
-- [x] 同步受影响的长期文档或明确不适用依据
-- [x] 取得仍覆盖当前版本的验证证据
-- [x] 完成需求追溯、完成审计和适用复核
+| R10 | 完整交付且不改产品行为 | #279 / AC10 | not_applicable | pre-merge Change 不自证未来 merge/main-fresh/archive/Issue Closure；这些继续由 downstream delivery gate 持有 |
 
 # 计划改动
 
@@ -227,7 +215,7 @@ Requirement Source 为 GitHub Issue #279。用户明确要求以后每次合并�
 - [x] upstream_re_read：已重读 #279、current main 与 current branch 规则；目标和非目标无漂移。
 - [x] change_coverage：R1-R9 已映射到直接实现/回归；R10 downstream 交付由 post-merge gate 持有。
 - [x] reverse_audit：已从实现任务 → coding.reference.28 → Maintenance/Completion/Delivery → PR Ready/merge 反向审计可达性。
-- [x] unresolved_cleared：R1-R9 satisfied，独立 Review 无 blocker；Validation Asset Redundancy Gate=clean。
+- [ ] unresolved_cleared：R1-R9 satisfied；等待 current-head 独立 Review 后确认无 blocker。
 
 # 完成证据与状态
 
@@ -239,7 +227,7 @@ Requirement Source 为 GitHub Issue #279。用户明确要求以后每次合并�
 | V2 | Draft PR #280 / run #1587 rerun | 新增回归（规则实现前） | Red：2 个新增测试按预期失败；Requirement Source/Change Contract 通过 | 证明当前规则缺少 Validation Asset Redundancy Gate |
 | V3 | branch current | Reference 27 / Maintenance / refs 11+23 静态反查 | 通过 | 详细 Owner、源仓库覆盖、Completion/Delivery 薄触发均可达 |
 | V4 | runs #1591/#1592/#1594 | full semantic regression | 新 Gate 语义回归已转 Green；仅 context budget 超限 | 功能/治理语义正确，但首次实现过厚 |
-| V5 | reviewed head 280cae5f | 独立 Review + Redundancy Gate audit | NO_FINDINGS_WITHIN_SCOPE；Gate=clean | 不抬预算，薄 Reference 已持续压缩；本任务未新增重复验证资产 |
+| V5 | historical intermediate head | 旧 Review 记录 | 已失效，不作为 current-head 交付证据 | current head 已发生后续修改，必须重新 Review |
 
 ## 未验证内容与剩余风险
 
