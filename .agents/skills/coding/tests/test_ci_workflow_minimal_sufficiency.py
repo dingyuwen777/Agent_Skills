@@ -135,6 +135,13 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
             ["change-archive.yml", "release.yml", "skill-tests.yml"],
             "永久 Workflow 集合发生变化；必须重新执行 Responsibility Audit",
         )
+        maintenance = self._read(MAINTENANCE)
+        for marker in (
+            "Linux/Windows/macOS `runtime-package` matrix",
+            "scripts/runtime_platform_smoke.py",
+            "Core + package matrix",
+        ):
+            self.assertIn(marker, maintenance)
 
     def test_change_archive_is_lifecycle_owner_not_duplicate_ci_or_release(self) -> None:
         workflow = self._read(WORKFLOW_DIR / "change-archive.yml")
