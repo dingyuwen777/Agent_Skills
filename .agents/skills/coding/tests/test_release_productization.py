@@ -53,18 +53,23 @@ class ReleaseProductizationTest(unittest.TestCase):
         self.assertNotIn("install_manifest_schema", workflow)
         self.assertNotIn("agent-skills-runtime-release-identity/v1", workflow)
 
-    def test_runtime_package_workflow_verifies_builder_json_and_no_sidecars(self) -> None:
+    def test_shared_platform_smoke_verifies_builder_identity_and_no_sidecars(self) -> None:
+        """Builder identity/hash/sidecar/install-state 由 shared smoke 单一实现证明。"""
         workflow = RUNTIME_PACKAGE_WORKFLOW.read_text(encoding="utf-8")
+        source = RUNTIME_PLATFORM_SMOKE.read_text(encoding="utf-8")
+        self.assertIn("python scripts/runtime_platform_smoke.py", workflow)
         for marker in (
-            "artifact_sha256", "integrity_fingerprint", "3.14.7",
-            "agent-skills-runtime-install-state/v1", "__install-state --json",
+            "artifact_sha256",
+            "integrity_fingerprint",
+            "expected_python_version",
+            "agent-skills-runtime-install-state/v1",
+            "__install-state",
             "agent-skills-install.json",
+            "*.manifest.json",
+            "hashlib.sha256",
         ):
-            self.assertIn(marker, workflow)
-        self.assertIn("test ! -e", workflow)
-        self.assertIn("Get-FileHash -Algorithm SHA256", workflow)
-        self.assertIn("*.manifest.json", workflow)
-        self.assertNotIn("install_manifest_schema", workflow)
+            self.assertIn(marker, source)
+        self.assertNotIn("install_manifest_schema", source)
 
     def test_release_is_manual_main_only_and_rejects_existing_identity(self) -> None:
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
