@@ -12,7 +12,6 @@ from unittest.mock import patch
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from licensing import license_tool
 from licensing.license_tool import issue_license
 from runtime.agent_skills_runtime import server
 from runtime.agent_skills_runtime.licensing import (
@@ -120,16 +119,31 @@ class RuntimeLicenseTest(unittest.TestCase):
             now_provider=lambda: box[0],
         )
 
-    def test_public_repository_live_tree_has_no_product_private_key_and_default_signing_fails_closed(self) -> None:
-        """当前 Public 仓库不得保留产品私钥，默认维护者签发入口必须失败关闭。"""
+    def test_public_repository_intentionally_tracks_product_key_pair_and_can_sign(self) -> None:
+        """当前产品明确允许 Public 仓库跟踪 key pair，并要求默认签发链真实可用。"""
         root = Path(__file__).resolve().parents[4]
         product_private = root / "licensing/private_key.pem"
-        output = root / "licensing/output/license.lic"
-        self.assertFalse(product_private.exists())
-        if output.exists():
-            output.unlink()
-        self.assertEqual(license_tool.main(), 1)
-        self.assertFalse(output.exists())
+        product_public = root / "licensing/public_key.pem"
+        self.assertTrue(product_private.is_file())
+        self.assertTrue(product_public.is_file())
+        self.assertNotIn(
+            "/licensing/private_key.pem",
+            (root / ".gitignore").read_text(encoding="utf-8"),
+        )
+
+        target = self.root / "public-product-license.lic"
+        claims = issue_license(
+            "公开仓库测试客户",
+            "公开仓库测试联系人",
+            "2026-09-19",
+            "2026-09-21",
+            target,
+            now=self.now,
+            private_key_path=product_private,
+            public_key_path=product_public,
+        )
+        self.assertEqual(claims["customer"]["name"], "公开仓库测试客户")
+        self.assertTrue(target.is_file())
 
     def test_license_tool_uses_top_configuration_and_self_verifies(self) -> None:
         """签发工具应生成最小 v1 Claims，且配置方式不依赖 customer/expires CLI 参数。"""
