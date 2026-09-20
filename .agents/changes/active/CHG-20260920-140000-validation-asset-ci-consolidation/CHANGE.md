@@ -242,7 +242,7 @@ Requirement Source：GitHub Issue #281。用户已授权按既定精简方案实
 
 # 完成审计
 
-- [x] upstream_re_read：已重读 #281、main bb705df7 与 reviewed head 7478e287；目标/非目标无漂移。
+- [x] upstream_re_read：已重读 #281、main bb705df7 与 final reviewed head 2b4ec44d；目标/非目标无漂移。
 - [x] change_coverage：R1-R9 均有直接实现/回归证据；R10 downstream 交付由 merge 后门禁持有。
 - [x] reverse_audit：已从 changed path → selector → semantic/core → package matrix → stable gate，以及 Release build → shared smoke 反查；未发现漏接线。
 - [x] unresolved_cleared：R1-R9 satisfied、R10 pre-merge N/A；current-head 独立 Review 无 blocker；Validation Asset Redundancy Gate=clean。
@@ -257,18 +257,19 @@ Requirement Source：GitHub Issue #281。用户已授权按既定精简方案实
 | V2 | Draft PR #282 / #1640 rerun | Contract Red | Requirement Source/Change Contract 通过；matrix/shared-smoke 目标回归按预期失败 | 证明旧 CI 尚无对称 matrix/shared smoke |
 | V3 | head 7478e287 / Skill Tests #1655 | full semantic + compile/CLI | 592 tests OK；compile/CLI smoke 通过；最终仅因 Change in_progress fail-closed | 测试去重后语义、Context/治理回归与新脚本可编译/可调用 |
 | V4 | head 7478e287 / PR #282 | 独立 Review + Redundancy Audit | NO_FINDINGS_WITHIN_SCOPE；Gate=clean | 删除项均有唯一 Evidence Owner，三平台/gate/release 不变项完整 |
+| V5 | head 2b4ec44d / Skill Tests #1659 | Ready 三平台 package Evidence | Core、Linux、Windows、macOS、Runtime Package Gate 全部 Success | matrix/shared smoke/stable Gate 已在三平台真实 Runner 上通过 |
+| V6 | head 2b4ec44d / PR #282 | final current-head re-review | NO_FINDINGS_WITHIN_SCOPE；Gate=clean | Windows UTF-8 shared smoke 修复未引入重复平台 shell，独立 Evidence 仍完整 |
 
 ## 未验证内容与剩余风险
 
-- Linux/Windows/macOS shared smoke 的真实 package Evidence 尚未执行（PR 仍 Draft）。
 - merge/main-fresh/archive/Issue Closure 尚未完成。
 - 正式 Release 未执行；本任务只验证 Release workflow contract，不创建 Release。
 
 ## 交付状态
 
-- 提交：实现已在任务分支；reviewed head 7478e2875ce6db5286c1f0c4de6f1a47986b85d5
-- 拉取请求：#282（Draft，待切 Ready 运行真实三平台 package）
-- CI：Red #1640 rerun；Green semantic #1655（592 tests OK），三平台 package 待 Ready
+- 提交：实现已在任务分支；final reviewed head 2b4ec44d264a7451501a9412ab31d3d289382e16
+- 拉取请求：#282（Ready，current-head 三平台 package 已通过）
+- CI：Red #1640 rerun；Green semantic #1655（592 tests OK）；Ready package #1659 全绿
 - 合并：未执行
 - Change 归档：未执行（merge 后 repository-native automation）
 - 发布 / 部署：不适用；本任务不创建正式 Release。
