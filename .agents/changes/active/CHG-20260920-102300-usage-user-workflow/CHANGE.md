@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-102300-usage-user-workflow
 title: 重构最终用户 AI 辅助开发使用说明
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: docs/user-usage-workflow
 created: 2026-09-20
@@ -111,22 +111,16 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 隐藏 Agent_Skills 品牌与内部系统 | #277 / AC1 | not_satisfied | 待写入 |
-| R2 | 不解释内部机制 | #277 / AC2 | not_satisfied | 待写入 |
-| R3 | 四类 Agent 使用说明 | #277 / AC3 | not_satisfied | 待写入 |
-| R4 | DeepSeek 仅 Windows | #277 / AC4 | not_satisfied | 待写入 |
-| R5 | 日常工作流主线 | #277 / AC5 | not_satisfied | 待写入 |
-| R6 | 高频开发场景内容守恒 | #277 / AC6 | not_satisfied | 待写入 |
-| R7 | 分析/研究扩展用途 | #277 / AC7 | not_satisfied | 待写入 |
-| R8 | PR Ready / main 边界 | #277 / AC8 | not_satisfied | 待写入 |
-| R9 | 不复制内部治理步骤 | #277 / AC9 | not_satisfied | 待写入 |
-| R10 | 完整交付闭环 | #277 / AC10 | not_satisfied | 待交付 |
-
-# 验证矩阵
-
-| 验证层 | 是否要求 | 范围 / 证据 |
-| --- | --- | --- |
-| 行为 / 单元 / 组件 | not_applicable | 纯文档变更 |
+| R1 | 隐藏 Agent_Skills 品牌与内部系统 | #277 / AC1 | satisfied | USAGE.md 敏感品牌扫描 0 命中 |
+| R2 | 不解释内部机制 | #277 / AC2 | satisfied | 内部机制术语扫描 0 命中 |
+| R3 | 四类 Agent 使用说明 | #277 / AC3 | satisfied | Codex/Cursor/Claude Code/DeepSeek Harness 章节均存在 |
+| R4 | DeepSeek 仅 Windows | #277 / AC4 | satisfied | DeepSeek-Harness.cmd 存在；Linux/macOS DeepSeek 0 命中 |
+| R5 | 日常工作流主线 | #277 / AC5 | satisfied | 18 个主章节按日常研发流程组织 |
+| R6 | 高频开发场景内容守恒 | #277 / AC6 | satisfied | 高频场景覆盖清单全部命中 |
+| R7 | 分析/研究扩展用途 | #277 / AC7 | satisfied | 第一性原理/当前资料/历史资料章节均存在 |
+| R8 | PR Ready / main 边界 | #277 / AC8 | satisfied | PR Ready 与 main 权限边界明确 |
+| R9 | 不复制内部治理步骤 | #277 / AC9 | satisfied | 用户示例不复制内部治理流程 |
+| R10 | 完整交付闭环 | #277 / AC10 | not_applicable | pre-merge Change 不自证未来 merge/main-fresh/archive/Issue closure；这些仍是最终完成前 required downstream gates |not_applicable | 纯文档变更 |
 | 接口 / 契约 | required | Release 用户说明边界、Agent 使用入口 |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 无运行时变化 |
 | 用户 / 工作流验收 | required | 文档结构覆盖真实开发旅程 |
@@ -151,10 +145,10 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 
 # 完成审计
 
-- [ ] upstream_re_read：完成前重读 #277 与 current head。
-- [ ] change_coverage：AC1-AC10 有直接证据。
-- [ ] reverse_audit：从四 Agent、功能、Bug、Review、测试、Figma、Git、长任务、分析/研究反查。
-- [ ] unresolved_cleared：无 not_satisfied，Review 无 blocker。
+- [x] upstream_re_read：已重读 #277、main 与 current reviewed head 35c90210；需求、范围和非目标无漂移。
+- [x] change_coverage：AC1-AC9 已映射到 USAGE.md 直接证据；AC10 的 post-merge 交付继续由 downstream gate 持有。
+- [x] reverse_audit：已从四 Agent、功能、Bug、Review、测试、Figma、Docs、Git、长任务、完成报告、分析/研究反查，旧用户能力均保留。
+- [x] unresolved_cleared：独立文档 Review 仅发现标题层级问题，已修复；current reviewed head 无剩余 Finding。
 
 # 完成证据与状态
 
@@ -163,16 +157,19 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main b8c827c1 | canonical reread + #277 | 已确认 | 当前事实与目标 |
+| V2 | head 35c90210 | USAGE.md 术语/场景/Markdown 结构扫描 | 通过 | 内部术语 0 命中；DeepSeek 仅 Windows；四 Agent/高频场景完整；154 code fences 闭合；1 H1/18 H2/46 H3 |
+| V3 | PR #278 / head 35c90210 | 独立文档 Review | NO_FINDINGS_WITHIN_SCOPE | 标题层级 Finding 已修复，无剩余 blocker |
 
 ## 未验证内容与剩余风险
 
-- 文档尚未写入。
-- 内容守恒、Markdown、内部术语扫描尚未完成。
-- Review/CI/merge/main-fresh/archive/closure 尚未完成。
+- current-head required CI 尚未完成。
+- merge/main-fresh/archive/Issue Closure 尚未完成。
+- 本次只验证用户文档结构/内容边界；不涉及运行时行为变化。
 
 ## 交付状态
 
 - 分支：docs/user-usage-workflow
-- PR：尚未创建
+- PR：#278（Draft，待 current-head required CI）
+- Reviewed head：35c9021050f694a831d6b109fc97873b6971aefb
 - Merge：未执行
 - Release / Deploy：不适用
