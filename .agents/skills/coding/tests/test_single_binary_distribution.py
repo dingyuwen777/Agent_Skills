@@ -39,6 +39,7 @@ class SingleBinaryDistributionTest(unittest.TestCase):
         bundle = build_bundle(ROOT)
         project_payload = build_project_payload(ROOT, bundle)
         root_material, container = encrypt_runtime_bundle(bundle)
+        license_public_key_pem = (ROOT / "licensing/public_key.pem").read_bytes()
 
         with tempfile.TemporaryDirectory() as directory:
             package_root = Path(directory)
@@ -47,6 +48,7 @@ class SingleBinaryDistributionTest(unittest.TestCase):
                 root_material,
                 container,
                 project_payload,
+                license_public_key_pem,
                 "1.2.3",
             )
             generated_source = (package_root / "_embedded_payload.py").read_text(encoding="utf-8")
@@ -69,6 +71,10 @@ class SingleBinaryDistributionTest(unittest.TestCase):
         self.assertEqual(restored_store.source_digest, project_payload["source_digest"])
         self.assertEqual(restored_store.decryption_count, 0)
         self.assertEqual(embedded.RELEASE_VERSION, "1.2.3")
+        self.assertEqual(
+            base64.b64decode(embedded.LICENSE_PUBLIC_KEY_PEM_B64, validate=True),
+            license_public_key_pem,
+        )
         self.assertIsNone(embedded.SOURCE_COMMIT)
         paths = {str(entry["path"]): entry for entry in restored_payload["files"]}
         for skill in project_payload["skills"]:
@@ -93,7 +99,9 @@ class SingleBinaryDistributionTest(unittest.TestCase):
         self.assertIn("RUNTIME_ROOT_SHARES_B64", source)
         self.assertNotIn("RUNTIME_ROOT_B64", source)
         self.assertIn("PROJECT_PAYLOAD_B64", source)
+        self.assertIn("LICENSE_PUBLIC_KEY_PEM_B64", source)
         self.assertIn("build_project_payload", source)
+        self.assertNotIn("private_key.pem", source)
 
     def test_embedded_source_commit_preserves_null_and_rejects_invalid_identity(self) -> None:
         """非 Git build 的 null 不能变成字符串，非法 commit 也不能进入公开 Runtime identity。"""
