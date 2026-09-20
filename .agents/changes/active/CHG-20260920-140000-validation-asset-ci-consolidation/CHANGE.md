@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-140000-validation-asset-ci-consolidation
 title: 精简重复测试与平台 CI 验证资产
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/validation-asset-ci-consolidation
 created: 2026-09-20
@@ -168,16 +168,16 @@ Requirement Source：GitHub Issue #281。用户已授权按既定精简方案实
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 合并并删除 runtime_cli_disclosure 单测试文件 | #281 / AC1 | not_satisfied | 待实现 |
-| R2 | CI topology 测试按 selector/workflow owner 去重 | #281 / AC2 | not_satisfied | 待实现 |
-| R3 | Issue/Requirement 重复断言按 Owner 收敛 | #281 / AC3 | not_satisfied | 待实现 |
-| R4 | Release exact ZIP 重复证明收敛 | #281 / AC4 | not_satisfied | 待实现 |
-| R5 | selector 无悬空测试映射 | #281 / AC5 | not_satisfied | 待实现 |
-| R6 | CI/Release 共用 Runtime artifact smoke | #281 / AC6 | not_satisfied | 待实现 |
-| R7 | package Evidence 三平台对称 | #281 / AC7 | not_satisfied | 待实现 |
-| R8 | stable Runtime Package Gate fail-closed | #281 / AC8 | not_satisfied | 待实现 |
+| R1 | 合并并删除 runtime_cli_disclosure 单测试文件 | #281 / AC1 | satisfied | test_runtime_disclosure_boundary.py 已承接 public install disclosure；test_runtime_cli_disclosure.py 已删除 |
+| R2 | CI topology 测试按 selector/workflow owner 去重 | #281 / AC2 | satisfied | CI topology 由 test_ci_ready_evidence_order.py 独占；selector/archive/minimal_sufficiency 已删除重复 topology assertions |
+| R3 | Issue/Requirement 重复断言按 Owner 收敛 | #281 / AC3 | satisfied | governance_asset_contract.py 已移除 Issue title/section/Acceptance/Closure 重复断言；PR source/closure Owner 保留 |
+| R4 | Release exact ZIP 重复证明收敛 | #281 / AC4 | satisfied | release_only_repository_surface.py 已移除重复发布 ZIP 证明；release_platform_zips.py 独占 exact ZIP/member surface |
+| R5 | selector 无悬空测试映射 | #281 / AC5 | satisfied | #1655 的 test_all_group_mappings_point_to_real_tests 通过；selector 不包含已删除 test_runtime_cli_disclosure.py |
+| R6 | CI/Release 共用 Runtime artifact smoke | #281 / AC6 | satisfied | scripts/runtime_platform_smoke.py 已新增，skill-tests.yml 调用 1 处，release.yml 三平台各调用 1 处 |
+| R7 | package Evidence 三平台对称 | #281 / AC7 | satisfied | skill-tests.yml 的 runtime-package matrix 对称包含 Linux/Windows/macOS；Core 不再持有 Linux build |
+| R8 | stable Runtime Package Gate fail-closed | #281 / AC8 | satisfied | Runtime Package Gate 名称保持，仅聚合 agent-skills-core + runtime-package；Ready/package deferred fail-closed |
 | R9 | 三 Workflow 独立，历史 Run 不批删 | #281 / AC9 | satisfied | 当前方案不改生命周期 Owner/历史 Run |
-| R10 | 完整验证和交付闭环 | #281 / AC10 | not_satisfied | 待交付 |
+| R10 | 完整验证和交付闭环 | #281 / AC10 | not_applicable | pre-merge Change 不自证未来 merge/main-fresh/archive/Issue Closure；这些由 downstream delivery gate 持有 |
 
 # 计划改动
 
@@ -195,11 +195,11 @@ Requirement Source：GitHub Issue #281。用户已授权按既定精简方案实
 
 - [x] 调查当前实现和事实源
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 行为变化建立失败证据或说明测试例外
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -242,10 +242,10 @@ Requirement Source：GitHub Issue #281。用户已授权按既定精简方案实
 
 # 完成审计
 
-- [ ] upstream_re_read：完成前重读 #281 与 current main/head。
-- [ ] change_coverage：R1-R10 都有直接证据。
-- [ ] reverse_audit：从 changed path → selector → semantic/core → package matrix → gate 和 Release build → smoke 反查。
-- [ ] unresolved_cleared：无 not_satisfied，Review 无 blocker，Validation Asset Redundancy Gate=clean。
+- [x] upstream_re_read：已重读 #281、main bb705df7 与 reviewed head 7478e287；目标/非目标无漂移。
+- [x] change_coverage：R1-R9 均有直接实现/回归证据；R10 downstream 交付由 merge 后门禁持有。
+- [x] reverse_audit：已从 changed path → selector → semantic/core → package matrix → stable gate，以及 Release build → shared smoke 反查；未发现漏接线。
+- [x] unresolved_cleared：R1-R9 satisfied、R10 pre-merge N/A；current-head 独立 Review 无 blocker；Validation Asset Redundancy Gate=clean。
 
 # 完成证据与状态
 
@@ -253,19 +253,24 @@ Requirement Source：GitHub Issue #281。用户已授权按既定精简方案实
 
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
-| V1 | main current | canonical reread + redundancy audit | 已确认 | 当前重复候选和必须保留边界 |
+| V1 | main bb705df7 | canonical reread + redundancy audit | 已确认 | 当前重复候选和必须保留边界 |
+| V2 | Draft PR #282 / #1640 rerun | Contract Red | Requirement Source/Change Contract 通过；matrix/shared-smoke 目标回归按预期失败 | 证明旧 CI 尚无对称 matrix/shared smoke |
+| V3 | head 7478e287 / Skill Tests #1655 | full semantic + compile/CLI | 592 tests OK；compile/CLI smoke 通过；最终仅因 Change in_progress fail-closed | 测试去重后语义、Context/治理回归与新脚本可编译/可调用 |
+| V4 | head 7478e287 / PR #282 | 独立 Review + Redundancy Audit | NO_FINDINGS_WITHIN_SCOPE；Gate=clean | 删除项均有唯一 Evidence Owner，三平台/gate/release 不变项完整 |
 
 ## 未验证内容与剩余风险
 
-- 实现、Red/Green、三平台 package、Review、merge/main-fresh/archive/closure 尚未完成。
+- Linux/Windows/macOS shared smoke 的真实 package Evidence 尚未执行（PR 仍 Draft）。
+- merge/main-fresh/archive/Issue Closure 尚未完成。
+- 正式 Release 未执行；本任务只验证 Release workflow contract，不创建 Release。
 
 ## 交付状态
 
-- 提交：未完成
-- 拉取请求：未创建
-- CI：未执行
+- 提交：实现已在任务分支；reviewed head 7478e2875ce6db5286c1f0c4de6f1a47986b85d5
+- 拉取请求：#282（Draft，待切 Ready 运行真实三平台 package）
+- CI：Red #1640 rerun；Green semantic #1655（592 tests OK），三平台 package 待 Ready
 - 合并：未执行
-- Change 归档：未执行
+- Change 归档：未执行（merge 后 repository-native automation）
 - 发布 / 部署：不适用；本任务不创建正式 Release。
 
 ## 备注
