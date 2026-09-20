@@ -156,6 +156,18 @@ class AnalysisResearchSkillsTest(unittest.TestCase):
                 with self.subTest(filename=filename, marker=marker):
                     self.assertIn(marker, payload)
 
+    def test_complex_analysis_defines_decision_target_without_precommitting_answer(self) -> None:
+        """复杂问题先明确要回答什么，但不得先选答案再找证据。"""
+        core = (SKILLS / "analysis" / "SKILL.md").read_text(encoding="utf-8")
+        reference = (
+            SKILLS
+            / "analysis"
+            / "references"
+            / "04_复杂问题拆解与结论强度.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("不是先选定答案", core)
+        self.assertIn("不预设答案", reference)
+
     def test_research_core_keeps_freshness_primary_source_and_stop_contract(self) -> None:
         """Research 默认查当前资料、追到一手来源，并有明确停止条件。"""
         text = (SKILLS / "research" / "SKILL.md").read_text(encoding="utf-8")
