@@ -92,6 +92,7 @@ jobs:
       integrity_fingerprint: ${{ steps.identity.outputs.integrity_fingerprint }}
       artifact_sha256: ${{ steps.identity.outputs.artifact_sha256 }}
       python_version: ${{ steps.identity.outputs.python_version }}
+      license_public_key_sha256: ${{ steps.identity.outputs.license_public_key_sha256 }}
       bundle_schema: ${{ steps.identity.outputs.bundle_schema }}
       bundle_version: ${{ steps.identity.outputs.bundle_version }}
       task_route_protocol: ${{ steps.identity.outputs.task_route_protocol }}
@@ -146,6 +147,7 @@ jobs:
       integrity_fingerprint: ${{ steps.identity.outputs.integrity_fingerprint }}
       artifact_sha256: ${{ steps.identity.outputs.artifact_sha256 }}
       python_version: ${{ steps.identity.outputs.python_version }}
+      license_public_key_sha256: ${{ steps.identity.outputs.license_public_key_sha256 }}
       bundle_schema: ${{ steps.identity.outputs.bundle_schema }}
       bundle_version: ${{ steps.identity.outputs.bundle_version }}
       task_route_protocol: ${{ steps.identity.outputs.task_route_protocol }}
@@ -200,6 +202,7 @@ jobs:
       integrity_fingerprint: ${{ steps.identity.outputs.integrity_fingerprint }}
       artifact_sha256: ${{ steps.identity.outputs.artifact_sha256 }}
       python_version: ${{ steps.identity.outputs.python_version }}
+      license_public_key_sha256: ${{ steps.identity.outputs.license_public_key_sha256 }}
       bundle_schema: ${{ steps.identity.outputs.bundle_schema }}
       bundle_version: ${{ steps.identity.outputs.bundle_version }}
       task_route_protocol: ${{ steps.identity.outputs.task_route_protocol }}
@@ -291,6 +294,9 @@ jobs:
           LINUX_PYTHON_VERSION: ${{ needs.runtime-linux.outputs.python_version }}
           WINDOWS_PYTHON_VERSION: ${{ needs.runtime-windows.outputs.python_version }}
           MACOS_PYTHON_VERSION: ${{ needs.runtime-macos.outputs.python_version }}
+          LINUX_LICENSE_PUBLIC_KEY_SHA256: ${{ needs.runtime-linux.outputs.license_public_key_sha256 }}
+          WINDOWS_LICENSE_PUBLIC_KEY_SHA256: ${{ needs.runtime-windows.outputs.license_public_key_sha256 }}
+          MACOS_LICENSE_PUBLIC_KEY_SHA256: ${{ needs.runtime-macos.outputs.license_public_key_sha256 }}
           LINUX_BUNDLE_SCHEMA: ${{ needs.runtime-linux.outputs.bundle_schema }}
           WINDOWS_BUNDLE_SCHEMA: ${{ needs.runtime-windows.outputs.bundle_schema }}
           MACOS_BUNDLE_SCHEMA: ${{ needs.runtime-macos.outputs.bundle_schema }}
@@ -338,7 +344,7 @@ jobs:
 
           fields = (
               "RELEASE_VERSION", "SOURCE_COMMIT", "INTEGRITY_FINGERPRINT", "PYTHON_VERSION",
-              "BUNDLE_SCHEMA", "BUNDLE_VERSION", "TASK_ROUTE_PROTOCOL", "ROUTING_MANIFEST_PROTOCOL",
+              "LICENSE_PUBLIC_KEY_SHA256", "BUNDLE_SCHEMA", "BUNDLE_VERSION", "TASK_ROUTE_PROTOCOL", "ROUTING_MANIFEST_PROTOCOL",
               "MCP_TOOL_CONTRACT_PROTOCOL", "PROJECT_PAYLOAD_SCHEMA", "SOURCE_DIGEST",
               "ROUTING_DIGEST", "PAYLOAD_DIGEST",
           )
@@ -355,7 +361,7 @@ jobs:
               raise SystemExit("source_commit 与 Release checkout 不一致")
           if reference["PYTHON_VERSION"] != "3.14.7":
               raise SystemExit("三平台 Runtime Python 版本不是 3.14.7")
-          for field in ("INTEGRITY_FINGERPRINT", "SOURCE_DIGEST", "ROUTING_DIGEST", "PAYLOAD_DIGEST"):
+          for field in ("INTEGRITY_FINGERPRINT", "LICENSE_PUBLIC_KEY_SHA256", "SOURCE_DIGEST", "ROUTING_DIGEST", "PAYLOAD_DIGEST"):
               if not re.fullmatch(r"[0-9a-f]{64}", reference[field]):
                   raise SystemExit(f"Release identity {field} 非法")
           if not re.fullmatch(r"[0-9a-f]{16}", reference["BUNDLE_VERSION"]):
