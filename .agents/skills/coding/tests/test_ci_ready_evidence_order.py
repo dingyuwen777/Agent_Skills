@@ -43,7 +43,7 @@ class CiReadyEvidenceOrderTest(unittest.TestCase):
             core.index("Enforce current Coding Change readiness"),
         )
         self.assertNotIn("Build and self-test Linux onefile Runtime", core)
-        self.assertNotIn("runtime_platform_smoke.py", core)
+        self.assertNotIn("--verify-no-args", core)
 
     def test_platform_package_matrix_requires_core_ready_signal(self) -> None:
         """Linux/Windows/macOS 使用同一 package Job，并且只在 Ready 后启动。"""
