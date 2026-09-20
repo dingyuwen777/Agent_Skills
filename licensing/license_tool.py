@@ -75,10 +75,7 @@ def _load_key_pair(
 ) -> tuple[Ed25519PrivateKey, Ed25519PublicKey]:
     """读取并交叉验证仓库中的 Ed25519 产品签名密钥对。"""
     if private_key_path.is_symlink() or not private_key_path.is_file():
-        raise FileNotFoundError(
-            "产品签发私钥不可用：当前仓库只有在 visibility=private 时才允许保存 "
-            "licensing/private_key.pem；Public 状态必须保持签发 fail closed"
-        )
+        raise FileNotFoundError(f"License 产品私钥不存在或不是普通文件：{private_key_path}")
     if public_key_path.is_symlink() or not public_key_path.is_file():
         raise FileNotFoundError(f"License 公钥不存在或不是普通文件：{public_key_path}")
     private_key = serialization.load_pem_private_key(private_key_path.read_bytes(), password=None)
@@ -206,7 +203,7 @@ def issue_license(
 
 
 def main() -> int:
-    """使用顶部配置签发 License；签发私钥不可用时明确失败关闭。"""
+    """使用文件顶部人工配置签发 License，并在密钥缺失或不匹配时明确失败。"""
     try:
         claims = issue_license(客户名称, 联系人, 生效日期, 到期日期, 输出文件)
     except (FileNotFoundError, OSError, ValueError, RuntimeError) as error:
