@@ -29,6 +29,7 @@ _IDENTITY_KEYS = (
     "integrity_fingerprint",
     "artifact_sha256",
     "python_version",
+    "license_public_key_sha256",
     "bundle_schema",
     "bundle_version",
     "task_route_protocol",
