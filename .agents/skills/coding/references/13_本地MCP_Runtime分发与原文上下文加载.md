@@ -386,6 +386,8 @@ Runtime Mode 的离线 License Contract 固定为：
 
 该文件是项目 Owner 管理的外部授权资产，不属于 Project Payload、managed_files、install-state、source_digest、routing_digest 或 payload_digest。install / upgrade / rollback 不创建、不覆盖、不删除、不迁移它。正式 Runtime 只内嵌 Ed25519 公钥；维护者侧 `licensing/private_key.pem` 和签发工具不进入 binary、Project Payload、Release 或目标项目。`status` / `self-test` / `serve` 启动保持可诊断，五个实际工作流 MCP Tool 在 frozen Runtime Mode 下统一要求有效 License；签名解析结果可进程内缓存，但每次受保护调用都重新比较当前时间，文件身份变化时重新读取并验签。续期只需原路径替换 `license.lic`。
 
+`agent-skills-license/v1` 是正式外部授权 Contract，不适用 Agent_Skills 普通“默认不承担历史 Runtime 兼容”的自动删除规则：至少在已经签发的 v1 License 有效期内，后续 Runtime 必须继续保留 v1 reader，并继续使用同一产品 Ed25519 公钥身份。需要引入 v2、轮换产品公钥或停止 v1 时，必须另建 Change 明确迁移、双 reader/切换窗口、回滚和已签 License 处理，不能在普通 Skill/Runtime 迭代中静默改变。
+
 项目 Host 资产：
 
 ```text
