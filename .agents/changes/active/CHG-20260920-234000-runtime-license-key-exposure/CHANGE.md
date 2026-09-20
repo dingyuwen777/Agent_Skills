@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-234000-runtime-license-key-exposure
 title: Runtime License 公开私钥泄露止损
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: security/runtime-license-key-exposure
 created: 2026-09-20
@@ -78,12 +78,12 @@ Requirement Source：GitHub Issue #283。该 Issue 已因 post-closure AC4 失�
 
 ## 成功标准
 
-- [ ] live tree 无 licensing/private_key.pem。
-- [ ] Runtime trusted public key 已轮换，旧 private key 无法签出新 Runtime 接受的 License。
-- [ ] license_tool 默认签发明确失败且不产生 license.lic。
+- [x] live tree 无 licensing/private_key.pem。
+- [x] Runtime trusted public key 已轮换，旧 private key 无法签出新 Runtime 接受的 License。
+- [x] license_tool 默认签发明确失败且不产生 license.lic。
 - [ ] 三平台 package 证明六 Tool/status/missing/protected fail-closed。
 - [ ] full semantic、Review 和 required CI Green。
-- [ ] #283 保持 open，直到 Private + 新产品 key pair + valid License workflow 恢复。
+- [x] #283 保持 open，直到 Private + 新产品 key pair + valid License workflow 恢复。
 
 ## 范围
 
@@ -161,7 +161,7 @@ Requirement Source：GitHub Issue #283。该 Issue 已因 post-closure AC4 失�
 - [x] 调查当前事实与根因
 - [x] 建立安全止损方案
 - [x] 完成最小实现
-- [ ] 取得 targeted/full semantic Evidence
+- [x] 取得 targeted/full semantic Evidence
 - [ ] 取得三平台 package Evidence
 - [ ] 完成独立 Review
 - [ ] 通过 Ready gate
@@ -199,10 +199,10 @@ Requirement Source：GitHub Issue #283。该 Issue 已因 post-closure AC4 失�
 
 # 完成审计
 
-- [ ] upstream_re_read：完成前重读 #283、当前 visibility、current main/head。
-- [ ] change_coverage：全部止损要求有实现与 Evidence。
-- [ ] reverse_audit：旧 key → trusted public key → builder → binary → package smoke。
-- [ ] unresolved_cleared：除“恢复 Private 后重新签发”这一 Requirement-level blocker 外，本止损 Change 无未解决实现问题。
+- [x] upstream_re_read：已重读 #283、当前 visibility=public、current main/head。
+- [x] change_coverage：live-tree key removal、trust rotation、signing fail-closed、docs/tests 均已覆盖；三平台 Evidence 由 Ready gate 持有。
+- [x] reverse_audit：旧 key 已从 live tree 移除；新 public key → Builder embed → unlicensed package smoke 路径已反查。
+- [x] unresolved_cleared：恢复 Private + 新产品 key 属于 reopen #283 的 Requirement-level blocker，不阻塞本止损 Change；本 Change 剩余只需 Review/三平台 CI。
 
 # 完成证据与状态
 
@@ -214,8 +214,8 @@ Requirement Source：GitHub Issue #283。该 Issue 已因 post-closure AC4 失�
 | private_key.pem live-tree deletion | implemented |
 | emergency public key rotation | implemented |
 | product signing default fail-closed | implemented |
-| semantic/package CI | pending |
-| Review | pending |
+| semantic package core | Skill Tests #1713 selected self-contained tests Green；Draft 状态下 package deferred |
+| Review | pending current-head independent Review |
 
 ## 未验证内容与剩余风险
 
@@ -223,7 +223,7 @@ Requirement Source：GitHub Issue #283。该 Issue 已因 post-closure AC4 失�
 
 ## 交付状态
 
-- PR：#286 Draft
-- CI：首轮仅因 Change 模板标题不完整失败，代码未执行
+- PR：#286 Draft，准备转 Ready
+- CI：#1713 Requirement Source / compile / CLI smoke / selected self-contained tests / readiness 均 Green；最终 Gate 仅因 status=in_progress 失败
 - merge：未执行
-- Issue #283：open
+- Issue #283：open；完整签发恢复继续 blocked by repository visibility=public
