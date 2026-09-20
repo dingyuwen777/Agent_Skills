@@ -193,7 +193,7 @@ def _prepare_project_artifact(
     if artifact.parent.name == "runtime" and artifact.parent.parent.name == ".agents":
         return artifact, artifact.parent.parent.parent, None
 
-    temporary = tempfile.TemporaryDirectory(prefix="agent-skills-mcp-license-smoke-")
+    temporary = tempfile.TemporaryDirectory(prefix="agent-skills-license-smoke-")
     project_root = Path(temporary.name) / "project"
     runtime_dir = project_root / ".agents/runtime"
     runtime_dir.mkdir(parents=True)
