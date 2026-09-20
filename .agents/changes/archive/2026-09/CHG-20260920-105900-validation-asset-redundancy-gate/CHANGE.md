@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-105900-validation-asset-redundancy-gate
 title: 把验证资产冗余清理升级为合并前完成门禁
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: feature/validation-asset-redundancy-gate
 created: 2026-09-20
