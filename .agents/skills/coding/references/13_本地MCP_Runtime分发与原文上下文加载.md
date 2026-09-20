@@ -260,7 +260,7 @@ UNKNOWN 只扩大真正依赖该未知维度的候选，再执行依赖与风险
 
 Local Hardened Runtime v3 使用 HKDF-SHA256 + AES-256-GCM authenticated encryption。它提高普通静态提取、批量导出与篡改的成本，但不是 TEE/KMS/DRM。
 
-完全本地、离线、零额外配置意味着：binary 必然包含或能够恢复 Runtime 解密需要的 root material。Builder 只在临时构建副本内嵌 root material、encrypted container、Project Payload 与 Release identity；不得把 root material、derived key、private Manifest 或 plaintext corpus打印到日志、sidecar、Builder Release asset 或正式 ZIP。
+对于 Bundle 解密，完全本地 onefile 不额外要求用户输入 password/key，因此 binary 必然包含或能够恢复 Runtime 解密需要的 root material；这一点与项目级 `.agents/license.lic` 的使用期限授权是两个独立边界。Builder 只在临时构建副本内嵌 root material、encrypted container、Project Payload、License 公钥与 Release identity；不得把 root material、derived key、private Manifest、License 私钥或 plaintext corpus 打印到日志、sidecar、Builder Release asset 或正式 ZIP。
 
 它能够提供：
 
@@ -292,7 +292,7 @@ agent_skills_checkpoint
 
 ### `agent_skills_status`
 
-只返回 Release 版本、当前任务/约束是否建立和是否加载完成、MCP Contract 与用户可见进度规则。不得公开 Skill Catalog、Reference identity/count、source/routing/payload digest 或内部计数。
+只返回 Release 版本、当前任务/约束是否建立和是否加载完成、MCP Contract、用户可见进度规则，以及最小 License 诊断：授权状态；有效时可包含授权客户/到期时间，失败时可包含稳定错误码。不得公开 raw payload、signature、公私钥、Skill Catalog、Reference identity/count、source/routing/payload digest 或内部计数。
 
 ### `agent_skills_route_contract`
 
