@@ -149,7 +149,7 @@ def _assert_exact_contexts(payload: dict[str, Any], expected_texts: list[str], l
 
 
 async def _assert_unlicensed_runtime(artifact: Path) -> None:
-    """验证无 License 时 status 可诊断，而第一个受保护 Tool 失败关闭。"""
+    """验证无 License 时六 Tool Contract 可发现、status 可诊断且 protected Tool 失败关闭。"""
     try:
         from mcp import Client, StdioServerParameters
         from mcp.client.stdio import stdio_client
@@ -158,6 +158,20 @@ async def _assert_unlicensed_runtime(artifact: Path) -> None:
 
     server = StdioServerParameters(command=str(artifact), args=["serve"])
     async with Client(stdio_client(server)) as client:
+        tools_result = await client.list_tools()
+        tool_names = {tool.name for tool in tools_result.tools}
+        if tool_names != EXPECTED_TOOLS:
+            raise RuntimeError(f"无 License MCP Tool Contract 不一致：actual={sorted(tool_names)}")
+        for tool in tools_result.tools:
+            schema = getattr(tool, "input_schema", None)
+            if schema is None:
+                schema = getattr(tool, "inputSchema", None)
+            properties = schema.get("properties", {}) if isinstance(schema, dict) else {}
+            if set(properties) != EXPECTED_PROPERTIES[tool.name]:
+                raise RuntimeError(
+                    f"无 License MCP 中文参数 schema 不一致：{tool.name} actual={sorted(properties)}"
+                )
+
         status = _structured_result(await client.call_tool("agent_skills_status", {}))
         if status.get("授权状态") != "missing" or status.get("授权错误码") != "LICENSE_MISSING":
             raise RuntimeError("无 License 的 MCP status 未返回 missing/LICENSE_MISSING")
@@ -508,9 +522,26 @@ def run_smoke(artifact: str | Path, source_root: str | Path = SOURCE_ROOT) -> di
         if license_path.exists():
             raise RuntimeError("MCP smoke 目标项目预先存在 license.lic，无法证明无 License failure boundary")
         asyncio.run(_assert_unlicensed_runtime(runtime_artifact))
+
+        product_private_key = source / "licensing/private_key.pem"
+        if not product_private_key.is_file():
+            expected_bundle = build_bundle(source)
+            return {
+                "ok": True,
+                "artifact": str(runtime_artifact),
+                "source_digest": expected_bundle["source_digest"],
+                "routing_digest": expected_bundle["routing_digest"],
+                "required_context_count": 0,
+                "tool_count": len(EXPECTED_TOOLS),
+                "git_delivery_case_count": 0,
+                "licensed_workflow_verified": False,
+            }
+
         _write_smoke_license(project_root, source)
         created_license = True
-        return asyncio.run(_run_smoke(runtime_artifact, source))
+        result = asyncio.run(_run_smoke(runtime_artifact, source))
+        result["licensed_workflow_verified"] = True
+        return result
     finally:
         if created_license and license_path.is_file():
             license_path.unlink()

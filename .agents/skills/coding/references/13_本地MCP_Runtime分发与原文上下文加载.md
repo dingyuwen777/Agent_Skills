@@ -388,6 +388,8 @@ Runtime Mode 的离线 License Contract 固定为：
 
 `agent-skills-license/v1` 是正式外部授权 Contract，不适用 Agent_Skills 普通“默认不承担历史 Runtime 兼容”的自动删除规则：至少在已经签发的 v1 License 有效期内，后续 Runtime 必须继续保留 v1 reader，并继续使用同一产品 Ed25519 公钥身份。需要引入 v2、轮换产品公钥或停止 v1 时，必须另建 Change 明确迁移、双 reader/切换窗口、回滚和已签 License 处理，不能在普通 Skill/Runtime 迭代中静默改变。
 
+**产品私钥泄露是唯一强制安全例外**：如果当前仓库不再是 Private 且产品私钥已经进入公开 Git 历史，该私钥永久视为 compromised。不得为了维持旧 License 兼容继续信任已泄露 key；必须建立新的 Security Change，删除 live-tree 私钥、轮换 Runtime trusted public key，并让正式签发 fail closed，直到仓库恢复 Private 且生成全新产品 key pair。删除当前文件或后来重新设为 Private 都不能让已经公开的旧私钥重新安全。
+
 项目 Host 资产：
 
 ```text
