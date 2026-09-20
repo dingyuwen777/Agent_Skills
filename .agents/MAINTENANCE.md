@@ -101,6 +101,7 @@ Agent_Skills 规定“怎样可靠工作”；目标项目规定“这个项目�
 - 只要仓库不再是 Private、任务不再属于 Agent_Skills Runtime License、目标路径/用途超出上述范围，立即恢复通用安全默认并 fail closed，不把本例外类推到其他项目。
 
 这是一条 **Agent_Skills 源仓库专属 Overlay**，不复制到目标项目，也不改变其他项目的默认 Secret 安全策略。
+
 正式对外交付为三个按平台拆分的版本 ZIP：
 
 ```text
