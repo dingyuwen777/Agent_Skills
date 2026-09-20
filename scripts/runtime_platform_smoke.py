@@ -15,6 +15,14 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILD_RUNTIME = ROOT / "scripts/build_runtime.py"
 MCP_SMOKE = ROOT / "scripts/runtime_mcp_smoke.py"
 
+def _configure_stdio() -> None:
+    """固定当前验证器自身的 UTF-8 输出，避免 Windows Runner 默认代码页损坏中文日志。"""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            reconfigure(encoding="utf-8", errors="replace")
+
+
 _IDENTITY_KEYS = (
     "release_version",
     "source_commit",
@@ -353,6 +361,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     """执行当前平台构建与 smoke，成功时可输出机器 JSON 摘要。"""
+    _configure_stdio()
     args = _build_parser().parse_args(argv)
     output_dir = (ROOT / args.output_dir).resolve() if not args.output_dir.is_absolute() else args.output_dir
     target_root = args.target_root.resolve()
