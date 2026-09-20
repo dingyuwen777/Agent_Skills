@@ -36,14 +36,14 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 ## 当前现状
 
 - `USAGE.md` 是 Release 最终用户唯一说明。
-- 当前文档 598 行，内容质量较高，但结构更像“能力百科 + Prompt 示例库”。
-- 当前文档包含 Windows 安装失败、DeepSeek Harness Linux/macOS/排障等超出最终用户日常使用主线的内容。
-- 当前文档还出现内部治理词汇，例如 Change、Requirement Traceability 等，不符合“用户不需要知道内部实现”的产品边界。
+- 原文档 598 行，内容质量较高，但结构更像“能力百科 + Prompt 示例库”。
+- 原文档包含 Windows 安装失败、DeepSeek Harness Linux/macOS/排障等超出最终用户日常使用主线的内容。
+- 原文档还出现内部治理词汇，例如 Change、Requirement Traceability 等，不符合“用户不需要知道内部实现”的产品边界。
 - Codex、Cursor、Claude Code、DeepSeek Harness 的实际入口差异需要保留，其中 DeepSeek Harness 只保留 Windows 使用方法。
 
 ## 问题、根因或约束
 
-根因不是内容错误，而是文档 Owner 视角错误：当前按内部能力分类组织，而最终用户需要按真实工作流理解“怎么开始、怎么开发、什么时候问人、怎么协作、怎么判断完成”。
+根因不是内容错误，而是文档 Owner 视角错误：原文按内部能力分类组织，而最终用户需要按真实工作流理解“怎么开始、怎么开发、什么时候问人、怎么协作、怎么判断完成”。
 
 ## 不修改的后果
 
@@ -58,9 +58,11 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 | --- | --- | --- | --- |
 | E1 | #277 已固化 AC1-AC10 | GitHub Issue #277 | 本 Change Requirement Source |
 | E2 | USAGE.md 是 Release 最终用户唯一说明 | .agents/MAINTENANCE.md | 文档必须以最终用户任务为中心 |
-| E3 | 当前 USAGE.md 598 行，含安装/DeepSeek 多平台/内部治理术语 | current main USAGE.md | 需要重组与收敛 |
+| E3 | 原 USAGE.md 598 行，含安装/DeepSeek 多平台/内部治理术语 | main USAGE.md | 需要重组与收敛 |
 | E4 | 用户明确要求 DeepSeek Harness 只保留 Windows 用法 | 当前用户确认 | 不保留 Linux/macOS |
 | E5 | 用户已确认完整替换文档文本 | 当前会话 | 本次写入内容已获得 Owner 确认 |
+| E6 | current USAGE 静态扫描内部术语 0 命中、DeepSeek Linux/macOS 0 命中 | head 35c90210 | 用户边界满足 |
+| E7 | 独立文档 Review 发现标题层级问题并已修复 | PR #278 comment 5747027864 | 当前文档结构规范 |
 
 # 目标、成功标准与非目标
 
@@ -70,14 +72,14 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 
 ## 成功标准
 
-- [ ] 文档不要求用户理解任何内部治理系统名称或实现。
-- [ ] Codex、Cursor、Claude Code、DeepSeek Harness 使用方式完整。
-- [ ] DeepSeek Harness 只保留 Windows。
-- [ ] 日常研发主线清晰。
-- [ ] 高频开发场景覆盖完整。
-- [ ] 内部实现术语不泄露。
-- [ ] 旧文档的重要用户能力没有丢失。
-- [ ] Markdown 结构和代码块完整。
+- [x] 文档不要求用户理解任何内部治理系统名称或实现。
+- [x] Codex、Cursor、Claude Code、DeepSeek Harness 使用方式完整。
+- [x] DeepSeek Harness 只保留 Windows。
+- [x] 日常研发主线清晰。
+- [x] 高频开发场景覆盖完整。
+- [x] 内部实现术语不泄露。
+- [x] 旧文档的重要用户能力没有丢失。
+- [x] Markdown 结构和代码块完整。
 - [ ] current-head required CI / 独立 Review 通过。
 - [ ] merge/main-fresh/archive/Issue Closure 完成。
 
@@ -120,7 +122,20 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 | R7 | 分析/研究扩展用途 | #277 / AC7 | satisfied | 第一性原理/当前资料/历史资料章节均存在 |
 | R8 | PR Ready / main 边界 | #277 / AC8 | satisfied | PR Ready 与 main 权限边界明确 |
 | R9 | 不复制内部治理步骤 | #277 / AC9 | satisfied | 用户示例不复制内部治理流程 |
-| R10 | 完整交付闭环 | #277 / AC10 | not_applicable | pre-merge Change 不自证未来 merge/main-fresh/archive/Issue closure；这些仍是最终完成前 required downstream gates |not_applicable | 纯文档变更 |
+| R10 | 完整交付闭环 | #277 / AC10 | not_applicable | pre-merge Change 不自证未来 merge/main-fresh/archive/Issue closure；这些仍是最终完成前 required downstream gates |
+
+# 计划改动
+
+| 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
+| --- | --- | --- | --- |
+| USAGE.md | 以已确认用户版全文替换并规范 Markdown 层级 | 最终用户只需要知道如何使用 AI 完成工作 | R1-R9 |
+| 当前 Change | 记录需求、内容守恒、Review、CI 与交付证据 | Agent_Skills L2 文档变更门禁 | R10 |
+
+# 验证矩阵
+
+| 验证层 | 是否要求 | 范围 / 证据 |
+| --- | --- | --- |
+| 行为 / 单元 / 组件 | not_applicable | 纯文档变更 |
 | 接口 / 契约 | required | Release 用户说明边界、Agent 使用入口 |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 无运行时变化 |
 | 用户 / 工作流验收 | required | 文档结构覆盖真实开发旅程 |
@@ -159,10 +174,11 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 | V1 | main b8c827c1 | canonical reread + #277 | 已确认 | 当前事实与目标 |
 | V2 | head 35c90210 | USAGE.md 术语/场景/Markdown 结构扫描 | 通过 | 内部术语 0 命中；DeepSeek 仅 Windows；四 Agent/高频场景完整；154 code fences 闭合；1 H1/18 H2/46 H3 |
 | V3 | PR #278 / head 35c90210 | 独立文档 Review | NO_FINDINGS_WITHIN_SCOPE | 标题层级 Finding 已修复，无剩余 blocker |
+| V4 | PR #278 run #1578 | Verify PR Requirement Source | 失败 | Change 机器 Contract 缺少固定“计划改动/验证矩阵”章节；用户文档本身未进入测试阶段，已修复 Change 结构 |
 
 ## 未验证内容与剩余风险
 
-- current-head required CI 尚未完成。
+- 修复 Change 机器 Contract 后的 current-head required CI 尚未完成。
 - merge/main-fresh/archive/Issue Closure 尚未完成。
 - 本次只验证用户文档结构/内容边界；不涉及运行时行为变化。
 
@@ -170,6 +186,6 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 
 - 分支：docs/user-usage-workflow
 - PR：#278（Draft，待 current-head required CI）
-- Reviewed head：35c9021050f694a831d6b109fc97873b6971aefb
+- Reviewed content head：35c9021050f694a831d6b109fc97873b6971aefb
 - Merge：未执行
 - Release / Deploy：不适用
