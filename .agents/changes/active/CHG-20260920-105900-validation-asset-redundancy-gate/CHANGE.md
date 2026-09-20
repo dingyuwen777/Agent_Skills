@@ -78,9 +78,9 @@ Requirement Source 为 GitHub Issue #279。用户明确要求以后每次合并�
 
 ## 成功标准
 
-- [ ] 详细 Owner 明确资产范围、判定标准、必须清理条件、保留边界和 Scope 边界。
-- [ ] Maintenance/Review/Delivery 都能到达同一门禁但不复制第二套完整规则。
-- [ ] 永久回归能阻止未来退回“只少跑、不清永久冗余”。
+- [x] 详细 Owner 明确资产范围、判定标准、必须清理条件、保留边界和 Scope 边界。
+- [x] Maintenance/Review/Delivery 都能到达同一门禁但不复制第二套完整规则。
+- [x] 永久回归能阻止未来退回“只少跑、不清永久冗余”。
 - [ ] required CI / Review / merge / main-fresh / archive / closure 完成。
 
 ## 范围
@@ -215,7 +215,7 @@ Requirement Source 为 GitHub Issue #279。用户明确要求以后每次合并�
 - [x] upstream_re_read：已重读 #279、current main 与 current branch 规则；目标和非目标无漂移。
 - [x] change_coverage：R1-R9 已映射到直接实现/回归；R10 downstream 交付由 post-merge gate 持有。
 - [x] reverse_audit：已从实现任务 → coding.reference.28 → Maintenance/Completion/Delivery → PR Ready/merge 反向审计可达性。
-- [ ] unresolved_cleared：R1-R9 satisfied；等待 current-head 独立 Review 后确认无 blocker。
+- [x] unresolved_cleared：R1-R9 satisfied；current-head 独立 Review 无 blocker；Validation Asset Redundancy Gate=clean。
 
 # 完成证据与状态
 
@@ -227,19 +227,21 @@ Requirement Source 为 GitHub Issue #279。用户明确要求以后每次合并�
 | V2 | Draft PR #280 / run #1587 rerun | 新增回归（规则实现前） | Red：2 个新增测试按预期失败；Requirement Source/Change Contract 通过 | 证明当前规则缺少 Validation Asset Redundancy Gate |
 | V3 | branch current | Reference 27 / Maintenance / refs 11+23 静态反查 | 通过 | 详细 Owner、源仓库覆盖、Completion/Delivery 薄触发均可达 |
 | V4 | runs #1591/#1592/#1594 | full semantic regression | 新 Gate 语义回归已转 Green；仅 context budget 超限 | 功能/治理语义正确，但首次实现过厚 |
-| V5 | historical intermediate head | 旧 Review 记录 | 已失效，不作为 current-head 交付证据 | current head 已发生后续修改，必须重新 Review |
+| V5 | historical intermediate head | 旧 Review 记录 | 已失效，不作为 current-head 交付证据 | current head 已发生后续修改 |
+| V6 | head a1af29e2 / PR #280 | current-head 独立 Review | NO_FINDINGS_WITHIN_SCOPE；Gate=clean | AC1–AC9、Scope、单一 Owner、独立 Evidence 和测试冗余均复核通过 |
+| V7 | run #1633 / implementation head f6c4dfa0 | 603 self-contained tests + compile/CLI + context budget | 603 tests OK；上下文预算恢复；Ready Check 因 Change 表格残片 fail-closed | 证明规则/回归/预算正确，治理载体问题已随后修复 |
 
 ## 未验证内容与剩余风险
 
-- 最终 ready_for_review head 的 required CI 尚未完成；此前 Green 语义回归仅剩 context budget，现已进一步压薄。
+- current-head required CI 尚未完成；规则/回归/预算已由 #1633 证明，需在写回本 Review 后对最终 head 取得新鲜 gate。
 - merge/main-fresh/archive/Issue Closure 尚未完成。
 - 本任务不修改 Runtime/Router/MCP/Release 产品行为。
 
 ## 交付状态
 
 - 提交：当前任务分支已有实现提交；最终 ready_for_review head 见 PR #280
-- 拉取请求：#280（Draft，待最终 current-head CI 后转 Ready）
-- CI：Red #1587 已确认；Green 语义回归 #1591/#1592/#1594 已通过新增门禁语义，最终 current-head CI 待运行
+- 拉取请求：#280（Ready/non-draft；待最终 current-head required CI）
+- CI：Red #1587 已确认；#1633 603 tests/预算已 Green，Ready Check 因 Change 结构残片失败；最终 current-head CI 待运行
 - 合并：未执行
 - Change 归档：未执行（merge 后由 repository-native automation 负责）
 - 发布 / 部署：不适用，本任务不修改产品发布行为。
