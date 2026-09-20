@@ -143,7 +143,7 @@ Runtime 不安装 canonical `references/` 或公开 Reference manifest，不接�
 python licensing/license_tool.py
 ```
 
-默认生成 `licensing/output/license.lic`，该目录被 Git 忽略。**只有仓库真实 `visibility=private` 时**才允许保存 `licensing/private_key.pem`；如果仓库是 Public，产品私钥必须缺失且签发工具 fail closed。当前历史产品私钥曾进入公开 Git 历史，已经永久视为 compromised，不得恢复或复用。当前 `licensing/public_key.pem` 是应急失效身份，其 private half 不保留，因此正式签发暂停。仓库重新变为 Private 后，必须在独立安全 Change 中生成全新 Ed25519 产品 key pair，再恢复签发。正式 Builder 始终只读取/嵌入公钥，私钥不得进入 Runtime binary、Project Payload、Release、目标项目或公共输出。
+默认生成 `licensing/output/license.lic`，该目录被 Git 忽略。当前产品明确允许 Public Repository 直接跟踪 `licensing/private_key.pem` / `licensing/public_key.pem`；维护者普通续期只修改脚本顶部配置并重新运行，不重新生成 key。正式 Builder 始终只读取/嵌入公钥，私钥不得进入 Runtime binary、Project Payload、Release、目标项目、MCP、日志或 Builder JSON。**由于 private key 本身公开，任何读取仓库的人都可以自行签发或续期合法 License；本方案因此只提供本地期限/格式门禁，不提供授权防伪造保证。**
 ### 同版本、跨宿主与模型边界
 
 Source / Runtime 是治理规则的取得方式，不是 Git 执行能力。实际仓库操作仍必须满足当前身份权限、Branch Protection / Ruleset、原子性、revision guard、Review、CI 和目标项目门禁；本地某一个 transport 失败不代表所有安全等价能力都不可用。
