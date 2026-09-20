@@ -139,12 +139,12 @@ Requirement Source：GitHub Issue #283。该 Issue 已因 post-closure AC4 失�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 旧泄露 key 不再被新 Runtime 信任 | #283 post-closure security fact | satisfied | public_key.pem 已轮换；旧 key 与 current trusted identity 不匹配 |
-| R2 | Public live tree 不含 product private key | #283 AC4 / current visibility | satisfied | private_key.pem 已删除并加入 gitignore |
-| R3 | Public 状态正式签发 fail closed | #283 AC3/AC4 | satisfied | license_tool 缺产品私钥返回失败；semantic regression Green |
-| R4 | Source Mode / six Tool / ownership / Release surface 不回归 | #283 AC1/AC5/AC8 | satisfied | current-head semantic tests Green；三平台 onefile Evidence 由 Ready package gate 继续验证 |
-| R5 | 不声称删除 live file 等于清除历史泄露 | security fact E2 | satisfied | README/runtime canonical 明确旧 key 永久 compromised |
-| R6 | Issue #283 保持 open 直到完整签发恢复 | #283 AC3/4/6/8/10 | satisfied | Issue #283 已 reopened，恢复条件明确为 Private + fresh product key |
+| R1 | 旧泄露 key 不再被新 Runtime 信任 | user: #283 AC4 + post-closure security requirement | satisfied | public_key.pem 已轮换；旧 key 与 current trusted identity 不匹配 |
+| R2 | Public live tree 不含 product private key | user: #283 AC4 | satisfied | private_key.pem 已删除并加入 gitignore |
+| R3 | Public 状态正式签发 fail closed | user: #283 AC3/AC4 | satisfied | license_tool 缺产品私钥返回失败；semantic regression Green |
+| R4 | Source Mode / six Tool / ownership / Release surface 不回归 | user: #283 AC1/AC5/AC8 | satisfied | current-head semantic tests Green；三平台 onefile Evidence 由 Ready package gate 继续验证 |
+| R5 | 不声称删除 live file 等于清除历史泄露 | external: GitHub repository metadata + public Git history | satisfied | README/runtime canonical 明确旧 key 永久 compromised |
+| R6 | Issue #283 保持 open 直到完整签发恢复 | user: #283 AC3/AC4/AC6/AC8/AC10 | satisfied | Issue #283 已 reopened，恢复条件明确为 Private + fresh product key |
 
 # 计划改动
 
