@@ -99,7 +99,7 @@ class LocalCacheAndDocsGovernanceTest(unittest.TestCase):
 
         for marker in (
             "Validation Asset Redundancy",
-            "进入 \`ready_for_review\` 前",
+            "进入 `ready_for_review` 前",
             "clean / not_applicable",
             "blocked",
         ):
