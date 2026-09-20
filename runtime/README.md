@@ -359,7 +359,7 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 
 ```text
 release_version / source_commit / python_version
-integrity_fingerprint
+integrity_fingerprint / license_public_key_sha256
 Bundle/Task Route/Routing Manifest/MCP Tool/Project Payload protocols
 bundle_version / source_digest / routing_digest / payload_digest
 ```
