@@ -45,7 +45,7 @@ class RuntimeBinaryProductNameTest(unittest.TestCase):
         self.assertNotIn(LEGACY_BINARY_NAME, installer)
 
     def test_release_keeps_three_platform_zip_names_and_uses_unversioned_binary_member(self) -> None:
-        """Release 仍是三平台 ZIP，但 ZIP 内 Runtime basename 固定为 agent-skills。"""
+        """Release 仍是三平台 ZIP，shared smoke 构建的 Runtime basename 固定为 agent-skills。"""
         release = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
         for marker in (
             'f"agent-skills-v{version}-linux.zip"',
@@ -57,8 +57,9 @@ class RuntimeBinaryProductNameTest(unittest.TestCase):
             'expected = [binary, "USAGE.md"]',
         ):
             self.assertIn(marker, release)
-        self.assertIn('name="agent-skills"', release)
-        self.assertIn('$name = "agent-skills"', release)
+        self.assertGreaterEqual(release.count("--name agent-skills"), 3)
+        self.assertIn("--copy-artifact release-assets/agent-skills", release)
+        self.assertIn("--copy-artifact release-assets/agent-skills.exe", release)
         self.assertNotIn("merge-multiple: true", release)
         self.assertNotIn(LEGACY_BINARY_NAME, release)
         self.assertNotIn("agent-skills-v${RELEASE_VERSION}-linux", release)
