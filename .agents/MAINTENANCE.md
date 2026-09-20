@@ -273,6 +273,7 @@ changed paths
 
 永久测试资产按独立证明责任组织为逻辑 test group；**优先减少“何时运行”，不是先删测试文件**。仍有长期回归价值的 test 不因本次 scope 未命中而删除。
 
+Validation Asset Redundancy Gate：每次维护收尾；少跑不等于允许永久冗余；blocked 禁完成。
 后续维护新增/修改测试时必须同步判断：
 
 - 它直接保护哪个 Owner / Contract / failure boundary；
