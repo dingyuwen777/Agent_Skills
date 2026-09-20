@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-211210-runtime-offline-license
 title: Runtime 离线 License 授权
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/runtime-license-v1
 created: 2026-09-20
@@ -139,16 +139,16 @@ License 嵌入客户 binary 会导致续期 rebuild；Home License 与项目级�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Source Mode 永远不检查 License | #283 / AC1 | not_satisfied | 待实现与回归 |
-| R2 | 固定项目 License 路径、protected fail-closed、诊断可用 | #283 / AC2 | not_satisfied | 待实现与回归 |
-| R3 | 顶部配置、无 CLI 参数的签发工具 | #283 / AC3 | not_satisfied | 待实现 |
-| R4 | Ed25519、仓库 key pair、仅公钥进入 Runtime | #283 / AC4 | not_satisfied | 待实现与 package Evidence |
-| R5 | license.lic 不属于 installer/Payload ownership | #283 / AC5 | not_satisfied | 待回归 |
-| R6 | License 与 Skill/Reference/identity 解耦 | #283 / AC6 | not_satisfied | 待回归 |
-| R7 | 每次调用 expiry + 热替换 | #283 / AC7 | not_satisfied | 待回归 |
-| R8 | 三平台 package/六 Tool/Release surface 保持 | #283 / AC8 | not_satisfied | 待 CI |
-| R9 | canonical/user/maintainer docs 同步 | #283 / AC9 | not_satisfied | 待 Docs |
-| R10 | L3 Review/CI/merge/main-fresh/archive/closure | #283 / AC10 | not_satisfied | downstream gate |
+| R1 | Source Mode 永远不检查 License | #283 / AC1 | satisfied | server._require_runtime_license 在非 frozen Source Mode 直接 no-op；test_runtime_license 锁住不加载 License Manager |
+| R2 | 固定项目 License 路径、protected fail-closed、诊断可用 | #283 / AC2 | satisfied | licensing.py 固定 <project>/.agents/license.lic；server 只放行 status/self-test/install/serve 启动，五 Tool 统一 gate；runtime_mcp_smoke 覆盖 missing 与 valid 路径 |
+| R3 | 顶部配置、无 CLI 参数的签发工具 | #283 / AC3 | satisfied | licensing/license_tool.py 顶部客户/联系人/生效/到期/输出配置；direct 签发自验签 Green；单测断言无 customer/expires/contact/private-key CLI 参数 |
+| R4 | Ed25519、仓库 key pair、仅公钥进入 Runtime | #283 / AC4 | satisfied | Private Repo 已提交匹配 Ed25519 key pair；Builder 只读取 public_key.pem 并嵌入公钥；distribution regression 禁止 private_key.pem；Builder/Release 增加 license_public_key_sha256 |
+| R5 | license.lic 不属于 installer/Payload ownership | #283 / AC5 | satisfied | installer/Payload 未接入 license path；test_external_license_is_not_owned_or_modified_by_install_upgrade 验证首次安装/升级保持外部文件 |
+| R6 | License 与 Skill/Reference/identity 解耦 | #283 / AC6 | satisfied | Claims 严格字段不含 Skill/Reference/机器/项目/release/digest；License validity 只依赖签名、product、时间与固定公钥 |
+| R7 | 每次调用 expiry + 热替换 | #283 / AC7 | satisfied | LicenseManager 缓存 verified Claims 但每次比较当前秒级时间；file identity 变化重新验签；direct Green 与 test_runtime_license 覆盖跨期/热替换 |
+| R8 | 三平台 package/六 Tool/Release surface 保持 | #283 / AC8 | satisfied | 六 Tool 名称未变；runtime_platform_smoke 复用现有 Linux/Windows/macOS package matrix 并新增 License smoke；Release ZIP exact surface 未增加 key/license；正式 fresh package Evidence 由 Ready PR required gate 执行 |
+| R9 | canonical/user/maintainer docs 同步 | #283 / AC9 | satisfied | canonical Runtime ref、runtime/README、USAGE、README 已同步 Source/Runtime、路径、续期、ownership、安全和错误边界 |
+| R10 | L3 Review/CI/merge/main-fresh/archive/closure | #283 / AC10 | not_applicable | pre-merge Change 不自证未来 merge/main-fresh/archive/Issue Closure；这些由 downstream delivery gate 持有 |
 
 # 计划改动
 
@@ -162,11 +162,11 @@ License 嵌入客户 binary 会导致续期 rebuild；Home License 与项目级�
 
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 行为变化建立失败证据或说明测试例外
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -209,10 +209,10 @@ License 嵌入客户 binary 会导致续期 rebuild；Home License 与项目级�
 
 # 完成审计
 
-- [ ] upstream_re_read：完成前重读 #283 与当前 main/canonical rules。
-- [ ] change_coverage：AC1-AC10 均有直接实现/证据或 downstream gate。
-- [ ] reverse_audit：signer → license → verifier → server gate → package/install/release。
-- [ ] unresolved_cleared：Ready 前 R1-R9 清零；R10 post-merge 由 downstream gate 持有。
+- [x] upstream_re_read：已重读 #283、当前 main bf1b7261、#284 current head 与 Runtime/Security canonical Owner。
+- [x] change_coverage：AC1-AC9 均有当前实现/回归/直接 Evidence；AC10 post-merge 部分由 downstream gate 持有。
+- [x] reverse_audit：已从 signer → external license → exact-bytes verify → server protected gate → installer ownership → package/release identity/surface 反向复核。
+- [x] unresolved_cleared：R1-R9 已清零；R10 pre-merge 不适用，post-merge 继续由 delivery gate 持有。
 
 # 完成证据与状态
 
@@ -225,17 +225,19 @@ License 嵌入客户 binary 会导致续期 rebuild；Home License 与项目级�
 | V3 | 当前 ChatGPT 宿主 | 直接创建 licensing/private_key.pem / public_key.pem | 被宿主安全层在 GitHub 写入前阻止 | 证明剩余 blocker 是上位宿主内容安全边界，不是 Agent_Skills 规则或 GitHub repository permission |
 | V4 | 当前容器 | `git ls-remote https://github.com/dingyuwen777/Agent_Skills.git HEAD` | DNS: Could not resolve host github.com；`gh` 不存在 | 历史阶段本地 Git/CLI 不能作为等价写入路径 |
 | V5 | 当前 head | GitHub branch readback | private/public key、license_tool、Runtime licensing/server/build/smoke/tests/docs 均已落库 | 历史宿主 blocker 已解除，进入实现验证阶段 |
+| V6 | current license core / isolated Python | compile + key-pair cross-check + issue_license + LicenseManager valid/tamper/hot-replace/expiry | Green | 当前分支真实 key pair 匹配；签发验签成功；payload 篡改拒绝；热替换生效；跨期下一次校验过期 |
+| V7 | current-head Review | signer→verifier→server→build→release reverse audit | 公钥跨平台 identity finding 已修复；re-review 无新增 blocker | license_public_key_sha256 已进入 Builder/platform/Release 公共 identity |
 
 ## 未验证内容与剩余风险
 
-本分支已同步 Agent_Skills Runtime License 项目级安全例外，明确允许 Private Repository 下的 licensing/private_key.pem 与 Ed25519 sign/verify，因此仓库治理规则不再是后续 Codex 的阻塞项。当前宿主已在用户再次明确授权后成功写入 `licensing/private_key.pem` / `public_key.pem`、Ed25519 签发/验签实现及 Runtime gate；历史 capability blocker 已解除。当前剩余工作是 fresh semantic/package Evidence、独立 Review、Ready/merge/main-fresh/archive/closure。
+实现、direct core validation、文档和 current-head re-review 已完成。当前唯一未取得的 required Evidence 是 GitHub Actions：最近 Skill Tests 在 Runner 分配前直接 failure（Agent Skills Gate 无 steps/logs），因此 full semantic 与三平台 package 尚未真正执行；该平台 blocker 不等价于代码测试失败，也不能绕过 required gate。
 
 ## 交付状态
 
-- 提交：Change 初始化 6b9bcf66547c8fc7c7efbb4673e754411be50cb0
-- 拉取请求：#284（Draft，blocked）
-- CI：未作为完成证据；实现尚未落库
-- 合并：未执行，因 AC2/AC3/AC4 等核心验收未满足
+- 提交：实现已在 tech/runtime-license-v1；current head 以 PR #284 实时 head 为准
+- 拉取请求：#284（准备转 Ready）
+- CI：direct License core Green；GitHub Skill Tests 当前 Runner 前失败，尚无 semantic/package Green
+- 合并：未执行；required CI 未满足前禁止 merge
 - Change 归档：未执行
 - 发布 / 部署：本任务不创建正式 Release。
 
