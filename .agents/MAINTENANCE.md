@@ -273,9 +273,9 @@ changed paths
 
 永久测试资产按独立证明责任组织为逻辑 test group；**优先减少“何时运行”，不是先删测试文件**。仍有长期回归价值的 test 不因本次 scope 未命中而删除。
 
-### Validation Asset Redundancy Gate（源仓库完成门禁）
+### Validation Asset Redundancy Gate
 
-**每次维护收尾**按 coding.reference.28：**少跑不等于允许永久冗余**；直接相关冗余须在 Ready/merge 前收口，仅 `clean / not_applicable` 可交付，`blocked` 禁 Ready/mergeable/完成；历史无关另记 Finding。
+**每次维护收尾**见 coding.reference.28；**少跑不等于允许永久冗余**。相关冗余须 Ready/merge 前收口；仅 `clean / not_applicable` 可交付，`blocked` 禁完成；历史无关记 Finding。
 
 后续维护新增/修改测试时必须同步判断：
 
