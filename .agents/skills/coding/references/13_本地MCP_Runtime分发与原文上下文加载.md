@@ -65,7 +65,7 @@ Project-local Runtime
 
 Local MCP 必须继续让用户只用自然语言提出任务；宿主模型恢复项目事实、建立 Task Route，Runtime 只做确定性校验/求值/加载，不扫描项目替模型猜架构，也不成为第二个 Coding Agent。
 
-最终使用者不需要：访问或 clone Agent_Skills 源仓库、为 Runtime 安装预装 Python、外部安装脚本、Runtime Kit、全局 Runtime、额外 password/API key/license key/key file，或维护 `.agents/agent-skills-install.json` / `*.manifest.json`。
+最终使用者不需要：访问或 clone Agent_Skills 源仓库、为 Runtime 安装预装 Python、外部安装脚本、Runtime Kit、全局 Runtime、额外 password/API key，或维护 `.agents/agent-skills-install.json` / `*.manifest.json`。Runtime Mode 唯一额外授权资产是项目级 `.agents/license.lic`；它由维护者离线签发，不需要登录、联网激活或 License Server。Source Mode 不读取也不校验该文件。
 
 Project Payload 会保留正式 Skill 自己真正需要的运行资产，例如 Coding helper；目标环境缺少相关工具时只能按专业规则采用明确 fallback，并把无法执行的机器门禁记为未验证。
 
@@ -377,6 +377,14 @@ Windows frozen+TTY 无参数失败：flush error 后提示 Enter 并读一次；
 Windows: .agents/runtime/agent-skills.exe
 POSIX:   .agents/runtime/agent-skills
 ```
+
+Runtime Mode 的离线 License Contract 固定为：
+
+```text
+<project>/.agents/license.lic
+```
+
+该文件是项目 Owner 管理的外部授权资产，不属于 Project Payload、managed_files、install-state、source_digest、routing_digest 或 payload_digest。install / upgrade / rollback 不创建、不覆盖、不删除、不迁移它。正式 Runtime 只内嵌 Ed25519 公钥；维护者侧 `licensing/private_key.pem` 和签发工具不进入 binary、Project Payload、Release 或目标项目。`status` / `self-test` / `serve` 启动保持可诊断，五个实际工作流 MCP Tool 在 frozen Runtime Mode 下统一要求有效 License；签名解析结果可进程内缓存，但每次受保护调用都重新比较当前时间，文件身份变化时重新读取并验签。续期只需原路径替换 `license.lic`。
 
 项目 Host 资产：
 
