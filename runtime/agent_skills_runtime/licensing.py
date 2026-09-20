@@ -87,8 +87,8 @@ def validate_public_key_pem(public_key_pem: bytes) -> Ed25519PublicKey:
     return key
 
 
-def parse_license(data: bytes) -> tuple[bytes, bytes, Mapping[str, Any]]:
-    """解析 License Envelope，但不在验签前信任 payload Claims。"""
+def parse_license(data: bytes) -> tuple[bytes, bytes]:
+    """只解析 Envelope 并返回原始 payload/signature；Claims 必须在验签成功后再解析。"""
     if len(data) > LICENSE_MAX_BYTES:
         raise LicenseError("LICENSE_INVALID", "License 文件过大")
     try:
@@ -104,13 +104,18 @@ def parse_license(data: bytes) -> tuple[bytes, bytes, Mapping[str, Any]]:
 
     payload_bytes = _base64url_decode(envelope.get("payload"), "payload")
     signature = _base64url_decode(envelope.get("signature"), "signature")
+    return payload_bytes, signature
+
+
+def _parse_claims(payload_bytes: bytes) -> Mapping[str, Any]:
+    """只在 Ed25519 验签成功后解析 payload Claims。"""
     try:
         claims = json.loads(payload_bytes.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise LicenseError("LICENSE_INVALID", "License payload 不是合法 UTF-8 JSON") from error
     if not isinstance(claims, dict):
         raise LicenseError("LICENSE_INVALID", "License payload 顶层必须是 JSON object")
-    return payload_bytes, signature, claims
+    return claims
 
 
 def verify_signature(public_key_pem: bytes, payload_bytes: bytes, signature: bytes) -> None:
@@ -223,9 +228,9 @@ class LicenseManager:
         if identity == self._cached_identity and self._cached_claims is not None:
             return self._cached_claims
 
-        payload_bytes, signature, raw_claims = parse_license(path.read_bytes())
+        payload_bytes, signature = parse_license(path.read_bytes())
         verify_signature(self._public_key_pem, payload_bytes, signature)
-        claims = _validated_claims(raw_claims)
+        claims = _validated_claims(_parse_claims(payload_bytes))
         self._cached_identity = identity
         self._cached_claims = claims
         return claims
