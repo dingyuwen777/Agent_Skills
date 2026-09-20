@@ -25,6 +25,7 @@ if str(SOURCE_ROOT) not in sys.path:
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime.crypto import split_root_material
 from runtime.agent_skills_runtime.encrypted_bundle import encrypt_runtime_bundle
+from runtime.agent_skills_runtime.licensing import validate_public_key_pem
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime.routing import ROUTING_MANIFEST_PROTOCOL, TASK_ROUTE_PROTOCOL
 from runtime.agent_skills_runtime.runtime import MCP_TOOL_CONTRACT_PROTOCOL, runtime_integrity_fingerprint
@@ -119,15 +120,26 @@ def _serialize_project_payload(payload: Mapping[str, Any]) -> bytes:
     return json.dumps(dict(payload), ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
+def _license_public_key_pem(source_root: str | Path) -> bytes:
+    """读取并验证唯一 Runtime License 公钥；Builder 永远不读取产品私钥。"""
+    path = Path(source_root).resolve() / "licensing" / "public_key.pem"
+    if path.is_symlink() or not path.is_file():
+        raise FileNotFoundError(f"Runtime License 公钥不存在或不是普通文件：{path}")
+    value = path.read_bytes()
+    validate_public_key_pem(value)
+    return value
+
+
 def _write_embedded_payload(
     package_root: Path,
     root_material: bytes,
     container: bytes,
     project_payload: Mapping[str, Any],
+    license_public_key_pem: bytes,
     release_version: str,
     source_commit: str | None = None,
 ) -> None:
-    """只在临时构建副本写入 v3 加密容器、可恢复根材料分片与 Project Payload，不修改源码仓库。"""
+    """只在临时构建副本写入 Runtime 私有材料、Project Payload 与 License 公钥。"""
     root_shares = split_root_material(root_material)
     project_payload_b64 = base64.b64encode(_serialize_project_payload(project_payload)).decode("ascii")
     content = (
@@ -135,6 +147,7 @@ def _write_embedded_payload(
         f'RUNTIME_ROOT_SHARES_B64 = "{base64.b64encode(root_shares).decode("ascii")}"\n'
         f'BUNDLE_CONTAINER_B64 = "{base64.b64encode(container).decode("ascii")}"\n'
         f'PROJECT_PAYLOAD_B64 = "{project_payload_b64}"\n'
+        f'LICENSE_PUBLIC_KEY_PEM_B64 = "{base64.b64encode(license_public_key_pem).decode("ascii")}"\n'
         f'RELEASE_VERSION = {release_version!r}\n'
         f'SOURCE_COMMIT = {source_commit!r}\n'
     )
@@ -198,6 +211,7 @@ def build_runtime(
     bundle = build_bundle(source)
     context_budget = _context_budget(source, bundle)
     project_payload = build_project_payload(source, bundle)
+    license_public_key_pem = _license_public_key_pem(source)
     root_material, container = encrypt_runtime_bundle(bundle)
 
     with tempfile.TemporaryDirectory(prefix="agent-skills-runtime-build-") as temp_name:
@@ -214,6 +228,7 @@ def build_runtime(
             root_material,
             container,
             project_payload,
+            license_public_key_pem,
             release_version,
             source_commit,
         )
@@ -266,6 +281,8 @@ def build_runtime(
     )
     if status.get("Release版本") != release_version or self_test.get("Release版本") != release_version:
         raise RuntimeError("构建产物 release_version 与显式构建版本不一致")
+    if status.get("授权状态") != "missing":
+        raise RuntimeError("未安装的构建产物 status 应把项目 License 诊断为 missing")
     if self_test.get("完整性指纹") != expected_integrity_fingerprint:
         raise RuntimeError("构建产物完整性指纹与当前源码、路由、Payload 或版本身份不一致")
     if self_test.get("通过") is not True:
