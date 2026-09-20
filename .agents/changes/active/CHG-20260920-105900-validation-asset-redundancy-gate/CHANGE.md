@@ -165,6 +165,24 @@ Requirement Source 为 GitHub Issue #279。用户明确要求以后每次合并�
 - [x] 取得仍覆盖当前版本的验证证据
 - [x] 完成需求追溯、完成审计和适用复核
 
+# 计划改动
+
+| 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
+| --- | --- | --- | --- |
+| coding/reference 27 | Validation Asset Redundancy Gate 详细 Owner | 统一判定与 Scope 边界 | R1-R6 |
+| MAINTENANCE.md | 源仓库完成门禁薄覆盖 | 每次维护自动收口 | R7 |
+| coding/reference 11 | Completion/Review 薄触发 | Ready 前关闭缺口 | R8 |
+| coding/reference 23 | Delivery 薄触发 | PR Ready / merge 前关闭缺口 | R8 |
+| test_docs_ci_fast_path.py | 永久回归 | 防止“只少跑、不清冗余”回退 | R9 |
+
+- [x] 调查当前实现和事实源
+- [x] 建立与风险相称的任务路由和验证矩阵
+- [x] 行为变化建立失败证据或说明测试例外
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
+
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
