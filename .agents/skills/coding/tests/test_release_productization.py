@@ -8,7 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[4]
 BUILD_RUNTIME_PATH = ROOT / "scripts/build_runtime.py"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
-RUNTIME_PACKAGE_WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"\nRUNTIME_PLATFORM_SMOKE = ROOT / "scripts/runtime_platform_smoke.py"
+RUNTIME_PACKAGE_WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"
+RUNTIME_PLATFORM_SMOKE = ROOT / "scripts/runtime_platform_smoke.py"
 
 
 class ReleaseProductizationTest(unittest.TestCase):
