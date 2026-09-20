@@ -134,6 +134,7 @@ jobs:
           .github/scripts/check_pr_requirement_source.py
           .github/scripts/archive_change_after_merge.py
           .github/scripts/runtime_package_scope.py
+          licensing/license_tool.py
           scripts/build_runtime.py
           scripts/runtime_mcp_smoke.py
           scripts/runtime_platform_smoke.py
@@ -144,6 +145,7 @@ jobs:
           runtime/agent_skills_runtime/encrypted_bundle.py
           runtime/agent_skills_runtime/project_payload.py
           runtime/agent_skills_runtime/install_state.py
+          runtime/agent_skills_runtime/licensing.py
           runtime/agent_skills_runtime/project_installer.py
           runtime/agent_skills_runtime/runtime.py
           runtime/agent_skills_runtime/server.py
