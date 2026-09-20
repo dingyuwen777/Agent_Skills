@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-140000-validation-asset-ci-consolidation
 title: 精简重复测试与平台 CI 验证资产
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/validation-asset-ci-consolidation
 created: 2026-09-20
