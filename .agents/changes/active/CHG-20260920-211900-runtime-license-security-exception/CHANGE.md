@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-211900-runtime-license-security-exception
 title: 明确 Runtime License Ed25519 项目级安全例外
 level: L3
-status: in_progress
+status: blocked
 owner: dingyuwen777
 branch: tech/runtime-license-security-exception
 created: 2026-09-20
@@ -129,10 +129,10 @@ Requirement Source：GitHub Issue #283。用户本轮进一步明确要求把该
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Codex 明确知道 Agent_Skills Runtime License 允许提交 private_key.pem | #283 / AC4 | not_satisfied | 待 canonical 规则修改 |
-| R2 | Codex 明确知道可以实现 Ed25519 签名/验签代码 | #283 / AC4 | not_satisfied | 待 canonical 规则修改 |
-| R3 | 例外不得扩大到其他 Secret/项目 | #283 / AC4 | not_satisfied | 待边界文本和测试 |
-| R4 | 私钥不得进入正式 Runtime/Release 等分发面 | #283 / AC4 | not_satisfied | 待边界文本和测试 |
+| R1 | Codex 明确知道 Agent_Skills Runtime License 允许提交 private_key.pem | #283 / AC4 | satisfied | MAINTENANCE + reference 14 已明确指定 repo/path/Private 前提 |
+| R2 | Codex 明确知道可以实现 Ed25519 签名/验签代码 | #283 / AC4 | satisfied | 两个 canonical Owner 已明确允许 sign/verify 且不需重复确认 |
+| R3 | 例外不得扩大到其他 Secret/项目 | #283 / AC4 | satisfied | repo + path + purpose + Private visibility 四条件与恢复 fail-closed 已写入并有回归断言 |
+| R4 | 私钥不得进入正式 Runtime/Release 等分发面 | #283 / AC4 | satisfied | 两个 Owner 均禁止 private key 进入 Runtime/Payload/Release/目标项目/日志/MCP/Builder JSON |
 
 # 计划改动
 
@@ -144,9 +144,9 @@ Requirement Source：GitHub Issue #283。用户本轮进一步明确要求把该
 
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
+- [x] 行为变化建立失败证据或说明测试例外
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
 - [ ] 取得仍覆盖当前版本的验证证据
 - [ ] 完成需求追溯、完成审计和适用复核
 
@@ -191,10 +191,10 @@ Requirement Source：GitHub Issue #283。用户本轮进一步明确要求把该
 
 # 完成审计
 
-- [ ] upstream_re_read：完成前重读 #283、当前 main 与两个 canonical Owner。
-- [ ] change_coverage：R1-R4 均由规则文本和测试直接覆盖。
-- [ ] reverse_audit：从未来 Codex Maintenance 入口反查到安全例外可达，且例外不外溢。
-- [ ] unresolved_cleared：Ready 前所有 not_satisfied 清零。
+- [x] upstream_re_read：已重读 #283、main bf1b7261 与两个 canonical Owner。
+- [x] change_coverage：R1-R4 均由规则文本和现有治理测试新增断言直接覆盖。
+- [x] reverse_audit：根 AGENTS → Maintenance；安全/Git 任务 → reference 14，两条路径都可达且均限定 repo/path/purpose/Private。
+- [x] unresolved_cleared：R1-R4 已清零；剩余阻塞仅是 GitHub Actions Runner 未启动，非需求未满足。
 
 # 完成证据与状态
 
@@ -203,20 +203,23 @@ Requirement Source：GitHub Issue #283。用户本轮进一步明确要求把该
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main bf1b7261 | GitHub metadata + canonical reread | 已确认 | Private visibility、当前安全默认与读取 Owner |
+| V2 | head 264cfa6b | branch readback + exact fragment audit | 通过 | Maintenance/reference 14 均包含 repo/path/purpose/Private 前提、Ed25519 sign/verify 授权和分发禁止项 |
+| V3 | PR #285 / Review-only | A1 #283→规则；A2 diff→测试/边界 | NO_FINDINGS_WITHIN_SCOPE | 未发现授权外溢；仅修复一个 Markdown 空行 |
+| V4 | PR #285 / Skill Tests #1664、#1665 | GitHub Actions | Runner 前失败；Agent Skills Gate 无 steps/logs | 平台 CI 未实际执行，不能作为 Green Evidence |
 
 ## 未验证内容与剩余风险
 
-实现、targeted semantic、独立 Review、PR CI 尚未完成。
+规则实现与 Review 已完成；`test_development_guidance.py` 已增加最小回归，但 GitHub Actions #1664/#1665 在 Runner 分配前失败且没有任何 step/log，本地容器也因 DNS 无法 clone 私有仓库，因此 targeted semantic/required CI 尚未实际执行，当前不得合并。
 
 ## 交付状态
 
-- 提交：Change 初始化
-- 拉取请求：未创建
-- CI：未运行
-- 合并：未执行
+- 提交：规则与回归已提交，current head 264cfa6b40da5de56a03e6bb22905207027db815
+- 拉取请求：#285（Draft，当前 blocked）
+- CI：Skill Tests #1664/#1665 均在 Runner 前失败，无 steps/logs；未取得 Green
+- 合并：未执行；required CI 未满足
 - Change 归档：未执行
 - 发布 / 部署：不适用。
 
 ## 备注
 
-本变更只解决 canonical 授权歧义，不替代 #283 的 Runtime License 实现。
+本变更只解决 canonical 授权歧义，不替代 #283 的 Runtime License 实现。当前 blocked 原因是 GitHub Actions 平台执行未启动，不是规则实现或 Review Finding。
