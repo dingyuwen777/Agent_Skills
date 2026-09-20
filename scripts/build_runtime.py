@@ -273,6 +273,7 @@ def build_runtime(
     expected_digest = str(bundle["source_digest"])
     expected_routing_digest = str(bundle["routing_digest"])
     expected_payload_digest = str(project_payload["payload_digest"])
+    license_public_key_sha256 = hashlib.sha256(license_public_key_pem).hexdigest()
     expected_integrity_fingerprint = runtime_integrity_fingerprint(
         bundle,
         release_version=release_version,
@@ -297,6 +298,7 @@ def build_runtime(
         "source_commit": source_commit,
         "integrity_fingerprint": expected_integrity_fingerprint,
         "python_version": python_version,
+        "license_public_key_sha256": license_public_key_sha256,
         "bundle_schema": str(bundle["schema"]),
         "bundle_version": str(bundle["bundle_version"]),
         "task_route_protocol": TASK_ROUTE_PROTOCOL,
