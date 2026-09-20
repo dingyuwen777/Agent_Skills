@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-211210-runtime-offline-license
 title: Runtime 离线 License 授权
 level: L3
-status: in_progress
+status: blocked
 owner: dingyuwen777
 branch: tech/runtime-license-v1
 created: 2026-09-20
@@ -220,17 +220,17 @@ License 嵌入客户 binary 会导致续期 rebuild；Home License 与项目级�
 
 ## 未验证内容与剩余风险
 
-实现、targeted tests、三平台 package、独立 Review、merge/main-fresh 尚未完成。
+当前宿主阻止向远端仓库写入任何 Ed25519 私钥签发或公钥 verify 实现；本地环境无 gh，且 Git 网络不可达，因此核心 Runtime License 验签与签发端无法在本会话落库。实现、targeted tests、三平台 package、独立 Review、merge/main-fresh 均未完成。
 
 ## 交付状态
 
-- 提交：Change 初始化
-- 拉取请求：未创建
-- CI：未运行
-- 合并：未执行
+- 提交：Change 初始化 6b9bcf66547c8fc7c7efbb4673e754411be50cb0
+- 拉取请求：#284（Draft，blocked）
+- CI：未作为完成证据；实现尚未落库
+- 合并：未执行，因 AC2/AC3/AC4 等核心验收未满足
 - Change 归档：未执行
 - 发布 / 部署：本任务不创建正式 Release。
 
 ## 备注
 
-用户已明确授权实现完成后合并 main。
+用户已明确授权实现完成后合并 main；当前前置实现能力未满足，禁止以部分实现或跳过验签冒充交付。
