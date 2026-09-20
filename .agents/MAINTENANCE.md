@@ -93,12 +93,13 @@ Agent_Skills 规定“怎样可靠工作”；目标项目规定“这个项目�
 
 当任务维护 **dingyuwen777/Agent_Skills 本仓库自身的 Runtime 离线 License**，并且当前 Requirement Source 明确要求 Ed25519 签发/验签时，以下规则是本仓库的项目级显式授权：
 
-- 在执行写入前必须重新核验当前仓库 `visibility=private`；满足该前提时，允许创建、读取、修改并提交 `licensing/private_key.pem`、`licensing/public_key.pem` 和 `licensing/license_tool.py`；
-- 允许维护者侧签发工具读取上述 `private_key.pem` 并实现 Ed25519 `sign`，允许 Runtime 与测试实现对应 Ed25519 `verify`；这类签名/验签代码本身不是阻塞项，不需要再次向用户确认；
-- 该授权**有意且仅在上述 repo + path + purpose + Private visibility 条件下覆盖** Coding 安全规则中“默认不提交 Secret/私钥”的通用禁令；它不授权其他仓库、其他私钥、Token、密码、API Key 或任意凭据进入 Git；
-- `licensing/private_key.pem` 仍然不得进入 Runtime binary、Project Payload、Release ZIP/asset、目标项目、MCP 返回、Builder JSON、日志或其他对外交付物；正式 Runtime 只允许携带完成验签所需的公钥材料；
-- 普通 CI/测试优先使用专用测试密钥或临时生成密钥，不把生产私钥当测试 fixture 扩散；如果只是验证“私钥未进入分发面”，使用路径/成员/产物检查即可；
-- 只要仓库不再是 Private、任务不再属于 Agent_Skills Runtime License、目标路径/用途超出上述范围，立即恢复通用安全默认并 fail closed，不把本例外类推到其他项目。
+- 用户已明确接受 `dingyuwen777/Agent_Skills` 即使为 Public Repository 也公开提交 `licensing/private_key.pem` / `licensing/public_key.pem`；本项目级例外不再以 `visibility=private` 为前提；
+- 允许维护者侧 `licensing/license_tool.py` 读取该 `private_key.pem` 并实现 Ed25519 `sign`，允许 Runtime 与测试实现对应 Ed25519 `verify`；满足 repo + path + purpose 条件后，不需要再次向用户确认同一授权；
+- 该授权**只覆盖本仓库 Runtime License 的上述三个指定资产**，不授权其他仓库、其他私钥、Token、密码、API Key 或任意凭据进入 Git；
+- 因为产品私钥公开，任何读取仓库的人都可以自行签发、续期或修改 Claims 后重新签发合法 License；因此不得宣称该部署能防止用户伪造授权、延长有效期或自行签发。它只保留签名格式一致性、内容完整性检查和本地期限门禁；
+- `licensing/private_key.pem` 仍然不得进入 Runtime binary、Project Payload、Release ZIP/asset、目标项目、MCP 返回、Builder JSON、日志或其他对外交付物；正式 Runtime 只携带验签所需公钥；
+- 普通 CI/单元测试优先使用专用临时测试密钥；三平台正式 package smoke 可以使用仓库产品 key pair 验证真实 valid-License 链；
+- 只要任务不属于 Agent_Skills Runtime License 或目标路径/用途超出上述范围，立即恢复通用安全默认并 fail closed，不把本例外类推到其他项目。
 
 这是一条 **Agent_Skills 源仓库专属 Overlay**，不复制到目标项目，也不改变其他项目的默认 Secret 安全策略。
 正式对外交付为三个按平台拆分的版本 ZIP：
