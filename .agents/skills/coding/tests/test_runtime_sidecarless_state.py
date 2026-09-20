@@ -18,6 +18,7 @@ BUILDER = ROOT / "scripts/build_runtime.py"
 INSTALLER = ROOT / "runtime/agent_skills_runtime/project_installer.py"
 SERVER = ROOT / "runtime/agent_skills_runtime/server.py"
 RUNTIME_PACKAGE_WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"
+RUNTIME_PLATFORM_SMOKE = ROOT / "scripts/runtime_platform_smoke.py"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
 LEGACY_INSTALL_MANIFEST = Path(".agents/agent-skills-install.json")
 
@@ -90,24 +91,23 @@ class RuntimeSidecarlessStateTest(unittest.TestCase):
         self.assertTrue(hasattr(builder, "_normalise_release_version"))
 
     def test_permanent_workflows_use_outputs_and_only_negative_sidecar_checks(self) -> None:
+        """Workflow 只引用 shared smoke；sidecar/install-state 细节由唯一实现证明。"""
         runtime_workflow = RUNTIME_PACKAGE_WORKFLOW.read_text(encoding="utf-8")
         release_workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        smoke = RUNTIME_PLATFORM_SMOKE.read_text(encoding="utf-8")
         for workflow in (runtime_workflow, release_workflow):
             self.assertNotIn("install_manifest_schema", workflow)
             self.assertNotIn("manifest_path", workflow)
             self.assertNotIn("linux.manifest.json", workflow)
             self.assertNotIn("windows.manifest.json", workflow)
             self.assertNotIn("macos.manifest.json", workflow)
-            self.assertNotIn("cp \"${artifact}.manifest.json\"", workflow)
-            self.assertNotIn("Copy-Item \"$artifact.manifest.json\"", workflow)
-            self.assertIn("*.manifest.json", workflow)
+            self.assertIn("runtime_platform_smoke.py", workflow)
+        for forbidden in ("install_manifest_schema", "manifest_path"):
+            self.assertNotIn(forbidden, smoke)
+        self.assertIn("*.manifest.json", smoke)
+        self.assertIn("agent-skills-install.json", smoke)
+        self.assertIn("legacy_manifest.exists()", smoke)
         for marker in ("integrity_fingerprint", "artifact_sha256"):
             self.assertIn(marker, release_workflow)
         self.assertIn("GITHUB_OUTPUT", release_workflow)
         self.assertIn("sha256", release_workflow.lower())
-        self.assertIn("agent-skills-install.json", runtime_workflow)
-        self.assertIn("test ! -e", runtime_workflow)
-
-
-if __name__ == "__main__":
-    unittest.main()

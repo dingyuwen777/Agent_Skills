@@ -100,26 +100,36 @@ class RuntimeReleaseHardeningTest(unittest.TestCase):
             self.assertIn("fixture install write failure", str(captured.exception.__cause__))
 
     def test_permanent_and_release_workflows_pin_python_3147(self) -> None:
-        """统一常规/三平台 Runtime CI 与 Release 都必须固定 Python 和 action SHA。"""
+        """Core+package matrix 与 Release 都固定 Python 和 pinned action。"""
         setup_marker = f"actions/setup-python@{SETUP_PYTHON_SHA}"
         unified_workflow = SKILL_TESTS_WORKFLOW.read_text(encoding="utf-8")
         release_workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
-        self.assertGreaterEqual(unified_workflow.count(setup_marker), 3)
+        self.assertGreaterEqual(unified_workflow.count(setup_marker), 2)
         self.assertGreaterEqual(release_workflow.count(setup_marker), 4)
-        self.assertGreaterEqual(unified_workflow.count(f'python-version: "{PINNED_PYTHON}"'), 3)
+        self.assertGreaterEqual(unified_workflow.count(f'python-version: "{PINNED_PYTHON}"'), 2)
         self.assertGreaterEqual(release_workflow.count(f'python-version: "{PINNED_PYTHON}"'), 4)
+        self.assertIn("runner: windows-2025", unified_workflow)
+        self.assertIn("runner: macos-15", unified_workflow)
         self.assertNotIn("runs-on: windows-latest", unified_workflow)
         self.assertNotIn("runs-on: windows-latest", release_workflow)
 
     def test_release_workflow_uses_tag_only_and_publishes_from_verified_draft(self) -> None:
+        """正式 Release 仍由 tag 驱动，并通过 shared smoke 后 Draft→Publish。"""
         workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
         for forbidden in ("< VERSION", "Get-Content VERSION", "仓库 VERSION", "FILE_VERSION"):
             self.assertNotIn(forbidden, workflow)
         for required in (
-            'VERSION="${TAG#v}"', '--release-version "${RELEASE_VERSION}"',
-            "--release-version $env:RELEASE_VERSION", "python -m unittest discover",
-            "-s .agents/skills/coding/tests", "ready_check.py --root .", "gh release create",
-            "--draft", "gh release upload", "gh release edit", "--draft=false",
+            'VERSION="${TAG#v}"',
+            "runtime_platform_smoke.py",
+            "--release-version",
+            "python -m unittest discover",
+            "-s .agents/skills/coding/tests",
+            "ready_check.py --root .",
+            "gh release create",
+            "--draft",
+            "gh release upload",
+            "gh release edit",
+            "--draft=false",
         ):
             self.assertIn(required, workflow)
         self.assertLess(workflow.index("python -m unittest discover"), workflow.index("gh release create"))

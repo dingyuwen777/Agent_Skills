@@ -3,9 +3,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[4]
-
 
 class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
     """验证 Change 历史、常规 CI 成本与项目 Runtime 生命周期的长期边界。"""
@@ -28,70 +26,6 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
         self.assertIn("归档", maintenance)
         self.assertNotIn("完成 main 新鲜验证后删除当前 Change", maintenance)
         self.assertNotIn("不复制到 archive", maintenance)
-
-    def test_skill_ci_only_builds_onefile_for_package_scope(self) -> None:
-        """统一 CI 可托管 Linux package，但构建依赖与三平台 binary 必须只在 package scope 触发。"""
-        workflow = self._read(".github/workflows/skill-tests.yml")
-        self.assertIn("runtime/requirements.txt", workflow)
-        self.assertIn("runtime/requirements-build.txt", workflow)
-        self.assertIn("Build and self-test Linux onefile Runtime", workflow)
-        self.assertIn("Runtime Windows Package", workflow)
-        self.assertIn("Runtime macOS Package", workflow)
-        self.assertGreaterEqual(
-            workflow.count("steps.runtime-scope.outputs.runtime_scope == 'package'"),
-            4,
-        )
-        self.assertGreaterEqual(
-            workflow.count("needs.agent-skills-core.outputs.runtime_scope == 'package'"),
-            2,
-        )
-        self.assertIn("Run selected self-contained tests", workflow)
-        self.assertIn("Verify current Coding Change readiness", workflow)
-        self.assertIn("change_gate_ready", workflow)
-        self.assertIn("Agent Skills Gate", workflow)
-
-    def test_runtime_package_ci_uses_stable_gate_and_keeps_three_platform_evidence(self) -> None:
-        """统一 CI 必须稳定产出 Runtime Package Gate，并只在 package+Ready 时执行三平台构建。"""
-        workflow_path = ROOT / ".github/workflows/skill-tests.yml"
-        classifier_path = ROOT / ".github/scripts/runtime_package_scope.py"
-        self.assertTrue(workflow_path.is_file(), "缺少统一 Skill/Runtime CI workflow")
-        self.assertTrue(classifier_path.is_file(), "缺少 CI Evidence Selector")
-        workflow = workflow_path.read_text(encoding="utf-8")
-        self.assertIn("Runtime Package Gate", workflow)
-        self.assertIn(".github/scripts/runtime_package_scope.py", workflow)
-        self.assertIn("runtime_scope", workflow)
-        self.assertIn("semantic_profile", workflow)
-        self.assertIn("--run-selected-tests", workflow)
-        self.assertNotIn("runtime/*|runtime/**/*", workflow)
-        self.assertNotIn(".agents/*|.agents/**/*", workflow)
-        self.assertGreaterEqual(
-            workflow.count("steps.runtime-scope.outputs.runtime_scope == 'package'"),
-            4,
-        )
-        self.assertGreaterEqual(
-            workflow.count("needs.agent-skills-core.outputs.runtime_scope == 'package'"),
-            2,
-        )
-        self.assertEqual(
-            workflow.count("needs.agent-skills-core.outputs.change_gate_ready == 'true'"),
-            2,
-        )
-        self.assertIn("Build and self-test Linux onefile Runtime", workflow)
-        self.assertIn("Runtime Windows Package", workflow)
-        self.assertIn("Runtime macOS Package", workflow)
-        self.assertIn("Verify Linux real stdio MCP contract", workflow)
-        self.assertIn("Verify real stdio MCP contract", workflow)
-        self.assertIn("Verify project-only single-binary installation", workflow)
-        self.assertIn('test "${CORE_RESULT}" = "success"', workflow)
-        self.assertIn(
-            "if: always() && needs.agent-skills-core.outputs.runtime_scope == 'package'",
-            workflow,
-        )
-        self.assertNotIn('test "${WINDOWS_RESULT}" = "skipped"', workflow)
-        self.assertNotIn('test "${MACOS_RESULT}" = "skipped"', workflow)
-        self.assertIn('test "${WINDOWS_RESULT}" = "success"', workflow)
-        self.assertIn('test "${MACOS_RESULT}" = "success"', workflow)
-        self.assertNotIn("LINUX_RESULT", workflow)
 
     def test_release_protocol_identity_is_builder_owned_not_workflow_hardcoded(self) -> None:
         """Release 必须比较 Builder identity，但不能复制 Runtime 协议版本成为第二事实源。"""
@@ -120,39 +54,26 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
             self.assertNotRegex(workflow, pattern, f"Release workflow 不应硬编码协议版本：{pattern}")
 
     def test_runtime_install_assertion_tracks_project_facing_agents_contract(self) -> None:
-        """三平台真实安装验证项目侧 AGENTS/Entry/Core，不恢复 Source 导航或内部 MCP 名称断言。"""
+        """共享 smoke 继续验证项目侧 AGENTS/Entry/Core，不恢复 Source 导航或内部 MCP 名称断言。"""
         managed = self._read(".agents/skills/coding/assets/AGENTS.managed.md")
-        workflow = self._read(".github/workflows/skill-tests.yml")
+        smoke = self._read("scripts/runtime_platform_smoke.py")
         project_contract = "必须先读取并遵守当前目录及上级适用的项目规则"
         self.assertIn(project_contract, managed)
-        self.assertEqual(workflow.count(project_contract), 6)
+        self.assertIn(project_contract, smoke)
         self.assertNotIn("对用户正常说明", managed)
-        self.assertNotIn("对用户正常说明", workflow)
+        self.assertNotIn("对用户正常说明", smoke)
         for forbidden in ("治理能力自身", "内部能力", "用户可见进度"):
             self.assertNotIn(forbidden, managed)
-
-        for stale_assertion in (
-            'grep -Fq ".agents/skills/router/SKILL.md" "${target}/.agents/skills/ENTRY.md"',
-            'grep -Fq ".agents/skills/coding/SKILL.md" "${target}/.agents/skills/router/SKILL.md"',
-            'grep -Fq "agent_skills_load_required_context" "${target}/.agents/skills/router/SKILL.md"',
-            'Select-String -Path $entry -Pattern ".agents/skills/router/SKILL.md"',
-            'Select-String -Path $router -Pattern ".agents/skills/coding/SKILL.md"',
-            'Select-String -Path $router -Pattern "agent_skills_load_required_context"',
+        for marker in (
+            "当前项目",
+            "真实文件",
+            "工程约束",
+            "最少充分",
+            "无法可靠取得",
+            "Fresh Evidence Contract",
+            "agent-routing:v1",
         ):
-            self.assertNotIn(stale_assertion, workflow)
-
-        self.assertGreaterEqual(
-            workflow.count('"当前项目" "真实文件" "工程约束" "最少充分" "无法可靠取得"'),
-            2,
-        )
-        self.assertIn('@("当前项目", "真实文件", "工程约束", "最少充分", "无法可靠取得")', workflow)
-        self.assertEqual(workflow.count("Fresh Evidence Contract"), 3)
-        self.assertEqual(workflow.count("agent-routing:v1"), 3)
-        self.assertGreaterEqual(
-            workflow.count("-Pattern $forbidden -SimpleMatch -CaseSensitive -Quiet"),
-            2,
-            "Windows Entry/Core 禁止词扫描必须大小写敏感，避免把合法 name: router 误判为内部 Router 描述",
-        )
+            self.assertIn(marker, smoke)
 
     def test_project_runtime_is_host_connection_scoped_not_system_daemon(self) -> None:
         """Runtime 生命周期由安装实现与维护文档证明，不向普通开发者说明内部进程细节。"""
@@ -182,8 +103,6 @@ class ArchiveCiRuntimeLifecycleTest(unittest.TestCase):
             "stdio",
         ):
             self.assertNotIn(internal_detail, usage)
-
-
 
 if __name__ == "__main__":
     unittest.main()

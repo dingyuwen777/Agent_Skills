@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from runtime.agent_skills_runtime import server
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime.project_installer import install_project
 from runtime.agent_skills_runtime.project_payload import build_project_payload
@@ -214,6 +215,50 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
         checkpoint = self.store.checkpoint(route["路由令牌"])
         for forbidden in ("最低风险", "缺失上下文数量", "已加载上下文数量"):
             self.assertNotIn(forbidden, checkpoint)
+
+    def test_public_install_result_hides_internal_install_identity(self) -> None:
+        """安装器内部可保留完整结果，但 CLI 只能输出用户完成安装所需的最小信息。"""
+        internal = {
+            "ok": True,
+            "target": "D:/work/project",
+            "release_version": "2.1.0",
+            "source_digest": "source-secret",
+            "payload_digest": "payload-secret",
+            "skills": ["coding", "docs", "review", "router"],
+            "shared_files": ["ENTRY.md"],
+            "removed_skills": ["legacy-skill"],
+            "removed_shared_files": ["OLD_ENTRY.md"],
+            "removed_managed_files": ["coding/SKILL.md"],
+            "runtime": ".agents/runtime/agent-skills.exe",
+            "manifest": ".agents/agent-skills-install.json",
+            "hosts": ["codex", "cursor", "claude-code", "deepseek-harness"],
+        }
+
+        public = server._public_install_result(internal)
+
+        self.assertEqual(
+            public,
+            {
+                "ok": True,
+                "target": "D:/work/project",
+                "release_version": "2.1.0",
+                "hosts": ["codex", "cursor", "claude-code", "deepseek-harness"],
+            },
+        )
+        serialized = str(public)
+        for forbidden in (
+            "coding",
+            "docs",
+            "review",
+            "router",
+            "ENTRY.md",
+            ".agents/runtime",
+            "agent-skills-install.json",
+            "source-secret",
+            "payload-secret",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, serialized)
 
     def test_source_mode_keeps_explicit_repository_navigation_visible(self) -> None:
         """Source Mode 仍保留维护者需要的明文导航和内部路径。"""

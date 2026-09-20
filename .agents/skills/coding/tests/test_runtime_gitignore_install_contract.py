@@ -17,6 +17,7 @@ BOOTSTRAP_REFERENCE = ROOT / ".agents/skills/coding/references/12_目标项目�
 RUNTIME_README = ROOT / "runtime/README.md"
 INSTALLER_SOURCE = ROOT / "runtime/agent_skills_runtime/project_installer.py"
 RUNTIME_PACKAGE_WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"
+RUNTIME_PLATFORM_SMOKE = ROOT / "scripts/runtime_platform_smoke.py"
 
 
 class RuntimeGitignoreInstallContractTest(unittest.TestCase):
@@ -90,12 +91,13 @@ class RuntimeGitignoreInstallContractTest(unittest.TestCase):
         self.assertNotIn("RUNTIME_IGNORE_RULE", source)
 
     def test_runtime_package_workflow_enforces_new_gitignore_contract(self) -> None:
+        """package Workflow 通过 shared smoke 统一验证 gitignore Contract。"""
         workflow = RUNTIME_PACKAGE_WORKFLOW.read_text(encoding="utf-8")
-        self.assertGreaterEqual(workflow.count('! grep -Fq "/.agents/runtime/" "${target}/.gitignore"'), 2)
-        self.assertGreaterEqual(workflow.count('! grep -Fq "/.agents/runtime/" "${no_args_target}/.gitignore"'), 2)
-        self.assertIn("Windows 项目安装不应自动新增 Runtime ignore", workflow)
-        self.assertIn("Windows 无参数安装不应自动新增 Runtime ignore", workflow)
-        self.assertGreaterEqual(workflow.count(".agents/project-context.json"), 4)
+        smoke = RUNTIME_PLATFORM_SMOKE.read_text(encoding="utf-8")
+        self.assertIn("python scripts/runtime_platform_smoke.py", workflow)
+        self.assertIn('"/.agents/runtime/"', smoke)
+        self.assertIn(".agents/project-context.json", smoke)
+        self.assertIn("项目安装不应自动新增 Runtime ignore", smoke)
 
     def test_canonical_install_contract_does_not_require_runtime_ignore(self) -> None:
         bootstrap = BOOTSTRAP_REFERENCE.read_text(encoding="utf-8")

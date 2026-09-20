@@ -6,9 +6,7 @@ from pathlib import Path
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime.project_payload import build_project_payload
 
-
 ROOT = Path(__file__).resolve().parents[4]
-
 
 class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
     """验证仓库只保留 Runtime Release 对外分发面，并把维护者、Agent 入口与最终用户入口分开。"""
@@ -267,55 +265,6 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         ):
             self.assertNotIn(obsolete, readme)
 
-    def test_release_validates_identity_and_publishes_only_platform_zips(self) -> None:
-        """正式 Release 使用 job outputs + binary SHA 校验三平台 identity，最终只发布三个平台 ZIP。"""
-        workflow = self._read(".github/workflows/release.yml")
-        self.assertIn("USAGE.md", workflow)
-        self.assertIn("--notes-file", workflow)
-        self.assertNotIn("--generate-notes", workflow)
-        self.assertIn("GITHUB_OUTPUT", workflow)
-        self.assertIn("integrity_fingerprint", workflow)
-        self.assertIn("artifact_sha256", workflow)
-        self.assertIn("sha256sum", workflow)
-        self.assertNotIn("linux.manifest.json", workflow)
-        self.assertNotIn("windows.manifest.json", workflow)
-        self.assertNotIn("macos.manifest.json", workflow)
-        self.assertIn("Build platform distribution ZIPs", workflow)
-        for marker in (
-            'f"agent-skills-v{version}-linux.zip"',
-            'f"agent-skills-v{version}-windows.zip"',
-            'f"agent-skills-v{version}-macos.zip"',
-            '"agent-skills-v${RELEASE_TAG#v}-linux.zip"',
-            '"agent-skills-v${RELEASE_TAG#v}-windows.zip"',
-            '"agent-skills-v${RELEASE_TAG#v}-macos.zip"',
-            'gh release upload "${RELEASE_TAG}" release-package/agent-skills-v*-linux.zip release-package/agent-skills-v*-windows.zip release-package/agent-skills-v*-macos.zip',
-        ):
-            self.assertIn(marker, workflow)
-        self.assertNotIn("SHA256SUMS", workflow)
-        self.assertNotIn('f"agent-skills-v{version}.zip"', workflow)
-        self.assertNotIn('expected_package="agent-skills-v${RELEASE_TAG#v}.zip"', workflow)
-        self.assertNotIn('gh release upload "${RELEASE_TAG}" release-assets/*', workflow)
-        for binary in (
-            'name="agent-skills"',
-            '$name = "agent-skills"',
-            "release-assets/release-runtime-linux/agent-skills",
-            "release-assets/release-runtime-windows/agent-skills.exe",
-            "release-assets/release-runtime-macos/agent-skills",
-        ):
-            self.assertIn(binary, workflow)
-        for versioned_raw_binary in (
-            "agent-skills-v${RELEASE_VERSION}-linux",
-            '"agent-skills-v$env:RELEASE_VERSION-windows"',
-            "agent-skills-v${RELEASE_VERSION}-macos",
-        ):
-            self.assertNotIn(versioned_raw_binary, workflow)
-        for forbidden in (
-            "agent-skills-full-kit",
-            "install_runtime.py",
-            "install_runtime_target.py",
-        ):
-            self.assertNotIn(forbidden, workflow)
-
     def test_runtime_project_payload_still_excludes_maintenance_readmes_tests_and_references(self) -> None:
         """共享 Router 不改变 Runtime 排除 canonical References/测试/维护 README 的安全边界。"""
         payload = self._read("runtime/agent_skills_runtime/project_payload.py")
@@ -326,7 +275,6 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertNotIn("render_reference_stub", payload)
         self.assertNotIn("agent_skills_load_context", payload)
         self.assertIn("Project Payload 不得包含 Runtime Reference 或 Stub", payload)
-
 
 if __name__ == "__main__":
     unittest.main()

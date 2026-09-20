@@ -35,7 +35,7 @@ class RepositoryStructureTest(unittest.TestCase):
         scripts = ROOT / "scripts"
         self.assertEqual(
             {path.name for path in scripts.iterdir() if path.is_file() and path.suffix == ".py"},
-            {"build_runtime.py", "runtime_mcp_smoke.py", "sync_repository_issue_forms.py"},
+            {"build_runtime.py", "runtime_mcp_smoke.py", "runtime_platform_smoke.py", "sync_repository_issue_forms.py"},
         )
         self.assertTrue(
             (ROOT / ".github/scripts/check_pr_requirement_source.py").is_file(),
