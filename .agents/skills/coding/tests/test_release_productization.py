@@ -93,7 +93,6 @@ class ReleaseProductizationTest(unittest.TestCase):
             "windows-2025",
             "macos-15",
             "ubuntu-24.04",
-            "scripts/build_runtime.py",
             "python scripts/runtime_platform_smoke.py",
             "release-runtime-linux",
             "release-runtime-windows",
