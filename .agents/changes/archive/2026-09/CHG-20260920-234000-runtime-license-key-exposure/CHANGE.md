@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-234000-runtime-license-key-exposure
 title: Runtime License 公开私钥泄露止损
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: security/runtime-license-key-exposure
 created: 2026-09-20
