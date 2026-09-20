@@ -3,6 +3,6 @@
 -->
 # CI / Actions 健康检查
 ## 每次实现默认执行的 Cost / Evidence Check
-只测试与修改相关的边界：human docs / 专业 Skill/Reference / Change/metadata/archive；删无关 test group、重复 setup/install/build。selector / path filter / scoped skip=永久回归和 fail-safe；fail-closed；CI/selector 自身变化使用 full current-head Evidence。required check identity / Change Ready：N/A→job-level condition / 0 Runner。仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化。Validation Asset Redundancy Gate：少跑 ≠ 允许永久冗余;test/group/CI/Job/Workflow/build-smoke-install 按 Owner / Contract / failure boundary / Evidence level 判定；本次新引入、扩大、直接触及或实际暴露的冗余可等价清理则，Ready前清；不能只通过 selector、skip 或条件判断把永久冗余隐藏起来；平台/权限/check独立证据异留；无直接因果关系的历史冗余只记 Finding;clean / not_applicable / blocked。
+只测试与修改相关的边界：human docs / 专业 Skill/Reference / Change/metadata/archive；删无关 test group、重复 setup/install/build。selector / path filter / scoped skip=永久回归和 fail-safe；fail-closed；CI/selector 自身变化使用 full current-head Evidence。required check identity / Change Ready：N/A→job-level condition / 0 Runner。仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化。Validation Asset Redundancy Gate：少跑 ≠ 允许永久冗余;test/group/CI/Job/Workflow/build-smoke-install 按 Owner / Contract / failure boundary / Evidence level 判定；本次新引入、扩大、直接触及或实际暴露的冗余可等价清理时，Ready/merge前清；不能只通过 selector、skip 或条件判断把永久冗余隐藏起来；平台/权限/check证据独立则留；无直接因果关系的历史冗余只记 Finding;clean / not_applicable / blocked。
 ## Actions Control-Plane Cleanup
 Source Workflow：disabled / deleted / orphaned / no-owner Workflow 可清；Requirement / Change / PR / Release / 事故 / 安全审计引用的历史 Run 留；capability-limited / cleanup gap。
