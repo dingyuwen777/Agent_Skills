@@ -273,6 +273,16 @@ changed paths
 
 永久测试资产按独立证明责任组织为逻辑 test group；**优先减少“何时运行”，不是先删测试文件**。仍有长期回归价值的 test 不因本次 scope 未命中而删除。
 
+### Validation Asset Redundancy Gate（源仓库完成门禁）
+
+**每次维护收尾**都必须按 [CI Workflow 健康检查与 Actions 清理](skills/coding/references/27_CI_Workflow健康检查与Actions清理.md) 执行 Validation Asset Redundancy Gate。这里的详细判定只由该 Reference 维护，本文件只增加源仓库强制完成语义。
+
+**少跑不等于允许永久冗余**：如果本次变更新引入、扩大、直接触及或实际暴露了没有独立 Owner / Contract / failure boundary / Evidence level 的 test、test group、CI step、Job、Workflow 或 build/smoke/install 验证资产，并且能证明删除、合并或职责重组不降低 Required Evidence，就必须在当前任务进入 PR Ready / merge 前清理；不能只靠 selector / skip 把永久冗余留在仓库。
+
+与当前变更无直接因果关系的历史冗余不自动扩大 Scope；记录 Finding，另建工作单元。不同平台、Evidence level、权限/生命周期、真实依赖或 required-check identity 的资产不得因表面相似被误删。
+
+源仓库完成状态必须记录为 `clean / not_applicable / blocked`；确认 required 冗余但无法安全收口时记 `blocked`，不得报告本任务 Ready、mergeable 或端到端完成。
+
 后续维护新增/修改测试时必须同步判断：
 
 - 它直接保护哪个 Owner / Contract / failure boundary；
