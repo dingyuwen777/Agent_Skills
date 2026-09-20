@@ -275,7 +275,7 @@ changed paths
 
 ### Validation Asset Redundancy Gate（源仓库完成门禁）
 
-**每次维护收尾**按 coding.reference.28 执行 Validation Asset Redundancy Gate：**少跑不等于允许永久冗余**。直接相关且可等价清理的冗余须在 Ready/merge 前收口；历史无关只记 Finding；仅 `clean / not_applicable` 可交付，`blocked` 不得 Ready/mergeable/完成。
+**每次维护收尾**按 coding.reference.28：**少跑不等于允许永久冗余**；直接相关冗余须在 Ready/merge 前收口，仅 `clean / not_applicable` 可交付，`blocked` 禁 Ready/mergeable/完成；历史无关另记 Finding。
 
 后续维护新增/修改测试时必须同步判断：
 
