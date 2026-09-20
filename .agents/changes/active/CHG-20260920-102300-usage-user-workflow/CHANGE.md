@@ -14,10 +14,14 @@ affected_areas:
   - user-documentation
   - release-usage-guide
   - documentation-ux
+  - ci-test-responsibility
 affected_paths:
   - USAGE.md
+  - .agents/skills/coding/tests/test_archive_ci_runtime_lifecycle.py
+  - .agents/skills/coding/tests/test_runtime_stdio_lifecycle.py
 contracts:
   - Release 最终用户说明
+  - human_docs/release_surface targeted Evidence
 data_changes: []
 ---
 
@@ -129,13 +133,15 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 | 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
 | --- | --- | --- | --- |
 | USAGE.md | 以已确认用户版全文替换并规范 Markdown 层级 | 最终用户只需要知道如何使用 AI 完成工作 | R1-R9 |
+| test_archive_ci_runtime_lifecycle.py | 移出需要 mcp 的 stdio 生命周期测试，仅保留适合 release-surface 的静态/治理断言 | human_docs profile 明确不安装 Runtime 依赖，避免不相干测试造成确定性失败 | CI 根因修复 |
+| test_runtime_stdio_lifecycle.py | 原样承载 stdio 生命周期测试 | full/package 与 test-only 仍保留 Runtime 生命周期覆盖 | CI 根因修复 |
 | 当前 Change | 记录需求、内容守恒、Review、CI 与交付证据 | Agent_Skills L2 文档变更门禁 | R10 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | not_applicable | 纯文档变更 |
+| 行为 / 单元 / 组件 | required | 迁移后的 Runtime stdio 生命周期测试在 full/package scope 继续执行 |
 | 接口 / 契约 | required | Release 用户说明边界、Agent 使用入口 |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 无运行时变化 |
 | 用户 / 工作流验收 | required | 文档结构覆盖真实开发旅程 |
@@ -148,7 +154,7 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 
 - 主要风险：重组时误删旧文档中的高价值用户场景。
 - 控制方式：旧→新能力内容守恒审计。
-- 兼容性：不修改任何代码/协议/运行时。
+- 兼容性：不修改任何生产代码/协议/运行时行为；仅调整测试文件归属。
 - Migration/数据：不适用。
 - 回滚：revert 文档 PR。
 
@@ -157,13 +163,14 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 - 用户文档：`USAGE.md` 全面重构。
 - Release：现有 Release 会继续把该文件作为用户说明打包；机制不变。
 - 依赖/配置/Secret/部署：无影响。
+- CI：修复 human_docs/release_surface 选择中运行 Runtime-only stdio test 却不安装 mcp 的职责混放问题；不改变 selector 策略。
 
 # 完成审计
 
 - [x] upstream_re_read：已重读 #277、main 与 current reviewed head 35c90210；需求、范围和非目标无漂移。
 - [x] change_coverage：AC1-AC9 已映射到 USAGE.md 直接证据；AC10 的 post-merge 交付继续由 downstream gate 持有。
 - [x] reverse_audit：已从四 Agent、功能、Bug、Review、测试、Figma、Docs、Git、长任务、完成报告、分析/研究反查，旧用户能力均保留。
-- [x] unresolved_cleared：独立文档 Review 仅发现标题层级问题，已修复；current reviewed head 无剩余 Finding。
+- [x] unresolved_cleared：独立文档 Review 的标题层级 Finding 已修复；current-head re-review 进一步确认 CI 根因修复只移动测试责任、不降低覆盖，无剩余 Finding。
 
 # 完成证据与状态
 
@@ -175,17 +182,21 @@ Requirement Source 为 GitHub Issue #277。用户已逐轮确认最终文档定�
 | V2 | head 35c90210 | USAGE.md 术语/场景/Markdown 结构扫描 | 通过 | 内部术语 0 命中；DeepSeek 仅 Windows；四 Agent/高频场景完整；154 code fences 闭合；1 H1/18 H2/46 H3 |
 | V3 | PR #278 / head 35c90210 | 独立文档 Review | NO_FINDINGS_WITHIN_SCOPE | 标题层级 Finding 已修复，无剩余 blocker |
 | V4 | PR #278 run #1578 | Verify PR Requirement Source | 失败 | Change 机器 Contract 缺少固定“计划改动/验证矩阵”章节；用户文档本身未进入测试阶段，已修复 Change 结构 |
+| V5 | PR #278 run #1579 | Requirement Source + selected human_docs/release_surface tests | 前置通过；测试失败 | 发现 release_surface 选中的 test_archive_ci_runtime_lifecycle.py 混入需要 mcp 的 stdio Runtime 测试，而 profile 明确不安装 Runtime dependency；确认为 CI 测试职责混放 |
+| V6 | head 2e4cbcc | USAGE 发布契约与静态复核 | 通过 | 用户侧必需短语恢复；内部术语仍 0；DeepSeek 仅 Windows；Markdown 正常 |
+| V7 | head db9b0ec / PR #278 | current-head re-review | NO_FINDINGS_WITHIN_SCOPE | stdio 测试原样迁移至独立 runtime-only 文件，生产实现/selector/断言不变，覆盖未降低 |
 
 ## 未验证内容与剩余风险
 
-- 修复 Change 机器 Contract 后的 current-head required CI 尚未完成。
+- 最终 current-head required CI 尚未完成；当前 head 会因修改 CI-self test 自动升级 full/package Evidence。
 - merge/main-fresh/archive/Issue Closure 尚未完成。
-- 本次只验证用户文档结构/内容边界；不涉及运行时行为变化。
+- 用户文档不涉及运行时行为变化；新增测试文件只保留原有 stdio 生命周期回归。
 
 ## 交付状态
 
 - 分支：docs/user-usage-workflow
 - PR：#278（Draft，待 current-head required CI）
-- Reviewed content head：35c9021050f694a831d6b109fc97873b6971aefb
+- Reviewed content head：2e4cbccedf6a94a4ecb0cee16cb7b23c432c2305
+- Current re-reviewed head：db9b0ec6593ce82ddd02d198e023e56cbb9657f3
 - Merge：未执行
 - Release / Deploy：不适用
