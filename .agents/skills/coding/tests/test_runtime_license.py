@@ -122,7 +122,8 @@ class RuntimeLicenseTest(unittest.TestCase):
     def test_license_tool_uses_top_configuration_and_self_verifies(self) -> None:
         """签发工具应生成最小 v1 Claims，且配置方式不依赖 customer/expires CLI 参数。"""
         claims = self._issue()
-        payload_bytes, signature, parsed = parse_license(self.license_path.read_bytes())
+        payload_bytes, signature = parse_license(self.license_path.read_bytes())
+        parsed = json.loads(payload_bytes.decode("utf-8"))
         self.assertEqual(parsed, claims)
         self.assertTrue(payload_bytes)
         self.assertTrue(signature)
