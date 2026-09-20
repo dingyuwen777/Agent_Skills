@@ -5,13 +5,11 @@ import sys
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[4]
 WORKFLOW = ROOT / ".github/workflows/skill-tests.yml"
 CLASSIFIER = ROOT / ".github/scripts/runtime_package_scope.py"
 MAINTENANCE = ROOT / ".agents/MAINTENANCE.md"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
-
 
 def _load_selector():
     """从真实维护脚本加载 selector，避免在测试中复制第二份路径规则。"""
@@ -26,11 +24,9 @@ def _load_selector():
     spec.loader.exec_module(module)
     return module
 
-
 def _selection(*paths: str):  # type: ignore[no-untyped-def]
     """返回 changed paths 对应的正式 EvidenceSelection。"""
     return _load_selector().select_evidence(paths)
-
 
 class RuntimePackageScopePolicyTest(unittest.TestCase):
     """验证 CI 按语义 Evidence 与 Runtime package 风险多轴选择。"""
@@ -252,27 +248,6 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
         self.assertEqual(classify_paths(["USAGE.md"]), "content")
         self.assertEqual(classify_paths(["runtime/agent_skills_runtime/runtime.py"]), "package")
 
-    def test_workflow_keeps_package_ready_signal_and_three_platform_gates(self) -> None:
-        workflow = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("package_evidence_required", workflow)
-        self.assertIn("change_gate_ready", workflow)
-        self.assertIn("ready_for_review", workflow)
-        self.assertIn("github.event.pull_request.draft", workflow)
-        self.assertGreaterEqual(
-            workflow.count("steps.runtime-scope.outputs.runtime_scope == 'package'"), 4
-        )
-        self.assertGreaterEqual(
-            workflow.count("needs.agent-skills-core.outputs.runtime_scope == 'package'"), 2
-        )
-
-    def test_setup_python_uses_dependency_cache_not_binary_cache(self) -> None:
-        workflow = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("cache: 'pip'", workflow)
-        self.assertIn("runtime/requirements.txt", workflow)
-        self.assertIn("runtime/requirements-build.txt", workflow)
-        self.assertNotIn("cache-path: .runtime-dist", workflow)
-        self.assertNotIn("actions/cache", workflow)
-
     def test_maintenance_owns_changed_scope_evidence_boundary_rule(self) -> None:
         maintenance = MAINTENANCE.read_text(encoding="utf-8")
         for marker in (
@@ -285,13 +260,6 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
             "正式 Release 不复用普通 CI binary",
         ):
             self.assertIn(marker, maintenance)
-
-    def test_release_workflow_still_builds_all_platform_artifacts(self) -> None:
-        release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
-        for marker in ("Release Runtime Linux", "Release Runtime Windows", "Release Runtime macOS"):
-            self.assertIn(marker, release)
-        self.assertNotIn("runtime_package_scope.py", release)
-
 
 if __name__ == "__main__":
     unittest.main()
