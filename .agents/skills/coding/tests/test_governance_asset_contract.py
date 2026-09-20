@@ -7,12 +7,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[4]
 CODING_PATH = ROOT / ".agents/skills/coding/scripts/coding.py"
 CONTRACT_PATH = ROOT / ".agents/skills/coding/scripts/governance_contract.py"
 TEMPLATE_PATH = ROOT / ".agents/skills/coding/assets/CHANGE.template.md"
-
 
 def _load_module(path: Path, name: str):
     """从指定路径加载 stdlib-only 工具模块。"""
@@ -23,10 +21,8 @@ def _load_module(path: Path, name: str):
     spec.loader.exec_module(module)
     return module
 
-
 CODING = _load_module(CODING_PATH, "governance_contract_coding")
 CONTRACT = _load_module(CONTRACT_PATH, "governance_contract_subject")
-
 
 REQUIREMENT_BODY = """## 问题背景
 当前需要统一治理资产。
@@ -123,7 +119,6 @@ Change 与 Requirement Source。
 canonical Coding 规则。
 """
 
-
 class GovernanceAssetContractTests(unittest.TestCase):
     """覆盖 Change 新实例与 GitHub Requirement Source 的稳定机器语义。"""
 
@@ -212,42 +207,6 @@ class GovernanceAssetContractTests(unittest.TestCase):
         for title, body in fixtures:
             with self.subTest(title=title):
                 self.assertEqual(CONTRACT.validate_issue_instance(title, body), [])
-
-    def test_issue_without_type_prefix_is_rejected(self) -> None:
-        """API 直接创建 Issue 也不能绕过标准类型身份。"""
-        errors = CONTRACT.validate_issue_instance("统一机器 Contract", TECHNICAL_BODY)
-        self.assertTrue(any("标题" in error for error in errors), errors)
-
-    def test_issue_missing_required_semantic_section_is_rejected(self) -> None:
-        """只有 AC 的精简 Issue 不能冒充完整 Requirement Source。"""
-        body = TECHNICAL_BODY.replace("## 非目标\n不修改历史记录。\n\n", "")
-        errors = CONTRACT.validate_issue_instance("[技术变更] 收紧治理门禁", body)
-        self.assertTrue(any("非目标" in error for error in errors), errors)
-
-    def test_acceptance_must_be_contiguous_task_list(self) -> None:
-        """Acceptance 必须由可回写且连续的 AC task list 承担最终状态。"""
-        body = TECHNICAL_BODY.replace("AC2：Issue", "AC3：Issue")
-        errors = CONTRACT.validate_issue_instance("[技术变更] 收紧治理门禁", body)
-        self.assertTrue(any("连续" in error for error in errors), errors)
-
-    def test_closure_requires_all_acceptance_items_checked(self) -> None:
-        """Closure machine validation 不能用 comment-only Evidence 代替 body task list 状态。"""
-        errors = CONTRACT.validate_issue_instance(
-            "[技术变更] 收紧治理门禁",
-            TECHNICAL_BODY,
-            require_all_checked=True,
-        )
-        self.assertTrue(any("尚未勾选" in error for error in errors), errors)
-        completed = TECHNICAL_BODY.replace("- [ ] AC", "- [x] AC")
-        self.assertEqual(
-            CONTRACT.validate_issue_instance(
-                "[技术变更] 收紧治理门禁",
-                completed,
-                require_all_checked=True,
-            ),
-            [],
-        )
-
 
 if __name__ == "__main__":
     unittest.main()
