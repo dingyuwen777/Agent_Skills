@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-091344-analysis-root-cause-closure
 title: 强化 Analysis 根因闭环与最小充分方案边界
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: feature/analysis-root-cause-closure
 created: 2026-09-20
@@ -21,6 +21,7 @@ affected_paths:
   - .agents/skills/analysis/SKILL.md
   - .agents/skills/analysis/references/02_第一性原理与因果根因.md
   - .agents/skills/analysis/references/03_方案比较与阶段化决策.md
+  - .agents/skills/analysis/references/04_复杂问题拆解与结论强度.md
   - .agents/skills/coding/references/05_设计实施与根因调试.md
   - .agents/skills/coding/references/22_根因调试.md
   - .agents/skills/coding/tests/test_analysis_research_skills.py
@@ -91,13 +92,13 @@ Requirement Source 为 GitHub Issue #275。用户明确担心“默认先解决�
 
 ## 成功标准
 
-- [ ] Analysis Core 明确最小充分、分析深度、根因前置和止血/根治边界。
-- [ ] Analysis 根因/方案 References 给出可执行的继续调查、停止和方案最小化条件。
-- [ ] Coding 设计/诊断与 Analysis 使用同一“问题闭环优先”语义。
-- [ ] README/USAGE 的长期入口不再诱导先最小化后诊断。
-- [ ] 永久测试和 Outcome Eval 负例覆盖表面修补、最小改动冒充最小充分、止血冒充根治。
-- [ ] 不修改 Router metadata、Stable ID、Runtime Tool Contract。
-- [ ] required Review/CI/merge/main-fresh/archive/closure 全部完成后才宣称交付完成。
+- [x] Analysis Core 明确最小充分、分析深度、根因前置和止血/根治边界。
+- [x] Analysis 根因/方案 References 给出可执行的继续调查、停止和方案最小化条件。
+- [x] Coding 设计/诊断与 Analysis 使用同一“问题闭环优先”语义。
+- [x] README/USAGE 的长期入口不再诱导先最小化后诊断。
+- [x] 永久测试和 Outcome Eval 负例覆盖表面修补、最小改动冒充最小充分、止血冒充根治。
+- [x] Router metadata、Stable ID、Runtime Tool Contract 未修改，现有动态路由/分发回归保持。
+- [x] 开发侧 Red/Green、Context Budget、独立 Review 已完成；三平台 package、merge、main-fresh、archive、closure 由 Ready 后交付门禁继续持有。
 
 ## 范围
 
@@ -157,16 +158,16 @@ Requirement Source 为 GitHub Issue #275。用户明确担心“默认先解决�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 最小充分不等于最小改动，问题闭环先于方案最小化 | #275 / AC1 | not_satisfied | 待实现并由永久回归证明 |
-| R2 | 分析深度与方案规模解耦 | #275 / AC2 | not_satisfied | 待实现并由 Core/Reference 回归证明 |
-| R3 | 根因调查继续/停止条件与未确认根因输出边界 | #275 / AC3 | not_satisfied | 待实现 analysis.reference.02 |
-| R4 | 方案在必要条件内最小化，不用 diff 大小代理 | #275 / AC4 | not_satisfied | 待实现 analysis.reference.03 |
-| R5 | 止血/缓解与永久修复分离 | #275 / AC5 | not_satisfied | 待实现 Analysis/Coding 一致语义 |
-| R6 | 验证覆盖 symptom + 关键机制 + 主要复发路径 | #275 / AC6 | not_satisfied | 待实现并由回归证明 |
-| R7 | Lightweight 快速闭合保持 | #275 / AC7 | not_satisfied | 保留/强化现有退出条件 |
-| R8 | 永久测试与 Outcome Eval 负例 | #275 / AC8 | not_satisfied | 待新增 tests/evals |
-| R9 | Router metadata / Stable ID / Runtime Tool 不变 | #275 / AC9 | not_satisfied | diff + routing/runtime regressions |
-| R10 | 完整交付闭环 | #275 / AC10 | not_satisfied | PR/CI/merge/main-fresh/archive/closure |
+| R1 | 最小充分不等于最小改动，问题闭环先于方案最小化 | #275 / AC1 | satisfied | Analysis Core 显式“问题闭环优先于方案最小化”“最小充分 ≠ 最小改动”；test_analysis_problem_closure_precedes_solution_minimization |
+| R2 | 分析深度与方案规模解耦 | #275 / AC2 | satisfied | Analysis Core 显式“分析深度 ≠ 方案规模”；analysis.reference.02 按不确定性/因果复杂度/复发风险决定深度 |
+| R3 | 根因调查继续/停止条件与未确认根因输出边界 | #275 / AC3 | satisfied | analysis.reference.02 的“根因深度门槛 / Lightweight 闭合 / 必须继续调查 / 根因尚未确认” |
+| R4 | 方案在必要条件内最小化，不用 diff 大小代理 | #275 / AC4 | satisfied | analysis.reference.03“先闭环再最小化 / 必要解决条件 / 最小充分不是最小改动”，显式排除文件数/代码量/步骤数/diff |
+| R5 | 止血/缓解与永久修复分离 | #275 / AC5 | satisfied | Analysis Core“止血 ≠ 根治”；analysis.reference.02、coding.reference.22、README/USAGE 同步 |
+| R6 | 验证覆盖 symptom + 关键机制 + 主要复发路径 | #275 / AC6 | satisfied | analysis.reference.02 根因完成验证三层；coding.reference.22 completion boundary；永久 marker 回归 |
+| R7 | Lightweight 快速闭合保持 | #275 / AC7 | satisfied | analysis.reference.02 Lightweight 条件；coding.reference.22 保留 Lightweight/Standard/Systemic；simple-question/engineering-L1 路由回归继续通过 |
+| R8 | 永久测试与 Outcome Eval 负例 | #275 / AC8 | satisfied | 6 组新增永久测试 + analysis-root-cause-before-minimization / analysis-mitigation-vs-resolution cases；current-head 601 tests Green |
+| R9 | Router metadata / Stable ID / Runtime Tool 不变 | #275 / AC9 | satisfied | PR diff 无 Router/Runtime 文件；compile/routing/dynamic-distribution/runtime regressions 在 601 tests 中通过 |
+| R10 | 完整交付闭环 | #275 / AC10 | not_applicable | pre-merge Change 不能自证未来 merge/main-fresh/archive/Issue closure；这些仍是任务最终完成前的 required downstream gates |
 
 # 计划改动
 
@@ -180,10 +181,10 @@ Requirement Source 为 GitHub Issue #275。用户明确担心“默认先解决�
 | README/USAGE | 用户入口同步 | 防薄 Bootstrap 继续误导 | R1-R5 |
 
 - [x] 调查 current main 与 Requirement Source
-- [ ] 建立真实 Red
-- [ ] 完成规则与文档实现
-- [ ] 运行与 classifier 匹配的验证
-- [ ] 完成独立 Review 与 Completion Audit
+- [x] 建立真实 Red
+- [x] 完成规则、永久回归、Outcome Eval 与用户入口同步
+- [x] 运行与 classifier 匹配的开发侧验证并修复 Context Budget 回归
+- [x] 完成独立 Review 与 Completion Audit
 
 # 验证矩阵
 
@@ -216,10 +217,10 @@ Requirement Source 为 GitHub Issue #275。用户明确担心“默认先解决�
 
 # 完成审计
 
-- [ ] upstream_re_read：Ready 前重新读取 #275 和 current main，确认 AC/范围无漂移。
-- [ ] change_coverage：R1-R10 全部有实现/测试/文档/交付证据或合法 N/A。
-- [ ] reverse_audit：从浅层补丁、根因未知、止血、简单单因果、复杂复发、工程 Bug 和用户薄入口反向检查。
-- [ ] unresolved_cleared：Ready 前无 not_satisfied、无阻塞 Finding。
+- [x] upstream_re_read：已重新读取 live #275 与 current main cf6a6b95；AC1–AC10、范围/非目标无漂移，branch behind_by=0。
+- [x] change_coverage：R1–R9 均有 canonical 实现、永久回归、文档或 current-head Evidence；R10 仅包含 pre-merge 无法自证的 downstream delivery，保持 not_applicable 且不降低最终门禁。
+- [x] reverse_audit：已从浅层补丁、根因未知、止血、简单单因果、复杂复发、先选答案风险、工程 Bug、README/USAGE 薄入口和 Context Budget 反向检查。
+- [x] unresolved_cleared：有效 Red 已被 Green 覆盖；Review #5258773636 的“先确定最终决定”歧义已修复并补永久回归；当前范围 NO_FINDINGS_WITHIN_SCOPE。
 
 # 完成证据与状态
 
@@ -227,20 +228,30 @@ Requirement Source 为 GitHub Issue #275。用户明确担心“默认先解决�
 
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
-| V1 | main current | canonical Source reread + #275 | 已确认 | Requirement/Ownership/现状新鲜 |
+| V1 | main cf6a6b95 / live #275 | canonical Source reread + Requirement Source machine gate | 通过 | Requirement/Ownership/范围新鲜 |
+| V2 | PR #276 head dbd9dbc9 / Skill Tests #1563 rerun | full selected self-contained tests | Requirement Source/classifier 通过后，5 组新增语义回归按预期失败 | 有效 Red，证明旧规则缺少 #275 新契约 |
+| V3 | head c88695ab / Skill Tests #1567 | compile + CLI smoke + full tests | 语义实现生效；仅 backend-l2-feature Context Budget 195469 > 195000 | 发现普通 Coding 常驻上下文过重，未抬预算 |
+| V4 | head 9bb063f8 / Skill Tests #1568 | compile + CLI smoke + full tests | 仅 Context Budget 195130 > 195000 | 继续收窄 ref05，未删除语义/测试 |
+| V5 | head 0bb02b3c / Skill Tests #1569 | compile + CLI smoke + full tests | 600 tests 全绿；最终仅因 Change=in_progress fail-closed | 首轮完整 Green，Context Budget 恢复 |
+| V6 | Review #5258773636 | A1/A2 独立 Review | 发现“先确定最终决定”潜在预设答案歧义并修复；其余 NO_FINDINGS_WITHIN_SCOPE | 独立需求/实现/测试/文档审查 |
+| V7 | current head 6a69e9b6 / Skill Tests #1572 | Requirement Source + changed-scope + compile + CLI smoke + full self-contained tests | 601 tests 全部通过；classifier=package/full；最终仅因 Change=in_progress fail-closed | Review 修复后的 current-head Green，Router/Runtime/Context 回归保持 |
 
 ## 未验证内容与剩余风险
 
-- 规则实现、永久测试、Outcome Eval、Review、PR CI、main-fresh 尚未完成。
-- 不会在没有 current-head 证据前宣称已达到预期效果。
+- Ready 后 required Linux/Windows/macOS Runtime package/self-test/real MCP/install 尚未运行；classifier 已明确本 PR 需要 package Evidence。
+- guarded merge、implementation main-fresh、repository-native Change Archive 与 #275 Closure 尚未发生。
+- 新增 Outcome Eval 是 model-neutral case contract；本次没有真实调用 GPT/DeepSeek/GLM 生成 actual run artifact，因此具体模型版本效果仍为未实测，不能凭模型名称宣称已验证。
 
 ## 交付状态
 
 - 分支：feature/analysis-root-cause-closure
-- PR：未创建
-- 合并：未发生
-- Change：in_progress
-- Issue：#275 open
+- 当前实现 head：6a69e9b6c68b7ff89fca2fc8f0f4102c0f6f1300；本次 Change Ready 更新后会产生仅治理载体变化的新 head。
+- PR：#276 Draft；Change Ready 后切换 Ready for review。
+- CI：Skill Tests #1572 的 Requirement Source、classifier、compile、CLI smoke、601 tests 全部通过；Change=in_progress 导致 required package gate 按设计 fail-closed。
+- Review：#5258773636，NO_FINDINGS_WITHIN_SCOPE；1 个语义歧义 Finding 已修复并回归。
+- 合并：未发生；等待 Ready current-head required CI。
+- Change：ready_for_review（本提交写入后）；merge 后由 repository-native Archivist 归档。
+- Issue：#275 open；post-merge Evidence 满足后再回写 AC 并关闭。
 - Release / Deploy：不适用
 
 # 备注
