@@ -302,6 +302,9 @@ def _build_and_verify(
     fingerprint = str(payload.get("integrity_fingerprint", ""))
     if re.fullmatch(r"[0-9a-f]{64}", fingerprint) is None:
         raise SystemExit("Runtime integrity fingerprint 非法")
+    license_public_key_sha256 = str(payload.get("license_public_key_sha256", ""))
+    if re.fullmatch(r"[0-9a-f]{64}", license_public_key_sha256) is None:
+        raise SystemExit("Runtime License 公钥 SHA256 非法")
 
     artifact_value = payload.get("artifact")
     if not isinstance(artifact_value, str) or not artifact_value:
