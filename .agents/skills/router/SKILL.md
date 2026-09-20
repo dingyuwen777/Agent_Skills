@@ -37,14 +37,16 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 | Skill | 职责 | 入口 |
 | --- | --- | --- |
-| `router` | 路由 | [`.agents/skills/router/SKILL.md`](SKILL.md) |
+| `router` | 路由 | [入口](SKILL.md) |
+| `analysis` | 分析/决策 | [入口](../analysis/SKILL.md) |
+| `research` | 研究/核验 | [入口](../research/SKILL.md) |
 | `coding` | 研发/Git | [`.agents/skills/coding/SKILL.md`](../coding/SKILL.md) |
-| `testing` | 测试 | [`.agents/skills/testing/SKILL.md`](../testing/SKILL.md) |
-| `review` | 审查 | [`.agents/skills/review/SKILL.md`](../review/SKILL.md) |
-| `docs` | 文档 | [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md) |
-| `figma` | 设计 | [`.agents/skills/figma/SKILL.md`](../figma/SKILL.md) |
+| `testing` | 测试 | [入口](../testing/SKILL.md) |
+| `review` | 审查 | [入口](../review/SKILL.md) |
+| `docs` | 文档 | [入口](../docs/SKILL.md) |
+| `figma` | 设计 | [入口](../figma/SKILL.md) |
 
-Runtime/Project Payload/Release 也动态发现；Review 判充分性，Testing 管测试。
+Runtime/Project Payload/Release 也动态发现。
 
 ## 3. Owner-gated 固定入口
 
