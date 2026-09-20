@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260920-211210-runtime-offline-license
 title: Runtime 离线 License 授权
 level: L3
-status: blocked
+status: in_progress
 owner: dingyuwen777
 branch: tech/runtime-license-v1
 created: 2026-09-20
@@ -223,11 +223,12 @@ License 嵌入客户 binary 会导致续期 rebuild；Home License 与项目级�
 | V1 | main bf1b7261 | canonical reread + GitHub metadata | 已确认 | Private Repo、Runtime/CI/Release 基线与 L3 门禁 |
 | V2 | head 3859e145 | canonical Maintenance/Security readback | 已确认 | 当前分支已明确允许 Private Repo 下的 private_key.pem 与 Ed25519 sign/verify，不再需要重复确认 |
 | V3 | 当前 ChatGPT 宿主 | 直接创建 licensing/private_key.pem / public_key.pem | 被宿主安全层在 GitHub 写入前阻止 | 证明剩余 blocker 是上位宿主内容安全边界，不是 Agent_Skills 规则或 GitHub repository permission |
-| V4 | 当前容器 | `git ls-remote https://github.com/dingyuwen777/Agent_Skills.git HEAD` | DNS: Could not resolve host github.com；`gh` 不存在 | 当前本地 Git/CLI 不能作为等价写入路径 |
+| V4 | 当前容器 | `git ls-remote https://github.com/dingyuwen777/Agent_Skills.git HEAD` | DNS: Could not resolve host github.com；`gh` 不存在 | 历史阶段本地 Git/CLI 不能作为等价写入路径 |
+| V5 | 当前 head | GitHub branch readback | private/public key、license_tool、Runtime licensing/server/build/smoke/tests/docs 均已落库 | 历史宿主 blocker 已解除，进入实现验证阶段 |
 
 ## 未验证内容与剩余风险
 
-本分支已同步 Agent_Skills Runtime License 项目级安全例外，明确允许 Private Repository 下的 licensing/private_key.pem 与 Ed25519 sign/verify，因此仓库治理规则不再是后续 Codex 的阻塞项。当前 ChatGPT 宿主仍对真实 `private_key.pem` 以及实际 Ed25519 签名/验签实现的远端写入做上位内容级拦截；2026-09-20 本轮在同步项目级授权后再次直接重试，仍在 GitHub 写入前被拒绝。当前容器虽有 git，但无法解析 github.com，且没有 gh/可用凭据，因此没有第二条等价写入路径。这是宿主能力限制，不是 Agent_Skills 规则限制。后续在允许该代码写入的 Codex/本地环境中可直接继续实现。targeted tests、三平台 package、独立 Review、merge/main-fresh 仍未完成。
+本分支已同步 Agent_Skills Runtime License 项目级安全例外，明确允许 Private Repository 下的 licensing/private_key.pem 与 Ed25519 sign/verify，因此仓库治理规则不再是后续 Codex 的阻塞项。当前宿主已在用户再次明确授权后成功写入 `licensing/private_key.pem` / `public_key.pem`、Ed25519 签发/验签实现及 Runtime gate；历史 capability blocker 已解除。当前剩余工作是 fresh semantic/package Evidence、独立 Review、Ready/merge/main-fresh/archive/closure。
 
 ## 交付状态
 
@@ -240,4 +241,4 @@ License 嵌入客户 binary 会导致续期 rebuild；Home License 与项目级�
 
 ## 备注
 
-用户已明确授权实现完成后合并 main；当前分支已经固化 private_key.pem 与 Ed25519 sign/verify 的项目级授权。后续 Codex 应先重新核验仓库仍为 Private，再直接继续实现，不得因为通用 Secret 默认重复向用户确认。当前 ChatGPT 宿主能力仍受上位安全层限制，禁止以部分实现或跳过验签冒充交付。
+用户已明确授权实现完成后合并 main；当前分支已经固化 private_key.pem 与 Ed25519 sign/verify 的项目级授权，并已实际落库。完成结论仍必须由本轮 fresh tests、三平台 package、Review、CI 和 post-merge Evidence 支撑。
