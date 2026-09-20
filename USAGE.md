@@ -10,6 +10,18 @@
 
 项目结构、代码位置、当前依赖、接口、数据结构、测试入口和 CI 等能够自行确认的信息，应由 AI 根据当前项目实际情况自行调查。
 
+### Runtime 授权文件
+
+如果项目使用正式 Agent_Skills Runtime，请把维护者提供的 `license.lic` 放到：
+
+```text
+<project>/.agents/license.lic
+```
+
+不需要登录、联网激活或机器码。可以用 Runtime 的 `status --json` 查看授权状态。续期时直接用新的 `license.lic` 覆盖同一路径即可，不需要重新安装 Agent_Skills、重新安装 Skill 或重新配置项目。
+
+如果提示 License 缺失、未生效、已过期或无效，请确认文件路径和维护者提供的授权文件；不要修改 License 内容，因为任何修改都会使签名校验失败。
+
 ---
 
 ## 1. 在不同 AI Agent 中怎么使用
