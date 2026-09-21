@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260921-000300-runtime-license-public-keypair-recovery
 title: Public 仓库 Runtime License 产品密钥恢复
 level: L3
-status: blocked
+status: in_progress
 owner: dingyuwen777
 branch: tech/runtime-license-public-keypair-recovery
 created: 2026-09-21
@@ -51,13 +51,13 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 - #284 已实现完整 Runtime License gate、签发工具、valid-License real MCP smoke 与三平台 package。
 - #286 在旧安全模型下删除 live private_key.pem、轮换到无 retained private half 的应急公钥，并让正式签发 fail closed。
 - Issue #283 已重新打开；AC3/AC4/AC6/AC8/AC10 当前未完成。
-- 当前分支已恢复 #284 产品 public key、移除 private-key gitignore、恢复 signer 普通 key pair 读取，并更新 canonical 安全说明；private_key.pem 尚未能通过当前 ChatGPT 宿主写入。
+- 当前分支已恢复 #284 产品 private/public key pair、移除 private-key gitignore、恢复 signer 普通 key pair 读取，并更新 canonical 安全说明；本轮独立 key cross-check 已确认 private/public key 匹配。
 
 ## 问题、根因或约束
 
 真正缺口不是 Runtime verifier，而是产品安全模型已经由用户从“私钥保密”改成“公开私钥也可接受”。当前 main 仍按旧模型 fail closed，因此和当前 Requirement 不一致。
 
-当前 ChatGPT 宿主会阻止把真实私钥内容直接写入远端 Git；这不是仓库权限或 Agent_Skills 规则限制，因此当前分支在私钥文件落库前保持 Red/blocked。
+历史 ChatGPT 宿主私钥写入限制已由本地/正常 Git 路径解除；当前不再存在 private-key capability blocker。后续结论只由 current-head semantic/package/Review Evidence 决定。
 
 ## 不修改的后果
 
@@ -75,8 +75,7 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 
 ## 推断与待确认
 
-- 待确认：本地 Codex 恢复 licensing/private_key.pem 后，current-head CI 应进入 product-key tests 和三平台 valid-License package。
-- 该项阻塞 Ready/merge，但不阻塞其余规则、文档和测试准备。
+- 待确认：current-head CI 能否证明 product signer、valid-License real MCP 与三平台 package 全部 Green；这是进入 Ready/merge 前的 required Evidence。
 
 # 目标、成功标准与非目标
 
@@ -157,8 +156,8 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 顶部配置签发工具可正常生成 License | #283 / AC3 | not_satisfied | private key 尚未落库 |
-| R2 | 仓库保存 key pair，Runtime 只嵌入公钥 | #283 / AC4 | not_satisfied | public key 已恢复；private key 尚未落库 |
+| R1 | 顶部配置签发工具可正常生成 License | #283 / AC3 | partially_satisfied | product key pair 已落库且匹配；待 current-head signer test Green |
+| R2 | 仓库保存 key pair，Runtime 只嵌入公钥 | #283 / AC4 | satisfied | live tree 已恢复 #284 matching product key pair；Builder 仍只读取 public key |
 | R3 | License 与 Skill/Reference/Runtime 内部 identity 解耦 | #283 / AC6 | satisfied | v1 Claims/verifier 未修改 |
 | R4 | 三平台 onefile + valid-License 六 Tool workflow | #283 / AC8 | not_satisfied | 待 private key + package CI |
 | R5 | 端到端 Review/CI/merge/main-fresh/archive/Closure | #283 / AC10 | not_satisfied | downstream gate |
@@ -180,7 +179,7 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
 - [x] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
+- [x] 完成最小实现，不静默扩大范围
 - [x] 同步受影响的长期文档或明确不适用依据
 - [ ] 取得仍覆盖当前版本的验证证据
 - [ ] 完成需求追溯、完成审计和适用复核
@@ -240,23 +239,24 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 | V1 | main e0aa50ee | GitHub metadata + #283/#286 reread | confirmed | Public 状态与当前止损基线 |
 | V2 | current branch | canonical/text diff | Green | Public private-key 例外和安全降级说明已落库 |
 | V3 | PR #287 / Draft CI #1721 | Requirement Source gate | Red | Change 模板不完整；后续 revision 已补齐 Contract |
-| V4 | PR #287 / Draft CI #1722 | Requirement Source + compile + CLI smoke + self-contained tests | 单一 Red | Requirement Source、scope、依赖、编译、CLI smoke 均 Green；唯一失败是 test_public_repository_intentionally_tracks_product_key_pair_and_can_sign，因为 live tree 尚无 licensing/private_key.pem |
+| V4 | PR #287 / Draft CI #1722 | Requirement Source + compile + CLI smoke + self-contained tests | 单一 Red | Requirement Source、scope、依赖、编译、CLI smoke 均 Green；唯一失败是 product private key 缺失 |
+| V5 | current head 4ebcf799 | GitHub branch readback + Ed25519 public derivation cross-check | Green | live private/public key 均存在，且 private-derived public key 与 licensing/public_key.pem 完全匹配 |
 
 ## 未验证内容与剩余风险
 
-- licensing/private_key.pem 尚未落库；当前 ChatGPT 宿主安全层阻止直接提交私钥内容。CI #1722 已证明这是当前唯一实现 blocker。
-- 在该文件恢复前，product signer 和三平台 valid-License package 不能取得 Green。
+- product key pair 已恢复，历史 capability blocker 已解除。
+- 当前未验证项只剩 current-head product signer test、三平台 valid-License package、independent Review 与 post-merge delivery gates。
 - 公开私钥本身使任何人都可自行签发，这是用户已接受的持续风险，不是待修复缺陷。
 
 ## 交付状态
 
 - 提交：规则、文档、signer、public key 与 tests 已在任务分支
 - 拉取请求：#287 Draft
-- CI：#1722 已取得精确 Red；唯一失败为 product private_key.pem 缺失，其他前置与编译/smoke 均 Green
+- CI：#1722 已取得历史精确 Red；private key 已在后续 revision 恢复，current-head CI #1724 待 fresh 结果
 - 合并：未执行
 - Change 归档：未执行
 - 发布 / 部署：本任务不创建正式 Release
 
 ## 备注
 
-恢复 private key 的等价本地操作可以从 #284 implementation merge revision 取回已经公开的 product key 文件；当前 ChatGPT 宿主不执行该私钥写入，不以其他低层 API 绕过安全检查。
+product private key 已通过正常 Git 路径恢复；当前分支继续使用 #284 product identity 以保持既有 License 兼容。
