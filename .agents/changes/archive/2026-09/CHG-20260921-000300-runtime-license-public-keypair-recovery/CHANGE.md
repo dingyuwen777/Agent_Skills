@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260921-000300-runtime-license-public-keypair-recovery
 title: Public 仓库 Runtime License 产品密钥恢复
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/runtime-license-public-keypair-recovery
 created: 2026-09-21
