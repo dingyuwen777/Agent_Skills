@@ -20,10 +20,10 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 # License 配置区
 # 正常签发时只需要修改下面这些字段，然后直接运行本脚本。
 # ============================================================
-客户名称 = "XX公司"
-联系人 = "张三"
+客户名称 = "nnit"
+联系人 = "YNND"
 生效日期 = "2026-09-20"
-到期日期 = "2027-09-20"
+到期日期 = "2026-12-31"
 输出文件 = "licensing/output/license.lic"
 
 

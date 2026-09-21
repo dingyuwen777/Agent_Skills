@@ -31,5 +31,5 @@ desktop.ini
 # Agent local disposable cache
 .agents/project-context.json
 
-# Maintainer-generated License output
-/licensing/output/
+## Maintainer-generated License output
+#/licensing/output/
