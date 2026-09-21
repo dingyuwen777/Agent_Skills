@@ -23,7 +23,6 @@ Thumbs.db
 desktop.ini
 
 # Secrets / local environment
-/licensing/private_key.pem
 .env
 .env.*
 !.env.example

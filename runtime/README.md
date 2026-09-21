@@ -381,13 +381,13 @@ Private Repository 承担 canonical Source 的访问控制；Runtime 加密不�
 
 正式 Runtime Mode 额外使用固定项目文件 `<project>/.agents/license.lic` 做完全离线期限授权。License Envelope 使用 `agent-skills-license/v1`，Ed25519 签名覆盖原始 payload bytes；Claims 只包含 License ID、产品、客户/联系人、签发时间、生效时间和到期时间，不绑定机器、项目、Skill、Reference、Bundle/Payload digest 或 Runtime release version。
 
-构建时 `scripts/build_runtime.py` 只读取并验证 `licensing/public_key.pem`，把公钥嵌入临时 `_embedded_payload.py` 后生成 onefile；`licensing/private_key.pem` 只属于维护者签发面，不进入 Runtime package、Project Payload、Release ZIP、目标项目、MCP 返回、Builder JSON 或日志。 Private Repository 才允许 live tree 保存产品私钥；仓库为 Public 时产品私钥必须不存在，维护者签发保持 fail closed。任何曾进入公开 Git 历史的产品私钥均永久视为 compromised，后续 Runtime 必须轮换到新的公钥身份。
+构建时 `scripts/build_runtime.py` 只读取并验证 `licensing/public_key.pem`，把公钥嵌入临时 `_embedded_payload.py` 后生成 onefile；`licensing/private_key.pem` 只属于维护者签发面，不进入 Runtime package、Project Payload、Release ZIP、目标项目、MCP 返回、Builder JSON 或日志。当前产品明确允许 Public Repository 直接跟踪该私钥，这是用户接受的部署取舍；因此私钥保密不属于本方案安全保证。
 
 Runtime verifier 由 `runtime/agent_skills_runtime/licensing.py` 单独负责。已验签 Claims 可以按 License 文件身份在进程内缓存，但每个受保护 MCP 调用都重新检查当前时间；License 文件被原子替换后自动重新读取并验签。安装器不拥有 `.agents/license.lic`，因此升级/回滚不得创建、覆盖、删除或迁移它。Source Mode 直接读取 canonical Source，不调用这层 Runtime License gate。
 
 稳定失败码为 `LICENSE_MISSING`、`LICENSE_INVALID`、`LICENSE_NOT_YET_VALID`、`LICENSE_EXPIRED`、`LICENSE_PRODUCT_MISMATCH`、`LICENSE_UNSUPPORTED_SCHEMA`。`status` 可以在没有有效 License 时返回这些最小诊断；`self-test` 和 `serve` 启动不要求 License，真正进入 route/start/submit/load/checkpoint 时统一 fail closed。
 
-`agent-skills-license/v1` 是外部长期 Contract：已签 v1 License 有效期间，普通 Runtime/Skill 更新必须继续支持 v1 并保持当前产品公钥身份。v2 或公钥轮换必须单独设计迁移 Change，不能跟随普通内部 schema/Bundle 演进静默发生。 **密钥泄露属于强制安全例外**：一旦产品私钥被公开，保持旧公钥会允许任意伪造 License，因此必须以独立 Security Change 轮换信任身份；旧 key/旧 License 兼容性让位于停止伪造能力，并在 Requirement Source 中明确记录。
+`agent-skills-license/v1` 是外部长期 Contract：普通 Runtime/Skill 更新必须继续支持 v1；产品公钥轮换必须单独设计 Change，不能跟随普通内部 schema/Bundle 演进静默发生。当前公开产品私钥意味着任何人都能生成 Runtime 可验证的签名，因此该部署不提供授权防伪造或 issuer exclusivity；Ed25519 在这里仅用于签名格式/内容一致性校验，并配合本地 `not_before` / `expires_at` 期限门禁。
 Local Hardened Runtime v3 的目标是减少目标项目中的普通明文浏览/复制面、避免 Runtime 启动即持有全库 plaintext、检测 Manifest/record 篡改，并堵住方便的 unknown-route full-corpus export。它不是 TEE/KMS/DRM。
 
 v3 使用 encrypted private manifest、opaque record locator、HKDF-SHA256 用途隔离派生与 per-reference AES-256-GCM authenticated records。Runtime 默认只解密当前 required Context；这缩小主动 plaintext 生命周期，但 Python `bytes`/`str` 不能提供可证明的物理 zeroize，因此不得宣称离开作用域后 RAM 已立即清零。

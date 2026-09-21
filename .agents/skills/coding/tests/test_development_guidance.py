@@ -171,6 +171,44 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         )
         self.assertNotIn("coding.reference.31", ordinary["必需Reference"])
 
+    def test_runtime_license_public_private_key_exception_is_narrow_and_explicit(self) -> None:
+        """Public 仓库的产品私钥例外必须可达、范围固定且不得夸大安全保证。"""
+        maintenance = self._read(".agents/MAINTENANCE.md")
+        delivery = self._read(
+            ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
+        )
+        for text in (maintenance, delivery):
+            for fragment in (
+                "Agent_Skills Runtime License 项目级安全例外",
+                "dingyuwen777/Agent_Skills",
+                "licensing/private_key.pem",
+                "licensing/public_key.pem",
+                "licensing/license_tool.py",
+                "Public",
+                "其他仓库",
+                "Token",
+                "密码",
+                "Runtime binary",
+                "Project Payload",
+                "Release ZIP",
+                "目标项目",
+                "MCP 返回",
+                "Builder JSON",
+            ):
+                with self.subTest(fragment=fragment):
+                    self.assertIn(fragment, text)
+
+        self.assertIn("不再以 `visibility=private` 为前提", maintenance)
+        self.assertIn("不再要求 `visibility=private`", delivery)
+        self.assertIn("任何读取仓库的人都可以自行签发", maintenance)
+        self.assertIn("任何读取仓库的人都能自行生成/续期合法 License", delivery)
+        self.assertIn("不得宣称该部署能防止用户伪造授权", maintenance)
+        self.assertIn("不得宣称防伪造授权", delivery)
+
+        for text in (maintenance, delivery):
+            self.assertNotIn("仓库为 Public 时产品私钥必须不存在", text)
+            self.assertNotIn("Public 状态必须保持签发 fail closed", text)
+
     def test_core_tdd_debugging_and_completion_rules_remain(self) -> None:
         """通用化不得删除 TDD、根因调试、Traceability 和 Completion Audit。"""
         skill = self._read(".agents/skills/coding/SKILL.md")
