@@ -24,6 +24,11 @@ jobs:
   agent-skills-core:
     name: Agent Skills Gate
     runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+      contents: read
+      issues: read
+      pull-requests: read
     outputs:
       runtime_scope: ${{ steps.runtime-scope.outputs.runtime_scope }}
       semantic_profile: ${{ steps.runtime-scope.outputs.semantic_profile }}
@@ -35,6 +40,15 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+
+      - name: Cleanup obsolete workflow history
+        if: >-
+          ${{ github.event_name == 'push' &&
+              github.ref == 'refs/heads/main' &&
+              contains(github.event.head_commit.message, '清理废弃 Actions 历史') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/scripts/cleanup_obsolete_workflow_runs.py
 
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
