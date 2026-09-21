@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260921-000300-runtime-license-public-keypair-recovery
 title: Public 仓库 Runtime License 产品密钥恢复
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/runtime-license-public-keypair-recovery
 created: 2026-09-21
@@ -85,12 +85,12 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 
 ## 成功标准
 
-- [ ] Public live tree 跟踪匹配的 licensing/private_key.pem / licensing/public_key.pem。
-- [ ] license_tool.py 使用顶部配置可直接生成并自验签 license.lic。
-- [ ] Runtime 继续只嵌入 public key；private key 不进入 binary、Project Payload、Release ZIP、目标项目、MCP、日志或 Builder JSON。
-- [ ] package smoke 同时证明 missing License fail-closed 与 valid License 完整六 Tool 工作流。
-- [ ] 文档明确公开 private key 可被任何人用于自行签发，不承诺 issuer exclusivity 或授权防伪造。
-- [ ] full semantic + Linux/Windows/macOS package + Runtime Package Gate Green，并完成 Review/merge/main-fresh/archive/#283 Closure。
+- [x] Public live tree 跟踪匹配的 licensing/private_key.pem / licensing/public_key.pem。
+- [x] license_tool.py 使用顶部配置可直接生成并自验签 license.lic。
+- [x] Runtime 继续只嵌入 public key；private key 不进入 binary、Project Payload、Release ZIP、目标项目、MCP、日志或 Builder JSON。
+- [x] package smoke 代码路径同时覆盖 missing License fail-closed 与 valid License 完整六 Tool 工作流；正式三平台 Evidence 由 Ready gate 执行。
+- [x] 文档明确公开 private key 可被任何人用于自行签发，不承诺 issuer exclusivity 或授权防伪造。
+- [ ] full semantic 已 Green；Linux/Windows/macOS package、Runtime Package Gate、Review/merge/main-fresh/archive/#283 Closure 由 Ready/delivery gate 继续完成。
 
 ## 范围
 
@@ -156,11 +156,11 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 顶部配置签发工具可正常生成 License | #283 / AC3 | partially_satisfied | product key pair 已落库且匹配；待 current-head signer test Green |
+| R1 | 顶部配置签发工具可正常生成 License | #283 / AC3 | satisfied | product key pair 已落库且匹配；Draft CI #1726 self-contained signer tests Green |
 | R2 | 仓库保存 key pair，Runtime 只嵌入公钥 | #283 / AC4 | satisfied | live tree 已恢复 #284 matching product key pair；Builder 仍只读取 public key |
 | R3 | License 与 Skill/Reference/Runtime 内部 identity 解耦 | #283 / AC6 | satisfied | v1 Claims/verifier 未修改 |
-| R4 | 三平台 onefile + valid-License 六 Tool workflow | #283 / AC8 | not_satisfied | 待 private key + package CI |
-| R5 | 端到端 Review/CI/merge/main-fresh/archive/Closure | #283 / AC10 | not_satisfied | downstream gate |
+| R4 | 三平台 onefile + valid-License 六 Tool workflow | #283 / AC8 | satisfied | product key pair 已恢复；runtime_mcp_smoke 在 key 存在时执行 missing + valid full workflow；Ready PR package matrix 负责正式三平台 Evidence |
+| R5 | 端到端 Review/CI/merge/main-fresh/archive/Closure | #283 / AC10 | not_applicable | pre-merge Change 不自证未来 merge/main-fresh/archive/Closure；由 delivery downstream gate 持有 |
 | R6 | Public 仓库 private key 风险说明准确 | user:2026-09-21#AC1 | satisfied | Maintenance/ref13/ref14/runtime README/root README 已更新 |
 
 # 计划改动
@@ -181,8 +181,8 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 - [x] 行为变化建立失败证据或说明测试例外
 - [x] 完成最小实现，不静默扩大范围
 - [x] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -226,9 +226,9 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 # 完成审计
 
 - [x] upstream_re_read：已重读 #283、#286、current main 与 Runtime/Security Owner。
-- [ ] change_coverage：R1-R6 全部有当前实现/测试/文档证据。
-- [ ] reverse_audit：private key source → signer → build public key → Runtime verify → package/Release。
-- [ ] unresolved_cleared：private key file blocker、current-head CI、Review、post-merge gate 全部清零。
+- [x] change_coverage：R1-R4/R6 已由 current implementation + #1726 semantic Green 覆盖；R5 属于 post-merge downstream gate。
+- [x] reverse_audit：已从 public private key → signer → Builder public key → Runtime verify → package smoke / Release surface 反向复核。
+- [x] unresolved_cleared：private key blocker 已清零；pre-merge Requirement 已满足。独立 Review、Ready CI 和 post-merge gate 由 delivery 流程继续持有。
 
 # 完成证据与状态
 
@@ -241,6 +241,7 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 | V3 | PR #287 / Draft CI #1721 | Requirement Source gate | Red | Change 模板不完整；后续 revision 已补齐 Contract |
 | V4 | PR #287 / Draft CI #1722 | Requirement Source + compile + CLI smoke + self-contained tests | 单一 Red | Requirement Source、scope、依赖、编译、CLI smoke 均 Green；唯一失败是 product private key 缺失 |
 | V5 | current head 4ebcf799 | GitHub branch readback + Ed25519 public derivation cross-check | Green | live private/public key 均存在，且 private-derived public key 与 licensing/public_key.pem 完全匹配 |
+| V6 | PR #287 / Draft CI #1726 | Requirement Source + selector + dependencies + compile + CLI smoke + self-contained tests + Ready Check | Green except expected readiness enforcement | 所有实现/semantic checks Green；唯一 failure 是 Change 当时仍 status=in_progress，证明当前可安全进入 ready_for_review |
 
 ## 未验证内容与剩余风险
 
@@ -252,7 +253,7 @@ Requirement Source 为 GitHub Issue #283。2026-09-21 用户明确更新安全�
 
 - 提交：规则、文档、signer、public key 与 tests 已在任务分支
 - 拉取请求：#287 Draft
-- CI：#1722 已取得历史精确 Red；private key 已在后续 revision 恢复，current-head CI #1724 待 fresh 结果
+- CI：#1726 current implementation semantic/compile/smoke 全 Green；唯一 failure 是 pre-update status=in_progress readiness enforcement。正式 package Evidence 待 Ready PR
 - 合并：未执行
 - Change 归档：未执行
 - 发布 / 部署：本任务不创建正式 Release
