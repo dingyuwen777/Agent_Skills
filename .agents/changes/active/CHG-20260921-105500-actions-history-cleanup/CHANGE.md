@@ -33,6 +33,44 @@ Requirement Source：GitHub Issue #289。
 
 当前 main 的 workflow 文件只有 Release、Change Archive、Skill Tests；Actions 历史仍保留已删除的一次性 workflow runs，导致 All workflows 左侧继续显示旧名称。
 
+
+# 事实与证据
+
+| 证据编号 | 已确认事实 | 来源 | 支撑决策 |
+| --- | --- | --- | --- |
+| E1 | main 当前只有 release.yml / change-archive.yml / skill-tests.yml 三个 workflow 文件 | GitHub contents API / main | 旧名称不是现役 workflow 文件 |
+| E2 | Actions 历史已分页扫描到空页，存在 #289 列出的 obsolete workflow path runs | GitHub Actions runs API | 需要删除历史 runs 才能清理 All workflows 左侧残留 |
+| E3 | 当前 GitHub connector 没有 delete workflow run 动作 | 当前工具能力检查 | 需要复用仓库自身 GITHUB_TOKEN 执行一次性清理 |
+| E4 | Skill Tests 已有 push main 触发入口 | .github/workflows/skill-tests.yml | 可在不新增 Workflow 名称的前提下承载一次性 main-only job |
+
+# 计划改动
+
+| 文件 / 模块 | 修改 | 原因 |
+| --- | --- | --- |
+| .github/workflows/skill-tests.yml | 临时增加 Cleanup Obsolete Actions History job | 用现有 workflow 名称执行一次性 Actions history DELETE |
+| cleanup job permissions | 仅 job-level actions: write + contents: read | 不扩大其他 CI job 权限 |
+| cleanup job trigger | 仅 push main | PR 阶段无删除副作用 |
+| 后续第二 PR | 删除临时 cleanup job | 最终 main 不保留一次性逻辑 |
+
+# 风险、兼容性、迁移与回滚
+
+| 项目 | 结论 / 处理 |
+| --- | --- |
+| 主要风险 | workflow run 删除不可逆，会删除对应历史日志；用户已明确要求清理废弃历史 |
+| 误删风险 | 只匹配显式 obsolete path allowlist，绝不按“非当前 workflow”泛化删除 |
+| 权限风险 | actions: write 仅授予 cleanup job，且仅 main push 执行 |
+| 兼容性 | 不改变 Release / Change Archive / Skill Tests 长期行为；不改 Runtime/License/Skill Contract |
+| Migration | 不适用；仅 Actions 历史维护 |
+| 回滚 | 已删除的历史 run 无法恢复，因此删除前必须按 allowlist 收集，删除后 readback 为 0 才算成功 |
+
+# 文档、依赖、部署与发布影响
+
+- 长期文档：不适用；这是 GitHub Actions 历史清理，不改变用户/Runtime 长期事实。
+- 依赖：无新增依赖；cleanup 使用 runner 自带 Python 标准库。
+- 部署：不适用。
+- Release：不修改 release.yml，不删除任何 Release workflow run。
+- CI：第一阶段临时增加一个 main-only cleanup job；第二阶段必须删除，最终 workflow 数量和长期职责恢复原状。
+
 # 目标、成功标准与非目标
 
 ## 成功标准
