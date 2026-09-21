@@ -135,15 +135,123 @@ Runtime 不安装 canonical `references/` 或公开 Reference manifest，不接�
 
 ### Runtime License（维护者）
 
-正式 Runtime Mode 使用项目级外部文件 `<project>/.agents/license.lic` 做完全离线期限授权；Source Mode 永远不检查该文件。
+正式 Runtime Mode 使用**项目级外部 License 文件**控制使用期限；Source Mode 永远不检查 License。
 
-维护者签发时打开 `licensing/license_tool.py`，只修改文件顶部的客户名称、联系人、生效日期、到期日期和输出文件，然后运行：
+这里的 License 机制不是“把 `license.lic` 加密起来”，而是使用 **Ed25519 数字签名**：维护者使用 [`licensing/private_key.pem`](licensing/private_key.pem) 对 License payload 原始 bytes 签名，Runtime 只内嵌 [`licensing/public_key.pem`](licensing/public_key.pem) 做验签。`license.lic` 中的客户、联系人、生效日期和到期日期可以被看到，但修改任何签名保护内容后，验签就会失败。
+
+#### 1. 签发位置
+
+维护者编辑 [`licensing/license_tool.py`](licensing/license_tool.py) 顶部配置：
+
+```text
+客户名称
+联系人
+生效日期
+到期日期
+输出文件
+```
+
+然后运行：
 
 ```bash
 python licensing/license_tool.py
 ```
 
-默认生成 `licensing/output/license.lic`，该目录被 Git 忽略。当前产品明确允许 Public Repository 直接跟踪 `licensing/private_key.pem` / `licensing/public_key.pem`；维护者普通续期只修改脚本顶部配置并重新运行，不重新生成 key。正式 Builder 始终只读取/嵌入公钥，私钥不得进入 Runtime binary、Project Payload、Release、目标项目、MCP、日志或 Builder JSON。**由于 private key 本身公开，任何读取仓库的人都可以自行签发或续期合法 License；本方案因此只提供本地期限/格式门禁，不提供授权防伪造保证。**
+默认生成：
+
+```text
+Agent_Skills/
+└── licensing/
+    └── output/
+        └── license.lic
+```
+
+`licensing/output/` 是维护者生成物目录，不属于 Runtime Release。
+
+#### 2. 目标项目中的实际位置
+
+Runtime 固定从目标项目读取：
+
+```text
+<project>/
+└── .agents/
+    └── license.lic
+```
+
+也就是说，维护者生成：
+
+```text
+licensing/output/license.lic
+```
+
+然后把该文件复制到目标项目：
+
+```text
+<project>/.agents/license.lic
+```
+
+**Release ZIP 不包含 `license.lic`。** 新项目安装 Runtime 后需要放置一次该文件；已有项目升级 Runtime 时，安装器不会创建、覆盖、删除或迁移已有 `.agents/license.lic`。
+
+#### 3. Runtime 如何判断 License
+
+Runtime 会校验：
+
+- `agent-skills-license/v1` schema；
+- Ed25519 signature；
+- `product=agent-skills`；
+- `not_before` 生效时间；
+- `expires_at` 到期时间。
+
+真正进入以下受保护能力前会统一检查 License：
+
+```text
+agent_skills_route_contract
+agent_skills_start_task
+agent_skills_submit_route
+agent_skills_load_required_context
+agent_skills_checkpoint
+```
+
+`status`、`self-test`、`install` 和 `serve` 启动仍保持可诊断。
+
+#### 4. License 到期后的表现
+
+到期后运行：
+
+```bash
+agent-skills status --json
+```
+
+会看到授权状态进入：
+
+```text
+expired
+LICENSE_EXPIRED
+```
+
+继续调用受保护 Tool 时会失败关闭，并返回类似：
+
+```text
+LICENSE_EXPIRED: License 已过期
+```
+
+#### 5. 续期
+
+续期不需要重新构建 Runtime，也不需要重新发布 Release：
+
+```text
+修改 licensing/license_tool.py 的到期日期
+→ 重新运行 python licensing/license_tool.py
+→ 得到新的 licensing/output/license.lic
+→ 覆盖目标项目 .agents/license.lic
+→ 下一次受保护调用自动重新读取并验签
+```
+
+#### 6. 安全边界
+
+当前产品明确允许 Public Repository 直接跟踪 [`licensing/private_key.pem`](licensing/private_key.pem) / [`licensing/public_key.pem`](licensing/public_key.pem)。因此任何读取仓库的人都可以取得 private key，自行签发或续期 Runtime 能验签通过的 License；本方案在当前部署选择下只提供**签名格式/内容一致性、本地期限判断和流程门禁**，不提供 issuer exclusivity 或授权防伪造保证。
+
+正式 Builder 始终只读取/嵌入公钥；private key 不得进入 Runtime binary、Project Payload、Release ZIP、目标项目、MCP 返回、日志或 Builder JSON。
 ### 同版本、跨宿主与模型边界
 
 Source / Runtime 是治理规则的取得方式，不是 Git 执行能力。实际仓库操作仍必须满足当前身份权限、Branch Protection / Ruleset、原子性、revision guard、Review、CI 和目标项目门禁；本地某一个 transport 失败不代表所有安全等价能力都不可用。
