@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260921-105500-actions-history-cleanup
 title: 清理废弃 GitHub Actions Workflow 历史
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: maintenance/actions-history-cleanup
 created: 2026-09-21
