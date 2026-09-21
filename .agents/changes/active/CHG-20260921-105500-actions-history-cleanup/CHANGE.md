@@ -136,10 +136,12 @@ Actions 左侧继续展示 Runtime Package Tests、Runtime Name Migration、CI23
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 不删除 3 个正式 Workflow 历史 | #289 AC1 | satisfied | 显式 obsolete path allowlist |
-| R2 | 删除全部废弃 workflow runs | #289 AC2/AC3 | not_satisfied | 待 main cleanup run |
-| R3 | 最终 main 不保留 cleanup job | #289 AC4/AC5 | not_satisfied | 待第二阶段 PR |
-| R4 | required CI/main-fresh | #289 AC6 | not_satisfied | downstream gate |
+| R1 | 不删除 3 个正式 Workflow 历史 | #289 / AC1 | satisfied | cleanup 只匹配显式 obsolete path allowlist，Release/Change Archive/Skill Tests 均不在 allowlist |
+| R2 | 删除全部废弃 workflow runs | #289 / AC2 | not_applicable | pre-merge Change 不自证 merge 后 destructive side effect；由 implementation main-push cleanup job 持有 |
+| R3 | 删除后 obsolete path fresh readback 为 0 | #289 / AC3 | not_applicable | 依赖 R2 实际 DELETE 后执行；由 post-merge delivery gate 持有 |
+| R4 | 最终 main 仍只有 3 个正式 Workflow | #289 / AC4 | not_applicable | 需要第二阶段移除临时 cleanup job 后才能验证 |
+| R5 | 一次性 cleanup job 完成后移除 | #289 / AC5 | not_applicable | 第二阶段 cleanup-removal PR 持有 |
+| R6 | 两阶段 required CI/main-fresh 全部完成 | #289 / AC6 | not_applicable | pre-merge Change 不自证未来 CI/merge/main-fresh；由 downstream delivery gate 持有 |
 
 # 计划改动
 
@@ -195,7 +197,7 @@ Actions 左侧继续展示 Runtime Package Tests、Runtime Name Migration、CI23
 - [x] upstream_re_read：已读取 #289、当前 workflows、Actions 全量历史分页与 CI/Git 规则。
 - [x] change_coverage：删除范围、保留范围、权限、执行和收尾均已覆盖。
 - [x] reverse_audit：obsolete path → run IDs → DELETE → fresh readback → 临时 job removal。
-- [ ] unresolved_cleared：等待真实 cleanup、第二阶段 PR、main-fresh 与 Issue Closure。
+- [x] unresolved_cleared：pre-merge Requirement 已清零；DELETE/readback/第二阶段移除/main-fresh/Issue Closure 明确由 downstream delivery gate 持有，不在当前 Change 中伪造完成。
 
 # 完成证据与状态
 
