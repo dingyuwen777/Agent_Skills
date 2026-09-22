@@ -7,7 +7,7 @@ Requirement-Source: #<Issue>
 - `#<Issue>`、空值、`TBD`、`TODO`、`待确认`、`无` 等占位值不能作为正式来源。
 - machine gate 只负责可机械确认的来源形状、存在性或可解析性；它不替代 Requirement 自然语言完整性、Completion Audit 或独立 Review。
 - 仓库外 ID / URL 只有在当前项目已经建立明确、稳定的机器解析规则时才能作为 machine source；通用模板不自创外部 URI 规则。
-- `Requirement-Source` 说明 PR 为什么存在；`Closes` / `Fixes` / `Resolves` 说明 merge 后是否应自动关闭整个 Issue，两者职责不同。
+- `Requirement-Source` 说明 PR 为什么存在；`Closes` / `Fixes` / `Resolves` 说明 merge 后是否应自动关闭整个 Issue，两者职责不同。不要用关闭关键字替代 `Requirement-Source:`。
 - Requirement Source 需要 post-merge evidence（例如 main-fresh CI、迁移/部署后验证或 Change archive）时，merge 前不得使用 `Closes` / `Fixes` / `Resolves` 抢先自动关闭；由 Post-Merge Finalization / Closure Audit 取得充分直接 Evidence、回写 Acceptance 并重读后再关闭。
 
 ## 背景与现状
