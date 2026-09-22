@@ -32,6 +32,7 @@ LEGACY_SYNC_PATH = ROOT / "scripts/sync_repository_issue_forms.py"
 
 
 def _load_module(name: str, path: Path):
+    """按真实路径加载治理模块，避免测试复制生产实现。"""
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"无法加载治理模块：{path}")
@@ -49,6 +50,7 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """构建当前真实 Bundle/Payload，作为 governance projection 测试基线。"""
         cls.bundle = build_bundle(ROOT)
         cls.payload = build_project_payload(ROOT, cls.bundle)
         cls.payload_files = {
@@ -63,6 +65,7 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
         source: PurePosixPath,
         content: bytes,
     ) -> None:
+        """写入 previous canonical source 与相同 root projection fixture。"""
         source_path = target / ".agents/skills" / Path(source.as_posix())
         source_path.parent.mkdir(parents=True, exist_ok=True)
         source_path.write_bytes(content)
@@ -74,6 +77,7 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
         projection.write_bytes(content)
 
     def _current_issue_sources(self) -> tuple[PurePosixPath, ...]:
+        """返回当前 canonical Issue Form 在 Project Payload 中的 source 路径。"""
         return tuple(
             PurePosixPath(f"coding/assets/issue-templates/{path.name}")
             for path in sorted(CANONICAL_FORMS.glob("*.yml"))
@@ -113,9 +117,11 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             self.assertEqual(SYNC.projection_drift(root), [])
 
     def test_legacy_marker_sync_script_is_removed(self) -> None:
+        """验证 governance canonical source、projection ownership 或 rollback 的对应契约。"""
         self.assertFalse(LEGACY_SYNC_PATH.exists())
 
     def test_project_payload_contains_canonical_issue_and_pr_assets(self) -> None:
+        """验证 governance canonical source、projection ownership 或 rollback 的对应契约。"""
         expected = {
             f"coding/assets/issue-templates/{path.name}"
             for path in CANONICAL_FORMS.glob("*.yml")
@@ -142,6 +148,7 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             self.assertIn("业务目标", profile.required_headings)
 
     def test_pr_profile_is_read_from_canonical_template(self) -> None:
+        """验证 governance canonical source、projection ownership 或 rollback 的对应契约。"""
         profile = CONTRACT.load_pr_profile()
         self.assertEqual(profile.required_headings[0], "Requirement Source")
         self.assertEqual(profile.required_headings[-1], "Git / 发布")
@@ -156,6 +163,7 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             self.assertIn("交付目标", CONTRACT.load_pr_profile(template).required_headings)
 
     def test_first_install_projects_issue_and_pr_assets_via_installer(self) -> None:
+        """验证 governance canonical source、projection ownership 或 rollback 的对应契约。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             target = root / "target"
@@ -171,6 +179,7 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             self.assertIn(".github/PULL_REQUEST_TEMPLATE.md", result["governance_projections"])
 
     def test_first_install_equal_projection_is_safe_adoption(self) -> None:
+        """验证 governance canonical source、projection ownership 或 rollback 的对应契约。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             target = root / "target"
@@ -191,6 +200,7 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             self.assertEqual(target_pr.read_bytes(), CANONICAL_PR.read_bytes())
 
     def test_first_install_rejects_different_existing_pr_before_mutation(self) -> None:
+        """验证 governance canonical source、projection ownership 或 rollback 的对应契约。"""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             target = root / "target"
@@ -227,6 +237,7 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             )
 
     def test_managed_projection_drift_fails_closed_and_keeps_project_bytes(self) -> None:
+        """验证 governance canonical source、projection ownership 或 rollback 的对应契约。"""
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
             source = PurePosixPath("coding/assets/issue-templates/01-requirement.yml")
@@ -242,10 +253,12 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             self.assertEqual(projection.read_bytes(), b"project-drift\n")
 
     def test_new_pr_projection_on_existing_install_create_adopt_or_fail_closed(self) -> None:
+        """验证 governance canonical source、projection ownership 或 rollback 的对应契约。"""
         issue_sources = self._current_issue_sources()
         previous_state = {"managed_files": [source.as_posix() for source in issue_sources]}
 
         def prepare_target(root: Path) -> None:
+            """为新 PR projection 场景准备旧版本只认领 Issue Forms 的目标项目。"""
             for source in issue_sources:
                 content = self.payload_files[source.as_posix()]
                 self._write_previous_source_and_projection(root, source, content)
@@ -274,6 +287,7 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             self.assertEqual(pr.read_text(encoding="utf-8"), "project-owned\n")
 
     def test_removed_previous_projection_deletes_equal_target_but_rejects_drift(self) -> None:
+        """验证 governance canonical source、projection ownership 或 rollback 的对应契约。"""
         source = PurePosixPath("coding/assets/PULL_REQUEST_TEMPLATE.md")
         old = b"previous-pr\n"
         previous_state = {"managed_files": [source.as_posix()]}
@@ -340,6 +354,7 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             failed = False
 
             def controlled_atomic_write(path: Path, content: bytes, mode: int | None = None) -> None:
+                """在指定 Host 写入点制造失败并允许后续 rollback 正常恢复。"""
                 nonlocal failed
                 if Path(path).resolve() == agents_path and not failed:
                     failed = True
