@@ -16,7 +16,6 @@ from typing import Any, Mapping
 from .governance_projection import (
     apply_governance_projection_plan,
     build_governance_projection_plan,
-    cleanup_empty_projection_directories,
     projection_target_paths,
 )
 from .install_state import (
@@ -530,6 +529,29 @@ def _snapshot_file(path: Path) -> tuple[bytes, int] | None:
     return content, path.stat().st_mode
 
 
+def _projection_parent_directories(target: Path, paths: tuple[Path, ...]) -> tuple[Path, ...]:
+    """返回 governance projection 可能新建的父目录，按浅到深稳定排序且不包含项目根。"""
+    directories: set[Path] = set()
+    for path in paths:
+        current = path.parent
+        while current != target:
+            directories.add(current)
+            current = current.parent
+    return tuple(sorted(directories, key=lambda item: (len(item.parts), item.as_posix())))
+
+
+def _cleanup_new_projection_directories(
+    directories: tuple[Path, ...],
+    existed_before: Mapping[Path, bool],
+) -> None:
+    """回滚后只删除本事务新建且当前为空的 projection 目录，保留安装前已有空目录。"""
+    for directory in sorted(directories, key=lambda item: len(item.parts), reverse=True):
+        if existed_before.get(directory, False):
+            continue
+        if directory.exists() and directory.is_dir() and not directory.is_symlink() and not any(directory.iterdir()):
+            directory.rmdir()
+
+
 def install_project(
     target_root: str | Path,
     project_payload: Mapping[str, Any],
@@ -578,6 +600,11 @@ def install_project(
     governance_plan = build_governance_projection_plan(target, project_payload, old_state)
     governance_paths = projection_target_paths(target, governance_plan)
     governance_snapshots = {path: _snapshot_file(path) for path in governance_paths}
+    governance_directories = _projection_parent_directories(target, governance_paths)
+    governance_directory_existed = {
+        directory: directory.exists()
+        for directory in governance_directories
+    }
 
     for skill in sorted(set(old_skills) | set(new_skills)):
         skill_path = skills_root / skill
@@ -724,7 +751,10 @@ def install_project(
             except Exception as rollback_error:
                 rollback_errors.append(f"{path}: {type(rollback_error).__name__}: {rollback_error}")
         try:
-            cleanup_empty_projection_directories(target)
+            _cleanup_new_projection_directories(
+                governance_directories,
+                governance_directory_existed,
+            )
         except Exception as rollback_error:
             rollback_errors.append(
                 f"governance projection directory cleanup: {type(rollback_error).__name__}: {rollback_error}"
