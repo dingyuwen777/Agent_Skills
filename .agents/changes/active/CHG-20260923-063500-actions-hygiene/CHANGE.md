@@ -223,6 +223,7 @@ GitHub 删除 Workflow YAML 不会自动删除历史 workflow runs，因此 All 
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main | workflows/readback + cleanup absence | confirmed | 当前干净基线且无永久实现 |\n| V2 | current branch / PR #295 | current-head diff + static Contract audit | Green | 候选算法、Git main-history、权限最小化、canonical 生命周期规则均已落库；真实 API 待 Ready/main-fresh |
+| V3 | PR #295 / Issue #294 | canonical Requirement Source revalidation | fixed | 技术变更 Issue 已补齐动机/根因、兼容迁移、风险回滚、稳定 AC、验证要求和上游事实源 |
 
 ## 未验证内容与剩余风险
 
@@ -233,7 +234,7 @@ GitHub 删除 Workflow YAML 不会自动删除历史 workflow runs，因此 All 
 
 - 提交：实现、测试、Workflow 接线和文档已在 maintenance/actions-hygiene
 - 拉取请求：#295（Draft，准备转 Ready）
-- CI：Ready 后执行 current-head required CI
+- CI：Requirement Source 已修正；本 revision 触发 fresh current-head required CI
 - 合并：未执行
 - Change 归档：未执行
 - 发布 / 部署：不适用
