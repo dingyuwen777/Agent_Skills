@@ -15,6 +15,10 @@ CLASSIFY_PATH = SCOPE_MODULE["classify_path"]
 BUILD_PLAN = MODULE["build_cleanup_plan"]
 PATH_IN_HISTORY = MODULE["path_existed_in_head_history"]
 RUN_HYGIENE = MODULE["run_hygiene"]
+RUNTIME_GLOBALS = RUN_HYGIENE.__globals__
+MAIN = MODULE["main"]
+MAIN_GLOBALS = MAIN.__globals__
+TRANSIENT_ERROR = MODULE["TransientGitHubApiError"]
 
 
 class ActionsHygieneTest(unittest.TestCase):
@@ -121,22 +125,22 @@ class ActionsHygieneTest(unittest.TestCase):
 
     def test_execute_deletes_snapshot_then_requires_fresh_zero_readback(self) -> None:
         """execute 必须基于初始快照删除，并以 fresh readback 的零残留作为成功条件。"""
-        old_list = MODULE["list_workflow_runs"]
-        old_current = MODULE["current_workflow_paths"]
-        old_history = MODULE["main_history_workflow_paths"]
-        old_request = MODULE["_api_request"]
+        old_list = RUNTIME_GLOBALS["list_workflow_runs"]
+        old_current = RUNTIME_GLOBALS["current_workflow_paths"]
+        old_history = RUNTIME_GLOBALS["main_history_workflow_paths"]
+        old_request = RUNTIME_GLOBALS["_api_request"]
         snapshots = [
             [{"id": 10, "path": ".github/workflows/old.yml", "name": "Old", "status": "completed"}],
             [],
         ]
         deletes: list[str] = []
         try:
-            MODULE["list_workflow_runs"] = lambda repository, token: snapshots.pop(0)
-            MODULE["current_workflow_paths"] = lambda root: {".github/workflows/skill-tests.yml"}
-            MODULE["main_history_workflow_paths"] = (
+            RUNTIME_GLOBALS["list_workflow_runs"] = lambda repository, token: snapshots.pop(0)
+            RUNTIME_GLOBALS["current_workflow_paths"] = lambda root: {".github/workflows/skill-tests.yml"}
+            RUNTIME_GLOBALS["main_history_workflow_paths"] = (
                 lambda root, observed: {".github/workflows/old.yml"} & set(observed)
             )
-            MODULE["_api_request"] = (
+            RUNTIME_GLOBALS["_api_request"] = (
                 lambda token, method, path: deletes.append(path) if method == "DELETE" else None
             )
             payload = RUN_HYGIENE(
@@ -146,10 +150,10 @@ class ActionsHygieneTest(unittest.TestCase):
                 execute=True,
             )
         finally:
-            MODULE["list_workflow_runs"] = old_list
-            MODULE["current_workflow_paths"] = old_current
-            MODULE["main_history_workflow_paths"] = old_history
-            MODULE["_api_request"] = old_request
+            RUNTIME_GLOBALS["list_workflow_runs"] = old_list
+            RUNTIME_GLOBALS["current_workflow_paths"] = old_current
+            RUNTIME_GLOBALS["main_history_workflow_paths"] = old_history
+            RUNTIME_GLOBALS["_api_request"] = old_request
 
         self.assertEqual(deletes, ["/repos/dingyuwen777/Agent_Skills/actions/runs/10"])
         self.assertEqual(payload["deleted_run_count"], 1)
@@ -157,18 +161,18 @@ class ActionsHygieneTest(unittest.TestCase):
 
     def test_execute_fails_when_fresh_readback_still_has_eligible_run(self) -> None:
         """DELETE 后 fresh readback 仍见 eligible run 时必须失败关闭，不能宣称清理完成。"""
-        old_list = MODULE["list_workflow_runs"]
-        old_current = MODULE["current_workflow_paths"]
-        old_history = MODULE["main_history_workflow_paths"]
-        old_request = MODULE["_api_request"]
+        old_list = RUNTIME_GLOBALS["list_workflow_runs"]
+        old_current = RUNTIME_GLOBALS["current_workflow_paths"]
+        old_history = RUNTIME_GLOBALS["main_history_workflow_paths"]
+        old_request = RUNTIME_GLOBALS["_api_request"]
         run = {"id": 11, "path": ".github/workflows/old.yml", "name": "Old", "status": "completed"}
         try:
-            MODULE["list_workflow_runs"] = lambda repository, token: [run]
-            MODULE["current_workflow_paths"] = lambda root: {".github/workflows/skill-tests.yml"}
-            MODULE["main_history_workflow_paths"] = (
+            RUNTIME_GLOBALS["list_workflow_runs"] = lambda repository, token: [run]
+            RUNTIME_GLOBALS["current_workflow_paths"] = lambda root: {".github/workflows/skill-tests.yml"}
+            RUNTIME_GLOBALS["main_history_workflow_paths"] = (
                 lambda root, observed: {".github/workflows/old.yml"} & set(observed)
             )
-            MODULE["_api_request"] = lambda token, method, path: None
+            RUNTIME_GLOBALS["_api_request"] = lambda token, method, path: None
             with self.assertRaisesRegex(RuntimeError, "fresh readback"):
                 RUN_HYGIENE(
                     ROOT,
@@ -177,14 +181,41 @@ class ActionsHygieneTest(unittest.TestCase):
                     execute=True,
                 )
         finally:
-            MODULE["list_workflow_runs"] = old_list
-            MODULE["current_workflow_paths"] = old_current
-            MODULE["main_history_workflow_paths"] = old_history
-            MODULE["_api_request"] = old_request
+            RUNTIME_GLOBALS["list_workflow_runs"] = old_list
+            RUNTIME_GLOBALS["current_workflow_paths"] = old_current
+            RUNTIME_GLOBALS["main_history_workflow_paths"] = old_history
+            RUNTIME_GLOBALS["_api_request"] = old_request
 
     def test_actions_hygiene_script_uses_governance_ci_profile(self) -> None:
         """只修改 Hygiene 脚本时应走治理证据，不误触发三平台 Runtime package。"""
         self.assertEqual(CLASSIFY_PATH(".github/scripts/actions_hygiene.py"), "governance")
+
+    def test_cli_distinguishes_transient_and_hard_failures(self) -> None:
+        """CLI 只把临时 GitHub API 错误映射为 75，硬错误必须保持普通失败。"""
+        import sys
+
+        old_run = MAIN_GLOBALS["run_hygiene"]
+        old_token = MAIN_GLOBALS["_token"]
+        old_argv = sys.argv[:]
+        try:
+            MAIN_GLOBALS["_token"] = lambda: "fixture-token"
+            sys.argv = ["actions_hygiene.py", "--repository", "owner/repo"]
+
+            def transient(*args, **kwargs):
+                raise TRANSIENT_ERROR("temporary")
+
+            MAIN_GLOBALS["run_hygiene"] = transient
+            self.assertEqual(MAIN(), 75)
+
+            def hard(*args, **kwargs):
+                raise RuntimeError("hard")
+
+            MAIN_GLOBALS["run_hygiene"] = hard
+            self.assertEqual(MAIN(), 1)
+        finally:
+            MAIN_GLOBALS["run_hygiene"] = old_run
+            MAIN_GLOBALS["_token"] = old_token
+            sys.argv = old_argv
 
     def test_skill_tests_owns_hygiene_with_narrow_permissions(self) -> None:
         """永久清理必须复用 Skill Tests，并把 actions:write 限制在独立 main-only job。"""
@@ -202,7 +233,9 @@ class ActionsHygieneTest(unittest.TestCase):
             "fetch-depth: 0",
             ".github/scripts/actions_hygiene.py",
             "--execute",
-            "::warning::Actions Hygiene failed",
+            "::warning::Actions Hygiene temporary GitHub API failure",
+            "Actions Hygiene invariant/permission failure",
+            'status}" -eq 75',
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, hygiene)
