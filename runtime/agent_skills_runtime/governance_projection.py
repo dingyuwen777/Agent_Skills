@@ -30,6 +30,7 @@ class GovernanceProjectionOperation:
 
 
 def _target_for_source(source: PurePosixPath) -> PurePosixPath | None:
+    """把 canonical governance source 映射到目标仓库根 projection 路径。"""
     prefix = ISSUE_FORM_ASSET_PREFIX.parts
     if source.parts[: len(prefix)] == prefix:
         remainder = source.parts[len(prefix) :]
@@ -57,6 +58,7 @@ def _incoming_governance_sources(project_payload: Mapping[str, Any]) -> dict[Pur
 
 
 def _previous_governance_sources(previous_state: Mapping[str, Any] | None) -> tuple[PurePosixPath, ...]:
+    """从 previous install-state 提取曾被认领的 governance source 路径。"""
     if previous_state is None:
         return ()
     raw = previous_state.get("managed_files", [])
@@ -71,6 +73,7 @@ def _previous_governance_sources(previous_state: Mapping[str, Any] | None) -> tu
 
 
 def _ensure_no_symlink(root: Path, path: Path) -> None:
+    """拒绝目标根到 projection 路径之间的符号链接越界。"""
     root = root.resolve()
     try:
         relative = path.relative_to(root)
@@ -84,6 +87,7 @@ def _ensure_no_symlink(root: Path, path: Path) -> None:
 
 
 def _existing_bytes(root: Path, path: Path) -> bytes | None:
+    """安全读取可选 root projection 普通文件字节。"""
     _ensure_no_symlink(root, path)
     if not path.exists():
         return None
@@ -182,11 +186,13 @@ def projection_target_paths(
     target_root: str | Path,
     plan: tuple[GovernanceProjectionOperation, ...],
 ) -> tuple[Path, ...]:
+    """把 projection plan 转换为需要 snapshot 的目标绝对路径。"""
     target = Path(target_root).resolve()
     return tuple(target.joinpath(*operation.target.parts) for operation in plan)
 
 
 def _atomic_write(path: Path, content: bytes) -> None:
+    """在同目录临时文件中写入后原子替换 governance projection。"""
     path.parent.mkdir(parents=True, exist_ok=True)
     previous_mode = path.stat().st_mode if path.exists() and path.is_file() else None
     with tempfile.NamedTemporaryFile("wb", dir=path.parent, prefix=path.name + ".", delete=False) as stream:
@@ -227,18 +233,3 @@ def apply_governance_projection_plan(
         changed.append(operation.target.as_posix())
     return tuple(changed)
 
-
-def cleanup_empty_projection_directories(target_root: str | Path) -> None:
-    """rollback 后只清理本机制可能新建且当前为空的固定 projection 目录。"""
-    target = Path(target_root).resolve()
-    candidates = [
-        target.joinpath(*ISSUE_FORM_TARGET_DIR.parts),
-        target / ".github",
-    ]
-    for directory in candidates:
-        try:
-            _ensure_no_symlink(target, directory)
-            if directory.is_dir() and not any(directory.iterdir()):
-                directory.rmdir()
-        except OSError:
-            continue
