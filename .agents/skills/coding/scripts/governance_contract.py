@@ -67,6 +67,7 @@ class IssueProfile:
         required_checkbox_headings: tuple[str, ...],
         required_textarea_headings: tuple[str, ...],
     ) -> None:
+        """初始化当前治理 Profile 的稳定结构字段。"""
         self.filename = filename
         self.title_prefix = title_prefix
         self.required_headings = required_headings
@@ -78,10 +79,12 @@ class PullRequestProfile:
     """表示从 canonical PR Template 恢复出的有序 Core Profile。"""
 
     def __init__(self, required_headings: tuple[str, ...]) -> None:
+        """初始化当前治理 Profile 的稳定结构字段。"""
         self.required_headings = required_headings
 
 
 def _frontmatter_and_body(text: str) -> tuple[dict[str, str], str]:
+    """解析扁平 Change frontmatter，并返回剩余 Markdown 正文。"""
     lines = text.splitlines()
     if not lines or lines[0].strip() != "---":
         raise GovernanceContractError("Change 缺少 frontmatter 起始分隔符")
@@ -100,6 +103,7 @@ def _frontmatter_and_body(text: str) -> tuple[dict[str, str], str]:
 
 
 def template_top_level_headings(template_text: str) -> tuple[str, ...]:
+    """从 canonical Change 模板提取有序一级标题。"""
     headings = tuple(match.group(1).strip() for match in TOP_LEVEL_HEADING_PATTERN.finditer(template_text))
     if not headings:
         raise GovernanceContractError("Change 模板未包含可识别的一级标题")
@@ -109,6 +113,7 @@ def template_top_level_headings(template_text: str) -> tuple[str, ...]:
 
 
 def template_required_second_level_headings(template_text: str, level: str) -> tuple[str, ...]:
+    """从模板 marker 恢复指定风险级别必需的二级标题。"""
     headings = tuple(
         match.group("heading").strip()
         for match in REQUIRED_HEADING_MARKER_PATTERN.finditer(template_text)
@@ -126,6 +131,7 @@ def _validate_ordered_headings(
     level: int,
     asset_name: str,
 ) -> list[str]:
+    """校验 Markdown 必需标题完整、唯一且顺序正确。"""
     pattern = TOP_LEVEL_HEADING_PATTERN if level == 1 else SECOND_LEVEL_HEADING_PATTERN
     actual = [match.group(1).strip() for match in pattern.finditer(body)]
     errors: list[str] = []
@@ -145,10 +151,12 @@ def _validate_ordered_headings(
 
 
 def is_current_change_id(change_id: str) -> bool:
+    """判断 Change ID 是否符合当前秒级新建格式。"""
     return CURRENT_CHANGE_ID_PATTERN.fullmatch(change_id.strip()) is not None
 
 
 def is_legacy_change_id(change_id: str) -> bool:
+    """判断 Change ID 是否为只允许历史读取的日期级格式。"""
     candidate = change_id.strip()
     return (
         LEGACY_CHANGE_ID_PATTERN.fullmatch(candidate) is not None
@@ -162,6 +170,7 @@ def validate_new_change_text(
     template_text: str,
     expected_id: str | None = None,
 ) -> list[str]:
+    """校验新建或当前 changed Coding Change 的机器 Contract。"""
     try:
         metadata, body = _frontmatter_and_body(text)
         required_headings = template_top_level_headings(template_text)
@@ -208,6 +217,7 @@ def validate_new_change_file(
     *,
     template_path: Path = CANONICAL_CHANGE_TEMPLATE,
 ) -> list[str]:
+    """读取 Change 与 canonical 模板并执行当前实例校验。"""
     expected_id = path.parent.name if path.name == "CHANGE.md" else None
     try:
         text = path.read_text(encoding="utf-8")
@@ -222,10 +232,12 @@ def validate_new_change_file(
 
 
 def _normalise_issue_heading(value: str) -> str:
+    """规范 Issue/PR Markdown 标题空白以稳定比较。"""
     return re.sub(r"\s+", " ", value.strip())
 
 
 def _issue_headings(body: str) -> tuple[str, ...]:
+    """提取 Issue 二到六级 Markdown 标题。"""
     return tuple(
         _normalise_issue_heading(match.group(1))
         for match in ISSUE_HEADING_PATTERN.finditer(body)
@@ -233,6 +245,7 @@ def _issue_headings(body: str) -> tuple[str, ...]:
 
 
 def _form_blocks(text: str) -> tuple[str, ...]:
+    """按 Issue Form 顶层 body item 切分 YAML 文本。"""
     starts = [match.start() for match in re.finditer(r"^  - type:\s*", text, re.MULTILINE)]
     if not starts:
         return ()
@@ -241,6 +254,7 @@ def _form_blocks(text: str) -> tuple[str, ...]:
 
 
 def _field_is_required(block: str) -> bool:
+    """判断当前 Issue Form 字段是否显式 required。"""
     lines = [line.strip() for line in block.splitlines()]
     try:
         validations_index = lines.index("validations:")
@@ -250,6 +264,7 @@ def _field_is_required(block: str) -> bool:
 
 
 def load_issue_profile(path: Path) -> IssueProfile:
+    """从 canonical Issue Form 动态恢复 creation/live Profile。"""
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -289,6 +304,7 @@ def load_issue_profile(path: Path) -> IssueProfile:
 
 
 def _canonical_issue_form_paths(forms_dir: Path) -> tuple[Path, ...]:
+    """返回 canonical Issue Form 普通文件集合。"""
     if forms_dir.is_symlink() or not forms_dir.is_dir():
         raise GovernanceContractError(f"canonical Issue Form 目录不存在或非法：{forms_dir}")
     paths = tuple(
@@ -304,6 +320,7 @@ def _canonical_issue_form_paths(forms_dir: Path) -> tuple[Path, ...]:
 
 
 def load_issue_profiles(forms_dir: Path = CANONICAL_ISSUE_FORM_DIR) -> tuple[IssueProfile, ...]:
+    """动态加载全部 canonical Issue 类型 Profile。"""
     profiles = tuple(
         load_issue_profile(path)
         for path in _canonical_issue_form_paths(forms_dir)
@@ -323,6 +340,7 @@ def resolve_issue_profile(
     *,
     forms_dir: Path = CANONICAL_ISSUE_FORM_DIR,
 ) -> IssueProfile:
+    """按显式 profile 或 title prefix 解析唯一 Issue Profile。"""
     profiles = load_issue_profiles(forms_dir)
     if profile is not None:
         candidate = profile.strip().casefold().replace("_", "-")
@@ -344,6 +362,7 @@ def resolve_issue_profile(
 
 
 def _section_body(body: str, heading: str, pattern: re.Pattern[str]) -> str | None:
+    """返回指定标题到下一标题之间的 section 正文。"""
     matches = list(pattern.finditer(body))
     target_index: int | None = None
     for index, match in enumerate(matches):
@@ -365,6 +384,7 @@ def _validate_strict_core(
     *,
     asset_name: str,
 ) -> list[str]:
+    """校验 creation Core 完整、唯一、严格顺序且无中间插入。"""
     errors: list[str] = []
     for heading in required_headings:
         count = actual_headings.count(heading)
@@ -390,6 +410,7 @@ def _validate_live_headings(
     *,
     asset_name: str,
 ) -> list[str]:
+    """校验 live 实例仍包含全部历史兼容必需标题。"""
     errors: list[str] = []
     for heading in required_headings:
         count = actual_headings.count(heading)
@@ -456,6 +477,7 @@ def validate_issue_instance(
 
 
 def load_pr_profile(template_path: Path = CANONICAL_PR_TEMPLATE) -> PullRequestProfile:
+    """从 canonical PR Template 动态恢复有序 Core headings。"""
     try:
         text = template_path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -469,6 +491,7 @@ def load_pr_profile(template_path: Path = CANONICAL_PR_TEMPLATE) -> PullRequestP
 
 
 def _pr_section_body(body: str, heading: str) -> str | None:
+    """返回 PR 指定二级标题 section 的正文。"""
     return _section_body(body, heading, SECOND_LEVEL_HEADING_PATTERN)
 
 
@@ -511,6 +534,7 @@ def validate_issue_form_projection(
     *,
     forms_dir: Path = CANONICAL_ISSUE_FORM_DIR,
 ) -> list[str]:
+    """校验根 Issue Forms 与 canonical assets 原字节一致。"""
     errors: list[str] = []
     target_dir = project_root / ISSUE_FORM_PROJECTION_RELATIVE
     try:
@@ -541,6 +565,7 @@ def validate_governance_projection(
     forms_dir: Path = CANONICAL_ISSUE_FORM_DIR,
     pr_template: Path = CANONICAL_PR_TEMPLATE,
 ) -> list[str]:
+    """校验根 Issue Forms 与 PR Template 全部 canonical projections。"""
     errors = validate_issue_form_projection(project_root, forms_dir=forms_dir)
     target = project_root / PR_TEMPLATE_PROJECTION_RELATIVE
     if not target.is_file() or target.is_symlink():
@@ -555,6 +580,7 @@ def validate_governance_projection(
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    """构建治理 Contract 的宿主无关 CLI 参数。"""
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -585,6 +611,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """执行治理资产机器 Contract CLI 并返回稳定退出码。"""
     args = _build_parser().parse_args(argv)
     json_output = bool(getattr(args, "json", False))
     if args.command == "validate-change":
