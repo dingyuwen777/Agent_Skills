@@ -332,7 +332,7 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 - Runtime Projection 不暴露当前 canonical Reference 文件名、路径、Stable ID、`agent-routing:v1`、内部组织或防披露自说明，同时保留宿主 `name`、核心项目工程语义与交付授权；
 - Runtime 公共返回面保持 project-facing，required canonical Context exact-text 不被删改；
 - v3 Manifest/record tamper、record swap、locator mismatch、lazy decrypt、自检全库与 task capability 安全回归；
-- sidecarless install-state、legacy v3 一次迁移、v1/v2/未知 schema 拒绝、项目自有 Reference 保留、同名冲突、Codex marker/重复 table fail-closed，以及 DeepSeek overlay/launcher marker ownership、四 Host 可移植性和失败/回滚诊断；
+- sidecarless install-state、legacy v3 一次迁移、v1/v2/未知 schema 拒绝、项目自有 Reference 保留、同名冲突、Issue/PR governance projection 的 first-install create/adopt/collision、previous-canonical markerless upgrade/drift/removal/rollback，以及 Codex/DeepSeek 等 Host ownership、四 Host 可移植性和失败/回滚诊断；
 - Windows onefile 无参数 EXE-parent 与 POSIX 无参数 cwd 语义、显式 `install --target` 优先级；
 - Builder JSON identity 与 no-sidecar Release preservation；
 - 动态 Skill Bundle + Project Payload 的源码级构建、投影确定性与内容守恒；
@@ -345,7 +345,7 @@ python scripts/runtime_mcp_smoke.py --artifact dist/agent-skills --json
 - Builder JSON 的 `integrity_fingerprint` 和实际 binary `artifact_sha256`；
 - 构建目录不存在 `*.manifest.json`；
 - real stdio MCP，包括 stable Tool Contract、project-facing progress、exact-text、capability 与 unknown full-corpus anti-export；
-- project-only single-binary 首次安装、重复安装/升级和平台对应无参数安装；
+- project-only single-binary 首次安装、重复安装/升级和平台对应无参数安装，并确认 canonical Issue Forms + PR Template 经 Project Payload 安装到根 `.github`、无 governance ownership sidecar；
 - 四 Host 项目资产：Codex、Cursor、Claude Code 与 DeepSeek Harness project-local overlay；Windows 还必须验证根 `DeepSeek-Harness.cmd`，POSIX 不生成该 Windows launcher；
 - 安装项目不存在 `.agents/agent-skills-install.json`，也不存在 canonical Reference/Stub/Private Routing Manifest；
 - 已安装 Runtime 的内部 install-state 能认领当前 Entry/Router，但不进入 MCP；
