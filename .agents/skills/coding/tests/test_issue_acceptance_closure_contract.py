@@ -87,15 +87,16 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
         for marker in required:
             self.assertIn(marker, text, marker)
 
-    def test_issue_create_or_update_requires_live_reread_and_contract_validation(self) -> None:
-        """创建或实质更新 Requirement Source 后必须验证平台真实 live 对象。"""
+    def test_issue_creation_requires_prewrite_and_live_reread_contract_validation(self) -> None:
+        """新建 Requirement Source 必须写前 create 校验、写后 live reread 并同检。"""
         text = self._read(TRACEABILITY)
         required = (
-            "Issue Creation / Update Live Validation Gate",
-            "创建或实质更新 GitHub Requirement Source",
-            "重新读取平台上的真实 live Requirement Source",
-            "未完成这次写后重读",
-            "不得把该 Requirement Source 视为 `resolved`",
+            "Issue Creation-time / Live Validation Gate",
+            "validate-issue --mode create",
+            "pre-write validation 失败时禁止创建",
+            "live reread",
+            "同一 create Contract",
+            "不能用表单草稿、API 请求体或 write success response 代替 live 事实",
         )
         for marker in required:
             self.assertIn(marker, text, marker)
@@ -263,16 +264,17 @@ class IssueAcceptanceClosureContractTest(unittest.TestCase):
         self.assertEqual(positions, sorted(positions), "Post-Merge Finalization 顺序发生漂移")
         self.assertIn("blocked/incomplete", text)
 
-    def test_github_first_install_projects_canonical_forms_without_changing_live_issue_ownership(self) -> None:
-        """GitHub 首次安装要落地 canonical Form 投影，但 live Issue 仍是最终 Requirement 状态 Owner。"""
+    def test_github_install_upgrade_projects_canonical_governance_without_changing_live_ownership(self) -> None:
+        """GitHub 安装/升级投影 canonical Issue+PR，同时保持 live Requirement 生命周期归仓库自身。"""
         text = self._read(TRACEABILITY)
         required = (
-            "GitHub 首次安装",
+            "安装/升级",
             "受管投影",
-            "canonical Issue Form",
+            "canonical Issue Forms + PR Template",
             "不能独立维护",
             "live Requirement Source",
-            "每个仓库继续使用自己的 Requirement/Change/PR 生命周期",
+            "previous install-state",
+            "project-side drift",
         )
         for item in required:
             self.assertIn(item, text, item)
