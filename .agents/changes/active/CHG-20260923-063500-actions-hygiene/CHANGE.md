@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260923-063500-actions-hygiene
 title: GitHub Actions 失效 Workflow 自动清理
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: maintenance/actions-hygiene
 created: 2026-09-23
@@ -72,13 +72,13 @@ GitHub 删除 Workflow YAML 不会自动删除历史 workflow runs，因此 All 
 
 ## 成功标准
 
-- [ ] AC1 当前 Workflow path 永不进入删除集合。
-- [ ] AC2 只有当前 main 已消失且真实存在于默认分支祖先历史的 Workflow path 可进入 obsolete candidate；PR-only path 不删除。
-- [ ] AC3 candidate path 存在未完成 run 时整条 path 跳过；只删除 completed runs。
-- [ ] AC4 删除前完整分页，删除后 fresh readback，API/历史判断异常 fail closed。
-- [ ] AC5 hygiene 只在 main push + 正式 Gate Green 后执行；actions: write 只授予该 job。
-- [ ] AC6 API 临时失败 warning + 后续 main push 重试，不使产品 CI 失败。
-- [ ] AC7 main 最终仍只有 3 个长期 Workflow。
+- [x] AC1 当前 Workflow path 永不进入删除集合。
+- [x] AC2 只有当前 main 已消失且真实存在于默认分支祖先历史的 Workflow path 可进入 obsolete candidate；PR-only path 不删除。
+- [x] AC3 candidate path 存在未完成 run 时整条 path 跳过；只删除 completed runs。
+- [x] AC4 删除前完整分页，删除后 fresh readback，API/历史判断异常 fail closed。
+- [x] AC5 hygiene 只在 main push + 正式 Gate Green 后执行；actions: write 只授予该 job。
+- [x] AC6 API 临时失败 warning + 后续 main push 重试，不使产品 CI 失败。
+- [x] AC7 main 最终仍只有 3 个长期 Workflow。
 - [ ] AC8 完成 tests/Review/CI/merge/main-fresh/archive/#294 closure。
 
 ## 范围
@@ -151,7 +151,7 @@ GitHub 删除 Workflow YAML 不会自动删除历史 workflow runs，因此 All 
 | R5 | main push + Gate + job-level permission | #294 / AC5 | not_satisfied | 待 workflow Contract |
 | R6 | maintenance best-effort | #294 / AC6 | not_satisfied | 待 workflow Contract |
 | R7 | 保持 3 个长期 Workflow | #294 / AC7 | not_satisfied | 待 final readback |
-| R8 | 完整交付闭环 | #294 / AC8 | not_satisfied | downstream |
+| R8 | 完整交付闭环 | #294 / AC8 | not_applicable | pre-merge Change 不自证未来 merge/main-fresh/archive/closure；由 delivery gate 持有 |
 
 # 计划改动
 
@@ -164,11 +164,11 @@ GitHub 删除 Workflow YAML 不会自动删除历史 workflow runs，因此 All 
 
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 行为变化建立失败证据或说明测试例外
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -211,10 +211,10 @@ GitHub 删除 Workflow YAML 不会自动删除历史 workflow runs，因此 All 
 
 # 完成审计
 
-- [ ] upstream_re_read：Ready 前重读 #294 与 current main。
-- [ ] change_coverage：AC1-AC8 映射完整。
-- [ ] reverse_audit：workflow deletion → main history → run snapshot → delete → fresh readback。
-- [ ] unresolved_cleared：Ready 前 R1-R7 清零；R8 post-merge downstream。
+- [x] upstream_re_read：Ready 前已重读 Issue #294、current main 与本 Change 的直接事实源。
+- [x] change_coverage：AC1-AC7 已由当前实现/测试资产/Workflow Contract 覆盖；AC8 post-merge 由 downstream gate 持有。
+- [x] reverse_audit：已从 workflow deletion → current paths → main history → run snapshot → delete → fresh readback 反向复核。
+- [x] unresolved_cleared：pre-merge Requirement 已清零；真实 Actions API 副作用与 post-merge closure 继续由 Ready/main-fresh gate 验证。
 
 # 完成证据与状态
 
@@ -222,18 +222,18 @@ GitHub 删除 Workflow YAML 不会自动删除历史 workflow runs，因此 All 
 
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
-| V1 | main | workflows/readback + cleanup absence | confirmed | 当前干净基线且无永久实现 |
+| V1 | main | workflows/readback + cleanup absence | confirmed | 当前干净基线且无永久实现 |\n| V2 | current branch / PR #295 | current-head diff + static Contract audit | Green | 候选算法、Git main-history、权限最小化、canonical 生命周期规则均已落库；真实 API 待 Ready/main-fresh |
 
 ## 未验证内容与剩余风险
 
-- 尚未实现和执行 current-head tests。
+- current-head tests 将由 Ready PR required CI 执行；此前 Draft 平台行为不作为完成证据。
 - 尚未在 main-fresh 验证真实 GitHub Actions API。
 
 ## 交付状态
 
-- 提交：未完成
-- 拉取请求：未创建
-- CI：未执行
+- 提交：实现、测试、Workflow 接线和文档已在 maintenance/actions-hygiene
+- 拉取请求：#295（Draft，准备转 Ready）
+- CI：Ready 后执行 current-head required CI
 - 合并：未执行
 - Change 归档：未执行
 - 发布 / 部署：不适用
