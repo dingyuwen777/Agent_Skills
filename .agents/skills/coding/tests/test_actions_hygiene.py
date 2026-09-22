@@ -3,8 +3,8 @@ from __future__ import annotations
 import runpy
 import subprocess
 import tempfile
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -74,7 +74,11 @@ class ActionsHygieneTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-            subprocess.run(["git", "config", "user.email", "ci@example.invalid"], cwd=root, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "ci@example.invalid"],
+                cwd=root,
+                check=True,
+            )
             subprocess.run(["git", "config", "user.name", "CI"], cwd=root, check=True)
             workflow = root / ".github/workflows/old.yml"
             workflow.parent.mkdir(parents=True)
