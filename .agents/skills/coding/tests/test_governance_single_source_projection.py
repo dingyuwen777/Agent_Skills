@@ -297,6 +297,36 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
                     build_governance_projection_plan(target, self.payload, previous_state)
             self.assertEqual(projection.read_bytes(), b"project-drift\n")
 
+    def test_installer_failure_preserves_preexisting_empty_governance_directories(self) -> None:
+        """回滚只能删除本事务新建的目录，不能删除安装前已经存在的空 .github 目录。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "target"
+            target.mkdir()
+            preexisting_issue_dir = target / ".github/ISSUE_TEMPLATE"
+            preexisting_issue_dir.mkdir(parents=True)
+            artifact = root / "agent-skills"
+            artifact.write_bytes(b"runtime-v1")
+            agents_path = (target / "AGENTS.md").resolve()
+            original_atomic_write = INSTALLER._atomic_write
+            failed = False
+
+            def controlled_atomic_write(path: Path, content: bytes, mode: int | None = None) -> None:
+                """在 governance projection 已应用后制造 Host 写失败，随后允许正常 rollback。"""
+                nonlocal failed
+                if Path(path).resolve() == agents_path and not failed:
+                    failed = True
+                    raise OSError("fixture host write failure with preexisting directories")
+                original_atomic_write(path, content, mode)
+
+            with patch.object(INSTALLER, "_atomic_write", side_effect=controlled_atomic_write):
+                with self.assertRaisesRegex(OSError, "preexisting directories"):
+                    install_project(target, self.payload, artifact, release_version="9.9.9")
+
+            self.assertTrue((target / ".github").is_dir())
+            self.assertTrue(preexisting_issue_dir.is_dir())
+            self.assertEqual(list(preexisting_issue_dir.iterdir()), [])
+
     def test_installer_failure_after_governance_apply_rolls_back_all_projection_bytes(self) -> None:
         """后续 Host 配置写失败时，root governance、managed files 与 Runtime 都回滚。"""
         with tempfile.TemporaryDirectory() as directory:
