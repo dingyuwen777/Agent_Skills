@@ -13,6 +13,12 @@ import subprocess
 import tempfile
 from typing import Any, Mapping
 
+from .governance_projection import (
+    apply_governance_projection_plan,
+    build_governance_projection_plan,
+    cleanup_empty_projection_directories,
+    projection_target_paths,
+)
 from .install_state import (
     INSTALL_STATE_SCHEMA,
     LEGACY_INSTALL_MANIFEST_PATH,
@@ -568,6 +574,11 @@ def install_project(
     old_managed_files = set(old_state["managed_files"]) if old_state is not None else set()
     owned = old_state is not None
 
+    # incoming .agents source 写入前完成 previous canonical byte 恢复与 root projection ownership preflight。
+    governance_plan = build_governance_projection_plan(target, project_payload, old_state)
+    governance_paths = projection_target_paths(target, governance_plan)
+    governance_snapshots = {path: _snapshot_file(path) for path in governance_paths}
+
     for skill in sorted(set(old_skills) | set(new_skills)):
         skill_path = skills_root / skill
         _ensure_path_not_symlink(target, skill_path)
@@ -678,6 +689,8 @@ def install_project(
         if _sha256_file(runtime_target) != _sha256_file(artifact):
             raise RuntimeError("项目 Runtime 安装后的 SHA256 与当前 artifact 不一致")
 
+        changed_governance_projections = apply_governance_projection_plan(target, governance_plan)
+
         for path, content in text_updates.items():
             _atomic_write(path, content)
         for skill in removed_skills:
@@ -705,6 +718,17 @@ def install_project(
                 _restore_file(path, snapshots[path])
             except Exception as rollback_error:
                 rollback_errors.append(f"{path}: {type(rollback_error).__name__}: {rollback_error}")
+        for path in reversed(governance_paths):
+            try:
+                _restore_file(path, governance_snapshots[path])
+            except Exception as rollback_error:
+                rollback_errors.append(f"{path}: {type(rollback_error).__name__}: {rollback_error}")
+        try:
+            cleanup_empty_projection_directories(target)
+        except Exception as rollback_error:
+            rollback_errors.append(
+                f"governance projection directory cleanup: {type(rollback_error).__name__}: {rollback_error}"
+            )
         try:
             _restore_file(runtime_target, runtime_snapshot)
         except Exception as rollback_error:
@@ -737,5 +761,6 @@ def install_project(
         "removed_managed_files": removed_managed_files,
         "runtime": runtime_relative,
         "ownership_source": ownership_source,
+        "governance_projections": list(changed_governance_projections),
         "hosts": ["codex", "cursor", "claude-code", "deepseek-harness"],
     }
