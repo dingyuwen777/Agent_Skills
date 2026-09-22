@@ -428,7 +428,7 @@ previous managed file + 新 Payload 删除        → 只删除该受管文件
 
 ### 13.1 GitHub governance root projection 的 markerless ownership
 
-Project Payload 中的 `coding/assets/issue-templates/*.yml` 与 `coding/assets/PULL_REQUEST_TEMPLATE.md` 是 canonical source assets；目标仓库根 `.github/ISSUE_TEMPLATE/*.yml` 与 `.github/PULL_REQUEST_TEMPLATE.md` 只是 projection，不重复进入 `managed_files` 形成第二 Owner。
+Project Payload 中的 `coding/assets/issue-templates/*.yml` 与 [`.agents/skills/coding/assets/PULL_REQUEST_TEMPLATE.md`](../assets/PULL_REQUEST_TEMPLATE.md) 是 canonical source assets；目标仓库根 `.github/ISSUE_TEMPLATE/*.yml` 与 `.github/PULL_REQUEST_TEMPLATE.md` 只是 projection，不重复进入 `managed_files` 形成第二 Owner。
 
 首次引入某 projection 时只允许：
 
