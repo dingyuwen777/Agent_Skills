@@ -17,17 +17,20 @@ TARGET_PR = Path(".github/PULL_REQUEST_TEMPLATE.md")
 
 
 def _ensure_no_symlink(root: Path, path: Path) -> None:
-    """拒绝 canonical/root projection 路径经过符号链接。"""
+    """拒绝 governance projection 路径经过符号链接或非目录祖先。"""
     root = root.resolve()
     try:
         relative = path.relative_to(root)
     except ValueError as error:
-        raise ValueError(f"governance projection 越出源仓库：{path}") from error
+        raise ValueError(f"governance projection 路径越出目标根：{path}") from error
     current = root
-    for part in relative.parts:
+    parts = relative.parts
+    for index, part in enumerate(parts):
         current = current / part
         if current.is_symlink():
             raise ValueError(f"governance projection 路径不能经过符号链接：{current}")
+        if index < len(parts) - 1 and current.exists() and not current.is_dir():
+            raise ValueError(f"governance projection 父路径必须是目录：{current}")
 
 
 def _canonical_files(root: Path) -> dict[Path, bytes]:
