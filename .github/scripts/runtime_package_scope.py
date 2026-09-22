@@ -33,6 +33,7 @@ _ARCHIVE_CONTROL_PATHS = {
 }
 
 _GOVERNANCE_EXACT_PATHS = {
+    ".github/scripts/actions_hygiene.py",
     "AGENTS.md",
     ".agents/MAINTENANCE.md",
     ".gitignore",
@@ -54,6 +55,7 @@ _TEST_PREFIX = ".agents/skills/coding/tests/"
 _ISSUE_TEMPLATE_PREFIX = ".github/ISSUE_TEMPLATE/"
 
 _CI_SELF_TESTS = {
+    "test_actions_hygiene.py",
     "test_archive_ci_runtime_lifecycle.py",
     "test_ci_ready_evidence_order.py",
     "test_ci_workflow_minimal_sufficiency.py",
