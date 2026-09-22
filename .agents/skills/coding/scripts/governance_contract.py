@@ -65,11 +65,13 @@ class IssueProfile:
         title_prefix: str,
         required_headings: tuple[str, ...],
         required_checkbox_headings: tuple[str, ...],
+        required_textarea_headings: tuple[str, ...],
     ) -> None:
         self.filename = filename
         self.title_prefix = title_prefix
         self.required_headings = required_headings
         self.required_checkbox_headings = required_checkbox_headings
+        self.required_textarea_headings = required_textarea_headings
 
 
 class PullRequestProfile:
@@ -257,6 +259,7 @@ def load_issue_profile(path: Path) -> IssueProfile:
         raise GovernanceContractError(f"Issue Form {path} 缺少 title prefix")
     required_headings: list[str] = []
     required_checkbox_headings: list[str] = []
+    required_textarea_headings: list[str] = []
     for block in _form_blocks(text):
         type_match = FORM_TYPE_PATTERN.search(block)
         field_id = FORM_ID_PATTERN.search(block)
@@ -270,6 +273,8 @@ def load_issue_profile(path: Path) -> IssueProfile:
         required_headings.append(heading)
         if field_type == "checkboxes":
             required_checkbox_headings.append(heading)
+        else:
+            required_textarea_headings.append(heading)
     if not required_headings:
         raise GovernanceContractError(f"Issue Form {path} 没有 required submission Profile")
     if len(set(required_headings)) != len(required_headings):
@@ -279,6 +284,7 @@ def load_issue_profile(path: Path) -> IssueProfile:
         title_prefix=title_match.group("prefix"),
         required_headings=tuple(required_headings),
         required_checkbox_headings=tuple(required_checkbox_headings),
+        required_textarea_headings=tuple(required_textarea_headings),
     )
 
 
@@ -420,7 +426,10 @@ def validate_issue_instance(
     if normalized_mode == "create":
         errors.extend(_validate_strict_core(headings, contract.required_headings, asset_name="Issue"))
     else:
-        errors.extend(_validate_live_headings(headings, contract.required_headings, asset_name="Issue"))
+        # live/closure 保留 creation-time Contract 生效前的历史 Issue 兼容；只有 create 强制新增 checkbox Core。
+        errors.extend(
+            _validate_live_headings(headings, contract.required_textarea_headings, asset_name="Issue")
+        )
 
     if normalized_mode == "create":
         for heading in contract.required_checkbox_headings:
