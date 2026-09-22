@@ -457,6 +457,10 @@ def validate_issue_instance(
             section = _section_body(body, heading, ISSUE_HEADING_PATTERN)
             if section is not None and CHECKED_TASK_PATTERN.search(section) is None:
                 errors.append(f"Issue required checkbox section 未完成：{heading}")
+        for heading in contract.required_textarea_headings:
+            section = _section_body(body, heading, ISSUE_HEADING_PATTERN)
+            if section is not None and not section.strip():
+                errors.append(f"Issue required textarea section 不能为空：{heading}")
 
     acceptance = _section_body(body, "验收标准", ISSUE_HEADING_PATTERN)
     matches = list(ACCEPTANCE_ITEM_PATTERN.finditer(acceptance or ""))
