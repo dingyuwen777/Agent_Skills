@@ -426,6 +426,22 @@ previous managed file + 新 Payload 删除        → 只删除该受管文件
 
 安装器不得通过目录名、内容相似、当前 Payload 或旧 Stub 猜 ownership。现有 legacy install-state 迁移规则如果被触发仍按安装器当前 Contract 处理，但**本次 Bundle v3 加固不以历史 Bundle v2 Runtime → v3 迁移作为验收条件，也不为此新增长期 v2 Bundle reader。**
 
+### 13.1 GitHub governance root projection 的 markerless ownership
+
+Project Payload 中的 `coding/assets/issue-templates/*.yml` 与 `coding/assets/PULL_REQUEST_TEMPLATE.md` 是 canonical source assets；目标仓库根 `.github/ISSUE_TEMPLATE/*.yml` 与 `.github/PULL_REQUEST_TEMPLATE.md` 只是 projection，不重复进入 `managed_files` 形成第二 Owner。
+
+首次引入某 projection 时只允许：
+
+```text
+target missing     → create
+target == incoming → safe adoption
+target different   → fail closed
+```
+
+后续版本升级必须在写 incoming `.agents/skills` 之前恢复 previous Runtime install-state，并读取该 state 已认领的 previous canonical source bytes `A`。只有 root target bytes `X == A` 时才证明该 projection 仍是上一次 Agent_Skills 生成物并允许更新到 incoming `B`；`X != A`（包括本应存在却被删除）统一视为 `PROJECT_SIDE_PROJECTION_DRIFT` 并 fail closed。新版本第一次增加 PR projection 时，旧 state 没有 PR source ownership，因此不能自动接管历史同名 PR Template。
+
+canonical source 被新版本删除时，target missing 已满足目标；target 仍等于 previous canonical 才可安全删除；发生 drift 时拒绝删除。整个证明不读取 ownership marker，也不写 governance state/projection state 等 sidecar。
+
 DeepSeek overlay/launcher 是 Host 专用受管文本，不进入 Project Payload `managed_files` 来伪造旧版 ownership。首次创建要求目标不存在；后续只有文件自身存在唯一合法 Agent_Skills DeepSeek marker 时才允许替换对应 block。旧 Runtime install-state 能证明 Agent_Skills 曾安装，**不能单独证明一个此前不存在于旧 Contract 的同名 DeepSeek 文件属于 Agent_Skills**。
 
 ## 14. AGENTS / `.gitignore` / 宿主配置保护
@@ -451,14 +467,15 @@ Codex workspace trust 与 Cursor/Claude/DeepSeek Harness 首次确认属于宿�
 安装器必须先完整预检，再进入可恢复写入：
 
 1. 验证 Project Payload v2、path/hash/size/mode/shared files/no-reference；
-2. 恢复 previous ownership，并预检同名冲突、symlink、marker、JSON/TOML，以及 DeepSeek 专用 marker 文件；
-3. 为全部 touched managed files、Runtime 和受管文本保存原始 bytes/权限快照，包括 DeepSeek overlay/launcher；
+2. 恢复 previous install-state/ownership；在写 incoming source 前读取 previous canonical governance bytes，并预检 root governance projection、同名冲突、symlink、marker、JSON/TOML 与 DeepSeek 专用 marker 文件；
+3. 为全部 touched managed files、Runtime、GitHub governance projections 和受管文本保存原始 bytes/权限快照，包括 DeepSeek overlay/launcher；
 4. 使用同目录临时文件 + 原子替换，不整体替换 Skill 目录；
 5. 只删除 previous `managed_files` 明确认领且新 Payload 已删除的文件；
 6. 安装 Runtime 并验证 artifact SHA256；
-7. 写 AGENTS、`.gitignore` 本地缓存规则、四 Host 配置；不写新的 ownership sidecar；
-8. 任一步异常恢复本轮快照；
-9. rollback 自身失败必须聚合报告“回滚不完整”、未恢复路径/原因，并保留原始异常 cause；不得 `except: pass`。
+7. 执行已经完成 ownership/drift preflight 的 Issue + PR root governance projection plan；
+8. 写 AGENTS、`.gitignore` 本地缓存规则、四 Host 配置；不写新的 ownership sidecar；
+9. 任一步异常恢复本轮所有 touched snapshot，包括 root governance projection；首次安装失败时清理由本事务新建且为空的 projection 目录；
+10. rollback 自身失败必须聚合报告“回滚不完整”、未恢复路径/原因，并保留原始异常 cause；不得 `except: pass`。
 
 不得使用 `git reset --hard`、`git clean`、force push 或历史重写冒充安装回滚。
 
