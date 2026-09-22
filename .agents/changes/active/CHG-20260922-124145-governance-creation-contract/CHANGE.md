@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260922-124145-governance-creation-contract
 title: 统一 Issue/PR 模板与 Creation-time Governance Contract
 level: L3
-status: ready_for_review
+status: proposed
 owner: dingyuwen777
 branch: tech/governance-creation-contract
 created: 2026-09-22
