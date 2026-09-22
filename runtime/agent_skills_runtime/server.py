@@ -12,7 +12,6 @@ from typing import Any, Mapping, Sequence
 
 from .crypto import recover_root_material
 from .encrypted_bundle import EncryptedBundleStore
-from .governance_projection import issue_form_projection_transaction
 from .install_state import INSTALL_STATE_SCHEMA, build_install_state
 from .licensing import LicenseManager, license_status, require_valid_license
 from .project_installer import install_project
@@ -346,13 +345,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             else:
                 target = arguments.target
             as_json = bool(getattr(arguments, "json", False))
-            with issue_form_projection_transaction(target, payload):
-                result = install_project(
-                    target,
-                    payload,
-                    artifact,
-                    release_version=release_version,
-                )
+            result = install_project(
+                target,
+                payload,
+                artifact,
+                release_version=release_version,
+            )
             _print_result(_public_install_result(result), as_json)
             return 0
 

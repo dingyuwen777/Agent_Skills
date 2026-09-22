@@ -125,6 +125,36 @@ def _verify_installed_project(target: Path) -> Path:
     if (target / ".agents/skills/coding/references").exists():
         raise SystemExit("目标项目不应安装 canonical Reference 或 Stub")
 
+    issue_source_dir = target / ".agents/skills/coding/assets/issue-templates"
+    issue_target_dir = target / ".github/ISSUE_TEMPLATE"
+    expected_issue_names = (
+        "01-requirement.yml",
+        "02-bug.yml",
+        "03-technical-change.yml",
+        "config.yml",
+    )
+    for name in expected_issue_names:
+        source = issue_source_dir / name
+        projection = issue_target_dir / name
+        if not source.is_file() or not projection.is_file():
+            raise SystemExit(f"项目安装缺少 canonical Issue Form source/projection：{name}")
+        if projection.read_bytes() != source.read_bytes():
+            raise SystemExit(f"项目 Issue Form root projection 与 canonical source 漂移：{name}")
+
+    pr_source = target / ".agents/skills/coding/assets/PULL_REQUEST_TEMPLATE.md"
+    pr_projection = target / ".github/PULL_REQUEST_TEMPLATE.md"
+    if not pr_source.is_file() or not pr_projection.is_file():
+        raise SystemExit("项目安装缺少 canonical PR Template source/root projection")
+    if pr_projection.read_bytes() != pr_source.read_bytes():
+        raise SystemExit("项目 PR Template root projection 与 canonical source 漂移")
+
+    for sidecar in (
+        target / ".agents/governance-state.json",
+        target / ".agents/projection-state.json",
+    ):
+        if sidecar.exists():
+            raise SystemExit(f"Runtime installer 不应生成 governance ownership sidecar：{sidecar}")
+
     agents = target / "AGENTS.md"
     _assert_contains(
         agents,
@@ -231,6 +261,17 @@ def _verify_installed_project(target: Path) -> Path:
         raise SystemExit("Runtime install-state 未认领 ENTRY.md")
     if "router/SKILL.md" not in state.get("managed_files", []):
         raise SystemExit("Runtime install-state 未认领 router/SKILL.md")
+    managed = set(state.get("managed_files", []))
+    expected_governance_sources = {
+        "coding/assets/PULL_REQUEST_TEMPLATE.md",
+        "coding/assets/issue-templates/01-requirement.yml",
+        "coding/assets/issue-templates/02-bug.yml",
+        "coding/assets/issue-templates/03-technical-change.yml",
+        "coding/assets/issue-templates/config.yml",
+    }
+    if not expected_governance_sources.issubset(managed):
+        missing_governance = sorted(expected_governance_sources - managed)
+        raise SystemExit(f"Runtime install-state 未认领 canonical governance source：{missing_governance}")
     _run_json([sys.executable, str(MCP_SMOKE), "--artifact", str(installed), "--json"])
     if license_path.exists():
         raise SystemExit("MCP smoke 结束后不应把测试 License 留在目标项目")
