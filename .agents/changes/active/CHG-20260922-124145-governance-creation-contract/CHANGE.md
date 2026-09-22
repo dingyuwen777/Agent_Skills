@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260922-124145-governance-creation-contract
 title: 统一 Issue/PR 模板与 Creation-time Governance Contract
 level: L3
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/governance-creation-contract
 created: 2026-09-22
@@ -236,16 +236,18 @@ AIMA_UGC rollout、正式 Runtime Release/tag、Deploy、依赖升级、License/
 | V4 | Red head c97f7507 / GitHub Actions run 35688204305 | Skill Tests | FAIL 于新 Red self-contained tests；checkout/setup/Requirement Source/scope 均成功 | 证明当前 main 缺 canonical PR/create contract/统一 installer projection，不是 Runner 故障 |
 | V5 | PR head 3fdddf74 / GitHub Actions run 35692333746 | Compile selected maintained entrypoints + CLI smoke + selected self-contained tests | compile PASS；CLI smoke PASS；628 tests / 10.957s / OK；Ready Check 仅因 status=proposed fail | 实现、治理资产、installer、rollback、文档链接与既有 Runtime 回归 Green，失败已收敛为 Change 状态门禁 |
 | V6 | branch current canonical owners | live #292 + canonical PR/validator/projection reread | #292 open 且 AC1-AC14 未漂移；canonical assets/validator/projection 可读 | ready_for_review 前 upstream re-read 与 Owner 漂移检查完成 |
+| V7 | Review Finding Red head 4ca52286 / GitHub Actions run 35692662202 | selected self-contained tests | 629 tests 中仅 `test_installer_failure_preserves_preexisting_empty_governance_directories` FAIL；其余 628 Green | 直接证明旧 rollback 会误删安装前已存在的空 `.github` 目录 |
+| V8 | Finding fix head 6a612962 / GitHub Actions run 35692850824 | compile + CLI smoke + selected self-contained tests | compile PASS；CLI smoke PASS；629 tests / 11.410s / OK；Ready 仅因 status=proposed fail | 目录存在性 snapshot 修复有效，且 docstring/既有治理与 Runtime 回归未退化 |
 
 ## 未验证内容与剩余风险
 
-当前实现与 628 项 semantic/installer/governance 回归已 Green。由于此前 Change 仍为 proposed，三平台 Runtime Package matrix 被正式 gate 跳过；本次切换 ready_for_review 后必须取得 Linux/Windows/macOS package Evidence。独立 Review、最终 current-head CI、merge、implementation main-fresh、repository-native Change Archive、#292 Acceptance 回写/重读、Issue close/重读和 branch cleanup 仍未完成。
+当前实现与 629 项 semantic/installer/governance 回归已 Green。由于此前 Change 仍为 proposed，三平台 Runtime Package matrix 被正式 gate 跳过；本次切换 ready_for_review 后必须取得 Linux/Windows/macOS package Evidence。独立 Review、最终 current-head CI、merge、implementation main-fresh、repository-native Change Archive、#292 Acceptance 回写/重读、Issue close/重读和 branch cleanup 仍未完成。
 
 ## 交付状态
 
 - 提交：Red + implementation + regression/doc sync 已在 `tech/governance-creation-contract`。
 - 拉取请求：#293，普通 PR；进入 ready_for_review 后继续 fresh CI/Review。
-- CI：run 35692333746 的 compile/CLI/628 tests Green；Change status 门禁触发失败，package 尚未执行。
+- CI：run 35692850824 的 compile/CLI/629 tests Green；Change status 门禁触发失败，package 尚未执行。
 - 合并：未执行。
 - Change 归档：未执行。
 - 发布 / 部署：本任务明确不创建 Release、不 Deploy。
