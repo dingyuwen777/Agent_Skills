@@ -75,13 +75,7 @@ GitHub 默认 Issue Forms 的唯一人工维护源：
 
 ## 3. Pull Request：canonical PR Template 是唯一 Profile Owner
 
-GitHub 默认 PR Template 的唯一人工维护源：
-
-```text
-.agents/skills/coding/assets/PULL_REQUEST_TEMPLATE.md
-```
-
-根 `.github/PULL_REQUEST_TEMPLATE.md` 只是原字节 projection。PR Core headings 必须从 canonical Template 动态解析，validator 不维护第二份 heading list。
+GitHub 默认 PR Template 的唯一人工维护源是 [`.agents/skills/coding/assets/PULL_REQUEST_TEMPLATE.md`](../assets/PULL_REQUEST_TEMPLATE.md)。根 `.github/PULL_REQUEST_TEMPLATE.md` 只是原字节 projection。PR Core headings 必须从 canonical Template 动态解析，validator 不维护第二份 heading list。
 
 新建 PR 使用 `validate-pr --mode create`：
 
