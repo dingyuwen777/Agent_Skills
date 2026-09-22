@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260922-124145-governance-creation-contract
 title: 统一 Issue/PR 模板与 Creation-time Governance Contract
 level: L3
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/governance-creation-contract
 created: 2026-09-22
@@ -84,10 +84,10 @@ PR Template 会继续漂移；Agent 仍可能先自由创建后补结构；Runti
 
 ## 成功标准
 
-- [ ] #292 / AC1-AC14 均取得直接 Evidence。
-- [ ] Issue/PR Core 均从 canonical assets 动态恢复，不在 validator 维护第二份 heading list。
-- [ ] first install、managed upgrade、drift、new projection、removal、rollback 均有正反例。
-- [ ] Runtime/MCP/License/Release 产品面不发生无关变化。
+- [x] #292 / AC1-AC13 已取得 pre-merge 直接 Evidence；AC14 的 merge/main-fresh/archive/closure/cleanup 由 post-merge delivery gate 持有。
+- [x] Issue/PR Core 均从 canonical assets 动态恢复，不在 validator 维护第二份 heading list。
+- [x] first install、managed upgrade、drift、new projection、removal、rollback 均有永久正反例。
+- [x] Runtime/MCP/License/Release 产品面没有本任务无关变化；依赖、schema 与六 Tool Contract 保持。
 
 ## 范围
 
@@ -144,20 +144,20 @@ AIMA_UGC rollout、正式 Runtime Release/tag、Deploy、依赖升级、License/
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Issue + PR Template 单一 canonical Owner | #292 / AC1 | not_satisfied | 待实现 |
-| R2 | 无 governance ownership marker/sidecar | #292 / AC2 | not_satisfied | 待实现 |
-| R3 | first install create/adopt/fail-closed | #292 / AC3 | not_satisfied | 待实现 |
-| R4 | managed upgrade previous-byte equality / drift fail-closed | #292 / AC4 | not_satisfied | 待实现 |
-| R5 | strict Issue creation Contract | #292 / AC5 | not_satisfied | 待实现 |
-| R6 | strict PR creation Contract | #292 / AC6 | not_satisfied | 待实现 |
-| R7 | Core ordered/no-interleaving + Appendix boundary | #292 / AC7 | not_satisfied | 待实现 |
-| R8 | PR canonical asset 进入 Payload/install-state/root projection | #292 / AC8 | not_satisfied | 待实现 |
-| R9 | governance projection 纳入统一 rollback | #292 / AC9 | not_satisfied | 待实现 |
-| R10 | source Issue+PR projection sync/check | #292 / AC10 | not_satisfied | 待实现 |
-| R11 | marker 版 Issue 可升级到 markerless | #292 / AC11 | not_satisfied | 待实现 |
-| R12 | PR projection 首次引入不覆盖不同 target | #292 / AC12 | not_satisfied | 待实现 |
-| R13 | Runtime/MCP/License/依赖/Release 非目标保持 | #292 / AC13 | not_satisfied | 待验证 |
-| R14 | tests/Review/CI/merge/main-fresh/archive/closure/cleanup | #292 / AC14 | not_satisfied | 由交付阶段取得 |
+| R1 | Issue + PR Template 单一 canonical Owner | #292 / AC1 | satisfied | canonical `coding/assets/issue-templates/*` + `coding/assets/PULL_REQUEST_TEMPLATE.md`；`test_governance_single_source_projection` 验证根 Issue/PR 原字节 parity |
+| R2 | 无 governance ownership marker/sidecar | #292 / AC2 | satisfied | canonical Issue Forms 已移除 ownership marker；Runtime 使用 previous state/bytes，不生成 governance sidecar；sidecarless 回归 Green |
+| R3 | first install create/adopt/fail-closed | #292 / AC3 | satisfied | `test_governance_single_source_projection` 覆盖 missing create、equal adoption、different collision |
+| R4 | managed upgrade previous-byte equality / drift fail-closed | #292 / AC4 | satisfied | `build_governance_projection_plan` + previous A / target X / incoming B 回归；X != A 返回 PROJECT_SIDE_PROJECTION_DRIFT |
+| R5 | strict Issue creation Contract | #292 / AC5 | satisfied | `governance_contract.py validate-issue --mode create`；required checkbox + textarea 从 Form 动态恢复，strictness 正反例 Green |
+| R6 | strict PR creation Contract | #292 / AC6 | satisfied | canonical PR Template + `validate-pr --mode create`；Core 与 Requirement-Source placeholder 正反例 Green |
+| R7 | Core ordered/no-interleaving + Appendix boundary | #292 / AC7 | satisfied | `test_governance_creation_strictness.py` 覆盖 missing/duplicate/out-of-order/interleaved/free+canonical，Core 后 Appendix PASS |
+| R8 | PR canonical asset 进入 Payload/install-state/root projection | #292 / AC8 | satisfied | Project Payload 动态包含 `coding/assets/PULL_REQUEST_TEMPLATE.md`；install-state managed_files 自然认领 source；installer 投影 root PR |
+| R9 | governance projection 纳入统一 rollback | #292 / AC9 | satisfied | server 已移除第二 transaction；installer 统一 preflight/snapshot/apply/restore；Host 后续失败回归恢复 Issue/PR/Runtime/managed bytes |
+| R10 | source Issue+PR projection sync/check | #292 / AC10 | satisfied | `scripts/sync_repository_governance_assets.py` 统一 Issue+PR sync/check；root byte parity 回归 Green |
+| R11 | marker 版 Issue 可升级到 markerless | #292 / AC11 | satisfied | legacy marker 仅作为 previous bytes 内容；old-state + equality 成功升级到 markerless incoming 回归 Green |
+| R12 | PR projection 首次引入不覆盖不同 target | #292 / AC12 | satisfied | previous state 无 PR source 时 missing=create、equal=adopt、different=GOVERNANCE_PROJECTION_COLLISION |
+| R13 | Runtime/MCP/License/依赖/Release 非目标保持 | #292 / AC13 | satisfied | PR head 3fdddf74 的 628 self-contained tests、compile、CLI smoke Green；未改依赖/schema/MCP Tool/License/Release workflow |
+| R14 | tests/Review/CI/merge/main-fresh/archive/closure/cleanup | #292 / AC14 | not_applicable | pre-merge Change 不自证未来 merge/main-fresh/archive/closure/cleanup；当前 semantic Green，三平台 package/Review/current-head/merge/post-merge 继续由 delivery gate 持有 |
 
 # 计划改动
 
@@ -172,11 +172,11 @@ AIMA_UGC rollout、正式 Runtime Release/tag、Deploy、依赖升级、License/
 
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 行为变化建立失败证据或说明测试例外
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -219,10 +219,10 @@ AIMA_UGC rollout、正式 Runtime Release/tag、Deploy、依赖升级、License/
 
 # 完成审计
 
-- [ ] upstream_re_read：进入 ready_for_review 前重新读取 #292 与当前 canonical Owner。
-- [ ] change_coverage：R1-R14 与 #292 AC1-AC14 一一映射并由直接 Evidence 覆盖。
-- [ ] reverse_audit：从 canonical assets 反查 validator/source sync/Payload/install-state/installer/root projection/tests/docs。
-- [ ] unresolved_cleared：所有 not_satisfied 清零；post-merge R14 由 downstream delivery gate 持有。
+- [x] upstream_re_read：已重新读取 live #292 与当前 branch canonical PR asset / validator / governance projection Owner。
+- [x] change_coverage：R1-R13 与 #292 AC1-AC13 已由当前实现和永久回归直接覆盖；R14 post-merge 部分明确由 downstream delivery gate 持有。
+- [x] reverse_audit：已从 canonical assets 反查 validator、source sync、Project Payload/install-state、installer/root projection、rollback、tests 与 targeted docs。
+- [x] unresolved_cleared：pre-merge R1-R13 均 satisfied；R14 对本 Change pre-merge 状态为 not_applicable，后续由 delivery gate 完成。
 
 # 完成证据与状态
 
@@ -232,17 +232,20 @@ AIMA_UGC rollout、正式 Runtime Release/tag、Deploy、依赖升级、License/
 | --- | --- | --- | --- | --- |
 | V1 | main 06dc17b0 | GitHub canonical/source/runtime readback | 已确认 | 当前事实基线与 L3/Runtime-Package 影响面 |
 | V2 | Issue #292 | create → fetch/readback | PASS；11 sections，AC1-AC14 连续未勾选 | Requirement Source 当前实例结构成立 |
-| V3 | pre-implementation | AIMA_UGC PR Template 只读对照 | 已确认通用规则更强且包含项目特定示例 | canonical PR 内容需做通用化内容守恒 |
+| V3 | pre-implementation | AIMA_UGC PR Template 只读对照 | 已确认通用规则更强且包含项目特定示例 | canonical PR 只提升通用 Requirement Source 规则，不引入项目路径 |
+| V4 | Red head c97f7507 / GitHub Actions run 35688204305 | Skill Tests | FAIL 于新 Red self-contained tests；checkout/setup/Requirement Source/scope 均成功 | 证明当前 main 缺 canonical PR/create contract/统一 installer projection，不是 Runner 故障 |
+| V5 | PR head 3fdddf74 / GitHub Actions run 35692333746 | Compile selected maintained entrypoints + CLI smoke + selected self-contained tests | compile PASS；CLI smoke PASS；628 tests / 10.957s / OK；Ready Check 仅因 status=proposed fail | 实现、治理资产、installer、rollback、文档链接与既有 Runtime 回归 Green，失败已收敛为 Change 状态门禁 |
+| V6 | branch current canonical owners | live #292 + canonical PR/validator/projection reread | #292 open 且 AC1-AC14 未漂移；canonical assets/validator/projection 可读 | ready_for_review 前 upstream re-read 与 Owner 漂移检查完成 |
 
 ## 未验证内容与剩余风险
 
-Red tests、实现、targeted/full/package validation、独立 Review、PR CI、merge、main-fresh、Change Archive、Closure 与 cleanup 尚未执行；在取得对应新鲜 Evidence 前不得报告完成。
+当前实现与 628 项 semantic/installer/governance 回归已 Green。由于此前 Change 仍为 proposed，三平台 Runtime Package matrix 被正式 gate 跳过；本次切换 ready_for_review 后必须取得 Linux/Windows/macOS package Evidence。独立 Review、最终 current-head CI、merge、implementation main-fresh、repository-native Change Archive、#292 Acceptance 回写/重读、Issue close/重读和 branch cleanup 仍未完成。
 
 ## 交付状态
 
-- 提交：首个 Red 提交待创建。
-- 拉取请求：待首个真实提交后创建。
-- CI：未执行。
+- 提交：Red + implementation + regression/doc sync 已在 `tech/governance-creation-contract`。
+- 拉取请求：#293，普通 PR；进入 ready_for_review 后继续 fresh CI/Review。
+- CI：run 35692333746 的 compile/CLI/628 tests Green；Change status 门禁触发失败，package 尚未执行。
 - 合并：未执行。
 - Change 归档：未执行。
 - 发布 / 部署：本任务明确不创建 Release、不 Deploy。
