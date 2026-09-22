@@ -199,6 +199,24 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             self.assertEqual(result["governance_projections"], [])
             self.assertEqual(target_pr.read_bytes(), CANONICAL_PR.read_bytes())
 
+    def test_projection_parent_file_conflict_fails_before_installer_writes(self) -> None:
+        """root projection 的非目录祖先必须在任何 managed/Runtime 写入前完成 preflight fail-closed。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "target"
+            target.mkdir()
+            (target / ".github").write_text("project-owned-file\n", encoding="utf-8")
+            artifact = root / "agent-skills"
+            artifact.write_bytes(b"runtime-v1")
+
+            with patch.object(INSTALLER, "_atomic_write", wraps=INSTALLER._atomic_write) as writer:
+                with self.assertRaisesRegex(ValueError, "父路径必须是目录"):
+                    install_project(target, self.payload, artifact, release_version="9.9.9")
+
+            writer.assert_not_called()
+            self.assertFalse((target / ".agents").exists())
+            self.assertEqual((target / ".github").read_text(encoding="utf-8"), "project-owned-file\n")
+
     def test_first_install_rejects_different_existing_pr_before_mutation(self) -> None:
         """验证 governance canonical source、projection ownership 或 rollback 的对应契约。"""
         with tempfile.TemporaryDirectory() as directory:
