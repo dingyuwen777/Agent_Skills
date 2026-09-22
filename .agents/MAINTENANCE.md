@@ -191,7 +191,7 @@ coding-change/v1
 
 ### GitHub Governance Assets 单一维护源
 
-GitHub Issue Forms 与 PR Template 的唯一人工维护源都在 Coding canonical assets：Issue Forms 位于 `.agents/skills/coding/assets/issue-templates/`，PR Template 位于 `.agents/skills/coding/assets/PULL_REQUEST_TEMPLATE.md`。源仓库根 `.github/ISSUE_TEMPLATE/*.yml` 与 `.github/PULL_REQUEST_TEMPLATE.md` 都只是生成投影，不形成第二个人工 Owner。修改 canonical governance asset 后运行：
+GitHub Issue Forms 与 PR Template 的唯一人工维护源都在 Coding canonical assets：Issue Forms 位于 `.agents/skills/coding/assets/issue-templates/`，PR Template 位于 [`.agents/skills/coding/assets/PULL_REQUEST_TEMPLATE.md`](skills/coding/assets/PULL_REQUEST_TEMPLATE.md)。源仓库根 `.github/ISSUE_TEMPLATE/*.yml` 与 `.github/PULL_REQUEST_TEMPLATE.md` 都只是生成投影，不形成第二个人工 Owner。修改 canonical governance asset 后运行：
 
 ```bash
 python scripts/sync_repository_governance_assets.py
