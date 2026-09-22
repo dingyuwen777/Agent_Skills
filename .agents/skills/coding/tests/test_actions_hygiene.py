@@ -10,6 +10,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[4]
 SCRIPT = ROOT / ".github/scripts/actions_hygiene.py"
 MODULE = runpy.run_path(str(SCRIPT))
+SCOPE_MODULE = runpy.run_path(str(ROOT / ".github/scripts/runtime_package_scope.py"))
+CLASSIFY_PATH = SCOPE_MODULE["classify_path"]
 BUILD_PLAN = MODULE["build_cleanup_plan"]
 PATH_IN_HISTORY = MODULE["path_existed_in_head_history"]
 
@@ -85,6 +87,10 @@ class ActionsHygieneTest(unittest.TestCase):
 
             self.assertTrue(PATH_IN_HISTORY(root, ".github/workflows/old.yml"))
             self.assertFalse(PATH_IN_HISTORY(root, ".github/workflows/pr-only.yml"))
+
+    def test_actions_hygiene_script_uses_governance_ci_profile(self) -> None:
+        """只修改 Hygiene 脚本时应走治理证据，不误触发三平台 Runtime package。"""
+        self.assertEqual(CLASSIFY_PATH(".github/scripts/actions_hygiene.py"), "governance")
 
     def test_skill_tests_owns_hygiene_with_narrow_permissions(self) -> None:
         """永久清理必须复用 Skill Tests，并把 actions:write 限制在独立 main-only job。"""
