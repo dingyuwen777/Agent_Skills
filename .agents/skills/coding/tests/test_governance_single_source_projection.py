@@ -116,6 +116,24 @@ class GovernanceSingleSourceProjectionTests(unittest.TestCase):
             self.assertFalse((target / "stale.yml").exists())
             self.assertEqual(SYNC.projection_drift(root), [])
 
+    def test_source_sync_rejects_non_directory_projection_parent(self) -> None:
+        """源仓库 sync 也必须在写入前拒绝 .github 等非目录祖先。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / ".agents/skills/coding/assets/issue-templates"
+            source.mkdir(parents=True)
+            for canonical in CANONICAL_FORMS.glob("*.yml"):
+                shutil.copy2(canonical, source / canonical.name)
+            pr = root / ".agents/skills/coding/assets/PULL_REQUEST_TEMPLATE.md"
+            pr.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(CANONICAL_PR, pr)
+            (root / ".github").write_text("project-owned-file\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "父路径必须是目录"):
+                SYNC.projection_drift(root)
+
+            self.assertEqual((root / ".github").read_text(encoding="utf-8"), "project-owned-file\n")
+
     def test_legacy_marker_sync_script_is_removed(self) -> None:
         """验证 governance canonical source、projection ownership 或 rollback 的对应契约。"""
         self.assertFalse(LEGACY_SYNC_PATH.exists())
