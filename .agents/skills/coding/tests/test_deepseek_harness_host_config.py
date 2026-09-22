@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import nullcontext
 import json
 import tempfile
 import unittest
@@ -222,14 +221,9 @@ class DeepSeekHarnessHostConfigTest(unittest.TestCase):
 
         with patch.object(SERVER, "_load_embedded_material", return_value=(object(), {"fixture": True}, "1.2.3")):
             with patch.object(SERVER, "_runtime_artifact_path", return_value=artifact):
-                with patch.object(
-                    SERVER,
-                    "issue_form_projection_transaction",
-                    return_value=nullcontext(()),
-                ):
-                    with patch.object(SERVER, "install_project", return_value=install_result) as install:
-                        with patch.object(SERVER, "_print_result"):
-                            self.assertEqual(SERVER.main([]), 0)
+                with patch.object(SERVER, "install_project", return_value=install_result) as install:
+                    with patch.object(SERVER, "_print_result"):
+                        self.assertEqual(SERVER.main([]), 0)
 
         self.assertEqual(Path(install.call_args.args[0]), project)
         self.assertEqual(Path(install.call_args.args[2]), artifact)
@@ -247,14 +241,9 @@ class DeepSeekHarnessHostConfigTest(unittest.TestCase):
 
         with patch.object(SERVER, "_load_embedded_material", return_value=(object(), {"fixture": True}, "1.2.3")):
             with patch.object(SERVER, "_runtime_artifact_path", return_value=artifact):
-                with patch.object(
-                    SERVER,
-                    "issue_form_projection_transaction",
-                    return_value=nullcontext(()),
-                ):
-                    with patch.object(SERVER, "install_project", return_value=install_result) as install:
-                        with patch.object(SERVER, "_print_result"):
-                            self.assertEqual(SERVER.main([]), 0)
+                with patch.object(SERVER, "install_project", return_value=install_result) as install:
+                    with patch.object(SERVER, "_print_result"):
+                        self.assertEqual(SERVER.main([]), 0)
 
         self.assertEqual(install.call_args.args[0], ".")
         self.assertEqual(Path(install.call_args.args[2]), artifact)
@@ -274,14 +263,9 @@ class DeepSeekHarnessHostConfigTest(unittest.TestCase):
 
         with patch.object(SERVER, "_load_embedded_material", return_value=(object(), {"fixture": True}, "1.2.3")):
             with patch.object(SERVER, "_runtime_artifact_path", return_value=artifact):
-                with patch.object(
-                    SERVER,
-                    "issue_form_projection_transaction",
-                    return_value=nullcontext(()),
-                ):
-                    with patch.object(SERVER, "install_project", return_value=install_result) as install:
-                        with patch.object(SERVER, "_print_result"):
-                            self.assertEqual(
+                with patch.object(SERVER, "install_project", return_value=install_result) as install:
+                    with patch.object(SERVER, "_print_result"):
+                        self.assertEqual(
                                 SERVER.main(["install", "--target", str(explicit_target), "--json"]),
                                 0,
                             )
