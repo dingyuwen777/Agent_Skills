@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260922-124145-governance-creation-contract
 title: 统一 Issue/PR 模板与 Creation-time Governance Contract
 level: L3
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/governance-creation-contract
 created: 2026-09-22
@@ -240,16 +240,18 @@ AIMA_UGC rollout、正式 Runtime Release/tag、Deploy、依赖升级、License/
 | V8 | Finding fix head 6a612962 / GitHub Actions run 35692850824 | compile + CLI smoke + selected self-contained tests | compile PASS；CLI smoke PASS；629 tests / 11.410s / OK；Ready 仅因 status=proposed fail | 目录存在性 snapshot 修复有效，且 docstring/既有治理与 Runtime 回归未退化 |
 | V9 | Re-review Finding Red head 96c5b8a8 / GitHub Actions run 35693081144 | selected self-contained tests | 631 tests；仅新加的 Runtime/source-sync 非目录祖先 preflight 用例为 1 failure + 1 error，其余 629 Green | 证明 `.github` 非目录祖先未在 write 前 fail closed，Runtime 甚至抛出晚到的 FileExistsError |
 | V10 | Finding fix head a8969165 / GitHub Actions run 35693330170 | compile + CLI smoke + selected self-contained tests | compile PASS；CLI smoke PASS；631 tests / 8.970s / OK；Ready 仅因 status=proposed fail | Runtime installer 与 source sync 都在写前稳定拒绝 symlink/非目录祖先；同一修复未破坏前 629 项 |
+| V11 | Final Review Finding Red head 3d66a9a3 / GitHub Actions run 35697029729 | selected self-contained tests | 632 tests 中仅 `test_issue_required_textarea_must_not_be_empty_on_create` FAIL；其余 631 Green | 证明 API/Agent create 可用空 required textarea 绕过 GitHub Form required 语义 |
+| V12 | Finding fix head d249893a / GitHub Actions run 35697111443 | compile + CLI smoke + selected self-contained tests | compile PASS；CLI smoke PASS；632 tests / 11.497s / OK；Ready 仅因 status=proposed fail | create 模式已动态拒绝 required textarea 空正文，live/closure 兼容未退化 |
 
 ## 未验证内容与剩余风险
 
-当前实现与 631 项 semantic/installer/governance 回归已 Green。由于此前 Change 仍为 proposed，三平台 Runtime Package matrix 被正式 gate 跳过；本次切换 ready_for_review 后必须取得 Linux/Windows/macOS package Evidence。独立 Review、最终 current-head CI、merge、implementation main-fresh、repository-native Change Archive、#292 Acceptance 回写/重读、Issue close/重读和 branch cleanup 仍未完成。
+当前实现与 632 项 semantic/installer/governance 回归已 Green。由于此前 Change 仍为 proposed，三平台 Runtime Package matrix 被正式 gate 跳过；本次切换 ready_for_review 后必须取得 Linux/Windows/macOS package Evidence。独立 Review、最终 current-head CI、merge、implementation main-fresh、repository-native Change Archive、#292 Acceptance 回写/重读、Issue close/重读和 branch cleanup 仍未完成。
 
 ## 交付状态
 
 - 提交：Red + implementation + regression/doc sync 已在 `tech/governance-creation-contract`。
 - 拉取请求：#293，普通 PR；进入 ready_for_review 后继续 fresh CI/Review。
-- CI：run 35693330170 的 compile/CLI/631 tests Green；Change status 门禁触发失败，package 尚未执行。
+- CI：run 35697111443 的 compile/CLI/632 tests Green；Change status 门禁触发失败，最终 package 需由恢复 Ready 后的新 head 执行。
 - 合并：未执行。
 - Change 归档：未执行。
 - 发布 / 部署：本任务明确不创建 Release、不 Deploy。
