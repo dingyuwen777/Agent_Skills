@@ -17,6 +17,7 @@ TARGET_PR = Path(".github/PULL_REQUEST_TEMPLATE.md")
 
 
 def _ensure_no_symlink(root: Path, path: Path) -> None:
+    """拒绝 canonical/root projection 路径经过符号链接。"""
     root = root.resolve()
     try:
         relative = path.relative_to(root)
@@ -30,6 +31,7 @@ def _ensure_no_symlink(root: Path, path: Path) -> None:
 
 
 def _canonical_files(root: Path) -> dict[Path, bytes]:
+    """读取 canonical Issue/PR assets 并生成固定 root projection 映射。"""
     issue_source = root / CANONICAL_ISSUE_DIR
     if issue_source.is_symlink() or not issue_source.is_dir():
         raise ValueError(f"canonical Issue Form 目录不存在或非法：{issue_source}")
@@ -48,6 +50,7 @@ def _canonical_files(root: Path) -> dict[Path, bytes]:
 
 
 def _existing_bytes(root: Path, relative: Path) -> bytes | None:
+    """安全读取源仓库 root projection 当前字节。"""
     path = root / relative
     _ensure_no_symlink(root, path)
     if not path.exists():
@@ -58,6 +61,7 @@ def _existing_bytes(root: Path, relative: Path) -> bytes | None:
 
 
 def _atomic_write(path: Path, content: bytes) -> None:
+    """在同目录临时文件中写入后原子替换 projection。"""
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile("wb", dir=path.parent, prefix=path.name + ".", delete=False) as stream:
         stream.write(content)
@@ -72,6 +76,7 @@ def _atomic_write(path: Path, content: bytes) -> None:
 
 
 def projection_drift(root: Path) -> list[str]:
+    """返回 canonical assets 与源仓库根 projection 的确定性 drift 列表。"""
     root = root.resolve()
     canonical = _canonical_files(root)
     drift: list[str] = []
@@ -118,6 +123,7 @@ def sync_projection(root: Path) -> tuple[str, ...]:
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    """构建 source-repository governance sync CLI 参数。"""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--check", action="store_true")
@@ -125,6 +131,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """执行 governance assets sync 或 check 并返回稳定退出码。"""
     args = _build_parser().parse_args(argv)
     if args.check:
         drift = projection_drift(args.root)
