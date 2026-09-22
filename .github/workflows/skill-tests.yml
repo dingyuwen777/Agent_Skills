@@ -294,3 +294,43 @@ jobs:
           test "${CORE_RESULT}" = "success"
           test "${PACKAGE_RESULT}" = "success"
 
+
+  actions-hygiene:
+    name: Actions Hygiene
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.agent-skills-core.result == 'success' &&
+      (needs.agent-skills-core.outputs.runtime_scope != 'package' ||
+       needs.runtime-package-gate.result == 'success')
+    needs:
+      - agent-skills-core
+      - runtime-package
+      - runtime-package-gate
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Checkout current main history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Reconcile obsolete workflow history
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="${RUNNER_TEMP}/actions-hygiene.json"
+          if ! python .github/scripts/actions_hygiene.py \
+            --root . \
+            --repository "${GITHUB_REPOSITORY}" \
+            --execute \
+            --json | tee "${report}"; then
+            echo "::warning::Actions Hygiene failed; cleanup is deferred to the next healthy main push."
+            exit 0
+          fi
