@@ -23,6 +23,7 @@ FORMS = ROOT / ".agents/skills/coding/assets/issue-templates"
 
 
 def _load_module(path: Path, name: str):
+    """从真实仓库路径加载治理模块，供 Red Contract 回归直接调用。"""
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"无法加载模块：{path}")
@@ -39,6 +40,7 @@ class GovernanceCreationContractRedTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """构建当前真实 Bundle/Project Payload，作为治理分发 Red 基线。"""
         cls.bundle = build_bundle(ROOT)
         cls.payload = build_project_payload(ROOT, cls.bundle)
 
