@@ -73,17 +73,20 @@ def _previous_governance_sources(previous_state: Mapping[str, Any] | None) -> tu
 
 
 def _ensure_no_symlink(root: Path, path: Path) -> None:
-    """拒绝目标根到 projection 路径之间的符号链接越界。"""
+    """拒绝 governance projection 路径经过符号链接或非目录祖先。"""
     root = root.resolve()
     try:
         relative = path.relative_to(root)
     except ValueError as error:
-        raise ValueError(f"governance projection 路径越出目标项目：{path}") from error
+        raise ValueError(f"governance projection 路径越出目标根：{path}") from error
     current = root
-    for part in relative.parts:
+    parts = relative.parts
+    for index, part in enumerate(parts):
         current = current / part
         if current.is_symlink():
-            raise ValueError(f"governance projection 不修改符号链接路径：{current}")
+            raise ValueError(f"governance projection 路径不能经过符号链接：{current}")
+        if index < len(parts) - 1 and current.exists() and not current.is_dir():
+            raise ValueError(f"governance projection 父路径必须是目录：{current}")
 
 
 def _existing_bytes(root: Path, path: Path) -> bytes | None:
