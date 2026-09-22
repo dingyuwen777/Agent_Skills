@@ -139,6 +139,19 @@ class GovernanceCreationStrictnessTests(unittest.TestCase):
         )
         self.assertTrue(any("Core" in error for error in errors), errors)
 
+    def test_issue_required_textarea_must_not_be_empty_on_create(self) -> None:
+        """API/Agent create 不能用只有 heading 的空 required textarea 绕过 GitHub Form required 语义。"""
+        sections = [
+            (h, "   " if h == "目标状态" else c)
+            for h, c in _issue_sections()
+        ]
+        errors = CONTRACT.validate_issue_instance(
+            "[技术变更] strict create",
+            _render_issue(sections),
+            mode="create",
+        )
+        self.assertTrue(any("required textarea" in error and "目标状态" in error for error in errors), errors)
+
     def test_issue_required_checkbox_must_be_checked_on_create(self) -> None:
         """验证 creation-time Governance Contract 的对应正反例。"""
         sections = [
