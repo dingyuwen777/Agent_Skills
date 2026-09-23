@@ -207,20 +207,53 @@ class MultiAgentExecutionInstallTest(unittest.TestCase):
         self.assertIn("enableRunInBackground: false", worker_block)
 
     def test_unowned_namespaced_agent_collision_fails_before_any_project_mutation(self) -> None:
-        """用户自有同名 execution file 必须在 Runtime/AGENTS 写入前阻止安装。"""
-        collision = self.target / ".codex/agents/agent-skills-explorer.toml"
-        collision.parent.mkdir(parents=True)
-        collision.write_text("# user-owned\n", encoding="utf-8")
-        sentinel = self.target / "keep.txt"
-        sentinel.write_text("keep\n", encoding="utf-8")
+        """Codex/Claude/Cursor 用户自有同名 role file 都必须在任何项目写入前 fail closed。"""
+        cases = (
+            Path(".codex/agents/agent-skills-explorer.toml"),
+            Path(".claude/agents/agent-skills-explorer.md"),
+            Path(".cursor/agents/agent-skills-explorer.md"),
+        )
+        for index, relative in enumerate(cases):
+            with self.subTest(relative=relative.as_posix()):
+                target = self.root / f"collision-{index}"
+                target.mkdir()
+                collision = target / relative
+                collision.parent.mkdir(parents=True)
+                collision.write_text("# user-owned\n", encoding="utf-8")
+                sentinel = target / "keep.txt"
+                sentinel.write_text("keep\n", encoding="utf-8")
 
-        with self.assertRaisesRegex(ValueError, "Agent Skills.*agent|custom agent|execution"):
-            install_project(self.target, self._payload(), self.artifact, release_version="1.0.0")
+                with self.assertRaisesRegex(ValueError, "Agent Skills.*agent|custom agent|execution"):
+                    install_project(target, self._payload(), self.artifact, release_version="1.0.0")
 
-        self.assertEqual(collision.read_text(encoding="utf-8"), "# user-owned\n")
-        self.assertEqual(sentinel.read_text(encoding="utf-8"), "keep\n")
-        self.assertFalse((self.target / "AGENTS.md").exists())
-        self.assertFalse((self.target / ".agents/runtime").exists())
+                self.assertEqual(collision.read_text(encoding="utf-8"), "# user-owned\n")
+                self.assertEqual(sentinel.read_text(encoding="utf-8"), "keep\n")
+                self.assertFalse((target / "AGENTS.md").exists())
+                self.assertFalse((target / ".agents/runtime").exists())
+
+    def test_same_binary_reinstall_is_idempotent_for_native_execution_projections(self) -> None:
+        """同一 binary 重装必须保持全部 native role projections 和 DSH overlay 字节稳定。"""
+        payload = self._payload()
+        install_project(self.target, payload, self.artifact, release_version="1.0.0")
+        tracked = [
+            self.target / ".dsh/agent-skills.cordis.yml",
+            *[
+                self.target / directory / f"agent-skills-{role_id}{suffix}"
+                for directory, suffix in (
+                    (".codex/agents", ".toml"),
+                    (".claude/agents", ".md"),
+                    (".cursor/agents", ".md"),
+                )
+                for role_id in ROLE_IDS
+            ],
+        ]
+        before = {path: path.read_bytes() for path in tracked}
+
+        result = install_project(self.target, payload, self.artifact, release_version="1.0.0")
+
+        self.assertEqual(result["ownership_source"], "same-artifact")
+        for path, expected in before.items():
+            self.assertEqual(path.read_bytes(), expected, str(path))
 
     def test_host_agent_write_failure_rolls_back_all_execution_and_runtime_files(self) -> None:
         """升级写 role file 失败时应恢复旧 execution layer、AGENTS 与 Runtime。"""
@@ -229,9 +262,10 @@ class MultiAgentExecutionInstallTest(unittest.TestCase):
         old_state = build_install_state(payload, "1.0.0")
         tracked = [
             self.target / "AGENTS.md",
-            self.target / ".codex/agents/agent-skills-explorer.toml",
-            self.target / ".claude/agents/agent-skills-explorer.md",
-            self.target / ".cursor/agents/agent-skills-explorer.md",
+            self.target / ".agents/skills/coding/assets/multi-agent-roles.json",
+            self.target / ".codex/agents/agent-skills-reviewer.toml",
+            self.target / ".claude/agents/agent-skills-reviewer.md",
+            self.target / ".cursor/agents/agent-skills-reviewer.md",
             self.target / ".dsh/agent-skills.cordis.yml",
             self.target / ".agents/runtime/agent-skills.exe",
         ]
