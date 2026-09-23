@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260924-001950-agent-orchestration-hardening
 title: 强化多 Agent 二阶收敛与系统性优化审计
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/agent-orchestration-hardening
 created: 2026-09-24
@@ -102,9 +102,9 @@ Requirement Source：GitHub Issue #306。用户明确要求按系统性优化方
 
 ## 成功标准
 
-- [ ] #306 AC1-AC17 有直接实现与永久回归证据。
-- [ ] #306 AC18 由独立 Review + final-head CI/package 证明。
-- [ ] #306 AC19 由 merge 后 main-fresh/archive/closure/cleanup 证明。
+- [x] #306 AC1-AC17 已有直接实现、Red→Green 与永久回归证据。
+- [x] #306 AC18 的独立 Review 已完成；final-head CI/package 明确由 Ready 后 Delivery Gate 持有，pre-Ready Change 不提前自证。
+- [x] #306 AC19 明确由 merge 后 Delivery Gate 持有，pre-merge Change 不提前自证未来动作。
 
 ## 范围
 
@@ -175,25 +175,25 @@ Analysis/Review/Coding canonical rules、target managed AGENTS、common host rol
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Closure≠Optimality + independent optimization audit | #306 / AC1 | not_satisfied | 待实现 |
-| R2 | 禁止自证没问题、限制结论范围 | #306 / AC2 | not_satisfied | 待实现 |
-| R3 | Follow-up Admission / no auto/recursive | #306 / AC3 | not_satisfied | 待实现 |
-| R4 | root-only + active budget 3 | #306 / AC4 | not_satisfied | 待实现 |
-| R5 | revision/decision epoch freshness | #306 / AC5 | not_satisfied | 待实现 |
-| R6 | child retry guard | #306 / AC6 | not_satisfied | 待实现 |
-| R7 | Evidence conflict no-vote | #306 / AC7 | not_satisfied | 待实现 |
-| R8 | join/cancel/delivery child lifecycle | #306 / AC8 | not_satisfied | 待实现 |
-| R9 | single writer lease | #306 / AC9 | not_satisfied | 待实现 |
-| R10 | task-local orchestration ledger | #306 / AC10 | not_satisfied | 待实现 |
-| R11 | Handoff Envelope | #306 / AC11 | not_satisfied | 待实现 |
-| R12 | common prompt + existing host permission preservation | #306 / AC12 | not_satisfied | 待实现 |
-| R13 | DSH depth/filter + truthful boundary | #306 / AC13 | not_satisfied | 待实现 |
-| R14 | managed AGENTS / USAGE project-facing sync | #306 / AC14 | not_satisfied | 待实现 |
-| R15 | Effectiveness Benchmark principle, no telemetry service | #306 / AC15 | not_satisfied | 待实现 |
-| R16 | permanent Red→Green regressions | #306 / AC16 | not_satisfied | 待实现 |
-| R17 | context budget unchanged | #306 / AC17 | not_satisfied | 待实现 |
-| R18 | independent Review + final-head CI/package | #306 / AC18 | not_satisfied | Delivery Gate |
-| R19 | merge/main-fresh/archive/closure/cleanup | #306 / AC19 | not_satisfied | Delivery Gate |
+| R1 | Closure≠Optimality + independent optimization audit | #306 / AC1 | satisfied | Analysis Core + ref04 + regression |
+| R2 | 禁止自证没问题、限制结论范围 | #306 / AC2 | satisfied | analysis ref04 独立失效模式审计 |
+| R3 | Follow-up Admission / no auto/recursive | #306 / AC3 | satisfied | review ref02 Follow-up Admission Gate |
+| R4 | root-only + active budget 3 | #306 / AC4 | satisfied | coding ref09 Depth/Budget Guard + managed AGENTS |
+| R5 | revision/decision epoch freshness | #306 / AC5 | satisfied | coding ref09 Freshness + common child prompt |
+| R6 | child retry guard | #306 / AC6 | satisfied | coding ref09 STOP_CHILD_RETRY + managed AGENTS |
+| R7 | Evidence conflict no-vote | #306 / AC7 | satisfied | coding ref09 Evidence Conflict Gate |
+| R8 | join/cancel/delivery child lifecycle | #306 / AC8 | satisfied | coding ref09 Join/Cancel Guard |
+| R9 | single writer lease | #306 / AC9 | satisfied | coding ref09 Single Writer Lease + managed AGENTS |
+| R10 | task-local orchestration ledger | #306 / AC10 | satisfied | coding ref09 Orchestration Ledger |
+| R11 | Handoff Envelope | #306 / AC11 | satisfied | coding ref09 + common child prompt headings |
+| R12 | common prompt + existing host permission preservation | #306 / AC12 | satisfied | host_agent_projection + existing host regressions |
+| R13 | DSH depth/filter + truthful boundary | #306 / AC13 | satisfied | DSH maxDepth/toolFilter + runtime README boundary |
+| R14 | managed AGENTS / USAGE project-facing sync | #306 / AC14 | satisfied | AGENTS.managed.md + USAGE 4.2/17.1 |
+| R15 | Effectiveness Benchmark principle, no telemetry service | #306 / AC15 | satisfied | coding ref09 Effectiveness Feedback + USAGE |
+| R16 | permanent Red→Green regressions | #306 / AC16 | satisfied | test_agent_orchestration_hardening.py；#1896 Red / #1922 Green |
+| R17 | context budget unchanged | #306 / AC17 | satisfied | #1922 context budget Green；未提高 budget |
+| R18 | independent Review + final-head CI/package | #306 / AC18 | not_applicable | Review 5293891633 已完成；final-head CI/package 属于 Ready 后 Delivery Gate |
+| R19 | merge/main-fresh/archive/closure/cleanup | #306 / AC19 | not_applicable | pre-merge Change 不能自证未来交付动作；由 Delivery Gate 完成 |
 
 # 计划改动
 
@@ -209,11 +209,11 @@ Analysis/Review/Coding canonical rules、target managed AGENTS、common host rol
 
 - [x] 调查当前实现和事实源
 - [x] 建立与风险相称的验证矩阵
-- [ ] 行为变化建立失败证据
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响长期文档
-- [ ] 取得当前版本验证证据
-- [ ] 完成需求追溯、完成审计和复核
+- [x] 行为变化建立失败证据
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响长期文档
+- [x] 取得当前版本验证证据
+- [x] 完成需求追溯、完成审计和复核
 
 # 验证矩阵
 
@@ -256,10 +256,10 @@ Analysis/Review/Coding canonical rules、target managed AGENTS、common host rol
 
 # 完成审计
 
-- [ ] upstream_re_read
-- [ ] change_coverage
-- [ ] reverse_audit
-- [ ] unresolved_cleared
+- [x] upstream_re_read：重新读取 #306、current head canonical rules、host projection、USAGE/Runtime docs 和 CI Evidence。
+- [x] change_coverage：从 #306 AC1-AC19 独立映射；没有把 Change 自身当需求全集。
+- [x] reverse_audit：从 Analysis/OUT_OF_SCOPE/delegation → host projection → Parent freshness/failure/lifecycle → completion 反查二阶失效边界。
+- [x] unresolved_cleared：R1-R17 satisfied；R18/R19 的 downstream Delivery 部分明确 not_applicable 于 pre-Ready Change，无 not_satisfied。
 
 # 完成证据与状态
 
@@ -268,17 +268,24 @@ Analysis/Review/Coding canonical rules、target managed AGENTS、common host rol
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main c2a85cf5 | canonical readback + #306 + DSH current source | confirmed | 当前缺口和真实 host能力 |
+| V2 | PR #307 / #1896 / run 35888305473 | 8 个 hardening contract tests | 8 failures | 有效 Red，证明旧实现缺 #306 目标 Guard |
+| V3 | head 5ed6cc9a / #1922 / run 35890283200 | compile + CLI smoke + 665 self-contained tests | tests 全部 OK；context budget Green；唯一失败为 Change=in_progress enforcement | current implementation Green |
+| V4 | PR #307 review 5293891633 @ 5ed6cc9a | requirement-first independent Review | NO_BLOCKING_FINDINGS_WITHIN_SCOPE | 无过度治理/自动派生/security 夸大等 blocker |
+| V5 | #1922 changed-scope classifier | runtime_scope=package / semantic_profile=full / package_evidence_required=true | confirmed | Ready 后必须取三平台 package Evidence |
 
 ## 未验证内容与剩余风险
 
-- 尚未建立 Red/Green。
+- Ready commit 会形成新 head，必须重新取得 exact-head Agent Skills Gate 与 Linux/Windows/macOS package Evidence。
 - 当前聊天宿主没有 subagent execution interface，本次按单 Agent fallback；不能把本次开发过程冒充真实 child-agent benchmark。
+- DSH toolFilter 只限制 child 可见 direct mutation tools，不是 permission lattice/sandbox；真实权限仍依赖 DSH permission/sandbox。
+- 本任务不创建 Runtime Release，因此已发布旧 binary 不会热更新。
 
 ## 交付状态
 
-- 提交：待实现
-- 拉取请求：待创建
-- CI：待 Red/Green
+- 提交：implementation head `5ed6cc9a9168299560b09cf696e6ea66aae6d18f`
+- 拉取请求：#307，当前 Draft；本提交将 Change 置为 `ready_for_review`
+- CI：Red #1896；implementation Green #1922；Ready 后刷新 final-head required CI/package
+- Review：5293891633，NO_BLOCKING_FINDINGS_WITHIN_SCOPE
 - 合并：未执行
 - Change 归档：未执行
 - 发布 / 部署：不适用
