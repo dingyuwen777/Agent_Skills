@@ -32,11 +32,7 @@ description: 面向不同项目形态、研发阶段和编程语言的可靠软�
 
 本 Skill 不是 Python、Web、Backend 或 PostgreSQL 专用流程。它的固定部分是“怎样可靠研发”；具体语言、框架、数据库、目录、包管理器、CI 和部署方式必须来自当前项目事实或 Greenfield 阶段经确认的新建工程决策。
 
-### Multi-Agent Value Gate
-
-实质性工程任务在计划前先按真实独立价值判断：`NO_SPLIT`（拆分成本不低于收益，单 Agent）、`MAY_SPLIT`（有独立候选但收益不确定）或 `MUST_SPLIT`（存在明显并行、上下文隔离、独立复核价值，或用户明确要求）。**只拆有真实独立价值**的 Agent，不按文件数、岗位名或“复杂”标签机械拆分。
-
-判为 `MAY_SPLIT/MUST_SPLIT` 时把 `能力=多 Agent` 纳入当前任务事实并读取 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)；`MUST_SPLIT` 在宿主真实支持 subagent/delegation 时必须拆分。宿主没有可用能力或能力被禁用时，向用户说明并**降级为单 Agent**继续正常执行，不因本门禁自身阻塞任务，也不得伪称已拆分；项目原有 Review、权限、安全、CI 等 required gate 不受影响。
+实质工程任务计划前只拆有真实独立价值，判 `NO_SPLIT/MAY_SPLIT/MUST_SPLIT`。后两类加入 `能力=多 Agent` 并读取 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)；`MUST_SPLIT` 有 delegation 时必拆，无能力则告知并降级为单 Agent继续，不因此阻塞或伪称已拆。
 
 详细规则分布在 `references/`。**当本文件的触发条件命中时，对应 reference 是本 Skill 的规范组成部分，必须在执行相关动作前读取；不能只读主文件后凭印象补流程。**
 
