@@ -173,6 +173,32 @@ class RuntimeSkillProjectionTest(unittest.TestCase):
                 with self.subTest(path=path, marker=marker):
                     self.assertNotIn(marker, checked)
 
+    def test_multi_agent_value_gate_survives_runtime_projection(self) -> None:
+        """多 Agent 价值判定与无能力降级语义必须同时存在于 canonical 与 Runtime Coding Core。"""
+        source = (SKILLS_ROOT / "coding" / "SKILL.md").read_text(encoding="utf-8")
+        collaboration = (
+            SKILLS_ROOT / "coding" / "references" / "09_多人和多智能体并行协作.md"
+        ).read_text(encoding="utf-8")
+        router = (SKILLS_ROOT / "router" / "SKILL.md").read_text(encoding="utf-8")
+        runtime = _payload_texts(build_project_payload(ROOT, build_bundle(ROOT)))["coding/SKILL.md"]
+
+        for text in (source, runtime):
+            self.assertIn("NO_SPLIT", text)
+            self.assertIn("MAY_SPLIT", text)
+            self.assertIn("MUST_SPLIT", text)
+            self.assertIn("只拆有真实独立价值", text)
+            self.assertIn("降级为单 Agent", text)
+
+        for role in ("Explorer", "Researcher", "Worker", "Tester", "Reviewer"):
+            self.assertIn(role, collaboration)
+        self.assertIn("Multi-Agent Visibility Contract", collaboration)
+        self.assertIn("Codex", collaboration)
+        self.assertIn("Claude Code", collaboration)
+        self.assertIn("Cursor", collaboration)
+        self.assertIn("DeepSeek Harness", collaboration)
+        self.assertIn("不创建子 Agent", router)
+        self.assertIn("不拆分或调度开发任务", router)
+
     def test_runtime_projection_is_deterministic(self) -> None:
         """同一 canonical 输入重复构建必须得到完全相同的 Project Payload Core bytes 和 digest。"""
         bundle = build_bundle(ROOT)
