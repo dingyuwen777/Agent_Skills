@@ -53,12 +53,12 @@ Review 不以 Finding 数量为目标。每个确定 Finding 同时给出 `sever
 
 | disposition | 当前返修行为 |
 | --- | --- |
-| `IN_SCOPE_BLOCKING` | 有证据、属当前 Acceptance/required gate；**只有**此类进入自动返修 |
-| `IN_SCOPE_NON_BLOCKING` | 当前相关但不阻塞；记录，**不自动**派 Worker |
-| `OUT_OF_SCOPE` | 历史/独立问题；不自动扩大当前任务，必要时另建 backlog |
-| `REQUIREMENT_CHANGE` | 需扩大 Requirement/Contract/Schema/Scope/授权；回 Main/上游决定 |
+| `IN_SCOPE_BLOCKING` | 当前范围且阻塞；**只有**此类进入自动返修 |
+| `IN_SCOPE_NON_BLOCKING` | 当前相关但不阻塞；**不自动**返修 |
+| `OUT_OF_SCOPE` | 不自动扩大当前任务；必要时另建后续 |
+| `REQUIREMENT_CHANGE` | 需扩大 Requirement/Contract/Schema/Scope/授权；回上游 |
 
-severity 不能替代 disposition：高严重度但超范围也不能自行扩需求；项目规则明确阻塞的 MEDIUM 仍可判 `IN_SCOPE_BLOCKING`。
+severity 与 disposition 独立；高 severity 不自动授权扩大 scope。
 
 ## 3. 每个 Finding 的最小结构
 
@@ -150,13 +150,13 @@ Review 必须先判断根因，再形成 Finding。
 
 ```text
 BLOCKED
-→ 存在未解决的 IN_SCOPE_BLOCKING，且严重度/项目规则要求当前不能继续
+→ 未解决的 IN_SCOPE_BLOCKING 禁止继续
 
 CHANGES_REQUIRED
-→ 存在必须在当前任务解决的 IN_SCOPE_BLOCKING
+→ 当前仍有必须解决的 IN_SCOPE_BLOCKING
 
 NON_BLOCKING_FINDINGS
-→ 只有 IN_SCOPE_NON_BLOCKING / OUT_OF_SCOPE 或其他非阻塞问题；仍需说明未验证边界
+→ 仅 IN_SCOPE_NON_BLOCKING / OUT_OF_SCOPE；说明未验证边界
 
 NO_FINDINGS_WITHIN_SCOPE
 → 当前审查范围没有发现问题；必须同时报告范围、验证和未覆盖项
