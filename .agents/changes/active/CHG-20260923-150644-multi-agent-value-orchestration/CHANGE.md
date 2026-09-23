@@ -164,7 +164,7 @@ AIMA_UGC rollout；Runtime Release/tag；Deploy；依赖升级；固定模型/�
 | R7 | Router Anti-Agent 保持 | #298 / AC7 | satisfied | Router 未修改；永久回归断言“不创建子 Agent / 不拆分或调度开发任务” |
 | R8 | Source/Runtime 同源触发 | #298 / AC8 | satisfied | Coding Core 写入 `能力=多 Agent`；`test_multi_agent_value_gate_survives_runtime_projection` 同时验证 canonical/Runtime Core |
 | R9 | USAGE 用户说明 | #298 / AC9 | satisfied | USAGE §4.1 已说明自动判定、可见状态与无能力单 Agent 降级 |
-| R10 | tests/Review/CI | #298 / AC10 | satisfied | Red run #1807 精确失败；Green run #1820：compile/CLI smoke/645 tests Green；Review 无阻塞 Finding；最终 current-head CI 由 Ready 后 gate 继续 |
+| R10 | tests/Review/CI | #298 / AC10 | satisfied | Red run #1807 锁定旧实现缺口；Green run #1820/#1822：compile/CLI smoke/645 tests 与 Ready Check Green；Review 发现的 NO_SPLIT 可见性缺口已修复并补永久回归；最终 package/current-head gate 在 PR Ready 后继续 |
 | R11 | 依赖/MCP/License/Release/Schema 保持 | #298 / AC11 | satisfied | PR changed files 仅 Coding rule/test/USAGE/Change；无 Manifest/lock/Runtime protocol/License/Release/Schema 文件变化 |
 | R12 | merge/main-fresh/archive/closure/cleanup | #298 / AC12 | not_applicable | pre-merge Change 不能自证未来 merge/main-fresh/archive/closure/cleanup；由已授权 Delivery Gate 在 merge 后完成 |
 
@@ -242,19 +242,20 @@ AIMA_UGC rollout；Runtime Release/tag；Deploy；依赖升级；固定模型/�
 | V2 | Issue #298 | create + live reread | 已建立并按用户纠正更新 | Requirement Source 与 AC1-AC12 |
 | V3 | abdae298 / Skill Tests #1807 | selected self-contained tests | FAIL：新回归因旧 Core 缺少 NO_SPLIT 精确失败 | 有效 Red Evidence |
 | V4 | 44e12fa4 / Skill Tests #1820 | compile selected entrypoints + CLI smoke + 645 self-contained tests | 全部 Green；645 tests OK | 实现、Runtime projection、内容守恒与 context budget 当前均通过 |
-| V5 | PR #299 head 44e12fa4 | Review Target + #298 + 当前 diff/调用边界复核 | NO_FINDINGS_WITHIN_SCOPE；仅发现 Change/PR 描述状态陈旧，本提交同步修正 | 当前实现无阻塞 Review Finding |
+| V5 | PR #299 Review：44e12fa4 → c37c5358 → 1d16ba5a | 独立重建 #298 AC1-AC12，审查 Coding Core / Reference 09 / Runtime projection / USAGE | 首轮发现显式需求缺口：NO_SPLIT 不加载详细 Reference 时可能不向用户报告单 Agent 判定；c37c5358 把“先报判定”放回 Coding Core，1d16ba5a 增加 Source/Runtime 永久回归；re-review 未发现新的阻塞 Finding | Review finding 已修复并由新回归保护 |
 | V6 | PR #299 changed-files readback | 5 files：Change、Coding Core、Reference 09、projection test、USAGE | 无 Manifest/lock/MCP/License/Release/Schema 变更 | R11 非目标保持 |
+| V7 | 4368a7fd / Skill Tests #1822 | compile + CLI smoke + 645 self-contained tests + changed Change Ready Check | Agent Skills Gate success；645 tests OK；Ready Check 通过 | 当前实现/治理与 context budget 在 Change Ready 状态继续 Green；Draft 状态按设计尚未执行三平台 package |
 
 ## 未验证内容与剩余风险
 
 - 当前聊天宿主没有可调用 subagent 执行接口；按 AC2 已降级为单 Agent 正常执行，本轮没有冒充实际拆分。
-- 三平台 Runtime package、merge、main-fresh、Change Archive、Issue Closure 和 cleanup 尚未发生；它们是本次 Ready 后/merge 后的真实 Delivery Gate，不影响当前实现进入 Review。
+- 三平台 Runtime package、merge、main-fresh、Change Archive、Issue Closure 和 cleanup 尚未发生；Draft 下 Runtime Package Gate 明确提示转 Ready 后执行，因此当前只剩交付阶段 required Evidence。
 
 ## 交付状态
 
 - 提交：实现/测试/文档已在 `tech/multi-agent-value-orchestration`；本次提交把 Change 切到 `ready_for_review`。
 - 拉取请求：PR #299 已创建，当前仍 Draft；本提交后等待 final current-head CI 再转 Ready。
-- CI：Red #1807 已确认；semantic Green #1820 已确认；三平台 Runtime Package Gate 等待 Change Ready 后执行。
+- CI：Red #1807 已确认；semantic Green #1820/#1822 与 Ready Check 已确认；Draft 的 Runtime Package Gate 按设计 fail-closed，转 Ready 后触发三平台 package evidence。
 - 合并：未执行；需 current-head Review/required CI 后 guarded merge。
 - Change 归档：未执行；由 repository-native post-merge automation 负责。
 - 发布 / 部署：不适用，本任务明确不创建 Runtime Release/Deploy。
