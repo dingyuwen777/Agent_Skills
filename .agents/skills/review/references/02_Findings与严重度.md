@@ -4,7 +4,7 @@
 
 # Findings 与严重度
 
-Review 的输出目标不是“挑出很多问题”，而是提供可定位、可触发、可验证、可行动的 Findings。
+Review 的输出目标不是“挑出很多问题”，而是提供可定位、可触发、可验证、可行动的 Findings。每个确定 Finding 同时包含两个独立维度：`severity` 回答问题有多严重，`disposition` 回答它是否允许驱动**当前任务**返修；高严重度不等于可以越过当前 Requirement / scope 自动修改。
 
 ## 1. 严重度
 
@@ -49,12 +49,37 @@ Review 的输出目标不是“挑出很多问题”，而是提供可定位、�
 
 纯个人风格偏好、无证据“也许以后会更好”的重构建议，不应为了凑数量变成 Finding。
 
-## 2. 每个 Finding 的最小结构
+## 2. disposition：当前任务如何处理
+
+每个确定 Finding 必须从以下四类选择一个 `disposition`：
+
+### `IN_SCOPE_BLOCKING`
+
+有当前证据支持、属于本次 Requirement / Acceptance / required gate，并且不解决就不能正确完成当前目标。**只有这一类 Finding 可以进入当前自动返修循环。**
+
+严重度通常是 `BLOCKER` / `HIGH`，也可以是项目规则明确要求当前解决的重要 `MEDIUM`；是否阻塞以真实 Acceptance 和项目门禁为准，不靠严重度标签机械推断。
+
+### `IN_SCOPE_NON_BLOCKING`
+
+属于当前影响面且有真实价值，但不阻塞当前 Acceptance / required gate。记录并在当前授权允许时给出后续建议，**不自动**重新派 Worker，也不能为了“Review 零意见”强制当前修改。
+
+### `OUT_OF_SCOPE`
+
+真实问题或风险，但与当前 Requirement、当前 diff 引入的直接回归和本次 Acceptance 无关，例如历史问题或另一个独立需求。当前返修循环**不自动**处理；有价值时建立独立 backlog / Requirement，不能静默扩大当前 PR。
+
+### `REQUIREMENT_CHANGE`
+
+解决 Finding 需要改变或扩大已确认的 Requirement、Contract、Schema、Scope、兼容边界或授权。Reviewer / Worker 不得自行批准；返回 Main/Parent Agent，并按当前上游决策与授权规则处理。
+
+因此即使出现 `HIGH + OUT_OF_SCOPE`，也不能直接扩大当前 Worker；反过来，项目正式门禁明确要求的 `MEDIUM + IN_SCOPE_BLOCKING` 仍可能阻塞当前交付。
+
+## 3. 每个 Finding 的最小结构
 
 建议使用：
 
 ```text
 [HIGH] <一句话问题>
+Disposition: IN_SCOPE_BLOCKING | IN_SCOPE_NON_BLOCKING | OUT_OF_SCOPE | REQUIREMENT_CHANGE
 
 位置：<文件/函数/行或影响范围>
 触发条件：<怎样发生>
@@ -67,7 +92,7 @@ Review 的输出目标不是“挑出很多问题”，而是提供可定位、�
 
 如果精确行号不可稳定获得，可以使用函数、组件、Route、模块或 diff hunk 作为位置，但必须足够让开发者找到问题。
 
-## 3. 触发条件是必须项
+## 4. 触发条件是必须项
 
 不要只写：
 
@@ -81,7 +106,7 @@ Review 的输出目标不是“挑出很多问题”，而是提供可定位、�
 
 触发条件让 Finding 可被测试，也能区分“理论可能”与真实可达路径。
 
-## 4. 证据等级
+## 5. 证据等级
 
 按强到弱常见为：
 
@@ -95,7 +120,7 @@ Review 的输出目标不是“挑出很多问题”，而是提供可定位、�
 
 最后一类不能伪装成确定 Bug。可以写成待验证风险，并说明还需要什么实验或事实确认。
 
-## 5. 测试缺口怎么写
+## 6. 测试缺口怎么写
 
 测试缺口不是泛泛写“建议增加测试”。应说明现有测试实际断言了什么，以及什么错误仍然可能在测试绿色时发生。
 
@@ -113,7 +138,7 @@ Browser Mock 已覆盖失败提示，但没有运行真实 API/Persistence；因
 
 这样开发者知道应该补哪一层证据。
 
-## 6. 不要把测试失败本身直接等同生产 Bug
+## 7. 不要把测试失败本身直接等同生产 Bug
 
 测试失败可能来自：
 
@@ -126,25 +151,25 @@ Browser Mock 已覆盖失败提示，但没有运行真实 API/Persistence；因
 
 Review 必须先判断根因，再形成 Finding。
 
-## 7. 重复问题合并
+## 8. 重复问题合并
 
 同一根因影响多个位置时，优先一个 Finding 描述根因和受影响范围，而不是复制多条相同问题。
 
 只有每个位置需要独立修复、严重度不同或触发条件不同，才拆开。
 
-## 8. Review 结论
+## 9. Review 结论
 
 可以使用：
 
 ```text
 BLOCKED
-→ 存在 BLOCKER 或项目规则定义的不可继续问题
+→ 存在未解决的 IN_SCOPE_BLOCKING，且严重度/项目规则要求当前不能继续
 
 CHANGES_REQUIRED
-→ 存在必须在当前任务解决的 HIGH/重要 MEDIUM
+→ 存在必须在当前任务解决的 IN_SCOPE_BLOCKING
 
 NON_BLOCKING_FINDINGS
-→ 只有非阻塞问题，但仍需说明未验证边界
+→ 只有 IN_SCOPE_NON_BLOCKING / OUT_OF_SCOPE 或其他非阻塞问题；仍需说明未验证边界
 
 NO_FINDINGS_WITHIN_SCOPE
 → 当前审查范围没有发现问题；必须同时报告范围、验证和未覆盖项
