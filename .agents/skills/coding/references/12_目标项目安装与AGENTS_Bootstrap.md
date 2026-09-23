@@ -67,7 +67,7 @@ Runtime binary 不是第二个 Coding Agent；**Project Governance Bootstrap 由
 
 Agent_Skills 源仓库根 `AGENTS.md` 是源码直读/维护模式薄 Bootstrap，[`.agents/MAINTENANCE.md`](../../../MAINTENANCE.md) 只负责维护 Agent_Skills 源仓库本身，二者都**禁止直接复制成目标项目根 `AGENTS.md`**。
 
-Source Mode 从 [`.agents/skills/ENTRY.md`](../../ENTRY.md) 进入 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md)。Runtime Mode 安装这些运行资产，但目标项目根 `AGENTS.md` 不把内部 Router / Skill / Reference 导航作为日常用户入口。
+Source Mode 从 [`.agents/skills/ENTRY.md`](../../ENTRY.md) 进入 [`.agents/skills/router/SKILL.md`](../../router/SKILL.md)。Runtime Mode 安装这些运行资产；目标项目根 `AGENTS.md` **只允许公开稳定 `.agents/skills/ENTRY.md` 作为项目工程约束 Bootstrap**，不得继续暴露 Router、专业 Skill、Reference、Stable ID 或内部加载导航。
 
 目标项目自有内容、managed marker 外文本、其他 MCP server、项目自有 Skill/Reference/资产都不是普通安装/升级的清理目标。**Runtime 安装自己的受管运行资产，但不认领目标项目其余 `.agents` 内容。** 当前受管范围来自当前 Release Project Payload 和可验证 previous ownership，不按目录猜归属。
 
@@ -136,7 +136,7 @@ coding/assets/AGENTS.managed.md
 → 唯一跨 Skill Catalog / Router canonical Owner
 ```
 
-`AGENTS.managed.md` 不复制 Entry/Router 或 Runtime disclosure 细则；详细内部规则留在唯一 Owner。Entry/Router/Core 仍是宿主原生发现、分发与 ownership 所需运行资产，不能为了减少明文而随意删除。
+`AGENTS.managed.md` 只导航到稳定 `.agents/skills/ENTRY.md`，**不复制 Entry/Router 正文**，也不公开 Router、专业 Skill、Reference 或 Runtime disclosure 细则；详细内部规则留在唯一 Owner。Entry/Router/Core 仍是宿主原生发现、分发与 ownership 所需运行资产，不能为了减少明文而随意删除。
 
 Bootstrap 只做机械可证明的内容：创建/增量更新 `AGENTS.md`、`.gitignore` 中 Agent_Skills 本地缓存 ignore、事实入口导航和宿主项目配置；不自动创建 Change/RFC/ADR/OpenSpec，不决定框架/数据库/架构，不修改 Schema/Migration，也不代替宿主做项目语义判断。
 
@@ -167,14 +167,17 @@ managed block 的项目侧职责以第 7 节为准；Runtime 用户可见表达�
 [`coding/assets/AGENTS.managed.md`](../assets/AGENTS.managed.md) 是 managed block 唯一模板事实源。它是**项目侧行为契约**，至少保持：
 
 1. **无论采用哪种通用治理执行方式**，都必须先读取并遵守当前目标项目及上级适用的 `AGENTS.md`、`CONTRIBUTING` 或同等项目规则，并从当前真实文件恢复任务事实；
-2. 默认通过项目已经配置的治理能力取得通用约束；系统、开发者或用户级更高优先级指令如果明确指定其他 Agent_Skills 执行方式，**只改变通用治理约束的取得和呈现方式**，**不得因此跳过、替代或降低目标项目自身规则**、Contract、Schema/Migration、CI、正式设计、部署和验收边界；
-3. 通用示例、历史聊天、缓存和猜测不能覆盖目标项目事实；
-4. 首次接入、治理状态未校准或长期治理事实漂移时，在实质性代码修改前执行有界 Project Governance Bootstrap，并在完成后重新读取最终 `AGENTS.md`；
-5. 必需治理约束无法可靠取得、完整性无法确认，或存在无法安全解析的高优先级冲突时明确报告并停止依赖对应约束，不得用旧记忆、摘要或猜测替代；
-6. 受管运行资产只服务当前项目的研发治理，不是项目自有长期规则；安装器只维护 managed marker 内文本，项目长期规则继续保存在 marker 外；
-7. 项目自己的 Overlay 始终继续生效；模式覆盖不能让项目制度失效，也不能被解释成“可以不读项目 AGENTS”。
+2. 在实质性工程任务形成计划前，读取稳定 `.agents/skills/ENTRY.md`，再通过项目已配置的治理能力取得本任务真正需要的完整约束；该路径是 Runtime 项目 Bootstrap 唯一允许公开的 `.agents/skills/` 导航；
+3. 默认通过项目已经配置的治理能力取得通用约束；系统、开发者或用户级更高优先级指令如果明确指定其他 Agent_Skills 执行方式，**只改变通用治理约束的取得和呈现方式**，**不得因此跳过、替代或降低目标项目自身规则**、Contract、Schema/Migration、CI、正式设计、部署和验收边界；
+4. 形成计划前执行 `NO_SPLIT / MAY_SPLIT / MUST_SPLIT` 价值判断；只有真正独立且收益高于协调成本的工作才拆 Agent，`MUST_SPLIT` 在宿主有可用 native delegation 时必须真实委派；
+5. 实际拆分优先使用 installer 生成的 namespaced native role agents；启动前说明数量、角色、scope、read/write 和并行/串行关系。多个 Writer 只有在写入范围、共享 Contract/Schema/状态和验证环境均隔离时才并行；
+6. 宿主没有可用 subagent/delegation、能力被禁用或无法安全使用时，必须明确说明并**降级为单 Agent 正常执行**；本 Contract 自身不因此阻塞任务，项目已有独立 Review、权限、安全、CI 等 required gate 仍照常生效；
+7. 通用示例、历史聊天、缓存和猜测不能覆盖目标项目事实；
+8. 首次接入、治理状态未校准或长期治理事实漂移时，在实质性代码修改前执行有界 Project Governance Bootstrap，并在完成后重新读取最终 `AGENTS.md`；
+9. 必需治理约束无法可靠取得、完整性无法确认，或存在无法安全解析的高优先级冲突时明确报告并停止依赖对应约束，不得用旧记忆、摘要或猜测替代；
+10. 受管运行资产和宿主 execution adapters 只服务当前项目研发治理，不是项目自有长期规则；安装器只维护可证明 ownership 的 managed marker / namespaced projection，项目长期规则继续保存在 marker 外。项目自己的 Overlay 始终继续生效。
 
-**Runtime 用户可见披露规则不由 managed block 承担。** 普通目标项目任务中 Source Mode 与 Runtime Mode 的专业执行、required Context 和用户可见工程过程必须保持同效果；内部能力身份仍用于路由、约束加载和专业执行。具体用户可见表达边界由 shared Entry、Runtime 公共进度规则与 Runtime Skill Projection 承担；Source Mode 仅在显式维护/审计 Agent_Skills 源码时保留内部导航可见性。**目标项目根 `AGENTS.md` 不应写入 Runtime/Skill/Reference/Router 隐私、防披露、内部路由、Handoff 或 required Context 组织说明。** 内部 Bootstrap Owner 仍必须保护项目规则边界：**不得把通用治理能力自身的执行、分发或实现说明复制或改写到项目 Overlay**；需要长期记录的只能是目标项目自己的规则、事实、稳定入口与特殊工程边界。
+**Runtime 用户可见披露规则不由 managed block 承担。** 普通目标项目任务中 Source Mode 与 Runtime Mode 的专业执行、required Context 和用户可见工程过程必须保持同效果；内部能力身份仍用于路由、约束加载和专业执行。具体用户可见表达边界由 shared Entry、Runtime 公共进度规则与 Runtime Skill Projection 承担；Source Mode 仅在显式维护/审计 Agent_Skills 源码时保留完整内部导航可见性。**目标项目根 `AGENTS.md` 只允许把稳定 `.agents/skills/ENTRY.md` 作为项目 Bootstrap 路径公开；不得继续写入 Router、专业 Skill、Reference、Stable ID、内部路由、Handoff、required Context 组织或防披露实现说明。** 内部 Bootstrap Owner 仍必须保护项目规则边界：**不得把通用治理能力自身的执行、分发或实现说明复制或改写到项目 Overlay**；需要长期记录的只能是目标项目自己的规则、事实、稳定入口与特殊工程边界。
 
 ## 8. `.gitignore` 规则
 
@@ -211,7 +214,7 @@ previous managed_files + 新 Payload
 - 目标 `.agents`、受管文件、Runtime、legacy manifest、AGENTS/宿主配置路径出现符号链接时拒绝越界修改；
 - Project Payload 先校验 schema、skills/shared files、path/SHA/size/mode/digest；
 - previous ownership 不可证明时 fail closed；
-- 同名未认领冲突在任何目标写入前发现；DeepSeek Harness 专用 overlay/Windows launcher 只有不存在或含唯一合法 Agent_Skills DeepSeek marker 时才能创建/更新，不能仅凭旧 install-state 推断新 Host 文件 ownership；
+- 同名未认领冲突在任何目标写入前发现；Codex `.codex/agents/agent-skills-*.toml`、Claude Code `.claude/agents/agent-skills-*.md`、Cursor `.cursor/agents/agent-skills-*.md` 只有不存在或含精确 Agent_Skills role ownership marker 时才能创建/更新；DeepSeek Harness 专用 overlay/Windows launcher 只有不存在或含唯一合法 Agent_Skills DeepSeek marker 时才能创建/更新，不能仅凭旧 install-state 推断新 Host 文件 ownership；
 - 不移动/替换整棵 Skill 目录，只逐文件原子写入；
 - 写入前保存 touched managed files、Runtime、legacy manifest（如存在）和受管文本快照，包括 DeepSeek overlay/launcher；
 - AGENTS、`.gitignore`、CLAUDE/Codex marker、JSON MCP 配置、DeepSeek marker 文件先验证再修改；
@@ -271,10 +274,11 @@ DeepSeek Harness 接入不得写 `$DSH_HOME`、全局 `cordis.patch.yml` 或用�
 - 旧 Runtime install-state 能恢复 previous managed/shared/Skill ownership；查询失败或不可证明时 fail closed；
 - 动态正式 Skill、shared Entry、Router/Core 安装正确，目标项目无 canonical Reference/Stub；
 - 同名未认领 shared/Skill/managed file 在写入前 fail closed，项目自有 Skill/Reference/资产保留；
-- `AGENTS.md` 用户原文/managed marker、`.gitignore` 与 Codex/Cursor/Claude 配置保留其他项目内容；安装器不自动新增 Runtime ignore，项目原本已有的 Runtime ignore 保持原样；
-- DeepSeek Harness overlay 使用项目相对 Runtime command、stdio `serve`、项目 cwd 且不含安装机器绝对路径；Windows 根 launcher 正确加载项目 overlay，POSIX 不生成该 Windows launcher；同名未受管/损坏 marker/symlink 冲突 fail closed；
+- `AGENTS.md` 用户原文/managed marker、`.gitignore` 与 Codex/Cursor/Claude 配置保留其他项目内容；根 `AGENTS.md` 精确包含一个稳定 `.agents/skills/ENTRY.md` Bootstrap，且不出现其他 `.agents/skills/` 内部导航；安装器不自动新增 Runtime ignore，项目原本已有的 Runtime ignore 保持原样；
+- Codex/Claude Code/Cursor 各生成五个 namespaced native role agents，均由唯一 Role Manifest 投影；read-only 与 Worker 权限/后台默认符合角色边界，未认领同名文件在任何写入前 fail closed；
+- DeepSeek Harness overlay 使用项目相对 Runtime command、stdio `serve`、项目 cwd 且不含安装机器绝对路径；同时装载 `ctx.subagents` service、spawn-in-process provider、五个 namespaced role delegation tools 与 control/list tools，且不联网安装 package；Windows 根 launcher 正确加载项目 overlay，POSIX 不生成该 Windows launcher；同名未受管/损坏 marker/symlink 冲突 fail closed；
 - Installer 不修改 `$DSH_HOME` 或用户 Harness profile，DeepSeek 适配不新增第七个 MCP Tool、不复制第二套 Skill/Prompt；
-- Runtime 安装后的根 `AGENTS.md` 满足第 7 节项目侧行为契约，不展开 Runtime/Source/MCP/Router/Reference/路由/加载或防披露说明；
+- Runtime 安装后的根 `AGENTS.md` 满足第 7 节项目侧行为契约，只公开稳定 `.agents/skills/ENTRY.md` Bootstrap，不展开 Runtime/Source/MCP/Router/专业 Skill/Reference/路由/加载或防披露说明；
 - marker 外 Overlay 只使用项目自身术语和可确认事实，不加入与当前项目无关的通用治理说明；
 - Source Mode 与 Runtime Mode 的 required Context、专业规则与 ordinary user-visible engineering behavior 保持同效果；
 - 安装失败和 rollback failure 都有可验证、可诊断结果。
