@@ -66,6 +66,8 @@ start_task(task, phase, 可选任务状态)
 
 模型名称、版本和宿主不进入 Router。GPT、DeepSeek、GLM 或其他模型可以采用不同推理策略，但同一项目任务必须满足同一 canonical Owner、Context、风险、授权、Evidence 和完成门禁。真实跨模型效果由仓库 `evals/` 的 model-neutral Outcome Eval case/run/grader Contract 比较：只有 `actual` run 进入真实模型验证计数，`fixture` 只验证机器契约；没有真实 run artifact 的模型只能标记 `unverified`。
 
+项目级 native role projection 继续只是 Host Adapter：common child prompt 要求 child 默认回 Parent、携带 revision/decision context 并使用稳定 Handoff headings；它不新增 Runtime Task Manager。DSH namespaced role tools 显式使用 `maxDepth: 1`；readonly role 额外用 `toolFilter` 隐藏直接 `write/edit` 工具。该 filter 只是同进程模型工具面的行为硬化，**不是 permission lattice 或 sandbox**；DSH 实际文件/进程权限仍由当前 permission/sandbox 与 Parent 授权决定，因此不得宣称它与 Codex/Cursor 的宿主级 readonly enforcement 等价。
+
 当前 Runtime **不实现 SEP-2640 Compatibility**。Analysis / Research 与其他正式 Skill 一样由动态 Catalog / Project Payload 自动发现和分发；它们不改变六个 MCP Tool，也不引入供应商专属研究控制面。
 
 ## 2. 三个独立完整性域
