@@ -296,7 +296,7 @@ AI 应根据当前项目自行确认：
 
 对复杂开发任务，AI 会先判断拆分是否真的有收益，而不是固定启动多个 Agent：
 
-- `NO_SPLIT`：任务局部、强顺序依赖或拆分成本更高，保持单 Agent；
+- `NO_SPLIT`：任务局部、强顺序依赖或拆分成本更高，保持单 Agent；明显的小任务不会为了展示编排而单独刷一条 `NO_SPLIT` banner；
 - `MAY_SPLIT`：存在独立工作，但收益不一定覆盖协调成本，由当前任务和宿主能力决定；
 - `MUST_SPLIT`：存在真正独立、可验收且有明显并行、上下文隔离或独立复核价值的工作；当前宿主支持 subagent 时会自动拆分。
 
@@ -314,6 +314,16 @@ AI 应根据当前项目自行确认：
 如果当前 Codex、Claude Code、Cursor、DeepSeek Harness 或其他宿主**没有可用的 subagent / delegation 能力**，即使任务属于 `MUST_SPLIT`，也会明确说明并**自动降级为单 Agent 继续正常执行**。不会仅因为宿主没有多 Agent 能力就中断一个本来能够完成的任务。
 
 项目本身已经存在的 Review、CI、权限、安全或其他 required gate 仍然照常执行；单 Agent 降级只影响多 Agent 带来的额外收益，不会绕过这些门禁。
+
+### 4.2 多 Agent 不会无限扩张
+
+多 Agent 默认由 Main/Parent 统一编排：**同时活动的子 Agent 默认不超过 3 个**，child 默认不继续创建 child；同一工作区默认只允许一个写入者，确有隔离的 worktree/environment 才并行多个 Writer。
+
+Parent 会把当前 revision 和已确认决定一起作为委派事实。子 Agent 基于旧 revision 或旧决定返回时会进入 `STALE_RESULT`，先重新验证再使用；同一 transient child 失败最多自动重试一次，再次同类失败进入 `STOP_CHILD_RETRY`，不会无限重启 Agent。证据已经充分或后台 Agent 已过期/无价值时，会停止等待，并在宿主支持时取消它。
+
+Review 发现 `OUT_OF_SCOPE` 时默认只记录。只有通过 **Follow-up Admission Gate**，确认有真实证据、独立价值、不是重复事项且当前授权允许，才可能进入后续 Backlog；它**不会自动创建 Issue** / Change / Branch / PR / Agent，**不会自动执行**，也**不会递归派生**新的 Follow-up。
+
+这些默认值以后不靠继续“感觉上再加规则”调整。需要优化拆分阈值或并发预算时，应使用**真实历史任务**比较耗时、Agent 数、返修轮数、CI 重跑和人工干预等证据；**不要继续凭感觉增加 Agent**，也不会为了此目的自动上传遥测数据。
 
 ---
 
