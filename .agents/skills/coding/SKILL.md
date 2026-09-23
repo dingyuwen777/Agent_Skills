@@ -308,7 +308,7 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 5. 多 Agent / 多人协作
 
-实质工程任务判 `NO_SPLIT/MAY_SPLIT/MUST_SPLIT`，只拆有真实独立价值；后两类加入 `能力=多 Agent` 并读 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)。只并行互不依赖且不写共享文件/接口/Schema/状态的工作；派发最少充分上下文，主 Agent 复核 diff、冲突与验证。`MUST_SPLIT` 有 delegation 时必拆，无能力则告知并降级为单 Agent继续，不阻塞或伪称已拆。
+实质工程任务先报 `NO_SPLIT/MAY_SPLIT/MUST_SPLIT` 判定，只拆有真实独立价值；后两类带 `能力=多 Agent` 并读 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)。只并行互不依赖且不写共享文件/接口/Schema/状态；派发最少充分上下文，主 Agent 复核 diff、冲突与验证。`MUST_SPLIT` 有 delegation 时必拆，无能力则告知并降级为单 Agent继续，不阻塞或伪称已拆。
 
 ## 6. Git、依赖、安全、交付与宿主能力边界
 
