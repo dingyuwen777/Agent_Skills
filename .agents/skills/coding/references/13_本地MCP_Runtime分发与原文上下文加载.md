@@ -451,7 +451,7 @@ DeepSeek overlay/launcher 是 Host 专用受管文本，不进入 Project Payloa
 - 根 `AGENTS.md` 创建或替换唯一 `agent-skills:managed` block；
 - `.gitignore` 只增量维护 Agent_Skills 本地缓存 ignore；不认领项目 Runtime ignore；
 - Cursor/Claude/Codex 分别只认领既有 Agent_Skills MCP 边界，并从唯一 Role Manifest 生成 `.cursor/agents/agent-skills-*.md`、`.claude/agents/agent-skills-*.md`、`.codex/agents/agent-skills-*.toml`；已有同名 role file 只有带精确 ownership marker 才可升级；
-- DeepSeek 只认领 `.dsh/agent-skills.cordis.yml` managed block 与 Windows `DeepSeek-Harness.cmd`；overlay 保留 MCP，并用 base 已提供的 subagent service/spawn/五 role tools/control/list 建立 `ctx.subagents`，不联网装包；坏/缺/重复 marker fail closed；
+- DeepSeek 只认领 `.dsh/agent-skills.cordis.yml` managed block 与 Windows `DeepSeek-Harness.cmd`；当前 base 已拥有 `ctx.subagents`/spawn/control/list，overlay 不重复注册，只增加五 role tools：read-only roles=continuable background，Worker=one-shot 且禁 background；不联网装包；坏/缺/重复 marker fail closed；
 - 不修改 `$DSH_HOME`、Harness 全局配置或用户 profile；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产必须保留；
 - 同名但 ownership 不可证明、marker 损坏、symlink/特殊文件或文本无法安全增量编辑时 fail closed。
@@ -509,7 +509,7 @@ release_version / source_commit
 8. MCP `tools/list` 恰为六 Tool，Context envelope 只含 `完整原文`，伪造/stale/cross-task token 失败；
 9. Source/Runtime private execution parity 对代表性任务保持 matched Skill、required risk、dependency closure、required Context 一致，Runtime Context 与 canonical exact bytes 一致；公共进度规则只描述项目工程过程，不枚举内部实现身份；
 10. Linux/Windows/macOS 各自在对应 Runner 完成 onefile build/status/self-test/real MCP/首次安装/当前版本重复安装；Windows 额外验证无参数 `.exe` 以 binary parent 为项目根、DeepSeek overlay 与根 launcher，POSIX 无参数继续使用 cwd 且不生成 Windows launcher；
-11. 四 Host 使用可移植相对配置；唯一 Role Manifest 生成三宿主五角色 files 与 DeepSeek role tools；namespaced projection 均需 ownership preflight、幂等升级和 rollback；DeepSeek 不改 `$DSH_HOME`、不联网装包；
+11. 四 Host 使用可移植相对配置；唯一 Role Manifest 生成三宿主五角色 files 与 DeepSeek 五 role tools；DSH 复用 base-owned runtime，Worker 不后台写；namespaced projection 均需 ownership preflight、幂等升级和 rollback；
 12. Builder/Release 不生成 `*.manifest.json`、key、Reference pack 或其他新 sidecar；
 13. Context budget 不得因 Runtime v3 规则维护显著膨胀；安全实现细节优先放在 [`runtime/README.md`](../../../../runtime/README.md)，canonical 本文件只保留执行必须的契约和边界。
 
