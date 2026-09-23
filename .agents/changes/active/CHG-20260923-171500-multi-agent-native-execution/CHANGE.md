@@ -266,6 +266,7 @@ Requirement Source：GitHub Issue #302。用户明确要求运行 Agent_Skills �
 | --- | --- | --- | --- | --- |
 | V1 | main `cf258a69` | canonical installer/assets + current official host docs readback | confirmed | 当前 execution gap 与 host schema |
 | V2 | PR #303 head `392aabc5` / Skill Tests #1837 | Verify PR Requirement Source | failed before tests because Change headings were noncanonical | 不是 Red Evidence；仅证明 Change 文档需先符合机器 Contract |
+| V3 | Issue #302 live contract | current Technical Change Form readback + Issue update | required `当前状态 / 兼容与迁移 / 风险与回滚 / 上游事实源` 已补齐 | Requirement Source 已满足当前机器语义段，下一 run 可以进入真实 Red tests |
 
 ## 未验证内容与剩余风险
 
@@ -276,7 +277,7 @@ Requirement Source：GitHub Issue #302。用户明确要求运行 Agent_Skills �
 
 - 提交：Change + Red test 已在 `tech/multi-agent-native-execution`。
 - 拉取请求：Draft PR #303。
-- CI：#1837 因 Change 机器契约在测试前失败；修正后重新取得有效 Red。
+- CI：#1837/#1838 均在测试前暴露 Requirement/Change 机器契约缺口；当前 Issue/Change 已按正式模板补齐，下一 head 重新取得有效 Red。
 - 合并：未执行。
 - Change 归档：未执行。
 - 发布 / 部署：不适用，本任务明确只合并源码 main。
