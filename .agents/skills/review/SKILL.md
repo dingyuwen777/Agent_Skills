@@ -45,7 +45,7 @@ Review **不复制** Coding 的编码、TDD、Git、兼容、安全、Contract�
 
 ## Review Convergence Guard（核心）
 
-Review 用于证明 **Requirement / Acceptance** 与质量门禁满足，**不是持续优化机制**。只有有证据且阻塞当前验收的 `IN_SCOPE_BLOCKING` 才自动返修；Main/Parent 控制准入，其余 disposition 不自动驱动 Worker。
+Review 证明 **Requirement / Acceptance** 与质量门禁，**不是持续优化机制**。只有 `IN_SCOPE_BLOCKING` 自动返修；Main/Parent 准入，其余 disposition 不自动驱动 Worker。
 
 ## 1. 规则事实源与集成边界
 
