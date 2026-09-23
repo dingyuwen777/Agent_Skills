@@ -110,6 +110,7 @@ def _verify_installed_project(target: Path) -> Path:
         target / ".mcp.json",
         target / ".codex/config.toml",
         target / "CLAUDE.md",
+        target / ".dsh/agent-skills.cordis.yml",
         target / ".agents/skills/ENTRY.md",
         target / ".agents/skills/router/SKILL.md",
         target / "AGENTS.md",
@@ -160,16 +161,24 @@ def _verify_installed_project(target: Path) -> Path:
         agents,
         (
             "必须先读取并遵守当前目录及上级适用的项目规则",
+            ".agents/skills/ENTRY.md",
+            "NO_SPLIT",
+            "MAY_SPLIT",
+            "MUST_SPLIT",
+            "降级为单 Agent",
             "当前真实文件",
             "首次接入",
             "完整性无法确认",
         ),
     )
+    agents_text = agents.read_text(encoding="utf-8")
+    if agents_text.count(".agents/skills/ENTRY.md") != 1:
+        raise SystemExit("目标 AGENTS 必须且只能公开一个稳定 Entry Bootstrap")
+    if ".agents/skills/" in agents_text.replace(".agents/skills/ENTRY.md", ""):
+        raise SystemExit("目标 AGENTS 除稳定 Entry 外不得公开其他内部 Skill 导航")
     _assert_excludes(
         agents,
         (
-            ".agents/skills/",
-            "ENTRY.md",
             "router/SKILL.md",
             "Reference",
             "治理能力自身",
@@ -179,6 +188,47 @@ def _verify_installed_project(target: Path) -> Path:
             "Source Mode",
         ),
     )
+
+    role_ids = ("explorer", "researcher", "worker", "tester", "reviewer")
+    for role_id in role_ids:
+        codex_agent = target / ".codex/agents" / f"agent-skills-{role_id}.toml"
+        claude_agent = target / ".claude/agents" / f"agent-skills-{role_id}.md"
+        cursor_agent = target / ".cursor/agents" / f"agent-skills-{role_id}.md"
+        for path in (codex_agent, claude_agent, cursor_agent):
+            if not path.is_file():
+                raise SystemExit(f"项目安装缺少原生多 Agent execution projection：{path}")
+            _assert_contains(
+                path,
+                (
+                    f"agent-skills-{role_id}",
+                    f"agent-skills:multi-agent-role:v1 role={role_id}",
+                    ".agents/skills/ENTRY.md",
+                ),
+            )
+        if role_id == "worker":
+            _assert_contains(codex_agent, ('sandbox_mode = "workspace-write"',))
+            _assert_contains(cursor_agent, ("readonly: false", "is_background: false"))
+        else:
+            _assert_contains(codex_agent, ('sandbox_mode = "read-only"',))
+            _assert_contains(claude_agent, ("permissionMode: plan", "disallowedTools:"))
+            _assert_contains(cursor_agent, ("readonly: true", "is_background: true"))
+
+    overlay = target / ".dsh/agent-skills.cordis.yml"
+    _assert_contains(
+        overlay,
+        (
+            "name: '@deepseek-ai/dsh-mcp-client'",
+            "name: '@deepseek-ai/dsh-subagent'",
+            "name: '@deepseek-ai/dsh-subagent-spawn-in-process'",
+            "name: '@deepseek-ai/dsh-tool-subagent'",
+            "name: '@deepseek-ai/dsh-tool-subagent-control'",
+            "name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'",
+            "provider: spawn",
+            "backgroundMode: continuable",
+        ),
+    )
+    for role_id in role_ids:
+        _assert_contains(overlay, (f"toolName: agent_skills_{role_id}",))
 
     entry = target / ".agents/skills/ENTRY.md"
     _assert_contains(entry, ("当前项目", "真实文件", "工程约束", "最少充分", "无法可靠取得"))
@@ -229,14 +279,12 @@ def _verify_installed_project(target: Path) -> Path:
         raise SystemExit("项目安装不应自动新增 Runtime ignore")
 
     if os.name == "nt":
-        overlay = target / ".dsh/agent-skills.cordis.yml"
         launcher = target / "DeepSeek-Harness.cmd"
-        if not overlay.is_file() or not launcher.is_file():
+        if not launcher.is_file():
             raise SystemExit("Windows 项目安装缺少 DeepSeek Harness 项目入口")
         _assert_contains(
             overlay,
             (
-                "name: '@deepseek-ai/dsh-mcp-client'",
                 "command: .agents/runtime/agent-skills.exe",
             ),
         )
