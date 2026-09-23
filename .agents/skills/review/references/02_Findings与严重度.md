@@ -4,7 +4,7 @@
 
 # Findings 与严重度
 
-Review 的输出目标不是“挑出很多问题”，而是提供可定位、可触发、可验证、可行动的 Findings。
+Finding 同时给出 `severity` 与 `disposition`，两者独立。
 
 ## 1. 严重度
 
@@ -49,12 +49,24 @@ Review 的输出目标不是“挑出很多问题”，而是提供可定位、�
 
 纯个人风格偏好、无证据“也许以后会更好”的重构建议，不应为了凑数量变成 Finding。
 
-## 2. 每个 Finding 的最小结构
+## 2. disposition：当前任务如何处理
+
+| disposition | 当前返修行为 |
+| --- | --- |
+| `IN_SCOPE_BLOCKING` | **只有**此类进入自动返修 |
+| `IN_SCOPE_NON_BLOCKING` | **不自动**返修 |
+| `OUT_OF_SCOPE` | 不自动扩 scope；必要时另建后续 |
+| `REQUIREMENT_CHANGE` | 需扩 Requirement/Contract/Schema/Scope/授权；回上游 |
+
+高 severity 不自动授权扩 scope。
+
+## 3. 每个 Finding 的最小结构
 
 建议使用：
 
 ```text
 [HIGH] <一句话问题>
+Disposition: IN_SCOPE_BLOCKING | IN_SCOPE_NON_BLOCKING | OUT_OF_SCOPE | REQUIREMENT_CHANGE
 
 位置：<文件/函数/行或影响范围>
 触发条件：<怎样发生>
@@ -67,7 +79,7 @@ Review 的输出目标不是“挑出很多问题”，而是提供可定位、�
 
 如果精确行号不可稳定获得，可以使用函数、组件、Route、模块或 diff hunk 作为位置，但必须足够让开发者找到问题。
 
-## 3. 触发条件是必须项
+## 4. 触发条件是必须项
 
 不要只写：
 
@@ -81,7 +93,7 @@ Review 的输出目标不是“挑出很多问题”，而是提供可定位、�
 
 触发条件让 Finding 可被测试，也能区分“理论可能”与真实可达路径。
 
-## 4. 证据等级
+## 5. 证据等级
 
 按强到弱常见为：
 
@@ -95,7 +107,7 @@ Review 的输出目标不是“挑出很多问题”，而是提供可定位、�
 
 最后一类不能伪装成确定 Bug。可以写成待验证风险，并说明还需要什么实验或事实确认。
 
-## 5. 测试缺口怎么写
+## 6. 测试缺口怎么写
 
 测试缺口不是泛泛写“建议增加测试”。应说明现有测试实际断言了什么，以及什么错误仍然可能在测试绿色时发生。
 
@@ -113,7 +125,7 @@ Browser Mock 已覆盖失败提示，但没有运行真实 API/Persistence；因
 
 这样开发者知道应该补哪一层证据。
 
-## 6. 不要把测试失败本身直接等同生产 Bug
+## 7. 不要把测试失败本身直接等同生产 Bug
 
 测试失败可能来自：
 
@@ -126,25 +138,25 @@ Browser Mock 已覆盖失败提示，但没有运行真实 API/Persistence；因
 
 Review 必须先判断根因，再形成 Finding。
 
-## 7. 重复问题合并
+## 8. 重复问题合并
 
 同一根因影响多个位置时，优先一个 Finding 描述根因和受影响范围，而不是复制多条相同问题。
 
 只有每个位置需要独立修复、严重度不同或触发条件不同，才拆开。
 
-## 8. Review 结论
+## 9. Review 结论
 
 可以使用：
 
 ```text
 BLOCKED
-→ 存在 BLOCKER 或项目规则定义的不可继续问题
+→ 未解决的 IN_SCOPE_BLOCKING 禁止继续
 
 CHANGES_REQUIRED
-→ 存在必须在当前任务解决的 HIGH/重要 MEDIUM
+→ 当前仍有必须解决的 IN_SCOPE_BLOCKING
 
 NON_BLOCKING_FINDINGS
-→ 只有非阻塞问题，但仍需说明未验证边界
+→ 仅 IN_SCOPE_NON_BLOCKING / OUT_OF_SCOPE；说明未验证边界
 
 NO_FINDINGS_WITHIN_SCOPE
 → 当前审查范围没有发现问题；必须同时报告范围、验证和未覆盖项

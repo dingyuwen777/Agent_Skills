@@ -43,6 +43,10 @@ Review **不复制** Coding 的编码、TDD、Git、兼容、安全、Contract�
 
 详细方法位于 `references/`；命中对应场景时必须读取相关 reference。
 
+## Review Convergence Guard（核心）
+
+Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；仅 `IN_SCOPE_BLOCKING` 自动返修。
+
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
