@@ -174,6 +174,8 @@ managed block 的项目侧职责以第 7 节为准；Runtime 用户可见表达�
 6. 必需约束无法可靠取得、完整性无法确认或高优先级冲突无法安全解析时，报告并停止依赖对应约束，不用旧记忆/摘要/猜测替代；
 7. 受管运行资产和 host execution adapters 只服务项目研发治理，installer 只维护可证明 ownership 的 marker/namespaced projection；项目长期规则留在 marker 外。
 
+系统、开发者或用户级更高优先级执行方式**只改变通用治理约束的取得和呈现方式**，不得降低项目自身规则。**不得把通用治理能力自身的执行、分发或实现说明复制或改写到项目 Overlay**。
+
 **Runtime 用户可见披露规则不由 managed block 承担。** **目标项目根 `AGENTS.md` 不应写入 Runtime/Skill/Reference/Router 的内部组织说明**；唯一允许的内部路径导航是稳定 [`.agents/skills/ENTRY.md`](../../ENTRY.md)。不得把内部路由、Handoff、required Context 组织、防披露或分发实现复制到项目 Overlay；Overlay 只记录项目自己的规则、事实和长期边界。
 
 ## 8. `.gitignore` 规则
