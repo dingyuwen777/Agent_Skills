@@ -55,22 +55,14 @@ Finding 同时给出 `severity` 与 `disposition`，两者独立。
 | --- | --- |
 | `IN_SCOPE_BLOCKING` | **只有**此类进入自动返修 |
 | `IN_SCOPE_NON_BLOCKING` | **不自动**返修 |
-| `OUT_OF_SCOPE` | 默认 `RECORD_ONLY`；不扩当前 scope |
+| `OUT_OF_SCOPE` | 默认 `RECORD_ONLY`，不扩当前 scope |
 | `REQUIREMENT_CHANGE` | 需扩 Requirement/Contract/Schema/Scope/授权；回上游 |
 
 高 severity 不自动授权扩 scope。
 
 ### Follow-up Admission Gate
 
-`OUT_OF_SCOPE` 默认是 `RECORD_ONLY`：**不自动创建 Issue**、**不自动创建 Change**、**不自动创建 Branch**、**不自动创建 PR**、**不自动创建 Agent**、**不自动执行**，也**不递归派生**新的 Follow-up。
-
-只有 Parent/Main 确认存在直接 Evidence、独立工程/业务价值、不是已有事项重复、值得长期跟踪且当前授权允许时，才可把它登记为 `FOLLOW_UP_BACKLOG`。进入 Backlog 仍不自动启动 Coding/Change/Agent；后续只有成为独立 Requirement 并重新通过正常准入后才执行。
-
-### Follow-up Admission Gate
-
-`OUT_OF_SCOPE` 默认到 `RECORD_ONLY` 即结束当前链路：**不自动创建 Issue**、**不自动创建 Change**、**不自动创建 Branch**、**不自动创建 PR**、**不自动创建 Agent**，也**不自动执行**或**不递归派生**新的 Follow-up。
-
-只有 Main/Parent 已确认真实 Evidence、具有独立跟踪价值、不是已有事项重复且当前授权允许时，才可转为 `FOLLOW_UP_BACKLOG`。Backlog 只是后续候选，不自动启动开发；未来真正执行时必须作为新的 Requirement/任务重新准入。
+`OUT_OF_SCOPE` 默认 `RECORD_ONLY`：**不自动创建 Issue**、**不自动创建 Change**、**不自动创建 Branch**、**不自动创建 PR**、**不自动创建 Agent**、**不自动执行**、**不递归派生**。只有有 Evidence、独立价值、非重复且当前授权允许时，Parent/Main 才可登记 `FOLLOW_UP_BACKLOG`；Backlog 仍不自动启动开发，后续须作为独立 Requirement 重新准入。
 
 ## 3. 每个 Finding 的最小结构
 
