@@ -34,17 +34,9 @@ description: 面向不同项目形态、研发阶段和编程语言的可靠软�
 
 ### Multi-Agent Value Gate
 
-对需要实质性工程工作的任务，在形成实现计划或大规模读取/修改前先判断多 Agent 是否有**真实独立价值**，只拆有真实独立价值的工作，不把 Agent 数量本身当成质量或完成指标：
+实质性工程任务在计划前先按真实独立价值判断：`NO_SPLIT`（拆分成本不低于收益，单 Agent）、`MAY_SPLIT`（有独立候选但收益不确定）或 `MUST_SPLIT`（存在明显并行、上下文隔离、独立复核价值，或用户明确要求）。**只拆有真实独立价值**的 Agent，不按文件数、岗位名或“复杂”标签机械拆分。
 
-- `NO_SPLIT`：任务局部、强顺序依赖、共享状态紧密，或拆分的启动/交接/重复读取成本预计不低于收益；保持单 Agent。
-- `MAY_SPLIT`：存在可独立工作的候选，但并行、上下文隔离或独立复核收益尚不足以覆盖协调成本；主 Agent 可按当前规模和宿主能力选择拆分或保持单 Agent。
-- `MUST_SPLIT`：存在两个及以上实质、独立且可验收的 frontier，或上下文隔离/独立复核对当前风险和可靠性有明确价值，或用户明确要求多 Agent；**当前宿主真实支持 subagent/delegation 时必须拆分**。
-
-宿主能力检查与拆分判定分开：命中 `MUST_SPLIT` 但当前宿主没有可用 subagent/delegation 能力、相关能力被禁用或当前环境无法安全使用时，必须向用户说明原因并**降级为单 Agent 正常执行**；不得因为本 Value Gate 自身阻塞任务，也不得把单 Agent 冒充成多 Agent。目标项目本身已经存在的独立 Review、权限、安全、CI 或其他 required gate 仍照常生效，不能用降级绕过。
-
-判为 `MAY_SPLIT` / `MUST_SPLIT`，或用户显式要求多 Agent 时，在创建任何子 Agent 前读取 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)，由其中唯一的 Orchestration Contract 决定角色、权限、并发、Handoff、用户可见状态和宿主 Adapter；本 Core 不复制第二套角色/调度规则。
-
-判为 `MAY_SPLIT` / `MUST_SPLIT` 后，把当前任务事实中的 `能力=多 Agent` 纳入后续约束取得；如果最终因收益不足或宿主能力缺失保持单 Agent，不伪造已经发生的 delegation。
+判为 `MAY_SPLIT/MUST_SPLIT` 时把 `能力=多 Agent` 纳入当前任务事实并读取 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)；`MUST_SPLIT` 在宿主真实支持 subagent/delegation 时必须拆分。宿主没有可用能力或能力被禁用时，向用户说明并**降级为单 Agent**继续正常执行，不因本门禁自身阻塞任务，也不得伪称已拆分；项目原有 Review、权限、安全、CI 等 required gate 不受影响。
 
 详细规则分布在 `references/`。**当本文件的触发条件命中时，对应 reference 是本 Skill 的规范组成部分，必须在执行相关动作前读取；不能只读主文件后凭印象补流程。**
 
