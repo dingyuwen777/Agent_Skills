@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260923-150644-multi-agent-value-orchestration
 title: 多 Agent 价值驱动编排与跨宿主适配
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/multi-agent-value-orchestration
 created: 2026-09-23
