@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260924-001950-agent-orchestration-hardening
 title: 强化多 Agent 二阶收敛与系统性优化审计
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/agent-orchestration-hardening
 created: 2026-09-24
