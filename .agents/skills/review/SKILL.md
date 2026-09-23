@@ -43,6 +43,12 @@ Review **不复制** Coding 的编码、TDD、Git、兼容、安全、Contract�
 
 详细方法位于 `references/`；命中对应场景时必须读取相关 reference。
 
+## Review Convergence Guard（核心）
+
+Review 的目标是证明当前 **Requirement / Acceptance** 与质量门禁已经满足，**不是持续优化机制**。Finding 必须同时判断严重度与当前任务处置；只有有证据、属于当前范围并会阻塞 Acceptance / required gate 的 `IN_SCOPE_BLOCKING` 才能驱动自动返修。非阻塞、超范围或需要改变 Requirement 的意见不得因为 Reviewer 提出就自动让 Worker 修改。
+
+有修复授权时，Review 负责独立发现和 re-review，Coding 负责生产修复；Main/Parent Agent 负责 Finding 准入与返修循环集成。返修必须收敛，详细 disposition、re-review 范围、停止机械循环和重新诊断规则见命中的 Review references。
+
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
