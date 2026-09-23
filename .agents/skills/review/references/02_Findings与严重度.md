@@ -55,10 +55,16 @@ Finding 同时给出 `severity` 与 `disposition`，两者独立。
 | --- | --- |
 | `IN_SCOPE_BLOCKING` | **只有**此类进入自动返修 |
 | `IN_SCOPE_NON_BLOCKING` | **不自动**返修 |
-| `OUT_OF_SCOPE` | 不自动扩 scope；必要时另建后续 |
+| `OUT_OF_SCOPE` | 默认 `RECORD_ONLY`；不扩当前 scope |
 | `REQUIREMENT_CHANGE` | 需扩 Requirement/Contract/Schema/Scope/授权；回上游 |
 
 高 severity 不自动授权扩 scope。
+
+### Follow-up Admission Gate
+
+`OUT_OF_SCOPE` 默认到 `RECORD_ONLY` 即结束当前链路：**不自动创建 Issue**、**不自动创建 Change**、**不自动创建 Branch**、**不自动创建 PR**、**不自动创建 Agent**，也**不自动执行**或**不递归派生**新的 Follow-up。
+
+只有 Main/Parent 已确认真实 Evidence、具有独立跟踪价值、不是已有事项重复且当前授权允许时，才可转为 `FOLLOW_UP_BACKLOG`。Backlog 只是后续候选，不自动启动开发；未来真正执行时必须作为新的 Requirement/任务重新准入。
 
 ## 3. 每个 Finding 的最小结构
 
