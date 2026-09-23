@@ -115,6 +115,8 @@ class AgentOrchestrationHardeningContractTest(unittest.TestCase):
             "重复失败",
             "OUT_OF_SCOPE",
             "不自动创建",
+            "NO_SPLIT",
+            "不单独播报",
         ):
             self.assertIn(marker, managed)
 
@@ -159,6 +161,18 @@ class AgentOrchestrationHardeningContractTest(unittest.TestCase):
         self.assertIn("enableRunInBackground: false", worker)
         self.assertIn("maxDepth: 1", worker)
         self.assertNotIn("toolFilter:", worker)
+
+    def test_runtime_docs_do_not_overclaim_dsh_tool_filter_security(self) -> None:
+        """DSH direct mutation filter 必须被记录为行为硬化，而非权限沙箱。"""
+        runtime_readme = (ROOT / "runtime" / "README.md").read_text(encoding="utf-8")
+
+        for marker in (
+            "maxDepth: 1",
+            "toolFilter",
+            "不是 permission lattice 或 sandbox",
+            "不得宣称",
+        ):
+            self.assertIn(marker, runtime_readme)
 
     def test_usage_documents_followup_budget_stale_and_effectiveness_feedback(self) -> None:
         """最终用户说明必须让自动边界可预期，并要求用真实任务数据调阈值。"""
