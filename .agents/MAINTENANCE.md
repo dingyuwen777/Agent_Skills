@@ -147,6 +147,21 @@ Runtime 安装明文是**项目工程视图，不是 canonical Source 镜像**�
 
 不能因为加密 onefile、Runtime Projection 或 sidecarless install-state 存在就宣称可抵御机器 Owner、调试器、内存转储、Hook、恶意替换项目内旧 Runtime 或专业逆向。
 
+### GitHub Actions Workflow 生命周期
+
+本仓库长期只使用现有正式 Workflow 承担 Actions Hygiene，不为清理 All workflows 额外新增永久 Cleanup Workflow。当前 Owner 是 `.github/workflows/skill-tests.yml` 的 main-push-only `Actions Hygiene` Job。
+
+维护约束：
+
+- 当前 `.github/workflows/*.yml|yaml` path 是绝对保护集合；
+- 只有当前 main 已不存在、且 `HEAD --first-parent` 历史证明曾进入默认分支的 Workflow record 才可成为 stale candidate；PR-only path 不自动删除；
+- 先分页 repository workflow records，再只对 stale workflow ID 定向分页 runs；禁止每次 main push 扫描全仓所有 Actions runs；
+- stale workflow 只要存在 queued/in_progress 等非 completed run，就整条跳过；completed-only 才可删除；
+- 删除后逐 stale workflow ID fresh readback；retired workflow 的 404 可视为 0，其他权限/结构/历史/readback 错误必须硬失败；
+- 只有 429、5xx、网络/超时属于可重试临时错误，可由 CI warning 并留到下次健康 main push；不得把权限或不变量缺陷吞成 warning；
+- `actions: write` 只能授予独立 Hygiene Job，Workflow 顶层和其他 Job 保持最小权限；
+- 历史 run 删除不可逆；若未来某个已删除 Workflow 的运行日志承担审计/Release Evidence，必须先在当前 Requirement Source/Change 中声明保留边界。
+
 ## 5. 人类文档与历史记录职责
 
 仓库只保留三个人类入口：
