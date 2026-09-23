@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260923-150644-multi-agent-value-orchestration
 title: 多 Agent 价值驱动编排与跨宿主适配
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/multi-agent-value-orchestration
 created: 2026-09-23
@@ -35,9 +35,9 @@ data_changes: []
 
 # 变更摘要
 
-- **要解决的问题**：当前多 Agent 规则只覆盖“已并行后的安全协作”，缺少价值驱动的拆分判定、MUST_SPLIT 失败语义、四宿主适配和用户可见编排。
+- **要解决的问题**：当前多 Agent 规则只覆盖“已并行后的安全协作”，缺少价值驱动的拆分判定、MUST_SPLIT/单 Agent 降级语义、四宿主适配和用户可见编排。
 - **拟议修改**：在 Coding Core 建立轻量决策入口，扩展既有 Reference 09 为唯一 Multi-Agent Orchestration Owner，并同步 Runtime projection、USAGE 和必要回归；保持 Router 不承担调度。
-- **预期结果**：简单任务继续单 Agent；真正有独立价值的复杂任务按 NO_SPLIT/MAY_SPLIT/MUST_SPLIT 决策，支持的宿主真实委派，不支持时如实 fail-closed，用户能看到 Agent 分工和状态。
+- **预期结果**：简单任务继续单 Agent；真正有独立价值的复杂任务按 NO_SPLIT/MAY_SPLIT/MUST_SPLIT 决策，支持的宿主真实委派，不支持时明确降级为单 Agent 正常执行，用户能看到 Agent 分工和状态。
 
 # 背景、现状与问题
 
@@ -83,8 +83,8 @@ Requirement Source：GitHub Issue #298。用户明确要求按已讨论方案修
 
 ## 推断与待确认
 
-- 推断：若只修改 canonical Coding Core/Reference/USAGE，不新增 Host 配置文件，则 Runtime 安装代码本身不必改变；需要用 Project Payload/Runtime tests 证明新 Core 能自然进入目标项目。
-- 待确认：当前 CI classifier 是否因 Skill/Runtime projection 变化要求三平台 package；最终以 PR head 的实际 required checks 为准，不预判。
+- 已确认：本次没有新增 Host 配置、Provider、Runtime protocol/schema 或依赖；Project Payload/Runtime projection 回归已证明更新后的 Coding Core 能进入项目侧 Runtime Core。
+- 已确认：当前 CI classifier 要求 Runtime Package Gate；Change Ready 后由 current-head CI 执行三平台 package evidence。
 
 # 目标、成功标准与非目标
 
@@ -94,10 +94,10 @@ Requirement Source：GitHub Issue #298。用户明确要求按已讨论方案修
 
 ## 成功标准
 
-- [ ] #298 AC1-AC11 在 PR head 有直接实现/测试/文档/Review Evidence。
-- [ ] #298 AC12 的 pre-merge 部分通过，post-merge main-fresh/archive/closure/cleanup 由 Delivery Gate 完成。
-- [ ] Router Anti-Agent Boundary 保持，没有新增 Planner/Queue/长期 Worker 机制。
-- [ ] 简单任务明确保持单 Agent，不以“多 Agent”本身作为收益。
+- [x] #298 AC1-AC11 已由当前实现、永久回归、文档与 Review Evidence 覆盖；current-head required CI 在 Ready 后继续执行。
+- [x] #298 AC12 的 pre-merge治理已建立；merge/main-fresh/archive/closure/cleanup 由 post-merge Delivery Gate 持有。
+- [x] Router Anti-Agent Boundary 保持，没有新增 Planner/Queue/长期 Worker 机制。
+- [x] 简单任务明确保持单 Agent，不以“多 Agent”本身作为收益。
 
 ## 范围
 
@@ -148,25 +148,25 @@ AIMA_UGC rollout；Runtime Release/tag；Deploy；依赖升级；固定模型/�
 
 - 新建独立 Orchestration Skill：会与 Router/Coding 协作规则形成新 Owner，并要求所有工程任务额外路由；当前既有 Reference 09 已足以承担，暂不采用。
 - 为 Codex/Claude/Cursor 各生成五套 native role 文件：可提高显式角色可发现性，但会复制同一角色语义并扩大 Runtime projection/ownership；当前宿主都可根据项目/Skill 指令创建原生 subagent，先采用薄 Adapter；未来若真实宿主 Evidence 证明需要固定文件，再另建 Change。
-- 为 DSH 安装 subagent provider：会新增外部依赖和具体 provider 决策，超出本次“通用 Adapter”范围；改为能力检测，MUST_SPLIT 无 provider 时显式 blocker。
+- 为 DSH 安装 subagent provider：会新增外部依赖和具体 provider 决策，超出本次“通用 Adapter”范围；改为能力检测，无 provider 时明确降级为单 Agent。
 - 所有 L2/L3 自动固定启动 5 个 Agent：直接违背价值驱动目标，成本高且会制造写冲突；不采用。
 
 # 需求追溯
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | NO/MAY/MUST 价值判定 | #298 / AC1 | not_satisfied | 待实现与验证 |
-| R2 | MUST_SPLIT 条件与宿主无能力时的单 Agent 降级 | #298 / AC2 | not_satisfied | 待实现与验证 |
-| R3 | 五角色且不复制专业 Skill | #298 / AC3 | not_satisfied | 待实现与验证 |
-| R4 | 用户可见 Visibility Contract | #298 / AC4 | not_satisfied | 待实现与验证 |
-| R5 | 并行写隔离/单 Writer | #298 / AC5 | not_satisfied | 待实现与验证 |
-| R6 | 四 Host native adapter | #298 / AC6 | not_satisfied | 待实现与验证 |
-| R7 | Router Anti-Agent 保持 | #298 / AC7 | not_satisfied | 待 diff/test 证明 |
-| R8 | Source/Runtime 同源触发 | #298 / AC8 | not_satisfied | 待 Project Payload projection 证明 |
-| R9 | USAGE 用户说明 | #298 / AC9 | not_satisfied | 待文档同步 |
-| R10 | tests/Review/CI | #298 / AC10 | not_satisfied | 待当前 head Evidence |
-| R11 | 依赖/MCP/License/Release/Schema 保持 | #298 / AC11 | not_satisfied | 待 diff 与回归证明 |
-| R12 | merge/main-fresh/archive/closure/cleanup | #298 / AC12 | not_satisfied | Delivery Gate 持有 |
+| R1 | NO/MAY/MUST 价值判定 | #298 / AC1 | satisfied | Coding Core §5 + Reference 09 Value Gate；run #1820 的 645 tests Green |
+| R2 | MUST_SPLIT 条件与宿主无能力时的单 Agent 降级 | #298 / AC2 | satisfied | Reference 09 Value Gate + USAGE §4.1；Runtime projection 回归 Green |
+| R3 | 五角色且不复制专业 Skill | #298 / AC3 | satisfied | Reference 09 角色段：Explorer/Researcher/Worker/Tester/Reviewer，只定义职责/权限并回到专业 Skill |
+| R4 | 用户可见 Visibility Contract | #298 / AC4 | satisfied | Reference 09 Multi-Agent Visibility Contract + USAGE §4.1 |
+| R5 | 并行写隔离/单 Writer | #298 / AC5 | satisfied | Reference 09：独立 frontier、共享 Contract/Schema 单 Writer、Writer 隔离/串行边界 |
+| R6 | 四 Host native adapter | #298 / AC6 | satisfied | Reference 09 Host Adapter Contract：Codex/Claude Code/Cursor/DeepSeek Harness capability detect + native delegation + fallback |
+| R7 | Router Anti-Agent 保持 | #298 / AC7 | satisfied | Router 未修改；永久回归断言“不创建子 Agent / 不拆分或调度开发任务” |
+| R8 | Source/Runtime 同源触发 | #298 / AC8 | satisfied | Coding Core 写入 `能力=多 Agent`；`test_multi_agent_value_gate_survives_runtime_projection` 同时验证 canonical/Runtime Core |
+| R9 | USAGE 用户说明 | #298 / AC9 | satisfied | USAGE §4.1 已说明自动判定、可见状态与无能力单 Agent 降级 |
+| R10 | tests/Review/CI | #298 / AC10 | satisfied | Red run #1807 精确失败；Green run #1820：compile/CLI smoke/645 tests Green；Review 无阻塞 Finding；最终 current-head CI 由 Ready 后 gate 继续 |
+| R11 | 依赖/MCP/License/Release/Schema 保持 | #298 / AC11 | satisfied | PR changed files 仅 Coding rule/test/USAGE/Change；无 Manifest/lock/Runtime protocol/License/Release/Schema 文件变化 |
+| R12 | merge/main-fresh/archive/closure/cleanup | #298 / AC12 | not_applicable | pre-merge Change 不能自证未来 merge/main-fresh/archive/closure/cleanup；由已授权 Delivery Gate 在 merge 后完成 |
 
 # 计划改动
 
@@ -180,24 +180,24 @@ AIMA_UGC rollout；Runtime Release/tag；Deploy；依赖升级；固定模型/�
 
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 行为变化建立失败证据或说明测试例外
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | Coding Core Value Gate、Reference 09 classifier/roles/visibility/adapter 语义 |
-| 接口 / 契约 | required | Router Anti-Agent、Source/Runtime project-facing Core parity、#298 Requirement Traceability |
-| 集成 / 持久化 / 运行依赖 | required | Project Payload / Runtime install 后的 Skill Core 投影 |
-| 用户 / 工作流验收 | required | USAGE + 复杂/简单/MUST capability 场景的规则正反例 |
-| 跨组件关键路径 | required | canonical Coding Core → Project Payload → installed project Core → Host route/delegation Contract |
-| 外部依赖 / 供应方探测 | not_applicable | 宿主能力已用官方当前文档核验；本任务不调用真实外部 Provider/生产数据 |
-| 构建 / 打包 / 运行 | required | 以 CI classifier 实际 required scope 为准，至少覆盖 Runtime/Project Payload/install smoke |
-| 文档 / 治理 / 其他 | required | Change/Issue/PR、USAGE、独立 Review、current-head CI、post-merge 收尾 |
+| 行为 / 单元 / 组件 | required | Red run #1807 精确证明旧实现缺失；Green run #1820 的 645 tests 覆盖 Value Gate/roles/visibility/adapter 与上下文预算 |
+| 接口 / 契约 | required | Router Anti-Agent 未改；Source/Runtime Coding Core projection 回归 Green；#298 AC1-AC12 已逐项映射 |
+| 集成 / 持久化 / 运行依赖 | required | Project Payload / Runtime Skill Core 投影、sidecarless install 与既有 Runtime 回归均在 645 tests 中 Green |
+| 用户 / 工作流验收 | required | USAGE §4.1 明确自动拆分、状态可见与无能力降级；本轮宿主真实无 subagent 时按该规则继续单 Agent |
+| 跨组件关键路径 | required | canonical Coding Core → Project Payload → Runtime Core → `能力=多 Agent` → Reference 09 路由由永久回归覆盖 |
+| 外部依赖 / 供应方探测 | not_applicable | 宿主能力依据当前官方 source owner 文档核验；本任务不调用真实外部 Provider/生产数据 |
+| 构建 / 打包 / 运行 | required | compile + CLI smoke 已 Green；Change Ready 后 current-head CI 执行 required 三平台 Runtime package gate |
+| 文档 / 治理 / 其他 | required | #298、当前 Change、PR #299、USAGE 与正式 Review；post-merge Archive/Closure 由 Delivery Gate继续 |
 
 ## 验证计划
 
@@ -227,10 +227,10 @@ AIMA_UGC rollout；Runtime Release/tag；Deploy；依赖升级；固定模型/�
 
 # 完成审计
 
-- [ ] upstream_re_read：进入 Ready 前重新读取 live #298、当前 head Coding/Router/Runtime/USAGE。
-- [ ] change_coverage：逐项映射 #298 AC1-AC12，不能从本 Change 反推完成。
-- [ ] reverse_audit：从工程任务入口反查 classifier → Reference 09 → host capability → child Handoff → parent integration → visible result，并核对 Project Payload。
-- [ ] unresolved_cleared：R1-R11 在 Ready 前全部取得 Evidence；R12 pre-merge 部分完成，post-merge 由 Delivery Gate继续。
+- [x] upstream_re_read：已重新读取 live #298、当前 head Coding Core、Reference 09、Runtime projection 回归与 USAGE。
+- [x] change_coverage：已从 #298 AC1-AC12 独立重建完成定义并逐项映射；没有把本 Change 自身当需求全集。
+- [x] reverse_audit：已反查任务判定 → `能力=多 Agent` → Reference 09 → host capability/fallback → Delegation/Handoff → 父 Agent 集成 → 用户可见结果，并核对 Runtime Projection。
+- [x] unresolved_cleared：R1-R11 均有当前实现/测试/文档/Review Evidence；R12 的 post-merge 动作明确由 Delivery Gate 持有。
 
 # 完成证据与状态
 
@@ -239,21 +239,25 @@ AIMA_UGC rollout；Runtime Release/tag；Deploy；依赖升级；固定模型/�
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main 0cb0cc2385 | GitHub canonical readback + official host docs | 已确认基线 | 当前规则/Runtime/宿主能力事实 |
-| V2 | Issue #298 | create + GitHub readback | 已建立 | Requirement Source 与 AC1-AC12 |
+| V2 | Issue #298 | create + live reread | 已建立并按用户纠正更新 | Requirement Source 与 AC1-AC12 |
+| V3 | abdae298 / Skill Tests #1807 | selected self-contained tests | FAIL：新回归因旧 Core 缺少 NO_SPLIT 精确失败 | 有效 Red Evidence |
+| V4 | 44e12fa4 / Skill Tests #1820 | compile selected entrypoints + CLI smoke + 645 self-contained tests | 全部 Green；645 tests OK | 实现、Runtime projection、内容守恒与 context budget 当前均通过 |
+| V5 | PR #299 head 44e12fa4 | Review Target + #298 + 当前 diff/调用边界复核 | NO_FINDINGS_WITHIN_SCOPE；仅发现 Change/PR 描述状态陈旧，本提交同步修正 | 当前实现无阻塞 Review Finding |
+| V6 | PR #299 changed-files readback | 5 files：Change、Coding Core、Reference 09、projection test、USAGE | 无 Manifest/lock/MCP/License/Release/Schema 变更 | R11 非目标保持 |
 
 ## 未验证内容与剩余风险
 
-- 尚未实施，因此 R1-R12 仍未完成。
-- 当前聊天宿主没有可调用 subagent 执行接口；按更新后的 AC2，本次继续单 Agent 正常执行，并如实披露没有实际拆分。
+- 当前聊天宿主没有可调用 subagent 执行接口；按 AC2 已降级为单 Agent 正常执行，本轮没有冒充实际拆分。
+- 三平台 Runtime package、merge、main-fresh、Change Archive、Issue Closure 和 cleanup 尚未发生；它们是本次 Ready 后/merge 后的真实 Delivery Gate，不影响当前实现进入 Review。
 
 ## 交付状态
 
-- 提交：仅待建立初始 Change commit。
-- 拉取请求：待创建 Draft PR。
-- CI：待 PR head。
-- 合并：未执行。
-- Change 归档：未执行。
-- 发布 / 部署：不适用，本任务未授权且明确非目标。
+- 提交：实现/测试/文档已在 `tech/multi-agent-value-orchestration`；本次提交把 Change 切到 `ready_for_review`。
+- 拉取请求：PR #299 已创建，当前仍 Draft；本提交后等待 final current-head CI 再转 Ready。
+- CI：Red #1807 已确认；semantic Green #1820 已确认；三平台 Runtime Package Gate 等待 Change Ready 后执行。
+- 合并：未执行；需 current-head Review/required CI 后 guarded merge。
+- Change 归档：未执行；由 repository-native post-merge automation 负责。
+- 发布 / 部署：不适用，本任务明确不创建 Runtime Release/Deploy。
 
 ## 备注
 
