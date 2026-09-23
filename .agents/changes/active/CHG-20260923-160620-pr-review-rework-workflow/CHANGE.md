@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260923-160620-pr-review-rework-workflow
 title: 完善 USAGE 的 PR Review 返修闭环
 level: L2
-status: active
+status: ready_for_review
 owner: dingyuwen777
 branch: docs/pr-review-rework-workflow
 created: 2026-09-23
@@ -72,14 +72,14 @@ Requirement Source 为 GitHub Issue #300。用户已确认前序方案，并明�
 
 ## 成功标准
 
-- [ ] 第 14 节明确 Review 有问题时默认继续更新同一个 PR，而不是关闭后重新创建。
-- [ ] 原开发者返修提示覆盖逐条 Finding、真实原因、相关范围、回归、更新同一 PR、重新请求 Review。
-- [ ] 维护者二次 Review 提示要求基于最新 HEAD/revision、最新 CI 和上一轮 Findings 重新判断。
-- [ ] 返修基本原则明确旧 Review/旧 CI 不能自动证明新 HEAD，独立新需求不静默扩大当前 PR。
-- [ ] 现有“已有本地代码接管”“Merge / Rebase 冲突”内容完整保留，仅顺延编号。
-- [ ] 第 18 节新增“PR Review 后返修”短指令。
-- [ ] 不新增面向最终用户的 git 命令教学，不引入新的内部治理实现说明。
-- [ ] current-head required CI / 独立 Review 通过。
+- [x] 第 14 节明确 Review 有问题时默认继续更新同一个 PR，而不是关闭后重新创建。
+- [x] 原开发者返修提示覆盖逐条 Finding、真实原因、相关范围、回归、更新同一 PR、重新请求 Review。
+- [x] 维护者二次 Review 提示要求基于最新 HEAD/revision、最新 CI 和上一轮 Findings 重新判断。
+- [x] 返修基本原则明确旧 Review/旧 CI 不能自动证明新 HEAD，独立新需求不静默扩大当前 PR。
+- [x] 现有“已有本地代码接管”“Merge / Rebase 冲突”内容完整保留，仅顺延编号。
+- [x] 第 18 节新增“PR Review 后返修”短指令。
+- [x] 不新增面向最终用户的 git 命令教学，不引入新的内部治理实现说明。
+- [ ] current-head required CI 通过；独立 Review 已完成，最终 head 仍需 re-review。
 - [ ] merge/main-fresh/archive/Issue Closure 完成。
 
 ## 非目标
@@ -113,14 +113,14 @@ Requirement Source 为 GitHub Issue #300。用户已确认前序方案，并明�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Review 有问题默认继续更新同一个 PR | #300 AC1 | pending | 待 USAGE 修改 |
-| R2 | 原开发者返修 AI-first 指令完整 | #300 AC2 | pending | 待 USAGE 修改 |
-| R3 | 维护者二次 Review 指令完整 | #300 AC3 | pending | 待 USAGE 修改 |
-| R4 | 返修基本原则完整 | #300 AC4 | pending | 待 USAGE 修改 |
-| R5 | 原 14.2/14.3 内容保留 | #300 AC5 | pending | 待内容守恒检查 |
-| R6 | 第 18 节新增短指令 | #300 AC6 | pending | 待 USAGE 修改 |
-| R7 | 不增加 git 命令教学/内部治理说明 | #300 AC7 | pending | 待静态复核 |
-| R8 | Review/CI/merge/main-fresh/archive | #300 AC8 | pending | 下游交付门禁 |
+| R1 | Review 有问题默认继续更新同一个 PR | #300 / AC1 | satisfied | `USAGE.md` 14.1 明确通常不关闭/重建 PR，并继续更新原 PR |
+| R2 | 原开发者返修 AI-first 指令完整 | #300 / AC2 | satisfied | `USAGE.md`“原开发者收到 Review 意见后”覆盖逐条 Finding、相关范围、回归、同一 PR 与重新请求 Review |
+| R3 | 维护者二次 Review 指令完整 | #300 / AC3 | satisfied | `USAGE.md`“修改完成以后，维护者怎么重新审核”要求 latest HEAD、上一轮 Findings 与当前 CI |
+| R4 | 返修基本原则完整 | #300 / AC4 | satisfied | `USAGE.md` 14.2 明确旧 Review/CI 不证明新 HEAD，独立新需求不得静默扩大当前 PR |
+| R5 | 原 14.2/14.3 内容保留 | #300 / AC5 | satisfied | main→head 内容守恒检查证明两段正文逐字等价，仅标题编号顺延为 14.3/14.4 |
+| R6 | 第 18 节新增短指令 | #300 / AC6 | satisfied | `USAGE.md` 第 18 节存在唯一“PR Review 后返修”入口 |
+| R7 | 不增加 git 命令教学/内部治理说明 | #300 / AC7 | satisfied | branch-head 静态扫描未新增 git add/commit/push/checkout/switch/rebase/merge 命令教学，文档保持 AI-first |
+| R8 | current-head Review/CI、merge/main-fresh/archive/Closure | #300 / AC8 | not_applicable | pre-merge Change 不自证未来 CI/merge/main-fresh/archive/Issue Closure；这些继续由 current-head 与 post-merge delivery gates 持有 |
 
 # 计划改动
 
@@ -157,12 +157,12 @@ Requirement Source 为 GitHub Issue #300。用户已确认前序方案，并明�
 - 依赖/配置/Secret/Schema/部署：无影响。
 - Runtime/CI：无实现变化，仅运行现有门禁验证。
 
-# Completion Audit
+# 完成审计
 
-- [ ] upstream_re_read：进入 ready_for_review 前重新读取 #300、current head 与受影响 `USAGE.md`。
-- [ ] change_coverage：R1-R7 均由直接文档证据覆盖，R8 由下游交付门禁持有。
-- [ ] reverse_audit：从开发者返修、维护者复审、同一 PR、独立新需求、速查入口反查无遗漏。
-- [ ] unresolved_cleared：独立 Review 无阻塞 Finding；current-head CI 通过。
+- [x] upstream_re_read：已重新读取 #300、main 155f18fc、当前 PR head 1922367 与受影响 `USAGE.md`；需求与范围无漂移。
+- [x] change_coverage：R1-R7 已由当前文档和静态检查直接覆盖；R8 的 current-head CI 与 post-merge 事实由下游 delivery gates 持有，不由 pre-merge Change 冒充完成。
+- [x] reverse_audit：已从原开发者返修、维护者复审、同一 PR、独立新需求、旧章节内容守恒和速查入口反查，未发现遗漏。
+- [x] unresolved_cleared：PR #301 对 1922367 的独立 Review 为 NO_FINDINGS_WITHIN_SCOPE；无未解决 Requirement/Finding，current-head CI 仍作为后续 required gate，不被本项冒充。
 
 # 完成证据与状态
 
@@ -171,16 +171,20 @@ Requirement Source 为 GitHub Issue #300。用户已确认前序方案，并明�
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main 155f18fc | canonical Source + `USAGE.md` + #300 | 已读取 | 当前事实、需求和治理入口 |
+| V2 | branch head 1922367 | 标题/关键语义/Markdown fence/git 命令扫描 + main...head diff | 通过 | 14.1–14.4 结构正确、关键返修语义完整、无 Git 命令教学、diff 仅 Change + USAGE |
+| V3 | PR #301 / head 1922367 | 独立 Review | NO_FINDINGS_WITHIN_SCOPE | R1-R7 与内容守恒无阻塞 Finding |
+| V4 | PR #301 run 1833 | Verify PR Requirement Source | 失败：新 Change 缺少必需标题“完成审计” | 已定位为 Change 机器格式问题；本 revision 改为 canonical `# 完成审计` 并进入 ready_for_review，等待新 head fresh CI |
 
 ## 未验证内容与剩余风险
 
-- 尚未写入 `USAGE.md`。
-- 尚未完成 branch-head 静态检查、独立 Review 和 required CI。
+- `USAGE.md` 已写入并完成 branch-head 静态检查；head 1922367 的独立 Review 无 Finding。
+- 本次 Change carrier 更新后会形成新的 PR head；该最终 head 的 required CI 与 re-review 尚未完成。
 - 尚未 merge；main-fresh、Change Archive 和 Issue Closure 尚未发生。
 
 ## 交付状态
 
 - 分支：docs/pr-review-rework-workflow
-- PR：未创建
+- PR：#301（普通 PR，逻辑已满足实现侧 Ready；等待 current-head CI / re-review）
+- Reviewed content head：1922367bca32d01b5b5361d431a8c5644f6230b3
 - Merge：未执行
 - Release / Deploy：不适用
