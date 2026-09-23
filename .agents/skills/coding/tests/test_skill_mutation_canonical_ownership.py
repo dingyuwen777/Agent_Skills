@@ -106,9 +106,14 @@ class SkillMutationCanonicalOwnershipTest(unittest.TestCase):
             "不得用旧记忆、摘要或自行猜测替代",
         ):
             self.assertIn(marker, managed, f"managed block 缺少项目侧入口保护：{marker}")
+        self.assertEqual(managed.count(".agents/skills/ENTRY.md"), 1)
+        self.assertNotIn(
+            ".agents/skills/",
+            managed.replace(".agents/skills/ENTRY.md", ""),
+            "managed block 除稳定 Entry 外不得暴露内部 Skill 导航",
+        )
         for forbidden in RUNTIME_FORBIDDEN_MUTATION_MARKERS + (
             ROUTER_PATH,
-            ".agents/skills/",
             "15_规则内容守恒与Skill维护.md",
             "canonical Owner",
             "canonical repository",
