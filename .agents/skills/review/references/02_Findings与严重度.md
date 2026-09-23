@@ -4,7 +4,7 @@
 
 # Findings 与严重度
 
-Review 的输出目标不是“挑出很多问题”，而是提供可定位、可触发、可验证、可行动的 Findings。每个确定 Finding 同时包含两个独立维度：`severity` 回答问题有多严重，`disposition` 回答它是否允许驱动**当前任务**返修；高严重度不等于可以越过当前 Requirement / scope 自动修改。
+Review 不以 Finding 数量为目标。每个确定 Finding 同时给出 `severity`（严重度）与 `disposition`（当前任务处置），两者独立。
 
 ## 1. 严重度
 
@@ -51,27 +51,14 @@ Review 的输出目标不是“挑出很多问题”，而是提供可定位、�
 
 ## 2. disposition：当前任务如何处理
 
-每个确定 Finding 必须从以下四类选择一个 `disposition`：
+| disposition | 当前返修行为 |
+| --- | --- |
+| `IN_SCOPE_BLOCKING` | 有证据、属当前 Acceptance/required gate；**只有**此类进入自动返修 |
+| `IN_SCOPE_NON_BLOCKING` | 当前相关但不阻塞；记录，**不自动**派 Worker |
+| `OUT_OF_SCOPE` | 历史/独立问题；不自动扩大当前任务，必要时另建 backlog |
+| `REQUIREMENT_CHANGE` | 需扩大 Requirement/Contract/Schema/Scope/授权；回 Main/上游决定 |
 
-### `IN_SCOPE_BLOCKING`
-
-有当前证据支持、属于本次 Requirement / Acceptance / required gate，并且不解决就不能正确完成当前目标。**只有这一类 Finding 可以进入当前自动返修循环。**
-
-严重度通常是 `BLOCKER` / `HIGH`，也可以是项目规则明确要求当前解决的重要 `MEDIUM`；是否阻塞以真实 Acceptance 和项目门禁为准，不靠严重度标签机械推断。
-
-### `IN_SCOPE_NON_BLOCKING`
-
-属于当前影响面且有真实价值，但不阻塞当前 Acceptance / required gate。记录并在当前授权允许时给出后续建议，**不自动**重新派 Worker，也不能为了“Review 零意见”强制当前修改。
-
-### `OUT_OF_SCOPE`
-
-真实问题或风险，但与当前 Requirement、当前 diff 引入的直接回归和本次 Acceptance 无关，例如历史问题或另一个独立需求。当前返修循环**不自动**处理；有价值时建立独立 backlog / Requirement，不能静默扩大当前 PR。
-
-### `REQUIREMENT_CHANGE`
-
-解决 Finding 需要改变或扩大已确认的 Requirement、Contract、Schema、Scope、兼容边界或授权。Reviewer / Worker 不得自行批准；返回 Main/Parent Agent，并按当前上游决策与授权规则处理。
-
-因此即使出现 `HIGH + OUT_OF_SCOPE`，也不能直接扩大当前 Worker；反过来，项目正式门禁明确要求的 `MEDIUM + IN_SCOPE_BLOCKING` 仍可能阻塞当前交付。
+severity 不能替代 disposition：高严重度但超范围也不能自行扩需求；项目规则明确阻塞的 MEDIUM 仍可判 `IN_SCOPE_BLOCKING`。
 
 ## 3. 每个 Finding 的最小结构
 
