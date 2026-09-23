@@ -16,9 +16,10 @@ affected_areas:
   - maintenance
 affected_paths:
   - .github/scripts/actions_hygiene.py
+  - .github/scripts/runtime_package_scope.py
   - .github/workflows/skill-tests.yml
   - .agents/skills/coding/tests/test_actions_hygiene.py
-  - .agents/skills/coding/references/07_通用验证与证据策略.md
+  - .agents/MAINTENANCE.md
 contracts:
   - GitHub Actions Hygiene
 data_changes: []
