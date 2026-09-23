@@ -233,6 +233,17 @@ class MultiAgentExecutionInstallTest(unittest.TestCase):
         ]
         before = {path.resolve(): path.read_bytes() for path in tracked}
 
+        # 让升级后的 canonical reviewer 角色真实变化，确保 projection plan 会重写 reviewer。
+        manifest_path = self.source / ".agents/skills/coding/assets/multi-agent-roles.json"
+        changed_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        reviewer = next(role for role in changed_manifest["roles"] if role["id"] == "reviewer")
+        reviewer["instructions"] += " Re-check the upgraded projection."
+        manifest_path.write_text(
+            json.dumps(changed_manifest, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        upgraded_payload = self._payload()
+
         upgraded = self.root / "upgrade" / "agent-skills.exe"
         upgraded.parent.mkdir()
         upgraded.write_bytes(b"runtime-v2")
@@ -251,7 +262,7 @@ class MultiAgentExecutionInstallTest(unittest.TestCase):
         with patch.object(INSTALLER, "_query_installed_runtime_state", return_value=old_state):
             with patch.object(INSTALLER, "_atomic_write", side_effect=controlled_atomic_write):
                 with self.assertRaisesRegex(OSError, "host agent projection failure"):
-                    install_project(self.target, payload, upgraded, release_version="1.1.0")
+                    install_project(self.target, upgraded_payload, upgraded, release_version="1.1.0")
 
         for path, expected in before.items():
             self.assertEqual(path.read_bytes(), expected, str(path))
