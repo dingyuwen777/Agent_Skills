@@ -301,8 +301,10 @@ class UniversalFigmaSkillTest(unittest.TestCase):
 
         self.assertIn(".agents/skills/ENTRY.md", root_agents)
         self.assertIn(".agents/skills/router/SKILL.md", root_agents)
+        self.assertEqual(managed.count(".agents/skills/ENTRY.md"), 1)
+        managed_without_entry = managed.replace(".agents/skills/ENTRY.md", "")
+        self.assertNotIn(".agents/skills/", managed_without_entry)
         for forbidden in (
-            ".agents/skills/",
             "ROUTER.md",
             "figma",
             "研发治理 MCP",
