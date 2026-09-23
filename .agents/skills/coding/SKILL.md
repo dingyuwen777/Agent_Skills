@@ -44,6 +44,8 @@ description: 面向不同项目形态、研发阶段和编程语言的可靠软�
 
 判为 `MAY_SPLIT` / `MUST_SPLIT`，或用户显式要求多 Agent 时，在创建任何子 Agent 前读取 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)，由其中唯一的 Orchestration Contract 决定角色、权限、并发、Handoff、用户可见状态和宿主 Adapter；本 Core 不复制第二套角色/调度规则。
 
+判为 `MAY_SPLIT` / `MUST_SPLIT` 后，把当前任务事实中的 `能力=多 Agent` 纳入后续约束取得；如果最终因收益不足或宿主能力缺失保持单 Agent，不伪造已经发生的 delegation。
+
 详细规则分布在 `references/`。**当本文件的触发条件命中时，对应 reference 是本 Skill 的规范组成部分，必须在执行相关动作前读取；不能只读主文件后凭印象补流程。**
 
 `references/` 当前使用 `01_`、`02_`……两位数字前缀表达研发流程阅读顺序；编号只是导航，不是固定文档数量、文件名或编号上限。每个任务只读取命中的最少充分规则。
