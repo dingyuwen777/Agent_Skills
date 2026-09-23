@@ -32,8 +32,6 @@ description: 面向不同项目形态、研发阶段和编程语言的可靠软�
 
 本 Skill 不是 Python、Web、Backend 或 PostgreSQL 专用流程。它的固定部分是“怎样可靠研发”；具体语言、框架、数据库、目录、包管理器、CI 和部署方式必须来自当前项目事实或 Greenfield 阶段经确认的新建工程决策。
 
-实质工程任务计划前只拆有真实独立价值，判 `NO_SPLIT/MAY_SPLIT/MUST_SPLIT`。后两类加入 `能力=多 Agent` 并读取 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)；`MUST_SPLIT` 有 delegation 时必拆，无能力则告知并降级为单 Agent继续，不因此阻塞或伪称已拆。
-
 详细规则分布在 `references/`。**当本文件的触发条件命中时，对应 reference 是本 Skill 的规范组成部分，必须在执行相关动作前读取；不能只读主文件后凭印象补流程。**
 
 `references/` 当前使用 `01_`、`02_`……两位数字前缀表达研发流程阅读顺序；编号只是导航，不是固定文档数量、文件名或编号上限。每个任务只读取命中的最少充分规则。
@@ -312,7 +310,7 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 5. 多 Agent / 多人协作
 
-只有互不依赖且不修改同一文件、接口、Schema、锁文件或共享状态的工作才并行。派发时给最少充分上下文：目标、范围、事实源、禁止项、验收和输出格式。主 Agent 必须复核子任务实际 diff、HEAD/Change 冲突、测试是否真实运行、证据范围和无关改动；不要直接相信“子 Agent 已完成”。详细规则见 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)。
+实质工程任务判 `NO_SPLIT/MAY_SPLIT/MUST_SPLIT`，只拆有真实独立价值；后两类加入 `能力=多 Agent` 并读 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)。只并行互不依赖且不写共享文件/接口/Schema/状态的工作；派发最少充分上下文，主 Agent 复核 diff、冲突与验证。`MUST_SPLIT` 有 delegation 时必拆，无能力则告知并降级为单 Agent继续，不阻塞或伪称已拆。
 
 ## 6. Git、依赖、安全、交付与宿主能力边界
 
