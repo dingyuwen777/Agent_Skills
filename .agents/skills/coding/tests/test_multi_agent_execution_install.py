@@ -190,17 +190,21 @@ class MultiAgentExecutionInstallTest(unittest.TestCase):
 
         overlay = (self.target / ".dsh/agent-skills.cordis.yml").read_text(encoding="utf-8")
         for marker in (
-            "@deepseek-ai/dsh-subagent",
-            "@deepseek-ai/dsh-subagent-spawn-in-process",
             "@deepseek-ai/dsh-tool-subagent",
-            "@deepseek-ai/dsh-tool-subagent-control",
-            "@deepseek-ai/dsh-tool-subagent-control/list-agents",
             "provider: spawn",
             "backgroundMode: continuable",
+            "backgroundMode: one-shot",
+            "enableRunInBackground: false",
         ):
             self.assertIn(marker, overlay)
+        self.assertNotIn("name: '@deepseek-ai/dsh-subagent'\n", overlay)
+        self.assertNotIn("name: '@deepseek-ai/dsh-subagent-spawn-in-process'", overlay)
+        self.assertNotIn("name: '@deepseek-ai/dsh-tool-subagent-control'", overlay)
         for role_id in ROLE_IDS:
             self.assertIn(f"agent_skills_{role_id}", overlay)
+        worker_block = overlay.split("toolName: agent_skills_worker", 1)[1].split("persona:", 1)[0]
+        self.assertIn("backgroundMode: one-shot", worker_block)
+        self.assertIn("enableRunInBackground: false", worker_block)
 
     def test_unowned_namespaced_agent_collision_fails_before_any_project_mutation(self) -> None:
         """用户自有同名 execution file 必须在 Runtime/AGENTS 写入前阻止安装。"""
