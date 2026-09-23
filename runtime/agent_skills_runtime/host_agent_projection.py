@@ -198,15 +198,10 @@ def render_cursor_agent(role: MultiAgentRole) -> bytes:
 
 
 def render_deepseek_execution_rows(roles: tuple[MultiAgentRole, ...]) -> str:
-    """生成插入 DeepSeek Harness patch 的 subagent service/provider/tool rows。"""
+    """基于 DSH base 已有 subagent runtime，只生成 Agent_Skills namespaced role tools。"""
     if not roles:
         return ""
-    lines = [
-        "    - id: agent-skills-subagent-service",
-        "      name: '@deepseek-ai/dsh-subagent'",
-        "    - id: agent-skills-subagent-spawn",
-        "      name: '@deepseek-ai/dsh-subagent-spawn-in-process'",
-    ]
+    lines: list[str] = []
     for role in roles:
         lines.extend(
             [
@@ -215,18 +210,12 @@ def render_deepseek_execution_rows(roles: tuple[MultiAgentRole, ...]) -> str:
                 "      config:",
                 "        provider: spawn",
                 f"        toolName: agent_skills_{role.id}",
-                "        backgroundMode: continuable",
-                f"        persona: {json.dumps(_role_prompt(role), ensure_ascii=False)}",
+                f"        backgroundMode: {'continuable' if role.background else 'one-shot'}",
             ]
         )
-    lines.extend(
-        [
-            "    - id: agent-skills-subagent-control",
-            "      name: '@deepseek-ai/dsh-tool-subagent-control'",
-            "    - id: agent-skills-subagent-list",
-            "      name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'",
-        ]
-    )
+        if not role.background:
+            lines.append("        enableRunInBackground: false")
+        lines.append(f"        persona: {json.dumps(_role_prompt(role), ensure_ascii=False)}")
     return "\n".join(lines)
 
 
