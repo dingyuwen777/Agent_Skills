@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260923-160620-pr-review-rework-workflow
 title: 完善 USAGE 的 PR Review 返修闭环
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: docs/pr-review-rework-workflow
 created: 2026-09-23
