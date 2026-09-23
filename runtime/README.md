@@ -179,16 +179,17 @@ v1、v2、未知或损坏 legacy manifest 直接失败；旧 Runtime 不存在�
 - 新 Release 删除文件时只删除 previous `managed_files` 明确认领项，不替换整棵 Skill 目录；
 - 项目后来添加到受管 Skill 目录中的 Reference/asset/其他文件继续是项目自有，普通升级不能删除；
 - `.agents/runtime/` 仍为项目本地运行资产，但安装/升级**不自动新增** Runtime ignore；**项目原本已有** `/.agents/runtime/` 或等价 ignore 时保持原样，不删除、不重复追加；
-- `AGENTS.md` / CLAUDE / Codex 使用既有 managed marker；DeepSeek Harness 的 `.dsh/agent-skills.cordis.yml` 与 Windows 根 `DeepSeek-Harness.cmd` 使用独立 DeepSeek managed marker；
+- `AGENTS.md` / CLAUDE / Codex 使用既有 managed marker；Codex/Claude Code/Cursor 的 namespaced role agent files 使用 `agent-skills:multi-agent-role:v1` ownership marker；DeepSeek Harness 的 `.dsh/agent-skills.cordis.yml` 与 Windows 根 `DeepSeek-Harness.cmd` 使用独立 DeepSeek managed marker；
 - DeepSeek Harness 资产只写目标项目：不修改 `$DSH_HOME`、全局 `cordis.patch.yml` 或用户 profile；同名文件存在但没有合法 DeepSeek managed marker 时 fail closed，不因为旧 install-state 存在就猜新 Host 文件 ownership；
 - Windows 安装生成项目根 `DeepSeek-Harness.cmd`，它只负责切到自身项目根并执行 `dsh web --patch "%~dp0.dsh\agent-skills.cordis.yml"`；Linux/macOS 只安装项目级 overlay，不生成 Windows launcher；
-- DeepSeek Harness 原生发现目标项目 `.agents/skills`；项目级 overlay 仅通过 `@deepseek-ai/dsh-mcp-client`、`transport: stdio`、`args: [serve]` 把现有项目 Runtime 接入 Harness，不复制 DeepSeek 专用 Skill、Prompt 或第二套治理语义；
-- 目标项目 `AGENTS.md` managed block 只做 Runtime 薄 Bootstrap：先恢复项目真实事实，再通过已配置的项目级治理 MCP 获取本次任务所需完整约束；不得把受管源码维护导航当作 Runtime 日常读取入口；
+- 唯一 `coding/assets/multi-agent-roles.json` 是 Explorer / Researcher / Worker / Tester / Reviewer 的角色事实源；安装器从它确定性生成 `.codex/agents/agent-skills-*.toml`、`.claude/agents/agent-skills-*.md`、`.cursor/agents/agent-skills-*.md`，不维护四套手写角色规则，不固定模型；
+- DeepSeek Harness 项目级 overlay 保留 `@deepseek-ai/dsh-mcp-client` + `transport: stdio` + `serve`，同时使用当前 `@deepseek-ai/dsh-base` 已提供的 `dsh-subagent`、`dsh-subagent-spawn-in-process`、五个 namespaced `dsh-tool-subagent` role tools、control 与 list-agents 建立 `ctx.subagents` execution surface；安装器不执行 npm/pnpm 在线安装，也不复制第二套专业 Skill；
+- 目标项目 `AGENTS.md` managed block 只做 Runtime 薄 Bootstrap：先恢复项目真实事实，**显式读取稳定 `.agents/skills/ENTRY.md`**，再通过已配置的项目级治理能力获取本次任务所需完整约束；该 Entry 是根 AGENTS 唯一允许公开的 `.agents/skills/` 路径，Router/专业 Skill/Reference 仍不作为 Runtime 日常导航公开；
 - Runtime 用户可见过程可以正常描述项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 和交付状态，并解释当前项目真正适用的工程要求；普通分发明文不通过“不要暴露某某内部能力”这类自说明来表达边界；
-- Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；
+- Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；三宿主 role agent files 只认领带精确 Agent_Skills role marker 的 namespaced 文件，未认领同名文件在任何项目写入前 fail closed；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产和未认领 shared file 保留；
 - Codex 同名 MCP table 存在但 managed marker 缺失，或合法 managed block 外另有重复同名 table 时，即使 legacy v3 或旧 Runtime install-state 能证明历史安装存在也 fail closed，不猜测 table ownership；
-- 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、legacy manifest（如存在）与包括 DeepSeek overlay/launcher 在内的受管文本；
+- 任一可预检错误先于写入发现；失败按 bytes/权限快照恢复 touched managed files、Runtime、legacy manifest（如存在）、Codex/Claude/Cursor role projections 与包括 DeepSeek overlay/launcher 在内的受管文本，并清理本事务新建且仍为空的 projection 目录；
 - legacy v3 manifest 只在所有新文件、Runtime、宿主配置都成功后删除；失败回滚必须恢复它；
 - 如果回滚本身有任何失败，必须同时报告原始安装异常与未恢复路径/原因，不能静默吞掉 rollback failure。
 
