@@ -124,10 +124,12 @@ def _role_prompt(role: MultiAgentRole) -> str:
     return (
         "Before substantive work, read the current project's AGENTS.md and "
         ".agents/skills/ENTRY.md when present, then obtain and follow the project's configured engineering constraints. "
-        "Treat the parent agent's delegated objective, scope, dependencies, authorization, and acceptance criteria as binding. "
+        "Treat the parent agent's delegated objective, scope, dependencies, authorization, acceptance criteria, "
+        "base_revision, and decision_epoch as binding when supplied. "
+        "Do not delegate to another agent unless the parent explicitly granted nested delegation; by default return to the parent. "
         f"{permission} {role.instructions} "
-        "Return status (completed/blocked/failed), concise summary, facts/evidence, changed files if any, "
-        "validation actually performed, remaining risks, and any decision still required from the parent."
+        "Return these lightweight headings: STATUS, SCOPE, REVISION, SUMMARY, EVIDENCE, CHANGES, VALIDATION, RISKS, "
+        "PARENT_DECISION. Under REVISION report the observed base_revision/decision_epoch or unknown; never invent them."
     )
 
 
@@ -211,8 +213,18 @@ def render_deepseek_execution_rows(roles: tuple[MultiAgentRole, ...]) -> str:
                 "        provider: spawn",
                 f"        toolName: agent_skills_{role.id}",
                 f"        backgroundMode: {'continuable' if role.background else 'one-shot'}",
+                "        maxDepth: 1",
             ]
         )
+        # DSH toolFilter 只缩小 child 可见的直接文件 mutation 工具；它不是 permission lattice
+        # 或 sandbox，不能据此宣称与 Codex/Claude/Cursor 的宿主级 readonly enforcement 等价。
+        if role.mode == "read_only":
+            lines.extend(
+                [
+                    "        toolFilter:",
+                    "          deny: [write, edit]",
+                ]
+            )
         if not role.background:
             lines.append("        enableRunInBackground: false")
         lines.append(f"        persona: {json.dumps(_role_prompt(role), ensure_ascii=False)}")

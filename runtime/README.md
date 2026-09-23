@@ -66,6 +66,8 @@ start_task(task, phase, 可选任务状态)
 
 模型名称、版本和宿主不进入 Router。GPT、DeepSeek、GLM 或其他模型可以采用不同推理策略，但同一项目任务必须满足同一 canonical Owner、Context、风险、授权、Evidence 和完成门禁。真实跨模型效果由仓库 `evals/` 的 model-neutral Outcome Eval case/run/grader Contract 比较：只有 `actual` run 进入真实模型验证计数，`fixture` 只验证机器契约；没有真实 run artifact 的模型只能标记 `unverified`。
 
+项目级 native role projection 继续只是 Host Adapter：common child prompt 要求 child 默认回 Parent、携带 revision/decision context 并使用稳定 Handoff headings；它不新增 Runtime Task Manager。DSH namespaced role tools 显式使用 `maxDepth: 1`；readonly role 额外用 `toolFilter` 隐藏直接 `write/edit` 工具。该 filter 只是同进程模型工具面的行为硬化，**不是 permission lattice 或 sandbox**；DSH 实际文件/进程权限仍由当前 permission/sandbox 与 Parent 授权决定，因此不得宣称它与 Codex/Cursor 的宿主级 readonly enforcement 等价。
+
 当前 Runtime **不实现 SEP-2640 Compatibility**。Analysis / Research 与其他正式 Skill 一样由动态 Catalog / Project Payload 自动发现和分发；它们不改变六个 MCP Tool，也不引入供应商专属研究控制面。
 
 ## 2. 三个独立完整性域
@@ -183,7 +185,7 @@ v1、v2、未知或损坏 legacy manifest 直接失败；旧 Runtime 不存在�
 - DeepSeek Harness 资产只写目标项目：不修改 `$DSH_HOME`、全局 `cordis.patch.yml` 或用户 profile；同名文件存在但没有合法 DeepSeek managed marker 时 fail closed，不因为旧 install-state 存在就猜新 Host 文件 ownership；
 - Windows 安装生成项目根 `DeepSeek-Harness.cmd`，它只负责切到自身项目根并执行 `dsh web --patch "%~dp0.dsh\agent-skills.cordis.yml"`；Linux/macOS 只安装项目级 overlay，不生成 Windows launcher；
 - 唯一 `coding/assets/multi-agent-roles.json` 是 Explorer / Researcher / Worker / Tester / Reviewer 的角色事实源；安装器从它确定性生成 `.codex/agents/agent-skills-*.toml`、`.claude/agents/agent-skills-*.md`、`.cursor/agents/agent-skills-*.md`，不维护四套手写角色规则，不固定模型；
-- DeepSeek Harness 项目级 overlay 保留 `@deepseek-ai/dsh-mcp-client` + `transport: stdio` + `serve`；当前 `@deepseek-ai/dsh-base` 已挂载 `ctx.subagents`、spawn/control/list，因此 overlay **不重复注册 base-owned runtime**，只增加五个 namespaced `dsh-tool-subagent` role tools：四个只读角色 continuable background，Worker one-shot foreground 且禁止 background；安装器不执行 npm/pnpm 在线安装；
+- DeepSeek Harness 项目级 overlay 保留 `@deepseek-ai/dsh-mcp-client` + `transport: stdio` + `serve`；当前 `@deepseek-ai/dsh-base` 已挂载 `ctx.subagents`、spawn/control/list，因此 overlay **不重复注册 base-owned runtime**。五个 namespaced role tools 显式 `maxDepth: 1`；四个 readonly 角色 continuable background 并用 `toolFilter` 隐藏直接 `write/edit`，Worker 保持 one-shot foreground、禁止 background 且不套 readonly filter。`toolFilter` 只是 child 工具视图 hardening，不是 permission lattice / sandbox，不能宣称与 Codex/Claude/Cursor 的宿主级 readonly enforcement 等价；安装器不执行 npm/pnpm 在线安装；
 - 目标项目 `AGENTS.md` managed block 只做 Runtime 薄 Bootstrap：先恢复项目真实事实，**显式读取稳定 [`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md)**，再通过已配置的项目级治理能力获取本次任务所需完整约束；该 Entry 是根 AGENTS 唯一允许公开的 `.agents/skills/` 路径，Router/专业 Skill/Reference 仍不作为 Runtime 日常导航公开；
 - Runtime 用户可见过程可以正常描述项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 和交付状态，并解释当前项目真正适用的工程要求；普通分发明文不通过“不要暴露某某内部能力”这类自说明来表达边界；
 - Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；三宿主 role agent files 只认领带精确 Agent_Skills role marker 的 namespaced 文件，未认领同名文件在任何项目写入前 fail closed；
