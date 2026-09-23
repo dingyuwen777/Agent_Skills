@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260923-224800-review-convergence-guard
 title: 增加 Review 返修收敛门禁
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/review-convergence-guard
 created: 2026-09-23
