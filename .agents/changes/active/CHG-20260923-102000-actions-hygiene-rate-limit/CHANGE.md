@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260923-102000-actions-hygiene-rate-limit
 title: Actions Hygiene 403 Rate Limit 临时错误识别
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: fix/actions-hygiene-rate-limit
 created: 2026-09-23
@@ -124,10 +124,10 @@ current path 保护、first-parent history、active skip、completed-only delete
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | rate-limit 403 transient | #296 / AC1 | not_satisfied | 待实现/测试 |
-| R2 | permission 403 hard | #296 / AC2 | not_satisfied | 待实现/测试 |
-| R3 | 既有 transient/404 不回归 | #296 / AC3 | not_satisfied | 待回归 |
-| R4 | 完整交付 | #296 / AC4 | not_satisfied | downstream |
+| R1 | rate-limit 403 transient | #296 / AC1 | satisfied | `_is_transient_http_error()` 覆盖 body/header 明确信号；回归资产已落库 |
+| R2 | permission 403 hard | #296 / AC2 | satisfied | 普通 403 不命中 rate-limit 证据时返回 False，继续 RuntimeError；回归已覆盖 |
+| R3 | 既有 transient/404 不回归 | #296 / AC3 | satisfied | 429/503 回归已覆盖；404 retired 分支未修改 |
+| R4 | 完整交付 | #296 / AC4 | not_applicable | pre-merge 不自证 CI/merge/main-fresh/archive/closure；由 delivery downstream gate 持有 |
 
 # 计划改动
 
@@ -138,8 +138,8 @@ current path 保护、first-parent history、active skip、completed-only delete
 
 - [x] 调查真实失败证据
 - [x] 建立最小方案
-- [ ] 完成实现
-- [ ] 取得 current-head CI
+- [x] 完成实现
+- [ ] 取得 current-head CI（Ready gate 执行）
 - [ ] 完成交付闭环
 
 # 验证矩阵
@@ -167,10 +167,10 @@ current path 保护、first-parent history、active skip、completed-only delete
 
 # 完成审计
 
-- [ ] upstream_re_read
-- [ ] change_coverage
-- [ ] reverse_audit
-- [ ] unresolved_cleared
+- [x] upstream_re_read：已重读 #296、AIMA #5534 真实 403 rate-limit 日志与 current main
+- [x] change_coverage：AC1-AC3 已映射到实现/回归；AC4 downstream
+- [x] reverse_audit：HTTPError → body/header rate-limit 判定 → TransientGitHubApiError → CLI 75 → CI warning
+- [x] unresolved_cleared：实现侧 blocker 清零；CI/Review/post-merge 由 delivery gate 持有
 
 # 完成证据与状态
 
@@ -184,6 +184,6 @@ current path 保护、first-parent history、active skip、completed-only delete
 
 ## 交付状态
 
-- PR：未创建
-- CI：未执行
+- PR：待创建
+- CI：待 Ready PR current-head
 - merge/archive/closure：未执行
