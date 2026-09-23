@@ -40,256 +40,197 @@ data_changes: []
 
 # 变更摘要
 
-- **要解决的问题**：当前 AC/测试闭环容易被误当成“系统已无优化空间”；多 Agent 还存在 Follow-up、递归 delegation、stale result、child retry、后台 child、writer、Evidence conflict 等二阶失效边界。
-- **拟议修改**：在 Analysis、Review、Coding 和现有 Host Projection Owner 内补独立失效模式审计、Follow-up Admission、depth/budget/freshness/retry/join/writer/conflict/ledger/handoff Guard，并对 DSH role rows 做真实可支持的 depth/direct-mutation hardening。
-- **预期结果**：不同模型/宿主下，自动机制围绕用户目标闭环而非递归扩张；“没有更多问题”的结论只能来自明确范围的独立审计，不再由当前实现自证。
+- **要解决的问题**：当前 AC/测试闭环不能证明系统已无优化空间；多 Agent 仍需约束 Follow-up、递归 delegation、stale result、child retry、后台 child、writer、Evidence conflict 等二阶失效。
+- **实际修改**：在既有 Analysis / Review / Coding / Host Adapter Owner 内增加独立失效模式审计、Follow-up Admission、depth/budget/freshness/retry/join/writer/conflict/ledger/handoff Guard；DSH role rows 增加 `maxDepth: 1` 与 readonly direct `write/edit` filter，并明确它不是安全沙箱。
+- **预期结果**：自动机制始终服务当前用户目标闭环；“没有更多高价值问题”的判断只能来自明确范围的独立审计，而不是当前实现自证。
 
 # 背景、现状与问题
 
 ## 背景
 
-Requirement Source：GitHub Issue #306。用户明确要求按系统性优化方案实施并合并 main，同时把“优化方向/排查问题必须全面系统，不能自己回答自己、用自己已有规则证明没问题”的方法写入 Skill。
+Requirement Source：GitHub Issue #306。用户要求按系统性优化方案实施并合并 main，同时把“优化/排查必须全面系统，不能自己回答自己、用已有规则证明没问题”的方法写入 Skill。
 
-## 当前现状
+## 起始缺口
 
-- #298/#299 已建立价值驱动 Multi-Agent Orchestration。
-- #302/#303 已建立 Codex/Claude/Cursor/DSH native execution projection。
-- #304/#305 已建立 Review Convergence Guard。
-- 当前 Analysis 有第一性原理与“证据充分即停止”，但无 Closure≠Optimality 与独立 failure-mode audit。
-- Review 的 OUT_OF_SCOPE 仅写“必要时另建后续”，没有 Follow-up Admission / no-auto-execute / no-recursive rule。
-- Coding Ref09 没有 delegation depth/active child budget、revision/decision epoch、child retry、join/cancel、Evidence conflict、writer lease、task-local ledger。
-- DSH role rows没有显式 maxDepth/toolFilter；官方 dsh-tool-subagent 当前支持二者，但 toolFilter 不是安全权限格。
+- Analysis 没有 `Closure ≠ Optimality` 与独立 failure-mode / negative-space / counterexample audit。
+- OUT_OF_SCOPE 没有 Follow-up Admission / no-auto-execute / no-recursive hard rule。
+- Multi-Agent 没有统一的 depth/budget/freshness/retry/join/conflict/writer/ledger。
+- DSH namespaced role tools 没有显式 recursion cap / direct mutation filter。
+- 目标项目 Bootstrap / USAGE 没有解释上述自动停止边界。
 
-## 问题、根因或约束
+## 根因
 
-根因不是 Agent 数量不足，而是现有治理主要覆盖“一阶任务执行”，对自动机制自身产生的新任务、新 Agent、新 Issue、旧结果、失败重试和后台生命周期缺少统一停止/准入边界；同时 Analysis 没有要求在“全面优化/排查”场景从当前方案之外主动寻找负空间和反例。
-
-## 不修改的后果
-
-- OUT_OF_SCOPE 可能在不同模型下被解释为自动建 Issue/继续执行，形成任务树。
-- child 可依赖宿主能力继续递归 delegation，协调/token 成本不可控。
-- 并行 child 返回旧 revision/旧业务决定时可能被直接集成。
-- child failure 可被模型机械 respawn。
-- Agent 间冲突可能被错误按数量投票。
-- Background child 在证据已足够后仍运行，或 write child 在交付时仍活动。
-- “AC/CI 都绿”可能再次被误写成“已经没有任何优化空间”。
+现有治理覆盖了一阶任务执行，但没有系统约束自动机制自身继续制造新 Agent、新 Issue、新重试、新写入和旧结果；同时 Analysis 在“还有没有优化”类问题上缺少独立反证审计，容易把已定义 AC 的 closure 误当成 global optimality。
 
 # 事实与证据
 
-| 证据编号 | 已确认事实 | 来源 / 定位 / 命令 | 支撑的约束或决策 |
+| 证据 | 已确认事实 | 来源 | 影响 |
 | --- | --- | --- | --- |
-| E1 | current main 无 Follow-up Admission / no-auto-Issue / recursive follow-up rule | current main repo search/readback | 需要 AC3 |
-| E2 | current Ref09 无 depth/budget/freshness/retry/join/conflict/ledger | current main repo search/readback | 需要 AC4-AC11 |
-| E3 | Analysis 当前无 Closure≠Optimality / independent failure-mode audit | analysis/SKILL.md + ref04 | 需要 AC1-AC2 |
-| E4 | DSH dsh-tool-subagent 当前支持 maxDepth/toolFilter | deepseek-ai/deepseek-harness current source | 可用现有 Host Adapter 做最小 hardening |
-| E5 | DSH toolFilter 不是授权格，in-process child permission 从 Parent 状态捕获/继承 | DSH official child-agent.ts / implemented note | 禁止宣称 readonly security parity |
-| E6 | Codex/Claude/Cursor 当前 projection 已有各自 readonly enforcement | host_agent_projection.py | 必须保持 |
-| E7 | Issue #306 AC1-AC19 | live Requirement Source | 当前完成定义 |
+| E1 | current main 起始时不存在 Follow-up Admission / no-auto Issue/recursive follow-up | main readback + #306 | R3 |
+| E2 | current Ref09 起始时无 depth/budget/freshness/retry/join/conflict/ledger | main readback | R4-R11 |
+| E3 | Analysis 起始时无 Closure≠Optimality / independent failure-mode audit | main readback | R1-R2 |
+| E4 | DSH current `dsh-tool-subagent` 支持 `maxDepth` / `toolFilter`，unknown tool name fail startup | deepseek-ai/deepseek-harness current source | R13 |
+| E5 | DSH current tool catalog 确认 `write` / `edit` 是真实工具名；同时还有 bash / optional editor mutation path | DSH current source/search | toolFilter 只能诚实声明 direct mutation hardening |
+| E6 | Red #1896 / run `35888305473`：新 8 个 contract tests 在旧实现上真实失败 | CI | 有效 Red |
+| E7 | 初版 Green #1912 / run `35889126228`：新行为已通过，但复杂路由 context budget 超 7246 bytes | CI | 必须内容守恒压缩，不能抬预算 |
+| E8 | compact 后 #1919 / run `35889960703` 暴露历史 Delegation machine anchors 被误删 | CI | 恢复旧 Contract，而非改测试 |
+| E9 | exact head `8ceaa5f8` / #1923 / run `35890678992`：compile、CLI smoke、665 tests 全部 OK；无 context-budget failure | CI | current implementation semantic Green |
+| E10 | fresh requirement-first Review `5293910425` @ `8ceaa5f8` | PR #307 | NO_BLOCKING_FINDINGS_WITHIN_SCOPE |
 
-## 推断与待确认
+## 已知边界
 
-- CI classifier 预计因 host projection / managed project payload 变化要求 package evidence，但以实际 classifier 为准。
-- DSH readonly role 的 direct `write/edit` toolFilter 只能减少常见直接文件修改入口；shell/其他能力仍受 DSH 自身 permission/sandbox 与 Parent 权限影响，不能宣称完整 read-only。
-- 不新增 Runtime protocol/schema，因此不预计需要 Migration。
+- DSH `toolFilter: deny: [write, edit]` 只隐藏这两个直接 mutation 工具；bash / optional editor-style mutation 仍由 DSH permission/sandbox 与 Parent 授权控制，因此**不宣称完整 read-only**。
+- 当前聊天宿主没有可调用 subagent execution interface，本次开发/Review 按单 Agent fallback；CI 证明 projection/config/contract，不冒充真实付费模型 child session benchmark。
+- 本任务不发布 Runtime；旧已发布 binary 不会热更新。
 
 # 目标、成功标准与非目标
 
 ## 目标
 
-1. 优化/全面排查时采用独立失效模式审计，阻断自证“没问题”。
-2. 给现有 Multi-Agent 增加最小但足够的自动扩张、陈旧结果、失败、并发和生命周期 Guard。
-3. 在不新建调度服务/角色/telemetry 的前提下，提高跨模型、跨宿主一致性。
+1. 优化/全面排查执行独立失效模式审计，阻断自证“没问题”。
+2. 限制多 Agent 自动派生、陈旧结果、重试、共享写和后台生命周期。
+3. 不增加角色、调度服务或自动 telemetry 的情况下提高跨模型/宿主稳定性。
 
 ## 成功标准
 
-- [x] #306 AC1-AC17 已有直接实现、Red→Green 与永久回归证据。
-- [x] #306 AC18 的独立 Review 已完成；final-head CI/package 明确由 Ready 后 Delivery Gate 持有，pre-Ready Change 不提前自证。
-- [x] #306 AC19 明确由 merge 后 Delivery Gate 持有，pre-merge Change 不提前自证未来动作。
-
-## 范围
-
-Analysis/Review/Coding canonical rules、target managed AGENTS、common host role prompt、DSH role projection、必要 Runtime docs、USAGE、永久 tests 和本次交付治理。
+- [x] #306 AC1–AC17 已由 canonical rules、Host projection、永久回归、USAGE/Runtime docs 和 current-head semantic CI 覆盖。
+- [x] #306 AC18 的 fresh Requirement-first Review 已完成；final-head required CI/package 属于 Ready 后 Delivery Gate。
+- [x] #306 AC19 的 merge/main-fresh/archive/closure/cleanup 明确由 Delivery Gate 持有，pre-merge Change 不自证未来动作。
 
 ## 非目标
 
-不新增角色/Planner/Scheduler/Team/Queue，不落盘 orchestration state，不自动 telemetry，不统一 JSON wire protocol，不修改 AIMA_UGC，不 Release/Deploy，不把 DSH toolFilter 宣称为安全沙箱。
+- 不新增第六个 Agent、Planner/Scheduler/Team/Queue。
+- 不持久化 Orchestration Ledger，不新增 Runtime Task Manager。
+- 不自动上传 telemetry，不强制统一 JSON wire protocol。
+- 不允许 Follow-up 自动执行/递归派生。
+- 不修改 AIMA_UGC。
+- 不创建 Runtime Release / Deploy。
+- 不把 DSH toolFilter 声称为 permission lattice / sandbox。
 
-## 必须保持不变
+# 约束与关键决策
 
-- NO/MAY/MUST 的 value-first 原则。
-- 无 host delegation 时单 Agent fallback。
-- 五个稳定 Role ID / multi-agent-roles/v1 schema。
-- Codex/Claude/Cursor 当前权限投影。
-- Parent 不信任 child 自报完成，仍以真实 Evidence 集成。
-- Review Convergence Guard 与 Acceptance completion contract。
-- Runtime MCP/License/Release ZIP/Public protocol 不变。
-
-# 约束与意图决策
-
-| 决策维度 | 当前决定 | 依据 | 影响 |
-| --- | --- | --- | --- |
-| Follow-up | OUT_OF_SCOPE 默认 RECORD_ONLY；通过 Admission 才可 Backlog；Backlog 不自动执行/递归 | #306 AC3 / E1 | 防任务树 |
-| Delegation | root-only default，active child default 3；例外需 Parent 证据授权 | #306 AC4 | 控制 fan-out |
-| Freshness | base_revision + decision_epoch；不匹配 STALE_RESULT | #306 AC5 | 防旧事实写入 |
-| Failure | transient retry ≤1；重复失败 STOP_CHILD_RETRY | #306 AC6 | 防 respawn loop |
-| Conflict | Evidence 优先、禁止投票 | #306 AC7 | 跨模型一致 |
-| Lifecycle | evidence sufficient/obsolete 时 join/cancel；交付前无未知 required/write child | #306 AC8 | 防后台泄漏 |
-| Write | single writer lease default | #306 AC9 | 防共享 checkout race |
-| State | task/session-only ledger，不落盘 | #306 AC10 | 防 compaction 遗忘 |
-| Handoff | 轻量标题 envelope，不强制 JSON | #306 AC11 | 跨宿主稳定 |
-| DSH | maxDepth=1；readonly deny direct write/edit，但非 security boundary | #306 AC13 / E4-E5 | 真实能力内 hardening |
-| Analysis | closure 不能证明 optimality；独立 failure-mode audit | #306 AC1-AC2 | 防自证闭环 |
-
-# 修改方案与决策依据
-
-## 最小充分方案
-
-1. 先新增 semantic/host-projection Red tests，证明 current main 缺口。
-2. Analysis Core + ref04 增加 Independent Optimization Audit / Closure≠Optimality。
-3. Review Ref02 增加 Follow-up Admission Gate；Ref01 只在需要处引用，不复制第二套。
-4. Coding Ref09 集中拥有 delegation depth/budget/freshness/retry/conflict/join/writer/ledger/handoff/effectiveness feedback。
-5. AGENTS.managed.md 只同步 project-facing hardening，保持薄入口。
-6. host_agent_projection common prompt 增加 child no-delegation default、revision/epoch return、Handoff Envelope；DSH rows加 maxDepth=1，readonly direct write/edit filter。
-7. USAGE/runtime README 同步真实用户/维护者边界。
-8. 全量 tests/context budget/host install/idempotency/rollback；不抬 budget。
-9. requirement-first Review → Ready → final-head CI/package → guarded merge → main-fresh → archive/closure。
-
-## 证据到决策
-
-| 决策 | 依据证据 | 为什么采用 |
-| --- | --- | --- |
-| D1 | E1-E3 | 现有一阶规则不足，需要二阶 Guard 和审计方法 |
-| D2 | E4-E5 | DSH 已支持 depth/filter，但只能诚实做行为硬化 |
-| D3 | E6 | 其他三宿主无需重构，只保持权限并共享 common prompt |
-| D4 | #306 非目标 | 不新建服务/角色，避免 Agent_Skills 自身过度治理 |
-
-## 备选方案与取舍
-
-- 新增 Planner/Scheduler/Agent Team：增加控制面和上下文，不需要，拒绝。
-- 所有 child 严格 JSON：跨宿主脆弱且收益不足，拒绝。
-- 每个 OUT_OF_SCOPE 自动 Issue：会产生递归 backlog，拒绝。
-- DSH 仅靠 persona 声称 read-only：与官方权限事实不符，拒绝。
-- 把 active child=3 写成不可突破硬上限：会误伤真实独立 frontier，采用“默认预算 + Parent 有证据扩展”。
+| 维度 | 最终决定 |
+| --- | --- |
+| Analysis | Closure/AC/Test Green ≠ Optimality；优化审计检查负空间、反例、二阶效应、生命周期/权限/并发/失败恢复/跨宿主/成本/门禁盲区，并有停止条件 |
+| Follow-up | OUT_OF_SCOPE 默认 RECORD_ONLY；通过 Admission 才可 FOLLOW_UP_BACKLOG；不自动 Issue/Change/Branch/PR/Agent/执行/递归 |
+| Delegation | root-only 默认；child 默认不 delegate；active child budget=3，是默认协调预算而非绝对上限 |
+| Freshness | base_revision + decision_epoch；不匹配 -> STALE_RESULT -> revalidate |
+| Retry | transient 同 delegation 最多自动重试 1 次；再次同类失败 STOP_CHILD_RETRY |
+| Conflict | 禁止 Agent 投票；按 current facts/source owner/Contract/test/probe Evidence 裁决，不足 UNKNOWN |
+| Lifecycle | Evidence 足够或 child obsolete 就停止等待；支持时 cancel；交付前 required/write child 不得未知活动 |
+| Writer | 同 checkout/shared state 默认 Single Writer Lease；多 Writer 必须完整隔离 |
+| Ledger | task/session-only，跟踪 split/epoch/active children/writer/repair/blockers/follow-ups；不落盘、不新服务 |
+| Handoff | STATUS/SCOPE/REVISION/SUMMARY/EVIDENCE/CHANGES/VALIDATION/RISKS/PARENT_DECISION；不强制 JSON |
+| DSH | maxDepth=1；readonly deny direct write/edit；只做 tool-view hardening |
+| Effectiveness | 后续阈值用真实历史任务 Evidence 调整，不继续凭感觉加 Agent/规则，不自动 telemetry |
 
 # 需求追溯
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Closure≠Optimality + independent optimization audit | #306 / AC1 | satisfied | Analysis Core + ref04 + regression |
-| R2 | 禁止自证没问题、限制结论范围 | #306 / AC2 | satisfied | analysis ref04 独立失效模式审计 |
-| R3 | Follow-up Admission / no auto/recursive | #306 / AC3 | satisfied | review ref02 Follow-up Admission Gate |
-| R4 | root-only + active budget 3 | #306 / AC4 | satisfied | coding ref09 Depth/Budget Guard + managed AGENTS |
-| R5 | revision/decision epoch freshness | #306 / AC5 | satisfied | coding ref09 Freshness + common child prompt |
-| R6 | child retry guard | #306 / AC6 | satisfied | coding ref09 STOP_CHILD_RETRY + managed AGENTS |
-| R7 | Evidence conflict no-vote | #306 / AC7 | satisfied | coding ref09 Evidence Conflict Gate |
-| R8 | join/cancel/delivery child lifecycle | #306 / AC8 | satisfied | coding ref09 Join/Cancel Guard |
-| R9 | single writer lease | #306 / AC9 | satisfied | coding ref09 Single Writer Lease + managed AGENTS |
-| R10 | task-local orchestration ledger | #306 / AC10 | satisfied | coding ref09 Orchestration Ledger |
-| R11 | Handoff Envelope | #306 / AC11 | satisfied | coding ref09 + common child prompt headings |
-| R12 | common prompt + existing host permission preservation | #306 / AC12 | satisfied | host_agent_projection + existing host regressions |
-| R13 | DSH depth/filter + truthful boundary | #306 / AC13 | satisfied | DSH maxDepth/toolFilter + runtime README boundary |
-| R14 | managed AGENTS / USAGE project-facing sync | #306 / AC14 | satisfied | AGENTS.managed.md + USAGE 4.2/17.1 |
-| R15 | Effectiveness Benchmark principle, no telemetry service | #306 / AC15 | satisfied | coding ref09 Effectiveness Feedback + USAGE |
-| R16 | permanent Red→Green regressions | #306 / AC16 | satisfied | test_agent_orchestration_hardening.py；#1896 Red / #1922 Green |
-| R17 | context budget unchanged | #306 / AC17 | satisfied | #1922 context budget Green；未提高 budget |
-| R18 | independent Review + final-head CI/package | #306 / AC18 | not_applicable | Review 5293891633 已完成；final-head CI/package 属于 Ready 后 Delivery Gate |
-| R19 | merge/main-fresh/archive/closure/cleanup | #306 / AC19 | not_applicable | pre-merge Change 不能自证未来交付动作；由 Delivery Gate 完成 |
+| R1 | Closure≠Optimality + independent optimization audit | #306 / AC1 | satisfied | Analysis Core + analysis ref04 |
+| R2 | 禁止当前实现/规则/测试循环自证；限定审计范围和 unknowns | #306 / AC2 | satisfied | analysis ref04 |
+| R3 | Follow-up Admission / no auto / no recursive | #306 / AC3 | satisfied | review ref02 + USAGE |
+| R4 | root-only + default active child budget 3 | #306 / AC4 | satisfied | coding ref09 + managed AGENTS |
+| R5 | base_revision / decision_epoch / STALE_RESULT | #306 / AC5 | satisfied | coding ref09 + common role prompt |
+| R6 | retry ≤1 / STOP_CHILD_RETRY | #306 / AC6 | satisfied | coding ref09 + managed AGENTS |
+| R7 | Evidence Conflict no-vote | #306 / AC7 | satisfied | coding ref09 |
+| R8 | Join/Cancel / delivery child lifecycle | #306 / AC8 | satisfied | coding ref09 + managed AGENTS |
+| R9 | Single Writer Lease | #306 / AC9 | satisfied | coding ref09 + managed AGENTS |
+| R10 | task/session-only Orchestration Ledger | #306 / AC10 | satisfied | coding ref09 |
+| R11 | lightweight Handoff Envelope, no mandatory JSON | #306 / AC11 | satisfied | coding ref09 + common role prompt |
+| R12 | common prompt no nested delegation + existing host permission preservation | #306 / AC12 | satisfied | host_agent_projection.py + existing host regressions |
+| R13 | DSH maxDepth/filter + truthful non-sandbox boundary | #306 / AC13 | satisfied | host projection + runtime README + DSH official facts |
+| R14 | managed AGENTS/USAGE project-facing sync + quiet obvious NO_SPLIT | #306 / AC14 | satisfied | AGENTS.managed.md + USAGE |
+| R15 | real-task Effectiveness feedback, no automatic telemetry | #306 / AC15 | satisfied | coding ref09 + USAGE |
+| R16 | permanent Red→Green regression | #306 / AC16 | satisfied | test_agent_orchestration_hardening.py + #1896 Red + #1923 Green |
+| R17 | context budget 不提高 | #306 / AC17 | satisfied | #1912 exposed overage；content-preserving compaction；#1923 no budget failure |
+| R18 | fresh Review + final-head required CI/package | #306 / AC18 | not_applicable | Review 5293910425 已完成；final-head CI/package 由 Ready 后 Delivery Gate |
+| R19 | merge/main-fresh/archive/closure/cleanup | #306 / AC19 | not_applicable | pre-merge Change 不能自证未来交付动作；由 Delivery Gate |
 
-# 计划改动
+# 实际改动
 
-| 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
-| --- | --- | --- | --- |
-| analysis/SKILL.md + ref04 | independent optimization audit | 防自证闭环 | R1-R2 |
-| review/ref02 | Follow-up Admission | 防 backlog recursion | R3 |
-| coding/ref09 | orchestration hardening owner | 二阶 Guard | R4-R11/R15 |
-| AGENTS.managed.md | 薄 project-facing contract | 目标项目实际执行 | R14 |
-| host_agent_projection.py | common child prompt + DSH depth/filter | native execution | R12-R13 |
-| coding/tests | semantic + projection regression | 永久约束 | R16-R17 |
-| USAGE.md / runtime README | 用户/维护者真实边界 | 可预期行为 | R13-R15 |
+| 资产 | 实际修改 |
+| --- | --- |
+| analysis/SKILL + ref04 | Closure≠Optimality / independent failure-mode audit |
+| review/ref02 | compressed severity/disposition + Follow-up Admission Gate |
+| coding/ref09 | compact unified Orchestration Contract + all second-order guards |
+| AGENTS.managed.md | project-facing depth/budget/freshness/failure/follow-up + quiet NO_SPLIT |
+| host_agent_projection.py | common revision/epoch/handoff prompt + DSH maxDepth/filter |
+| test_agent_orchestration_hardening.py | permanent semantic/projection regression |
+| USAGE.md | multi-agent finite expansion + follow-up + benchmark + analysis audit |
+| runtime/README.md | truthful DSH hardening/security boundary |
 
-- [x] 调查当前实现和事实源
-- [x] 建立与风险相称的验证矩阵
-- [x] 行为变化建立失败证据
-- [x] 完成最小实现，不静默扩大范围
-- [x] 同步受影响长期文档
-- [x] 取得当前版本验证证据
-- [x] 完成需求追溯、完成审计和复核
+- [x] 调查 current main / live Requirement Source / current DSH facts
+- [x] 建立与风险相称验证矩阵
+- [x] 建立有效 Red
+- [x] 完成最小实现
+- [x] 在不提高预算的前提下完成内容守恒压缩
+- [x] 恢复压缩过程中暴露的历史 Contract machine anchors
+- [x] 同步长期文档
+- [x] current-head semantic Green
+- [x] fresh Requirement-first Review
+- [x] 完成需求追溯与 Completion Audit
 
 # 验证矩阵
 
-| 验证层 | 是否要求 | 范围 / 证据 |
+| 层 | 要求 | 当前证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | semantic hardening + host projection unit regression |
-| 接口 / 契约 | required | role schema不变；common prompt/DSH row contract |
-| 集成 / 持久化 / 运行依赖 | not_applicable | 无 DB/持久化/远端运行依赖 |
-| 用户 / 工作流验收 | required | USAGE/managed AGENTS project-facing behavior |
-| 跨组件关键路径 | required | canonical role→payload→host projection→installer |
-| 外部依赖 / 供应方探测 | required | 已核对 current DSH官方 source 支持/限制 |
-| 构建 / 打包 / 运行 | required | classifier + 三平台 onefile（若 package required） |
-| 文档 / 治理 / 其他 | required | Analysis/Review/Coding/Change/Issue/Review/CI |
+| Behavior/semantic | required | #1896 Red；#1923 665 tests OK |
+| Contract preservation | required | #1919 暴露旧锚点丢失；后续恢复；#1923 all Green |
+| Context budget | required | #1912 overage -> compaction；#1923 Green，无提高阈值 |
+| Host projection | required | permanent host regression + #1923 |
+| DSH current external boundary | required | official tool-subagent schema/catalog source re-read |
+| User/project-facing docs | required | managed AGENTS / USAGE / runtime README |
+| Package | required | changed-scope workflow requires Runtime Package Gate；Ready 后取得三平台 evidence |
+| Review | required | review 5293910425 @ 8ceaa5f8 |
 
-## 验证计划
+# 风险、兼容与回滚
 
-- 目标测试：新增 orchestration hardening semantic + DSH projection tests。
-- 相关回归：multi-agent execution install、runtime projection、review convergence、router/context budget、installer rollback/idempotency。
-- 静态检查或构建：repository-native Skill Tests。
-- 专项真实边界：以 DSH current official source 证明 maxDepth/toolFilter 能力与非安全边界。
-- 就绪检查：repository-native ready_check。
-
-# 风险、兼容性、迁移与回滚
-
-| 项目 | 结论 | 依据 / 处理方式 |
-| --- | --- | --- |
-| 主要风险 | 过度治理、budget误当硬上限、DSH filter误称 security | semantic tests + Review |
-| 兼容性 | role schema/ID、MCP/Runtime protocol 不变 | 增量规则/projection |
-| 数据 / Migration | 不适用 | 无数据变化 |
-| 部署 / 运行 | 后续 binary upgrade 才进入外部项目 | 本次不 Release |
-| 回滚 / 恢复 | revert PR | 无不可逆数据 |
-
-# 文档、依赖、部署与发布影响
-
-- **长期文档**：Analysis/Review/Coding canonical rules、USAGE、Runtime README。
-- **依赖 / Runtime**：无新依赖；host projection 实现修改。
-- **配置 / Secret**：无。
-- **部署 / Release**：不 Release/Deploy。
-- **兼容 / 消费方通知**：Source Mode main 立即生效；旧发布 binary 需后续正常 Release/upgrade 才获得新 projection。
+- 角色 ID / `multi-agent-roles/v1` 不变。
+- Codex/Claude/Cursor 既有 sandbox/permission/readonly projection 不降低。
+- DSH filter 只做 direct write/edit hardening，不构成 security parity。
+- Runtime MCP/License/Release ZIP/Public protocol 不变；无新依赖/Schema/Migration。
+- active child=3 是默认预算；Parent 有 Evidence 且宿主允许时可扩，不误变硬上限。
+- 回滚为 revert PR；无不可逆数据。
 
 # 完成审计
 
-- [x] upstream_re_read：重新读取 #306、current head canonical rules、host projection、USAGE/Runtime docs 和 CI Evidence。
-- [x] change_coverage：从 #306 AC1-AC19 独立映射；没有把 Change 自身当需求全集。
-- [x] reverse_audit：从 Analysis/OUT_OF_SCOPE/delegation → host projection → Parent freshness/failure/lifecycle → completion 反查二阶失效边界。
-- [x] unresolved_cleared：R1-R17 satisfied；R18/R19 的 downstream Delivery 部分明确 not_applicable 于 pre-Ready Change，无 not_satisfied。
+- [x] upstream_re_read：已重读 live #306、current head canonical rules/projection/tests/docs 和 current DSH tool-subagent/tool facts。
+- [x] change_coverage：从 #306 AC1–AC19 独立映射，不以本 Change 自身当需求全集。
+- [x] reverse_audit：反查 optimization audit、OUT_OF_SCOPE→Follow-up、Parent→child→stale/retry/conflict/join、writer/ledger/handoff、DSH projection、用户说明和测试。
+- [x] unresolved_cleared：R1–R17 satisfied；R18/R19 downstream Delivery 部分明确 not_applicable 于 pre-Ready Change，无 not_satisfied。
 
 # 完成证据与状态
 
 ## 新鲜证据
 
-| 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
-| --- | --- | --- | --- | --- |
-| V1 | main c2a85cf5 | canonical readback + #306 + DSH current source | confirmed | 当前缺口和真实 host能力 |
-| V2 | PR #307 / #1896 / run 35888305473 | 8 个 hardening contract tests | 8 failures | 有效 Red，证明旧实现缺 #306 目标 Guard |
-| V3 | head 5ed6cc9a / #1922 / run 35890283200 | compile + CLI smoke + 665 self-contained tests | tests 全部 OK；context budget Green；唯一失败为 Change=in_progress enforcement | current implementation Green |
-| V4 | PR #307 review 5293891633 @ 5ed6cc9a | requirement-first independent Review | NO_BLOCKING_FINDINGS_WITHIN_SCOPE | 无过度治理/自动派生/security 夸大等 blocker |
-| V5 | #1922 changed-scope classifier | runtime_scope=package / semantic_profile=full / package_evidence_required=true | confirmed | Ready 后必须取三平台 package Evidence |
+| 证据 | revision / run | 结果 | 证明 |
+| --- | --- | --- | --- |
+| V1 | main `c2a85cf5` + #306 + DSH current source | confirmed | 起始事实/外部能力边界 |
+| V2 | Skill Tests #1896 / `35888305473` | 8 个新 contract tests 在旧实现上失败 | 有效 Red |
+| V3 | Skill Tests #1912 / `35889126228` | 新行为通过；complex context over +7246 bytes | 发现预算回归，禁止抬阈值 |
+| V4 | Skill Tests #1919 / `35889960703` | compact 后暴露历史 Delegation markers 丢失 | 内容守恒问题被测试捕获 |
+| V5 | exact head `8ceaa5f8` / Skill Tests #1923 / `35890678992` | compile/CLI success；665 tests OK；无 context budget failure；唯一 gate failure=Change in_progress | current implementation semantic Green |
+| V6 | PR #307 review `5293910425` @ `8ceaa5f8` | NO_BLOCKING_FINDINGS_WITHIN_SCOPE | fresh requirement-first Review |
 
 ## 未验证内容与剩余风险
 
-- Ready commit 会形成新 head，必须重新取得 exact-head Agent Skills Gate 与 Linux/Windows/macOS package Evidence。
-- 当前聊天宿主没有 subagent execution interface，本次按单 Agent fallback；不能把本次开发过程冒充真实 child-agent benchmark。
-- DSH toolFilter 只限制 child 可见 direct mutation tools，不是 permission lattice/sandbox；真实权限仍依赖 DSH permission/sandbox。
-- 本任务不创建 Runtime Release，因此已发布旧 binary 不会热更新。
+- 本提交把 Change 置为 Ready，会形成新 head；必须重新取得 exact-head required CI/package。
+- DSH bash / optional editor mutation 不由 deny[write,edit] 消除；这是已公开边界，真正权限仍由 DSH permission/sandbox 与 Parent 控制。
+- 未运行真实外部 GPT/Claude/Cursor/DSH child-model benchmark；本次 CI 验证 source/projection/install/package contract，不冒充 live agent performance。
+- 不创建 Runtime Release；旧发布 binary 不会获得本次 host projection hardening。
 
 ## 交付状态
 
-- 提交：implementation head `5ed6cc9a9168299560b09cf696e6ea66aae6d18f`
-- 拉取请求：#307，当前 Draft；本提交将 Change 置为 `ready_for_review`
-- CI：Red #1896；implementation Green #1922；Ready 后刷新 final-head required CI/package
-- Review：5293891633，NO_BLOCKING_FINDINGS_WITHIN_SCOPE
+- 分支：`tech/agent-orchestration-hardening`
+- PR：#307，当前 Draft；本提交把 Change 置为 `ready_for_review`
+- Review：5293910425，无阻塞 Finding；Ready commit 后做增量 re-review
+- CI：Red #1896；semantic Green #1923；Ready 后重新取得 final-head required CI/package
 - 合并：未执行
 - Change 归档：未执行
-- 发布 / 部署：不适用
+- Release / Deploy：不适用
 
 ## 备注
 
-无。
+不新增第六个 Agent、Planner/Scheduler/Team/Queue、持久化 ledger 或自动 telemetry。
