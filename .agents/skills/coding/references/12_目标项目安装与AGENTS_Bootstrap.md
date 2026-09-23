@@ -258,7 +258,7 @@ Greenfield / 空仓库：
 
 ## 13. 宿主差异
 
-项目级配置只是让宿主找到同一个项目 Runtime：Codex 使用 `.codex/config.toml`，Cursor 使用 `.cursor/mcp.json`，Claude Code 使用 `.mcp.json` 并通过 `CLAUDE.md` 最薄 bridge 读取项目规则；DeepSeek Harness 原生发现项目 `.agents/skills`，Agent_Skills Installer 额外生成项目级 `.dsh/agent-skills.cordis.yml`，通过 `@deepseek-ai/dsh-mcp-client` 的 stdio 配置启动同一个 `.agents/runtime/agent-skills[.exe] serve`。Windows 项目根同时生成 `DeepSeek-Harness.cmd`，只负责切换到自身项目根并以该 overlay 启动 `dsh web`；Linux/macOS 不生成 Windows launcher。
+项目级配置让宿主找到同一 Runtime 与 native roles：Codex/Cursor/Claude Code 使用各自项目配置和 namespaced role files；DeepSeek 项目 overlay 保留 MCP，并在当前 `@deepseek-ai/dsh-base` 已有 subagent runtime 上增加五个 namespaced role tools。Windows 另生成 `DeepSeek-Harness.cmd`；Linux/macOS 不生成该 launcher。
 
 DeepSeek Harness 接入不得写 `$DSH_HOME`、全局 `cordis.patch.yml` 或用户 profile。现有同名 DeepSeek overlay/launcher 没有唯一合法 Agent_Skills marker 时 fail closed；Codex/Cursor/Claude 继续按各自既有 ownership 规则处理。任何宿主自己的 trust/approval 边界都不得绕过，DeepSeek 环境还必须由用户/团队预先提供可从 `PATH` 调用的 `dsh` 命令。
 
@@ -274,7 +274,7 @@ DeepSeek Harness 接入不得写 `$DSH_HOME`、全局 `cordis.patch.yml` 或用�
 - 动态正式 Skill、shared Entry、Router/Core 安装正确，目标项目无 canonical Reference/Stub；
 - 同名未认领 shared/Skill/managed file 在写入前 fail closed，项目自有 Skill/Reference/资产保留；
 - `AGENTS.md` 保留用户原文/marker，只公开一个 [`.agents/skills/ENTRY.md`](../../ENTRY.md)；`.gitignore` 与既有 Host 配置保留项目内容，不自动新增 Runtime ignore；
-- Codex/Claude Code/Cursor 各由唯一 Role Manifest 生成五个 namespaced native roles；DeepSeek overlay 保留相对 Runtime/MCP，并装 subagent service + spawn + 五 role tools + control/list，不联网装包；未认领同名/坏 marker/symlink 均 fail closed；
+- Codex/Claude Code/Cursor 各由唯一 Role Manifest 生成五个 namespaced native roles；DeepSeek 复用 base 的 subagent runtime，只增加五 role tools：四个只读角色 continuable background，Worker one-shot foreground；不联网装包，未认领同名/坏 marker/symlink fail closed；
 - Installer 不修改 `$DSH_HOME` 或用户 Harness profile，DeepSeek 适配不新增第七个 MCP Tool、不复制第二套 Skill/Prompt；
 - Runtime 根 `AGENTS.md` 满足第 7 节，只公开 [`.agents/skills/ENTRY.md`](../../ENTRY.md)，不展开 Runtime/Source/MCP/Router/专业 Skill/Reference/加载或防披露说明；
 - marker 外 Overlay 只使用项目自身术语和可确认事实，不加入与当前项目无关的通用治理说明；
