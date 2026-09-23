@@ -184,7 +184,7 @@ v1、v2、未知或损坏 legacy manifest 直接失败；旧 Runtime 不存在�
 - Windows 安装生成项目根 `DeepSeek-Harness.cmd`，它只负责切到自身项目根并执行 `dsh web --patch "%~dp0.dsh\agent-skills.cordis.yml"`；Linux/macOS 只安装项目级 overlay，不生成 Windows launcher；
 - 唯一 `coding/assets/multi-agent-roles.json` 是 Explorer / Researcher / Worker / Tester / Reviewer 的角色事实源；安装器从它确定性生成 `.codex/agents/agent-skills-*.toml`、`.claude/agents/agent-skills-*.md`、`.cursor/agents/agent-skills-*.md`，不维护四套手写角色规则，不固定模型；
 - DeepSeek Harness 项目级 overlay 保留 `@deepseek-ai/dsh-mcp-client` + `transport: stdio` + `serve`，同时使用当前 `@deepseek-ai/dsh-base` 已提供的 `dsh-subagent`、`dsh-subagent-spawn-in-process`、五个 namespaced `dsh-tool-subagent` role tools、control 与 list-agents 建立 `ctx.subagents` execution surface；安装器不执行 npm/pnpm 在线安装，也不复制第二套专业 Skill；
-- 目标项目 `AGENTS.md` managed block 只做 Runtime 薄 Bootstrap：先恢复项目真实事实，**显式读取稳定 `.agents/skills/ENTRY.md`**，再通过已配置的项目级治理能力获取本次任务所需完整约束；该 Entry 是根 AGENTS 唯一允许公开的 `.agents/skills/` 路径，Router/专业 Skill/Reference 仍不作为 Runtime 日常导航公开；
+- 目标项目 `AGENTS.md` managed block 只做 Runtime 薄 Bootstrap：先恢复项目真实事实，**显式读取稳定 [`.agents/skills/ENTRY.md`](../.agents/skills/ENTRY.md)**，再通过已配置的项目级治理能力获取本次任务所需完整约束；该 Entry 是根 AGENTS 唯一允许公开的 `.agents/skills/` 路径，Router/专业 Skill/Reference 仍不作为 Runtime 日常导航公开；
 - Runtime 用户可见过程可以正常描述项目调查、需求/风险判断、代码修改、测试、文档同步、复核、Git/CI 和交付状态，并解释当前项目真正适用的工程要求；普通分发明文不通过“不要暴露某某内部能力”这类自说明来表达边界；
 - Cursor/Claude JSON 只认领 `mcpServers.agent-skills`；三宿主 role agent files 只认领带精确 Agent_Skills role marker 的 namespaced 文件，未认领同名文件在任何项目写入前 fail closed；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产和未认领 shared file 保留；
