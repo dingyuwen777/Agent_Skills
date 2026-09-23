@@ -212,6 +212,11 @@ class _SelectionBuilder:
                 self.add_groups("governance", "ci_self")
                 self.compile_required = True
                 return
+            if normalized == ".github/scripts/actions_hygiene.py":
+                self.promote_scope("governance")
+                self.add_groups("governance")
+                self.compile_required = True
+                return
             if normalized == ".github/scripts/check_pr_requirement_source.py":
                 self.promote_scope("governance")
                 self.add_groups("governance")
@@ -251,6 +256,10 @@ class _SelectionBuilder:
             name = Path(normalized).name
             if normalized.startswith(f"{_TEST_PREFIX}fixtures/"):
                 self.require_full(package=False)
+                return
+            if name == "test_actions_hygiene.py":
+                self.promote_scope("governance")
+                self.direct_tests.add(name)
                 return
             if name in _CI_SELF_TESTS:
                 self.require_full(package=True)
