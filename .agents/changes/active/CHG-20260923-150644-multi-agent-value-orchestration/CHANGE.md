@@ -49,7 +49,7 @@ Requirement Source：GitHub Issue #298。用户明确要求按已讨论方案修
 
 - Router canonical 明确 Anti-Agent Boundary：不创建子 Agent、不拆分/调度任务。
 - Coding Reference 09 已规定纵向切片、DAG/frontier、Delegation Contract、并行写隔离、授权边界和父 Agent 集成验证。
-- Coding Core 尚未要求在实质性工程任务开始时先判断多 Agent 的独立价值，因此普通任务不会稳定触发 Reference 09。
+- Coding Core 尚未要求在实质性工程任务开始时先判断多 Agent 的独立价值，因此普通任务不会稳定触发 Reference 09，也没有宿主能力不足时的统一单 Agent 降级语义。
 - Runtime 已支持 Codex、Cursor、Claude Code、DeepSeek Harness 四 Host 的 Agent_Skills 接入，但当前没有统一 multi-agent adapter 语义。
 - 官方当前文档确认 Codex、Claude Code、Cursor 与 DeepSeek Harness 都存在原生 subagent/delegation 能力，但能力入口和配置面不同。
 
@@ -65,7 +65,7 @@ Requirement Source：GitHub Issue #298。用户明确要求按已讨论方案修
 
 ## 不修改的后果
 
-复杂任务可能错失并行、上下文隔离和独立复核收益；简单任务也可能被过度拆分，增加 token、延迟和协调成本。不同宿主会出现不同的拆分行为和可见性，且 MUST_SPLIT 无真实能力时可能静默降级为单 Agent。
+复杂任务可能错失并行、上下文隔离和独立复核收益；简单任务也可能被过度拆分，增加 token、延迟和协调成本。不同宿主会出现不同的拆分行为和可见性；宿主无真实 subagent 能力时如果没有明确规则，也可能静默降级或错误阻塞。
 
 # 事实与证据
 
@@ -118,7 +118,7 @@ AIMA_UGC rollout；Runtime Release/tag；Deploy；依赖升级；固定模型/�
 | 范围与负责人边界 | Reference 09 是 Multi-Agent canonical Owner；Router 不调度 | E2/E3、#298 AC7 | 避免第二套 Orchestration |
 | 接口与契约 | 新增 NO/MAY/MUST、角色/Handoff/Visibility/Adapter 语义；不增 MCP Tool | #298 AC1-AC8 | 规则 Contract 变化，Runtime protocol 不变 |
 | 数据与迁移 | 不适用：无数据库/业务数据/Schema | #298 / AC11 | 无 Migration |
-| 错误与失败语义 | MUST_SPLIT 缺能力/权限时 fail-closed；MAY_SPLIT 可回退单 Agent并说明 | #298 / AC2/AC6 | 不允许假多 Agent |
+| 错误与失败语义 | MUST_SPLIT 在宿主支持时必须拆；宿主缺少 subagent 能力时显式降级为单 Agent 并继续执行；其他既有硬门禁不受影响 | #298 / AC2/AC6 | 不允许假多 Agent，也不因编排能力缺失误阻塞 |
 | 兼容性 | 简单任务继续单 Agent；现有专业 Skill/Router 保持 | #298 / AC1/AC3/AC7 | 降低协调成本和漂移风险 |
 | 部署与回滚 | 只合并 main，不 Release/Deploy；失败可 revert PR | 用户授权、#298 非目标 | 无不可逆运行数据 |
 
@@ -127,7 +127,7 @@ AIMA_UGC rollout；Runtime Release/tag；Deploy；依赖升级；固定模型/�
 ## 最小充分方案
 
 1. 在 Coding Core 增加“Multi-Agent Value Gate”薄入口：先判 NO/MAY/MUST；只有 MAY/MUST/用户显式要求时加载 Reference 09。
-2. 扩展 Reference 09，形成完整唯一 Orchestration Contract：独立价值判定、MUST_SPLIT、五角色职责、权限、并发、Visibility、Handoff、Host Adapter、失败边界。
+2. 扩展 Reference 09，形成完整唯一 Orchestration Contract：独立价值判定、MUST_SPLIT、宿主不支持时的单 Agent 自动降级、五角色职责、权限、并发、Visibility、Handoff、Host Adapter、失败边界。
 3. 保持 Router Anti-Agent Boundary，仅在必要时校准文字/metadata，不让 Router 执行调度。
 4. 通过 Runtime Project Payload / Skill Projection 现有机制分发更新后的 Coding Core；除非证据证明必需，不增加新的宿主配置文件或 sidecar。
 5. 更新 USAGE，告诉使用者无需手工分配 Agent；AI 会按价值判定并报告，宿主能力不足会显式说明。
@@ -156,7 +156,7 @@ AIMA_UGC rollout；Runtime Release/tag；Deploy；依赖升级；固定模型/�
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
 | R1 | NO/MAY/MUST 价值判定 | #298 / AC1 | not_satisfied | 待实现与验证 |
-| R2 | MUST_SPLIT 条件与 capability fail-closed | #298 / AC2 | not_satisfied | 待实现与验证 |
+| R2 | MUST_SPLIT 条件与宿主无能力时的单 Agent 降级 | #298 / AC2 | not_satisfied | 待实现与验证 |
 | R3 | 五角色且不复制专业 Skill | #298 / AC3 | not_satisfied | 待实现与验证 |
 | R4 | 用户可见 Visibility Contract | #298 / AC4 | not_satisfied | 待实现与验证 |
 | R5 | 并行写隔离/单 Writer | #298 / AC5 | not_satisfied | 待实现与验证 |
@@ -244,7 +244,7 @@ AIMA_UGC rollout；Runtime Release/tag；Deploy；依赖升级；固定模型/�
 ## 未验证内容与剩余风险
 
 - 尚未实施，因此 R1-R12 仍未完成。
-- 当前聊天宿主没有可调用 subagent 执行接口；本次开发不能把单 Agent 工作冒充多 Agent，这正是 AC2 要约束的 failure boundary。
+- 当前聊天宿主没有可调用 subagent 执行接口；按更新后的 AC2，本次继续单 Agent 正常执行，并如实披露没有实际拆分。
 
 ## 交付状态
 
