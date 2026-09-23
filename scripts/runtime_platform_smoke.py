@@ -218,17 +218,22 @@ def _verify_installed_project(target: Path) -> Path:
         overlay,
         (
             "name: '@deepseek-ai/dsh-mcp-client'",
-            "name: '@deepseek-ai/dsh-subagent'",
-            "name: '@deepseek-ai/dsh-subagent-spawn-in-process'",
             "name: '@deepseek-ai/dsh-tool-subagent'",
-            "name: '@deepseek-ai/dsh-tool-subagent-control'",
-            "name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'",
             "provider: spawn",
             "backgroundMode: continuable",
+            "backgroundMode: one-shot",
+            "enableRunInBackground: false",
         ),
     )
     for role_id in role_ids:
         _assert_contains(overlay, (f"toolName: agent_skills_{role_id}",))
+    for duplicate_base_row in (
+        "name: '@deepseek-ai/dsh-subagent'\n",
+        "name: '@deepseek-ai/dsh-subagent-spawn-in-process'",
+        "name: '@deepseek-ai/dsh-tool-subagent-control'",
+    ):
+        if duplicate_base_row in overlay.read_text(encoding="utf-8"):
+            raise SystemExit(f"DeepSeek overlay 不应重复注册 base-owned subagent row：{duplicate_base_row}")
 
     entry = target / ".agents/skills/ENTRY.md"
     _assert_contains(entry, ("当前项目", "真实文件", "工程约束", "最少充分", "无法可靠取得"))
