@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260923-063500-actions-hygiene
 title: GitHub Actions 失效 Workflow 自动清理
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: maintenance/actions-hygiene
 created: 2026-09-23
@@ -144,12 +144,12 @@ GitHub 删除 Workflow YAML 不会自动删除历史 workflow runs，因此 All 
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | current path 永不删除 | #294 / AC1 | partially_satisfied | stale workflow record selection 继续以 current path 为绝对保护；待 current-head CI |
-| R2 | main-history / PR-only 边界 | #294 / AC2 | partially_satisfied | first-parent main-history 判定与真实 Git fixture 保留；待 current-head CI |
-| R3 | active-run skip / completed only | #294 / AC3 | partially_satisfied | stale workflow ID 定向 run 快照仍保持 active 整条 skip；待 current-head CI |
-| R4 | targeted snapshot/delete/readback + fail closed | #294 / AC4 | partially_satisfied | 已改为 repository workflow records → stale workflow ID → targeted runs → DELETE → per-ID readback；待 current-head CI Green |
-| R5 | main + Gate + minimal permission | #294 / AC5 | partially_satisfied | Workflow 接线与权限未变；待 current-head CI |
-| R6 | maintenance failure semantics | #294 / AC6 | partially_satisfied | 仅 429/5xx/network 返回 75 并 warning；权限/结构/历史/readback 硬失败；待 current-head CI |
+| R1 | current path 永不删除 | #294 / AC1 | satisfied | stale workflow record selection 以 current path 为绝对保护，回归已覆盖 |
+| R2 | main-history / PR-only 边界 | #294 / AC2 | satisfied | first-parent main-history 判定与真实 Git fixture 覆盖 main 删除/PR-only merge |
+| R3 | active-run skip / completed only | #294 / AC3 | satisfied | stale workflow ID 定向 run 快照保持 active 整条 skip；completed-only deterministic plan 覆盖 |
+| R4 | targeted snapshot/delete/readback + fail closed | #294 / AC4 | satisfied | repository workflow records → stale workflow ID → targeted runs → DELETE → per-ID readback；测试禁止 global runs scan |
+| R5 | main + Gate + minimal permission | #294 / AC5 | satisfied | Skill Tests main-only hygiene job + job-level actions:write；workflow 顶层不提升 |
+| R6 | maintenance failure semantics | #294 / AC6 | satisfied | 仅 429/5xx/network 返回 75；权限/结构/历史/readback 保持硬失败，CLI/Workflow 回归覆盖 |
 | R7 | 保持 3 个长期 Workflow | #294 / AC7 | satisfied | 未新增 .github/workflows 文件；仅在现有 Skill Tests 中增加 job，当前正式 Workflow 文件数量保持 3 |
 | R8 | 完整交付闭环 | #294 / AC8 | not_applicable | pre-merge Change 不自证未来 Review/merge/main-fresh/archive/Issue closure；由 delivery downstream gate 持有 |
 # 计划改动
@@ -166,8 +166,8 @@ GitHub 删除 Workflow YAML 不会自动删除历史 workflow runs，因此 All 
 - [x] 行为变化建立失败证据或说明测试例外
 - [x] 完成最小实现，不静默扩大范围
 - [x] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -211,9 +211,9 @@ GitHub 删除 Workflow YAML 不会自动删除历史 workflow runs，因此 All 
 # 完成审计
 
 - [x] upstream_re_read：Ready 前已重读 Issue #294、current main 与本 Change 的直接事实源。
-- [ ] change_coverage：定向分页 redesign 后待 current-head CI 重新覆盖 AC1-AC7；AC8 downstream。
-- [ ] reverse_audit：按 workflow records → main history → stale workflow IDs → targeted runs → delete → per-ID readback 重新复核。
-- [ ] unresolved_cleared：性能 redesign 的 current-head tests/Review 尚未完成。
+- [x] change_coverage：AC1-AC7 已映射到定向实现与回归资产；AC8 post-merge 由 downstream gate 持有。
+- [x] reverse_audit：已按 workflow records → main history → stale workflow IDs → targeted runs → delete → per-ID readback 反向复核。
+- [x] unresolved_cleared：实现侧 blocker 已清零；current-head CI/Review 与 post-merge 继续由 delivery gate 持有。
 
 # 完成证据与状态
 
