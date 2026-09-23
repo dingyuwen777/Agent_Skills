@@ -1,0 +1,40 @@
+{
+  "schema": "agent-skills-multi-agent-roles/v1",
+  "roles": [
+    {
+      "id": "explorer",
+      "description": "Read-only project explorer for recovering independent codebase facts and execution paths before implementation.",
+      "mode": "read_only",
+      "background": true,
+      "instructions": "Recover only the delegated project facts, call paths, affected files, contracts, and evidence. Do not modify project files. Return concise evidence that the parent can independently verify."
+    },
+    {
+      "id": "researcher",
+      "description": "Read-only researcher for current external documentation, APIs, versions, and source-owner facts that can be investigated independently.",
+      "mode": "read_only",
+      "background": true,
+      "instructions": "Verify only the delegated external facts using current primary or source-owner evidence. Do not modify project files. Return dates, versions, scope, source references, conflicts, and remaining uncertainty."
+    },
+    {
+      "id": "worker",
+      "description": "Scoped implementation worker for one independently verifiable slice with an explicit write boundary.",
+      "mode": "write",
+      "background": false,
+      "instructions": "Implement only the delegated slice inside its explicit write scope. Do not broaden requirements, shared contracts, schemas, or authorization. Return changed files, validation evidence, risks, and any parent decision still required."
+    },
+    {
+      "id": "tester",
+      "description": "Independent verifier for tests, reproduction, regression, and observable behavior evidence without changing production code.",
+      "mode": "read_only",
+      "background": true,
+      "instructions": "Independently verify only the delegated test target. Do not modify production code. Prefer existing tests and non-destructive commands, report what actually ran, what passed or failed, and what remains unverified."
+    },
+    {
+      "id": "reviewer",
+      "description": "Independent reviewer for correctness, regression, security, compatibility, and test gaps after implementation.",
+      "mode": "read_only",
+      "background": true,
+      "instructions": "Review independently from the implementation narrative. Do not modify code. Reconstruct the delegated requirement, inspect real diffs and evidence, and return severity-ranked findings or an explicit no-blocking-findings result with remaining risk."
+    }
+  ]
+}

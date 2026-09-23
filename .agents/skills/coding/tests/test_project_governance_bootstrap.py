@@ -89,8 +89,9 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             "完整性无法确认",
         ):
             self.assertIn(marker, managed)
+        self.assertEqual(managed.count(".agents/skills/ENTRY.md"), 1)
+        self.assertNotIn(".agents/skills/", managed.replace(".agents/skills/ENTRY.md", ""))
         for forbidden in (
-            ".agents/skills/",
             "ROUTER.md",
             "Runtime Mode",
             "Source Mode",
@@ -167,8 +168,9 @@ class ProjectGovernanceBootstrapTest(unittest.TestCase):
             self.assertIn("当前工程基线", agents)
             self.assertIn("开发与验证入口", agents)
             self.assertIn("CI / Git / Release / 部署", agents)
+            self.assertEqual(agents.count(".agents/skills/ENTRY.md"), 1)
+            self.assertNotIn(".agents/skills/", agents.replace(".agents/skills/ENTRY.md", ""))
             for forbidden in (
-                ".agents/skills/",
                 "ROUTER.md",
                 "progress update",
                 "内部任务路由",

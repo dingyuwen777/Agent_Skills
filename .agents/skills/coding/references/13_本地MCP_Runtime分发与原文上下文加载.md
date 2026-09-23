@@ -450,15 +450,13 @@ DeepSeek overlay/launcher 是 Host 专用受管文本，不进入 Project Payloa
 
 - 根 `AGENTS.md` 创建或替换唯一 `agent-skills:managed` block；
 - `.gitignore` 只增量维护 Agent_Skills 本地缓存 ignore；不认领项目 Runtime ignore；
-- Cursor 只认领 `.cursor/mcp.json` 的 `mcpServers.agent-skills`；
-- Claude Code 只认领 `.mcp.json` 的同名 server，并保持最薄 `CLAUDE.md` bridge；
-- Codex 只认领 `.codex/config.toml` 的 Agent Skills managed MCP block；
-- DeepSeek Harness 只认领项目 `.dsh/agent-skills.cordis.yml` 的唯一 DeepSeek managed block；Windows 只认领项目根 `DeepSeek-Harness.cmd` 的唯一对应 managed block；两个专用文件存在但 marker 缺失/损坏/重复时 fail closed；
+- Cursor/Claude/Codex 分别只认领既有 Agent_Skills MCP 边界，并从唯一 Role Manifest 生成 `.cursor/agents/agent-skills-*.md`、`.claude/agents/agent-skills-*.md`、`.codex/agents/agent-skills-*.toml`；已有同名 role file 只有带精确 ownership marker 才可升级；
+- DeepSeek 只认领 `.dsh/agent-skills.cordis.yml` managed block 与 Windows `DeepSeek-Harness.cmd`；当前 base 已拥有 `ctx.subagents`/spawn/control/list，overlay 不重复注册，只增加五 role tools：read-only roles=continuable background，Worker=one-shot 且禁 background；不联网装包；坏/缺/重复 marker fail closed；
 - 不修改 `$DSH_HOME`、Harness 全局配置或用户 profile；
 - marker 外项目文本、其他 MCP server、项目自有 Skill/Reference/资产必须保留；
 - 同名但 ownership 不可证明、marker 损坏、symlink/特殊文件或文本无法安全增量编辑时 fail closed。
 
-Runtime managed block 只表达项目侧契约：先读项目自身规则与真实事实，正常展示真实工程过程，治理能力自身运行/实现细节不作为项目进度或交付内容。详细 Runtime 披露边界由本 canonical Owner 与 Runtime 私有执行/公共输出 Contract 承担，不把内部控制面清单或“防披露说明”复制回目标根 `AGENTS.md`、Entry、Skill Core 或 agent prompt。
+Runtime managed block 先读项目规则/事实，只公开稳定 [`.agents/skills/ENTRY.md`](../../ENTRY.md) 作为 Bootstrap；Router、专业 Skill、Reference、内部控制面和防披露实现不复制到根 `AGENTS.md`。
 
 Codex workspace trust 与 Cursor/Claude/DeepSeek Harness 首次确认属于宿主安全边界，安装器不得绕过。DeepSeek Harness 的 `dsh` 命令由用户/团队环境提供，Agent_Skills 安装器不安装 Harness 本身。
 
@@ -511,7 +509,7 @@ release_version / source_commit
 8. MCP `tools/list` 恰为六 Tool，Context envelope 只含 `完整原文`，伪造/stale/cross-task token 失败；
 9. Source/Runtime private execution parity 对代表性任务保持 matched Skill、required risk、dependency closure、required Context 一致，Runtime Context 与 canonical exact bytes 一致；公共进度规则只描述项目工程过程，不枚举内部实现身份；
 10. Linux/Windows/macOS 各自在对应 Runner 完成 onefile build/status/self-test/real MCP/首次安装/当前版本重复安装；Windows 额外验证无参数 `.exe` 以 binary parent 为项目根、DeepSeek overlay 与根 launcher，POSIX 无参数继续使用 cwd 且不生成 Windows launcher；
-11. 四 Host 项目配置均使用可移植项目相对语义，不固化安装机器绝对路径；DeepSeek 不修改 `$DSH_HOME`，专用 marker 冲突与写入失败能 fail closed/rollback；
+11. 四 Host 使用可移植相对配置；唯一 Role Manifest 生成三宿主五角色 files 与 DeepSeek 五 role tools；DSH 复用 base-owned runtime，Worker 不后台写；namespaced projection 均需 ownership preflight、幂等升级和 rollback；
 12. Builder/Release 不生成 `*.manifest.json`、key、Reference pack 或其他新 sidecar；
 13. Context budget 不得因 Runtime v3 规则维护显著膨胀；安全实现细节优先放在 [`runtime/README.md`](../../../../runtime/README.md)，canonical 本文件只保留执行必须的契约和边界。
 
@@ -583,7 +581,9 @@ Source Mode 是明文维护/直读模式；有源码访问权的维护者可以�
 
 ```text
 目标项目 AGENTS managed block / 真实事实
+→ 稳定 [`.agents/skills/ENTRY.md`](../../ENTRY.md) Bootstrap
 → project-facing Entry / Router/专业 Skill Projection
+→ Multi-Agent Value Gate 命中时使用宿主 native role execution adapter
 → .agents/license.lic 离线门禁（status 可诊断）
 → agent_skills_route_contract
 → agent_skills_start_task（新任务或显式恢复 Durable Task State）

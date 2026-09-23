@@ -143,7 +143,7 @@ canonical references/*.md
 → 历史 agent-skills-install/v3 仅一次迁移，成功后删除
 ```
 
-Runtime 安装明文是**项目工程视图，不是 canonical Source 镜像**：`ENTRY.md`、各 Runtime `SKILL.md`、分发的 `agents/openai.yaml` 与 managed `AGENTS.md` 不写内部 Catalog/Router/Reference/Handoff、私有 routing metadata、加载组织或“为了隐藏这些内部身份”的防披露自说明；需要宿主发现时只保留最小机器身份（例如 Skill frontmatter `name`）。这些限制不允许通过少加载专业 Context、删 canonical metadata 或改 Reference 原文来实现。
+Runtime 安装明文是**项目工程视图，不是 canonical Source 镜像**：目标根 managed `AGENTS.md` **只允许公开稳定 [`.agents/skills/ENTRY.md`](skills/ENTRY.md) 作为 Bootstrap**；`ENTRY.md`、各 Runtime `SKILL.md`、分发的 `agents/openai.yaml` 与宿主 role projections 不继续公开内部 Catalog/Router/专业 Skill/Reference/Handoff、私有 routing metadata、加载组织或“为了隐藏这些内部身份”的防披露自说明；需要宿主发现时只保留最小机器身份和 role 执行元数据。这些限制不允许通过少加载专业 Context、删 canonical metadata 或改 Reference 原文来实现。
 
 不能因为加密 onefile、Runtime Projection 或 sidecarless install-state 存在就宣称可抵御机器 Owner、调试器、内存转储、Hook、恶意替换项目内旧 Runtime 或专业逆向。
 
@@ -227,14 +227,14 @@ python scripts/sync_repository_governance_assets.py --check
 
 Runtime 内容守恒必须**分两条独立证据轴**，不能把它们混成“明文逐字一致”：
 
-1. **Project-facing Plaintext**：安装明文只保留当前项目实际工程规则、风险、授权、验证和交付语义，不泄露内部组织身份、源码导航、私有 routing metadata 或防披露自说明；
+1. **Project-facing Plaintext**：安装明文只保留当前项目实际工程规则、风险、授权、验证和交付语义；除稳定 [`.agents/skills/ENTRY.md`](skills/ENTRY.md) Bootstrap 外，不泄露内部组织身份、源码导航、私有 routing metadata 或防披露自说明；
 2. **Private Execution Parity**：canonical Skill/Reference metadata、Stable ID、dependency、risk floor、evaluator 结果、required Context 与 exact Reference bytes 保持同源同效。
 
 删除明文 routing metadata 不等于降低执行能力；反过来，为了追求 Source/Runtime byte equality 把内部 metadata/output guard 重新塞回 Runtime 明文，也属于内容守恒失败。
 
 Figma 尤其必须保留 Canvas/Section/Spacing/Annotation、Prototype、Owner、状态、`READY / READY_WITH_NOTES / NOT_READY`、失败处理、Fresh Screenshot/Machine Audit 和每次写后 Canvas-level Review。
 
-Router 尤其必须保持项目事实优先、动态 Skill 发现、专业 Skill 选择、Reference 两种加载模式、跨 Skill Handoff、失败停止和权限/CI 门禁；根 `AGENTS.md`、`ENTRY.md` 与 `AGENTS.managed.md` 只能做 Bootstrap，不能重新生长成第二套完整 Router。Runtime 安装的 Entry/Router Core 是派生 project-facing 视图，不承担 Source 维护导航；完整 Router 语义仍由 canonical Source + private evaluator/context 链证明。
+Router 尤其必须保持项目事实优先、动态 Skill 发现、专业 Skill 选择、Reference 两种加载模式、跨 Skill Handoff、失败停止和权限/CI 门禁；根 `AGENTS.md`、`ENTRY.md` 与 `AGENTS.managed.md` 只能做 Bootstrap，不能重新生长成第二套完整 Router。根 managed block 显式指向稳定 [`.agents/skills/ENTRY.md`](skills/ENTRY.md) 不等于允许继续暴露 Router/Reference 或复制 Router 语义。Runtime 安装的 Entry/Router Core 是派生 project-facing 视图，不承担 Source 维护导航；完整 Router 语义仍由 canonical Source + private evaluator/context 链证明。
 
 ## 8. Runtime 维护不变量
 

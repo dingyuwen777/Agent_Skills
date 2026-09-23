@@ -18,6 +18,13 @@ from .governance_projection import (
     build_governance_projection_plan,
     projection_target_paths,
 )
+from .host_agent_projection import (
+    MultiAgentRole,
+    build_host_agent_projection_plan,
+    host_projection_target_paths,
+    load_multi_agent_roles,
+    render_deepseek_execution_rows,
+)
 from .install_state import (
     INSTALL_STATE_SCHEMA,
     LEGACY_INSTALL_MANIFEST_PATH,
@@ -437,8 +444,13 @@ def _updated_claude_md(existing: bytes | None) -> bytes:
     )
 
 
-def _updated_deepseek_harness_config(existing: bytes | None, runtime_command: str) -> bytes:
-    """创建或更新项目级 DeepSeek Harness MCP overlay，不覆盖无法证明 ownership 的同名文件。"""
+def _updated_deepseek_harness_config(
+    existing: bytes | None,
+    runtime_command: str,
+    roles: tuple[MultiAgentRole, ...],
+) -> bytes:
+    """创建或更新项目级 DeepSeek Harness MCP + 原生 subagent execution overlay。"""
+    execution_rows = render_deepseek_execution_rows(roles)
     block = (
         f"{DEEPSEEK_MANAGED_START}\n"
         "- insert:\n"
@@ -452,7 +464,8 @@ def _updated_deepseek_harness_config(existing: bytes | None, runtime_command: st
         "          - serve\n"
         "        cwd: !!js process.cwd()\n"
         "        failOnStartupError: true\n"
-        f"{DEEPSEEK_MANAGED_END}"
+        + (execution_rows + "\n" if execution_rows else "")
+        + f"{DEEPSEEK_MANAGED_END}"
     )
     return _replace_owned_marker_file(
         existing,
@@ -623,6 +636,16 @@ def install_project(
             raise ValueError(f"受管共享路径必须是普通文件：{shared_path}")
 
     payload_files = _payload_files(project_payload)
+    multi_agent_roles = load_multi_agent_roles(payload_files)
+    host_agent_plan = build_host_agent_projection_plan(target, payload_files)
+    host_agent_paths = host_projection_target_paths(target, host_agent_plan)
+    host_agent_snapshots = {path: _snapshot_file(path) for path in host_agent_paths}
+    host_agent_directories = _projection_parent_directories(target, host_agent_paths)
+    host_agent_directory_existed = {
+        directory: directory.exists()
+        for directory in host_agent_directories
+    }
+
     if new_managed_files != sorted(set(new_managed_files)):
         raise ValueError("Project Payload 受管文件路径必须唯一且稳定排序")
 
@@ -671,7 +694,11 @@ def install_project(
         claude_mcp_path: _updated_json_mcp(_existing_bytes(claude_mcp_path), claude_runtime_command, owned, ".mcp.json"),
         codex_path: _updated_codex_config(_existing_bytes(codex_path), codex_runtime_command, owned),
         claude_md_path: _updated_claude_md(_existing_bytes(claude_md_path)),
-        deepseek_path: _updated_deepseek_harness_config(_existing_bytes(deepseek_path), runtime_relative),
+        deepseek_path: _updated_deepseek_harness_config(
+            _existing_bytes(deepseek_path),
+            runtime_relative,
+            multi_agent_roles,
+        ),
     }
     if deepseek_launcher_path is not None:
         text_updates[deepseek_launcher_path] = _updated_deepseek_harness_launcher(
@@ -718,6 +745,10 @@ def install_project(
 
         changed_governance_projections = apply_governance_projection_plan(target, governance_plan)
 
+        for operation in host_agent_plan:
+            projection_path = target.joinpath(*operation.target.parts)
+            _atomic_write(projection_path, operation.content)
+
         for path, content in text_updates.items():
             _atomic_write(path, content)
         for skill in removed_skills:
@@ -745,6 +776,20 @@ def install_project(
                 _restore_file(path, snapshots[path])
             except Exception as rollback_error:
                 rollback_errors.append(f"{path}: {type(rollback_error).__name__}: {rollback_error}")
+        for path in reversed(host_agent_paths):
+            try:
+                _restore_file(path, host_agent_snapshots[path])
+            except Exception as rollback_error:
+                rollback_errors.append(f"{path}: {type(rollback_error).__name__}: {rollback_error}")
+        try:
+            _cleanup_new_projection_directories(
+                host_agent_directories,
+                host_agent_directory_existed,
+            )
+        except Exception as rollback_error:
+            rollback_errors.append(
+                f"host agent projection directory cleanup: {type(rollback_error).__name__}: {rollback_error}"
+            )
         for path in reversed(governance_paths):
             try:
                 _restore_file(path, governance_snapshots[path])

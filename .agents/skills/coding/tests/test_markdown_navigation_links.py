@@ -115,6 +115,12 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
 
                 for match in INLINE_MD.finditer(line):
                     candidate = match.group(1)
+                    if (
+                        relative == ".agents/skills/coding/assets/AGENTS.managed.md"
+                        and candidate == ".agents/skills/ENTRY.md"
+                    ):
+                        # 这里是复制到目标项目后的稳定 Runtime 路径，不是源仓库文档导航。
+                        continue
                     if self._resolve_candidate(path, candidate) is None:
                         continue
                     if self._inline_token_is_linked(line, match.start(), match.end()):
@@ -157,7 +163,8 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
         self.assertIn(PROJECT_ENTRY_LINK, source_root_agents)
         self.assertIn(PROJECT_ROUTER_LINK, source_root_agents)
         self.assertNotIn(PROJECT_ROUTER_LINK, managed)
-        self.assertNotIn(".agents/skills/", managed)
+        self.assertEqual(managed.count(".agents/skills/ENTRY.md"), 1)
+        self.assertNotIn(".agents/skills/", managed.replace(".agents/skills/ENTRY.md", ""))
         self.assertNotIn("研发治理 MCP", managed)
         self.assertNotIn("Runtime Mode", managed)
         self.assertIn("无论采用哪种通用治理执行方式", managed)
@@ -178,7 +185,8 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
             generated = (root / "AGENTS.md").read_text(encoding="utf-8")
             self.assertNotIn(PROJECT_ENTRY_LINK, generated)
             self.assertNotIn(PROJECT_ROUTER_LINK, generated)
-            self.assertNotIn(".agents/skills/", generated)
+            self.assertEqual(generated.count(".agents/skills/ENTRY.md"), 1)
+            self.assertNotIn(".agents/skills/", generated.replace(".agents/skills/ENTRY.md", ""))
             self.assertNotIn("研发治理 MCP", generated)
             self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", generated)
             self.assertIn("只改变通用治理约束的取得和呈现方式", generated)
@@ -199,7 +207,8 @@ class MarkdownNavigationLinksTest(unittest.TestCase):
             ).decode("utf-8")
             self.assertNotIn(PROJECT_ENTRY_LINK, generated)
             self.assertNotIn(PROJECT_ROUTER_LINK, generated)
-            self.assertNotIn(".agents/skills/", generated)
+            self.assertEqual(generated.count(".agents/skills/ENTRY.md"), 1)
+            self.assertNotIn(".agents/skills/", generated.replace(".agents/skills/ENTRY.md", ""))
             self.assertNotIn("研发治理 MCP", generated)
             self.assertIn("必须先读取并遵守当前目录及上级适用的项目规则", generated)
             self.assertIn("只改变通用治理约束的取得和呈现方式", generated)

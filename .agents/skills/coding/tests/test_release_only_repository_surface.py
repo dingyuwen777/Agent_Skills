@@ -202,8 +202,9 @@ class ReleaseOnlyRepositorySurfaceTest(unittest.TestCase):
         self.assertIn(".agents/MAINTENANCE.md", root_agents)
         self.assertIn("不得复制到目标项目", root_agents)
 
+        self.assertEqual(managed.count(".agents/skills/ENTRY.md"), 1)
+        self.assertNotIn(".agents/skills/", managed.replace(".agents/skills/ENTRY.md", ""))
         for forbidden in (
-            ".agents/skills/",
             "ROUTER.md",
             "agent_skills_load_required_context",
             ".agents/skills/figma/SKILL.md",
