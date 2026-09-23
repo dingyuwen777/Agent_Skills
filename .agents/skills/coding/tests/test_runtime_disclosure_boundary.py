@@ -101,8 +101,9 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
     def test_runtime_managed_bootstrap_is_only_project_facing_bootstrap(self) -> None:
         """目标项目 managed block 只表达项目事实/规则/Bootstrap，不承担内部披露规则。"""
         text = RUNTIME_BOOTSTRAP.read_text(encoding="utf-8")
+        self.assertEqual(text.count(".agents/skills/ENTRY.md"), 1)
+        self.assertNotIn(".agents/skills/", text.replace(".agents/skills/ENTRY.md", ""))
         for forbidden in (
-            ".agents/skills/",
             "ROUTER.md",
             "Reference",
             "Stable ID",
@@ -146,8 +147,9 @@ class RuntimeDisclosureBoundaryTest(unittest.TestCase):
             install_project(target, payload, artifact, release_version="9.9.9-test")
 
             agents = (target / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertEqual(agents.count(".agents/skills/ENTRY.md"), 1)
+            self.assertNotIn(".agents/skills/", agents.replace(".agents/skills/ENTRY.md", ""))
             for forbidden in (
-                ".agents/skills/",
                 "Reference",
                 "Runtime Mode",
                 "Source Mode",
