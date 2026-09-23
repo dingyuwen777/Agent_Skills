@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260923-171500-multi-agent-native-execution
 title: 安装多 Agent 原生执行层与项目 Bootstrap
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/multi-agent-native-execution
 created: 2026-09-23
