@@ -4,7 +4,7 @@
 
 # Findings 与严重度
 
-Review 不以 Finding 数量为目标。每个确定 Finding 同时给出 `severity`（严重度）与 `disposition`（当前任务处置），两者独立。
+Finding 同时给出 `severity` 与 `disposition`，两者独立。
 
 ## 1. 严重度
 
@@ -53,12 +53,12 @@ Review 不以 Finding 数量为目标。每个确定 Finding 同时给出 `sever
 
 | disposition | 当前返修行为 |
 | --- | --- |
-| `IN_SCOPE_BLOCKING` | 当前范围且阻塞；**只有**此类进入自动返修 |
-| `IN_SCOPE_NON_BLOCKING` | 当前相关但不阻塞；**不自动**返修 |
-| `OUT_OF_SCOPE` | 不自动扩大当前任务；必要时另建后续 |
-| `REQUIREMENT_CHANGE` | 需扩大 Requirement/Contract/Schema/Scope/授权；回上游 |
+| `IN_SCOPE_BLOCKING` | **只有**此类进入自动返修 |
+| `IN_SCOPE_NON_BLOCKING` | **不自动**返修 |
+| `OUT_OF_SCOPE` | 不自动扩 scope；必要时另建后续 |
+| `REQUIREMENT_CHANGE` | 需扩 Requirement/Contract/Schema/Scope/授权；回上游 |
 
-severity 与 disposition 独立；高 severity 不自动授权扩大 scope。
+高 severity 不自动授权扩 scope。
 
 ## 3. 每个 Finding 的最小结构
 
