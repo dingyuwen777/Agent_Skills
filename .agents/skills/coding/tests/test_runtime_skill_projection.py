@@ -187,9 +187,11 @@ class RuntimeSkillProjectionTest(unittest.TestCase):
             self.assertIn("MAY_SPLIT", text)
             self.assertIn("MUST_SPLIT", text)
             self.assertIn("只拆有真实独立价值", text)
+            self.assertIn("可独立验收", text)
             self.assertIn("先报", text)
             self.assertIn("降级为单 Agent", text)
 
+        self.assertIn("不能跳过独立价值判定", collaboration)
         for role in ("Explorer", "Researcher", "Worker", "Tester", "Reviewer"):
             self.assertIn(role, collaboration)
         self.assertIn("Multi-Agent Visibility Contract", collaboration)
