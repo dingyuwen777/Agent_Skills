@@ -107,7 +107,7 @@ Requirement Source：GitHub Issue #306。用户要求按系统性优化方案实
 - 不创建 Runtime Release / Deploy。
 - 不把 DSH toolFilter 声称为 permission lattice / sandbox。
 
-# 约束与关键决策
+# 约束与意图决策
 
 | 维度 | 最终决定 |
 | --- | --- |
@@ -123,6 +123,30 @@ Requirement Source：GitHub Issue #306。用户要求按系统性优化方案实
 | Handoff | STATUS/SCOPE/REVISION/SUMMARY/EVIDENCE/CHANGES/VALIDATION/RISKS/PARENT_DECISION；不强制 JSON |
 | DSH | maxDepth=1；readonly deny direct write/edit；只做 tool-view hardening |
 | Effectiveness | 后续阈值用真实历史任务 Evidence 调整，不继续凭感觉加 Agent/规则，不自动 telemetry |
+
+# 修改方案与决策依据
+
+## 最小充分方案
+
+1. 在现有 Analysis / Review / Coding Owner 内补规则，不新增 Agent/调度控制面。
+2. Project-facing managed AGENTS 与 common role prompt只同步执行所需边界。
+3. DSH 仅使用官方已支持的 `maxDepth/toolFilter` 做递归/direct mutation hardening，并保留非安全沙箱边界。
+4. 永久 Red→Green 回归锁定规则、host projection、既有 Contract 与 context budget。
+5. Ready 后由 Delivery Gate 取得 final-head 三平台 package、guarded merge 与 main-fresh。
+
+## 证据到决策
+
+- E1–E3 证明一阶治理不能覆盖二阶自动扩张和优化审计盲区，因此补 Guard 而不是增加角色。
+- E4–E5 证明 DSH 可做 depth/tool-view hardening，但不能把 filter 宣称为 permission/sandbox。
+- E6–E9 证明 Red 有效、预算回归被真实捕获、内容守恒压缩后 current implementation semantic Green。
+
+## 备选方案与取舍
+
+- 新增 Planner/Scheduler/Agent Team/Queue：控制面和协调成本高于当前收益，不采用。
+- 每个 OUT_OF_SCOPE 自动建 Issue：会制造递归任务树，不采用。
+- 所有 Handoff 强制 JSON：跨宿主脆弱且无必要，不采用。
+- active child=3 设为不可突破硬上限：会误伤真实独立 frontier；采用“默认预算 + Parent 有 Evidence 可扩展”。
+- 把 DSH toolFilter 当完整 read-only sandbox：与官方当前语义不符，不采用。
 
 # 需求追溯
 
@@ -148,7 +172,7 @@ Requirement Source：GitHub Issue #306。用户要求按系统性优化方案实
 | R18 | fresh Review + final-head required CI/package | #306 / AC18 | not_applicable | Review 5293910425 已完成；final-head CI/package 由 Ready 后 Delivery Gate |
 | R19 | merge/main-fresh/archive/closure/cleanup | #306 / AC19 | not_applicable | pre-merge Change 不能自证未来交付动作；由 Delivery Gate |
 
-# 实际改动
+# 计划改动
 
 | 资产 | 实际修改 |
 | --- | --- |
@@ -185,7 +209,7 @@ Requirement Source：GitHub Issue #306。用户要求按系统性优化方案实
 | Package | required | changed-scope workflow requires Runtime Package Gate；Ready 后取得三平台 evidence |
 | Review | required | review 5293910425 @ 8ceaa5f8 |
 
-# 风险、兼容与回滚
+# 风险、兼容性、迁移与回滚
 
 - 角色 ID / `multi-agent-roles/v1` 不变。
 - Codex/Claude/Cursor 既有 sandbox/permission/readonly projection 不降低。
@@ -193,6 +217,14 @@ Requirement Source：GitHub Issue #306。用户要求按系统性优化方案实
 - Runtime MCP/License/Release ZIP/Public protocol 不变；无新依赖/Schema/Migration。
 - active child=3 是默认预算；Parent 有 Evidence 且宿主允许时可扩，不误变硬上限。
 - 回滚为 revert PR；无不可逆数据。
+
+# 文档、依赖、部署与发布影响
+
+- **长期文档**：Analysis/Review/Coding canonical rules、managed AGENTS、USAGE、Runtime README 已同步。
+- **依赖 / Runtime**：无新依赖；只修改 host role projection 生成语义，不改变 Runtime MCP/Public protocol。
+- **配置 / Secret / 数据 / Schema**：不适用，无变化。
+- **Release / Deploy**：本任务不创建 Runtime Release / Deploy；旧发布 binary 需后续正常 Release/upgrade 才获得新 projection。
+- **回滚**：revert PR 即可，无不可逆迁移。
 
 # 完成审计
 
