@@ -35,9 +35,10 @@ class SkillRouterSingleSourceTest(unittest.TestCase):
         self.assertIn(MAINTENANCE_PATH, root_agents)
         self.assertNotIn("## 8. Runtime 维护不变量", root_agents)
 
+        self.assertEqual(managed.count(ENTRY_PATH), 1)
+        self.assertNotIn(".agents/skills/", managed.replace(ENTRY_PATH, ""))
         for forbidden in (
             ROUTER_PATH,
-            ".agents/skills/",
             "agent_skills_load_required_context",
             ".agents/skills/figma/SKILL.md",
             ".agents/skills/review/SKILL.md",
