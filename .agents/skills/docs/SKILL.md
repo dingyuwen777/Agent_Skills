@@ -55,9 +55,21 @@ Docs 的目标不是“让 Markdown 看起来更完整”，而是让读者能�
 9. **不为完整而制造文档。** 文档数量、目录、模板和章节由项目实际需求决定；没有独立读者任务或长期维护价值时，不新增文档来满足形式。
 10. **默认 targeted，不全仓扫。** 有文档影响时默认只读受影响事实源、调用链和相关文档。只有确实存在广泛长期架构、主数据流、跨模块运行边界或部署体系变化时才使用 `full`；`full` 也只覆盖相关文档域，不等于机械读取仓库全部 Markdown。
 11. **Review 默认不等于修改授权。** 用户只要求审查时只报告；只有任务明确允许修改时才能进入 Review + Fix 或 Write / Update。未经授权不提交、推送、开 PR、合并或发布。
-12. **发现代码问题时不让文档迎合 Bug。** 如果当前证据表明实现偏离正式要求，Docs 应报告实现问题并返回 Coding；代码修正后再做一次针对性复核。不要通过改文档把错误实现合法化。
+12. **发现代码问题时不让文档迎合 Bug。** 如果当前证据表明实现偏离正式要求，Docs 先按 Cross-Skill Terminal / Handoff Contract 判断：只有当前 Scope 且已授权修复才 `HANDOFF_CURRENT_SCOPE` 返回 Coding；超范围问题按 `REPORT_ONLY / BLOCK_CURRENT_DELIVERY / FOLLOW_UP_CANDIDATE / REQUIREMENT_DECISION` 收口。代码修正后再做针对性复核。不要通过改文档把错误实现合法化。
 13. **以实用性为结束条件。** 读者看完应知道为什么、怎么流、去哪里找真实实现、怎么验证或排障。文档没有帮助读者完成真实任务时，即使术语很多、章节很多也不算高质量。
 14. **仓库内具体文件引用必须同时可定位、可点击。** 当 Markdown 文档引用当前仓库内一个已确认存在的具体文件，且该引用承担实现定位、事实验证、进一步阅读、修改入口或排障导航职责时，不论文件类型，统一使用**完整仓库相对路径 + 可点击链接**。`.md`、`.py`、`.json`、`.yaml/.yml`、`.toml`、`.sql` 以及其他源码、测试、配置、Contract、Schema、Migration、脚本文件遵循同一原则；显示文字保留完整仓库相对路径，链接目标使用从当前文档位置可解析的相对路径并验证真实存在。不得只写不可点击的 inline-code 路径，也不得用“这里”“详情”等隐藏真实目标；命令、目录树、glob、占位路径、协议/流程示例、生成路径、代码字面量等非导航内容不机械链接化。模板或生成型文档必须按最终输出位置重新验证相对链接。详细写法见 [02_第一性原理技术写作.md](references/02_第一性原理技术写作.md)，审查与修复见 [03_审查编写与修复流程.md](references/03_审查编写与修复流程.md)。
+
+## 1.1 Cross-Skill Terminal / Handoff Contract
+
+Docs 发现实现、测试、设计或治理问题时，先按 Router 的跨 Skill 终态收口，而不是因为“文档与代码冲突”就自动进入修改链：
+
+- 当前 Requirement/Scope 内、已有修复授权的实现问题 → `HANDOFF_CURRENT_SCOPE` → Coding；
+- 不阻塞当前交付的独立问题 → `REPORT_ONLY`；确有独立长期价值时可标记 `FOLLOW_UP_CANDIDATE`；
+- `OUT_OF_SCOPE` 但实际阻塞当前正确交付 → `BLOCK_CURRENT_DELIVERY`，不让文档改写错误实现，也不自动扩大代码 Scope；
+- 需要改变正式 Requirement/Contract/Schema/Scope/Authorization → `REQUIREMENT_DECISION`；
+- 旧事实结果 → `STALE_RESULT`；required 事实/能力不可得 → `CAPABILITY_BLOCKER`。
+
+Docs 继续只拥有文档专业判断；Follow-up 持久化、生产实现修改和 Git 副作用不由本 Skill 自动授权。
 
 ## 2. Docs Impact：让同步有效但不变重
 
