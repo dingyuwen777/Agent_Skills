@@ -322,7 +322,7 @@ AI 应根据当前项目自行确认：
 
 如果当前 Codex、Claude Code、Cursor、DeepSeek Harness 或其他宿主**没有可用的 subagent / delegation 能力**，即使 Delegation Value 属于 `MUST_SPLIT`，也会明确说明并把可安全完成的实现工作**降级为单 Agent 继续**。不会仅因为缺少并行能力就中断本来能够完成的工作。
 
-但这种 fallback **只损失委派带来的效率/隔离收益，不会降低 `Independence Requirement=REQUIRED`**。如果项目要求独立 Review，而当前宿主确实没有可满足该独立性的能力，实现和其他无依赖工作可以继续，但“独立 Review 已通过 / 可合并 / 可交付”等结论必须保持阻塞。项目本身已有的 CI、权限、安全或其他 required gate 同样不会被绕过。
+但这种 降级处理 **只损失委派带来的效率/隔离收益，不会降低 `Independence Requirement=REQUIRED`**。如果项目要求独立 Review，而当前宿主确实没有可满足该独立性的能力，实现和其他无依赖工作可以继续，但“独立 Review 已通过 / 可合并 / 可交付”等结论必须保持阻塞。项目本身已有的 CI、权限、安全或其他 required gate 同样不会被绕过。
 
 ### 4.2 多 Agent 不会无限扩张
 
