@@ -89,9 +89,9 @@ CMakeLists.txt ≠ Linux-only
 
 ### 1.1 自主执行、澄清和阻塞边界
 
-`SELF_DECIDE` 处理普通局部、低风险、可逆且不改业务/public Contract/数据/安全/权限/Scope 的细节；`OWNER_DECISION / AUTHORIZATION_REQUIRED / REQUIRED_USER_INPUT / CAPABILITY_BLOCKER` 才请求人类。**No Choice-Prompt**：可自主解决的问题不变成选择题。
+`SELF_DECIDE` 处理局部低风险可逆且不改业务/public Contract/数据/安全/权限/Scope 的细节；`OWNER_DECISION / AUTHORIZATION_REQUIRED / REQUIRED_USER_INPUT / CAPABILITY_BLOCKER` 才请求人类。**No Choice-Prompt**：可自主解决的问题不变成选择题。
 
-**事实恢复 / 核验默认由 Agent 自行**；只有命中 Ask 状态才**提请用户 / Owner 决策**，已固化决定**不重复确认**。**阻塞按依赖边界传播**，其他已授权工作继续。
+**事实恢复 / 核验默认由 Agent 自行**；Ask 状态才**提请用户 / Owner 决策**，已固化决定**不重复确认**；**阻塞按依赖边界传播**。
 
 ## 2. 四维任务路由
 
