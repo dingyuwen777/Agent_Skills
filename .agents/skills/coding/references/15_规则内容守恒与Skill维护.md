@@ -21,7 +21,7 @@ Audit 不创建 Change/分支/PR/commit 或运行写入型交付门禁；可读 
 
 ### Mutation Apply
 
-`Mutation Apply` 最低 L2，经 `coding.reference.29` 恢复 Change、Validation、独立 Review 与影响面审计，正式 CI 不得降低。**Mutation Apply 本身不自动授予** PR/merge/main-fresh/Change Archive/Requirement Closure/Release/Deploy；终点由 Requested Outcome、gate、Effective Authorization 共同决定。
+`Mutation Apply` 最低 L2，经 `coding.reference.29` 恢复 Change、Validation、独立 Review 与影响面审计，正式仓库 CI 门禁不得降低。**Mutation Apply 本身不自动授予** PR/merge/main-fresh/Change Archive/Requirement Closure/Release/Deploy；终点由 Requested Outcome、gate、Effective Authorization 共同决定。
 
 ### Mutation 开发侧 Evidence Profile
 
