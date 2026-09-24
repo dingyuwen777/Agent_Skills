@@ -4,41 +4,24 @@
 
 # 规则内容守恒与 Skill 维护
 
-本规则处理 Skill/reference/模板/项目 Overlay 的重组、精简、拆分、合并、改名、迁移和通用化；内容守恒优先于篇幅精简。Mutation 前必须读取本文件，并保证原有可执行规则完整、可达、可验证。
+处理 Skill/reference/模板/Overlay 的重组、精简、拆并、改名、迁移/通用化；Mutation 前读取，**内容守恒优先于篇幅精简**，原规则必须完整、可达、可验证。
 
 ## 0. Mutation Audit / Proposal 与 Mutation Apply
 
-Skill Mutation 必须先区分**只读分析/建议**和**真正 canonical 写入**，不能因为用户在讨论“怎么改 Skill”就预付完整写入流程。
-
-正式 Task Route 中：
-
-- `Skill Mutation Audit` 明确表示只读 Audit / Proposal；
-- `Skill Mutation Apply` 明确表示 canonical 写入；
-- 兼容旧请求的宽泛 `Skill Mutation` 在尚未出现写入动作事实前按 Audit-compatible 状态处理，**不得因为意图含糊预付 Apply-only Change / Validation / Review / Impact Audit**；
-- 一旦用户明确要求新增、修改、删除、重命名、同步或实际写入 canonical Skill/Reference，当前任务事实必须细化为 `Skill Mutation Apply` 或对应具体写入意图，再进入 Apply 门禁。
+先区分只读 `Skill Mutation Audit` / Proposal 与 canonical `Skill Mutation Apply`；宽泛 `Skill Mutation` 在没有写入事实前按 Audit 处理，明确增改删/重命名/同步/写入后才进入 Apply。
 
 ### Mutation Audit / Proposal
 
-用户只要求检查、审计、给方案、比较做法，或明确“先不要改”时，进入 `Mutation Audit / Proposal`：
-
 ```text
-读取当前 canonical Source
-→ 恢复 Ownership / trigger / dependency / validation / Runtime 影响
-→ 找出问题、冲突和建议
-→ 给出影响面与验证方案
-→ STOP，不执行 canonical 写入
+读取 canonical Source → 恢复 Ownership/trigger/dependency/validation/Runtime 影响
+→ 问题/冲突/建议与验证方案 → STOP
 ```
 
-规则：
-
-- 不因为潜在修改意图创建 Change、分支、PR、commit 或运行写入型交付门禁；
-- 可以读取完整 canonical Skill/Reference、当前测试和 CI 事实，必要时做只读语义/路由影响分析；
-- 用户明确要求实际修改后切换 `Mutation Apply`，按第 7.2 节完成阶段级 canonical 重读与漂移检查；
-- 只读 Audit 的结论不是“已同步/已交付”，也不能把历史缓存或 Runtime 安装副本冒充 canonical Source。
+Audit 不创建 Change/分支/PR/commit 或运行写入型交付门禁；可读 canonical、测试/CI 做只读分析。用户明确写入后切 Apply 并按 §7.2 重读；Audit 不得声称已同步/交付，也不用缓存/安装副本冒充 canonical Source。
 
 ### Mutation Apply
 
-`Mutation Apply` 经 `coding.reference.29` 显式依赖恢复 Change、Validation、两阶段复核与影响面审计，最低 L2；Change、Completion、独立 Review 和 required CI 按当前 Maintenance 执行，**正式仓库 CI 门禁不得降低或绕过**。**Mutation Apply 本身不自动授予** `develop-and-submit` / `develop-and-deliver` 或 PR、merge、main-fresh、Change Archive、Requirement Closure、Release、Deploy 权限；只执行 **Requested Outcome**、真实 gate 与 Effective Authorization 共同允许的阶段，不降低 CI 或扩大权限。
+`Mutation Apply` 最低 L2，经 `coding.reference.29` 恢复 Change、Validation、独立 Review 与影响面审计，正式仓库 CI 门禁不得降低。**Mutation Apply 本身不自动授予** PR/merge/main-fresh/Change Archive/Requirement Closure/Release/Deploy；终点由 Requested Outcome、gate、Effective Authorization 共同决定。
 
 ### Mutation 开发侧 Evidence Profile
 
@@ -114,6 +97,8 @@ profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required c
 ```
 
 必需原文/MCP 路由链失败时，不用“以前读过”冒充已执行；只阻塞依赖缺失 Context 的动作，其他只读事实恢复/建议继续。
+
+**Cross-Owner Semantic Conflict Audit**：**Owner/权限/默认动作/停止条件/强度**冲突=未闭环。
 
 ## 4. 测试和人工语义对照都需要
 

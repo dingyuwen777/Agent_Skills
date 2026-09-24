@@ -4,82 +4,47 @@
 
 # Findings 与严重度
 
-Finding 同时给出 `severity` 与 `disposition`；前者描述影响，后者决定当前任务是否返修。
+Finding=`severity + Scope + Delivery Effect + Action`，四者正交。
 
 ## 1. severity
 
-- **BLOCKER**：当前不能继续合并/发布/部署的确定问题，如数据损坏、严重安全/权限缺陷、核心行为失败或已验证的关键 Migration/兼容破坏。
-- **HIGH**：当前任务必须解决的重要正确性/交付风险，如明确需求缺失、API/Contract/Schema/事务/并发/权限错误、关键状态/恢复缺陷、消费者不兼容或关键工作流失败。
-- **MEDIUM**：真实缺陷或明显测试/维护缺口，但通常不阻断全部功能，如边界输入、异常/资源、次要状态或重要非核心回归缺口。
-- **LOW**：不改变当前正确性但有明确价值的局部维护、规范或测试可读性问题。
+`BLOCKER/HIGH/MEDIUM/LOW` 只描述影响强度；无证据风格偏好不成 Finding，severity 不授权扩大 Scope/修复/Follow-up。
 
-纯个人风格偏好、无证据“也许更好”的重构建议不能为了凑数量变成 Finding。
+## 2. Finding 三轴 Contract
 
-## 2. disposition 与 Follow-up
+- **Scope**：`IN_SCOPE | OUT_OF_SCOPE | REQUIREMENT_CHANGE`；
+- **Delivery Effect**：`BLOCKING | NON_BLOCKING`；
+- **Action**：`AUTO_REPAIR | REPORT_ONLY | REQUIREMENT_DECISION | FOLLOW_UP_CANDIDATE`。
+- **唯一自动返修组合**：Evidence + IN_SCOPE + BLOCKING + AUTO_REPAIR + 已有修改授权。
+- **`OUT_OF_SCOPE + BLOCKING` 合法**：阻塞交付，不得改成 IN_SCOPE 自动修。
+- Router 映射：返修→HANDOFF_CURRENT_SCOPE；阻塞→BLOCK_CURRENT_DELIVERY；上游变化→REQUIREMENT_DECISION；报告→REPORT_ONLY；候选→FOLLOW_UP_CANDIDATE。classification 由 Reviewer 判定。
 
-| disposition | 当前行为 |
-| --- | --- |
-| `IN_SCOPE_BLOCKING` | **只有**此类进入自动返修 |
-| `IN_SCOPE_NON_BLOCKING` | 当前相关但**不自动**返修 |
-| `OUT_OF_SCOPE` | 默认 `RECORD_ONLY`，不扩当前 scope |
-| `REQUIREMENT_CHANGE` | 需扩 Requirement/Contract/Schema/Scope/授权；回上游 |
+## 3. Follow-up Admission 与生命周期
 
-severity 与 disposition 独立；高 severity 不自动授权扩大 scope。
-
-### Follow-up Admission Gate
-
-`OUT_OF_SCOPE` 到 `RECORD_ONLY` 即结束当前链路：**不自动创建 Issue**、**不自动创建 Change**、**不自动创建 Branch**、**不自动创建 PR**、**不自动创建 Agent**，也**不自动执行**或**不递归派生** Follow-up。
-
-只有 Main/Parent 已确认 Evidence、存在独立跟踪价值、不是已有事项重复且当前授权允许时，才可转 `FOLLOW_UP_BACKLOG`；Backlog 只是候选，不自动开发。未来执行时重新作为新 Requirement/任务准入。
-
-## 3. Finding 最小结构
+OUT_OF_SCOPE 默认 `REPORT_ONLY / RECORD_ONLY`：**不自动创建 Issue、不自动创建 Change、不自动创建 Branch、不自动创建 PR、不自动创建 Agent、不自动执行、不递归派生**。Evidence 足够、独立价值且非重复才成为 `FOLLOW_UP_CANDIDATE`。
 
 ```text
-[SEVERITY] <问题>
-Disposition: IN_SCOPE_BLOCKING | IN_SCOPE_NON_BLOCKING | OUT_OF_SCOPE | REQUIREMENT_CHANGE
-位置: <文件/函数/范围>
-触发条件: <怎样发生>
-影响: <用户/数据/调用方结果>
-证据: <代码/测试/Contract/日志/运行>
-测试缺口: <为什么现有证据没挡住；不适用则说明>
-修复方向: <最小方向>
-验证建议: <怎样证明修复>
+RECORD_ONLY → Follow-up Admission → FOLLOW_UP_CANDIDATE
+→ Persistence Authorization Gate → 项目既有 backlog carrier → BACKLOG_ITEM → STOP
 ```
 
-位置必须足够定位。触发条件是必须项：把“可能有竞态”改成可验证的并发/状态前提，区分理论可能与真实可达。
+持久化要求既有 carrier + 项目规则/长期授权/用户明确授权 + 去重。**当前任务 Git 权限**或 commit/push/PR/merge 不授权 OUT_OF_SCOPE 持久化；无授权保留 candidate。`BACKLOG_ITEM` **不自动执行**或派生，未来按**新 Requirement / 新 Task**恢复 facts/Scope/Authorization/Risk/Evidence，旧 revision/decision_epoch/测试不继承。
 
-## 4. Evidence 与测试缺口
-
-Evidence 常见强度：
+## 4. Finding 最小结构
 
 ```text
-当前可重复失败/回归测试
-→ 真实运行/Integration/Golden Path
-→ 明确 Contract/Schema/调用链矛盾
-→ 静态路径可证明错误
-→ 合理风险假设
+[SEVERITY] 问题
+Scope / Delivery Effect / Action
+位置 / 触发条件 / 影响 / 证据
+测试缺口（适用）/ 收口方向 / 验证建议
 ```
 
-最后一类不能伪装成确定 Bug。Test Gap 必须说明“现有测试证明了什么、什么错误仍可能绿色”，而不是只写“建议加测试”。Mock/Fake/Browser 证据不能冒充未运行的真实后端、持久化或外部依赖。
+位置/触发必须可验证；证据不足写风险/待验证假设。
 
-测试失败本身也不自动等于生产 Bug；先区分实现缺陷、过期测试假设、Fixture/Mock 漂移、环境/外部依赖变化和测试竞态。
+## 5. Evidence 与测试缺口
 
-## 5. 去重与结论
+可重复失败/回归 > 真实 Integration/Golden Path > Contract/Schema/调用链矛盾 > 静态证明 > 风险假设；最后一类不冒充 Bug。Test Gap 写清现有证据边界，Mock/Fake/Browser 不冒充未运行真实边界。
 
-同一根因影响多个位置时合并一个 Finding，除非各位置需独立修复、严重度或触发条件不同。
+## 6. 去重与结论
 
-```text
-BLOCKED
-→ unresolved IN_SCOPE_BLOCKING 禁止继续
-
-CHANGES_REQUIRED
-→ 当前仍有必须解决的 IN_SCOPE_BLOCKING
-
-NON_BLOCKING_FINDINGS
-→ 仅 IN_SCOPE_NON_BLOCKING / OUT_OF_SCOPE；说明未验证边界
-
-NO_FINDINGS_WITHIN_SCOPE
-→ 当前审查范围未发现阻塞问题；仍报告范围、验证和未覆盖项
-```
-
-这些只是 Review 输出语言，不替代托管平台正式审批，也不自动授权合并。
+同根因默认合并。任意 unresolved BLOCKING→`BLOCKED`；IN_SCOPE+BLOCKING+AUTO_REPAIR→`CHANGES_REQUIRED`；REQUIREMENT_CHANGE→`UPSTREAM_DECISION_REQUIRED`；仅 NON_BLOCKING→`NON_BLOCKING_FINDINGS`；无 Finding→`NO_FINDINGS_WITHIN_SCOPE`。状态不替代平台审批或授权。

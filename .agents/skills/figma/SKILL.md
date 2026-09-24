@@ -110,16 +110,7 @@ Skill 提到了数据库
 
 本 Skill 不复制研发、Git、CI、文档或代码 Review 规则。
 
-发现生产实现问题：
-
-```text
-code_issue_detected
-→ 返回项目 Coding 工作流
-→ 实现修复并验证
-→ Figma targeted re-review
-```
-
-需要同步长期文档时，路由到项目现有 Docs 工作流。
+发现生产实现问题时按 **统一终态 / Handoff Contract**：当前 Scope + 既有实现授权才 `HANDOFF_CURRENT_SCOPE`；其余按 `REPORT_ONLY / FOLLOW_UP_CANDIDATE / BLOCK_CURRENT_DELIVERY / REQUIREMENT_DECISION` 收口。Figma 不自动扩大代码 Scope、持久化 Follow-up 或取得 Git/生产修改权限；长期文档同样先判断是否属于当前 Scope。
 
 ## 2.2 宿主 Figma 工具优先
 

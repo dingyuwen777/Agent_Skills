@@ -71,6 +71,10 @@ Review 仍负责：
 
 Review 需要新增测试、系统性黑盒/探索式测试或复杂测试设计时，Handoff 到 Testing；Review 不维护第二套测试工程方法。
 
+### 统一终态 / Handoff Contract
+
+跨域发现按 Router 终态收口：当前 Scope + 既有修复授权才 `HANDOFF_CURRENT_SCOPE`；超范围按 `REPORT_ONLY / FOLLOW_UP_CANDIDATE`，真实阻塞用 `BLOCK_CURRENT_DELIVERY`，上游变化用 `REQUIREMENT_DECISION`。Testing 不自动扩大 Scope、持久化 Follow-up 或取得生产修改权限。
+
 ## 2. Testing 工作模式
 
 ### `test-only`（默认）
@@ -90,17 +94,17 @@ Review 需要新增测试、系统性黑盒/探索式测试或复杂测试设计
 
 ### `test-and-fix`
 
-Testing 自身不维护生产修复流程。发现确定生产缺陷后：
+Testing 自身不维护生产修复流程。只有确定生产缺陷属于**当前 Requirement/Scope** 且已有相应修改授权时：
 
 ```text
 可复现失败证据
-→ Handoff Coding
+→ HANDOFF_CURRENT_SCOPE → Coding
 → Coding 最小修复并取得 Green
 → 返回 Testing 执行 Regression
 → 需要独立判断时返回 Review
 ```
 
-只有用户明确授权完整修复链时才允许跨 Skill 继续；权限不会因为 Testing 发现 Bug 自动扩大。已经在同一任务中明确授予、且目标/范围/副作用等级没有变化的授权按 Router 的 Authorization Continuity 沿 Handoff 继续有效，不要求重复索要同一批准；进入更高副作用等级仍必须已有对应授权。
+超范围缺陷按统一终态收口，不用 Handoff 绕过 Scope/授权。完整 fix loop 也只在同目标、同范围、同副作用等级内延续既有授权；更高副作用仍需对应授权。
 
 ## 3. Test Target 必须明确
 

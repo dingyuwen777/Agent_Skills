@@ -18,6 +18,18 @@ RUN_PROTOCOL = "Agent Skills Outcome Eval Run/v1"
 REPORT_PROTOCOL = "Agent Skills Outcome Eval Report/v1"
 UNAVAILABLE = "unavailable"
 
+HIGH_VALUE_CONVERGENCE_CASES = (
+    "follow-up-recursion",
+    "oos-blocker",
+    "repair-churn",
+    "parent-reviewer",
+    "stale-child",
+    "single-writer",
+    "must-split-fallback",
+    "simple-fp",
+    "cross-skill-finding",
+)
+
 _CASE_FIELDS = {
     "协议",
     "用例标识",

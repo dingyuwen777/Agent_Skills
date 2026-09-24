@@ -47,9 +47,11 @@ class AgentOrchestrationHardeningContractTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         for marker in (
-            "Follow-up Admission Gate",
+            "Follow-up Admission",
             "RECORD_ONLY",
-            "FOLLOW_UP_BACKLOG",
+            "FOLLOW_UP_CANDIDATE",
+            "Persistence Authorization Gate",
+            "BACKLOG_ITEM",
             "不自动创建 Issue",
             "不自动创建 Change",
             "不自动创建 Branch",
@@ -113,8 +115,10 @@ class AgentOrchestrationHardeningContractTest(unittest.TestCase):
             "3",
             "旧 revision",
             "重复失败",
-            "OUT_OF_SCOPE",
-            "不自动创建",
+            "FOLLOW_UP_CANDIDATE",
+            "不自动",
+            "Delegation Value",
+            "Independence Requirement",
             "NO_SPLIT",
             "不单独播报",
         ):
@@ -180,12 +184,15 @@ class AgentOrchestrationHardeningContractTest(unittest.TestCase):
 
         for marker in (
             "Follow-up Admission Gate",
-            "不会自动创建 Issue",
+            "FOLLOW_UP_CANDIDATE",
+            "持久化授权",
+            "不会自动创建",
             "不会自动执行",
             "不会递归派生",
             "同时活动的子 Agent 默认不超过 3 个",
             "STALE_RESULT",
             "STOP_CHILD_RETRY",
+            "Independence Requirement",
             "真实历史任务",
             "不要继续凭感觉增加 Agent",
         ):
