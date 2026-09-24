@@ -117,41 +117,16 @@ profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required c
 
 ## 3.1 Cross-Owner Semantic Conflict Audit
 
-**内容仍然存在，不代表规则彼此兼容。** 任何会修改、迁移、压缩、通用化或跨 Skill 同步同一语义的 Mutation，在内容守恒之外必须执行 **Cross-Owner Semantic Conflict Audit**。
+**内容守恒 ≠ 语义无冲突。** Mutation 涉及跨专业 Handoff、权限、状态、完成/阻塞、project-facing projection 或长期说明时，还要沿实际可达链检查 `Router/Entry → Core → Reference → projection/USAGE/Runtime（受影响时）` 的：
 
-至少沿当前真实可达链检查：
+- **Owner**：最终分类/决策/执行/验证责任唯一；
+- **权限**：只读、修改、Git、merge、Release/Deploy、Follow-up 持久化不被扩大；
+- **默认动作**：报告/Handoff/修复/阻塞/持久化/停止一致；
+- **停止条件**：STOP/replan/new-task 边界一致；
+- **强度**：required/optional、BLOCKING/NON_BLOCKING、fail-closed/fallback 不被无依据降级；
+- **例外/失败处理**：更具体规则是真正覆盖，不是第二套冲突解释。
 
-```text
-Router / Entry
-→ Skill Core
-→ 命中 Reference
-→ managed/project-facing projection（受影响时）
-→ USAGE / 长期用户说明（承担同一行为契约时）
-→ Runtime/private execution projection（受影响时）
-```
-
-对同一语义逐项比较：
-
-- **Owner**：谁拥有最终分类、决策、执行和验证责任；不能两个 Owner 都声称最终裁决；
-- **权限**：只读、修改、Git、merge、Release/Deploy 与 Follow-up 持久化是否被某一层无意扩大；
-- **默认动作**：报告、Handoff、修复、阻塞、持久化、停止是否一致；
-- **停止条件**：何时 STOP、何时 replan、何时进入新任务，不能一层要求停止、另一层继续自动派生；
-- **强度**：MUST/SHOULD、required/optional、BLOCKING/NON_BLOCKING、fail-closed/fallback 是否发生无依据降级；
-- **例外/失败处理**：更具体规则是否真的覆盖通用规则，而不是形成互相打架的第二套解释。
-
-如果文本都保留但上述任一维度无法建立唯一、无冲突的解释，Mutation 仍视为**未闭环**；不能用“两个文件都写了相关规则”作为完成证据。
-
-Cross-Owner Semantic Conflict Audit 与内容守恒是两条独立证据轴：
-
-```text
-Content Preservation
-→ 规则有没有丢
-
-Cross-Owner Semantic Conflict Audit
-→ 规则之间有没有互相冲突
-```
-
-完成前从 canonical Owner 向所有直接消费者做一次正向检查，再从 managed projection / USAGE / Handoff 入口反向回溯 Owner。发现冲突时优先收敛到唯一 canonical Owner，并让其他位置只保留必要 trigger / terminal / project-facing 解释；不得为了“同步”复制完整第二套专业规则。
+任一项无法建立唯一解释即未闭环；优先收敛到 canonical Owner，其他位置只保留 trigger/terminal/project-facing 薄表达。历史 Change/PR 不参与 current live 冲突审计。
 
 ## 4. 测试和人工语义对照都需要
 
