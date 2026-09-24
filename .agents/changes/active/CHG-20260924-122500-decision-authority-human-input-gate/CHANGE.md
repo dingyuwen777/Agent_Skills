@@ -175,8 +175,8 @@ Router、Coding/Git、managed/Runtime project-facing、host child prompt、Outco
 | R12 | Source/Runtime/project-facing/child/USAGE 同语义 | #312 / AC12 | satisfied | managed/Runtime/child/USAGE contract tests |
 | R13 | context budget 不提高 | #312 / AC13 | satisfied | run 35958667459: existing absolute context budgets Green; thresholds unchanged |
 | R14 | Red→Green 且旧回归不削弱 | #312 / AC14 | satisfied | Red 35956572754; Green 35958667459; existing regressions preserved |
-| R15 | Review/CI/merge/main-fresh/archive/closure/cleanup | #312 / AC15 | not_satisfied | 待交付 |
-| R16 | 不 Release/Deploy；#310 保持等待新 main actual qualification | #312 / AC16 | not_satisfied | 待交付 |
+| R15 | Review/CI/merge/main-fresh/archive/closure/cleanup | #312 / AC15 | not_applicable | pre-merge Change 不自证未来交付；由 Ready 后 Delivery Gate 完成 |
+| R16 | 不 Release/Deploy；#310 保持等待新 main actual qualification | #312 / AC16 | not_applicable | 本任务明确不执行 Release/Deploy；#310 保持 open 并等待新 final-main actual qualification |
 
 # 计划改动
 
