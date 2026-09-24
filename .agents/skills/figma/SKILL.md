@@ -110,16 +110,17 @@ Skill 提到了数据库
 
 本 Skill 不复制研发、Git、CI、文档或代码 Review 规则。
 
-发现生产实现问题：
+发现生产实现问题时，先按 Router 的 **Cross-Skill Terminal / Handoff Contract** 判断，不把“设计发现代码问题”自动等价为当前修复授权：
 
-```text
-code_issue_detected
-→ 返回项目 Coding 工作流
-→ 实现修复并验证
-→ Figma targeted re-review
-```
+- 当前 Requirement/Scope 内且已有实现修复授权 → `HANDOFF_CURRENT_SCOPE` → Coding → 修复验证 → Figma targeted re-review；
+- 独立非阻塞实现问题 → `REPORT_ONLY`；确有长期独立价值时可标记 `FOLLOW_UP_CANDIDATE`；
+- `OUT_OF_SCOPE` 但 Evidence 证明当前设计基线/交付无法成立 → `BLOCK_CURRENT_DELIVERY`，不自动把代码修复吸收进当前 Scope；
+- 需要改变业务 Requirement、系统能力、Contract/Schema、Scope 或 Authorization → `REQUIREMENT_DECISION`；
+- 旧实现事实 → `STALE_RESULT`；required 系统事实/能力不可得 → `CAPABILITY_BLOCKER`。
 
-需要同步长期文档时，路由到项目现有 Docs 工作流。
+Figma 继续拥有设计事实、Finding 和 READY 判定，不拥有 Follow-up 持久化、生产代码修改或 Git 副作用权限。
+
+需要同步长期文档时，也按同一 Cross-Skill Terminal / Handoff Contract 决定是否属于当前 Scope，再路由到项目现有 Docs 工作流。
 
 ## 2.2 宿主 Figma 工具优先
 
