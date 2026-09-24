@@ -174,11 +174,15 @@ class TwoPassCrossSkillConvergenceContractTest(unittest.TestCase):
             self.assertIn(marker, mutation)
 
     def test_outcome_eval_names_high_value_new_failure_families(self) -> None:
-        """静态规则 Green 不能冒充真实模型效果，关键失效模式要进入 actual eval 候选。"""
+        """高价值失效族进入 Eval 机器契约，Reference 保持 actual/fixture 边界。"""
         outcome = (
             SKILLS / "coding" / "references" / "31_跨模型效果评测与规则有效性.md"
         ).read_text(encoding="utf-8")
+        machine = (ROOT / "evals" / "agent_outcome_eval.py").read_text(encoding="utf-8")
 
+        self.assertIn("HIGH_VALUE_CONVERGENCE_CASES", outcome)
+        self.assertIn("actual", outcome)
+        self.assertIn("fixture", outcome)
         for marker in (
             "follow-up-recursion",
             "oos-blocker",
@@ -189,10 +193,8 @@ class TwoPassCrossSkillConvergenceContractTest(unittest.TestCase):
             "must-split-fallback",
             "simple-fp",
             "cross-skill-finding",
-            "actual",
-            "fixture",
         ):
-            self.assertIn(marker, outcome)
+            self.assertIn(marker, machine)
 
     def test_project_facing_docs_explain_bounded_analysis_and_followup_authorization(self) -> None:
         """最终用户和项目规则应得到停止条件、独立性和 Follow-up 授权边界。"""
