@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260924-122500-decision-authority-human-input-gate
 title: 统一跨模型自主决策与用户提问准入
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/decision-authority-human-input-gate
 created: 2026-09-24
