@@ -34,123 +34,200 @@ data_changes: []
 - **用户已确认决定**：保留真实跨宿主 Behavior Qualification 能力和 actual/fixture 真值边界，但取消它对每次正式 Release 的硬依赖；GitHub Release 只使用自身能够自动、确定性完成的质量门禁。完成本变更后关闭 Issue #310。
 - **预期结果**：维护者以后可以直接从 GitHub Actions 手工运行 Release 并输入 tag；Release 继续执行完整 self-contained tests、Ready、Outcome Eval registry、三平台 Runtime/package/identity/ZIP 等硬门禁；跨宿主 Behavior Qualification 独立运行，真实执行过的模型/宿主可标记 verified，未执行保持 unverified，但不阻塞普通 Release。
 
-# Requirement Source
+# 背景、现状与问题
 
-- GitHub Issue #310。
-- 用户本轮明确 Owner 决策：Behavior Qualification 不再作为每次 Release 的不可满足前置条件；按该方案修改、合并到 main、关闭 #310。
+## 背景
 
-# 目标与成功标准
+Issue #310 原本把 final-main 跨宿主 actual Behavior Qualification 作为普通 Release 和 Issue Closure 的前置。用户进一步确认真实使用流程后，明确指出 GitHub 上点击 Release 时并没有自动产生四宿主 actual run 的能力。
+
+## 当前现状
+
+- `.github/workflows/release.yml` 的 preflight 会查询同一 `GITHUB_SHA` 的成功 Behavior Qualification workflow run，下载 `release-behavior-qualification` artifact 并重新 validate。
+- `.github/workflows/behavior-qualification.yml` 只接受维护者输入的 `bundle_base64`，自身不调用模型 Provider、不启动 Codex / Claude Code / Cursor / DeepSeek Harness。
+- `evals/release_qualification.py` 正确地拒绝 fixture、stale revision、缺 host/model coverage 的 bundle。
+- Outcome Eval registry、三平台 Runtime package smoke、Release identity/SHA/ZIP/Draft-Publish 等 deterministic gate 已存在。
+
+## 问题、根因或约束
+
+根因不是 Behavior Qualification 没价值，而是**证据生产责任与 Release hard gate 生命周期错配**：Release 依赖一个自己不能自动产生、仓库也没有自动宿主执行基础设施产生的外部 Evidence。把这种证据设为每次普通 Release 的硬前置，会把“未运行”错误升级为“产品不可发布”，并让 GitHub Release 流程永久无法自闭环。
+
+## 不修改的后果
+
+- 维护者点击 Release 会在 preflight 因缺少同 SHA qualification artifact 失败；
+- 为了发版只能人工运行四宿主、伪造 actual 或绕过 gate，三者都不符合目标；
+- #310 会因为不可满足的 Closure 前置长期保持 open。
+
+# 事实与证据
+
+| 证据编号 | 已确认事实 | 来源 / 定位 / 命令 | 支撑的约束或决策 |
+| --- | --- | --- | --- |
+| E1 | 当前 main 为 `aa7b1943c4aa7ecaf4acfba9630e4326edf6a9df` | GitHub main fresh read | 本轮基线 |
+| E2 | Release preflight 查询/下载 Behavior Qualification artifact | current `.github/workflows/release.yml` | 证明硬依赖真实存在 |
+| E3 | Behavior Qualification workflow 只校验输入 bundle，不生成真实模型 run | current `.github/workflows/behavior-qualification.yml` | 证明 Release 无自动 Evidence 生产路径 |
+| E4 | qualification validator 保留 actual/fixture/revision/host/model fail-closed | current `evals/release_qualification.py` + tests | 该能力有独立质量价值，应保留 |
+| E5 | 用户明确要求解除 Release 硬依赖，并完成后关闭 #310 | 当前 Owner 决策 / #310 Owner Decision Revision | Requirement |
+| E6 | PR #314 Red 第一次运行 `35961897285` 先被 Change 格式门禁拦截，未形成目标 Contract Red | GitHub Actions job log | 需要修正施工契约后重新取得真实 Red |
+
+# 目标、成功标准与非目标
+
+## 目标
+
+- Release 只执行 GitHub Actions 自身能自动、确定性履行的 hard gates；
+- Behavior Qualification 独立保留，并继续严格区分 actual 与 fixture；
+- 普通发版用户路径恢复为 `main → Actions / Release → 输入 v<SemVer> → 自动验证与发布`；
+- 按新 Closure Contract 完成并关闭 #310。
+
+## 成功标准
 
 - [ ] Release preflight 不再查询/下载/强制验证 Behavior Qualification workflow artifact。
-- [ ] Release 保留并自动执行现有 deterministic hard gates：main/tag/Release identity、完整 self-contained tests、Ready、Outcome Eval registry、Linux/Windows/macOS Runtime smoke、三平台 identity、artifact SHA256、ZIP 与 Draft/Publish 校验。
+- [ ] Release 保留 main/tag/Release identity、full self-contained tests、Ready、Outcome Eval registry、Linux/Windows/macOS Runtime smoke、三平台 identity、artifact SHA256、ZIP、Draft/Publish 校验。
 - [ ] Behavior Qualification workflow、Outcome Eval cases、actual/fixture 区分、grader、revision/host/model coverage validator 保留。
-- [ ] canonical 跨模型规则明确：Behavior Qualification 是独立的真实跨宿主验证能力，不是普通 Release 的先决条件；没有 actual run 时只能说 unverified，不能伪造通过。
-- [ ] README 的正式 Release 流程与实际 workflow 一致，不再要求维护者手工准备 qualification bundle 才能发版。
-- [ ] 永久测试锁定“保留 Behavior Qualification 能力 + Release 不依赖它”这两个同时成立的 Contract。
-- [ ] current-head required CI、独立 Review、guarded merge、implementation main-fresh、repository-native Change Archive、Issue #310 Acceptance/Closure、任务分支 cleanup 全部闭环。
+- [ ] canonical 跨模型规则明确 Behavior Qualification 为独立验证能力，不是普通 Release 前置；没有 actual run 时只能声明 unverified。
+- [ ] README 正式 Release 流程与 workflow 一致，不再要求先人工准备 qualification bundle 才能发版。
+- [ ] 永久测试同时锁定“Behavior Qualification 能力存在”和“Release 不依赖它”。
+- [ ] current-head required CI、独立 Review、guarded merge、implementation main-fresh、repository-native Change Archive、#310 Acceptance/Closure 与任务分支 cleanup 闭环。
 - [ ] 本任务不执行实际 Release/Deploy。
 
-# 范围
+## 非目标
 
-- Release workflow 的资格门禁职责边界；
-- Cross-host Behavior Qualification 的生命周期定位；
-- 对应 canonical Rule、README 与永久回归；
-- Issue #310 Closure Contract 同步与最终关闭。
-
-# 非目标
-
-- 不删除 evals/、Behavior Qualification workflow 或真实 actual run validator；
+- 不删除 `evals/`、Behavior Qualification workflow 或真实 actual run validator；
 - 不伪造 Codex / Claude Code / Cursor / DeepSeek Harness actual Evidence；
-- 不降低 existing self-contained tests、Ready、三平台 Runtime/package/identity/ZIP 门禁；
+- 不降低 existing self-contained tests、Ready、Outcome Eval registry、三平台 Runtime/package/identity/ZIP 门禁；
 - 不改变 public Runtime CLI/MCP、License、Project Payload schema、Release ZIP 产品面；
 - 不新增 Provider Secret、模型 API 或自动宿主执行基础设施；
 - 不执行 Release/Deploy；
 - 不修改 AIMA_UGC 或其他仓库。
 
-# 必须保持不变
+# 约束与意图决策
 
-- 模型身份不参与 canonical Router；
-- fixture 不能冒充 actual，未真实运行的模型/宿主仍为 unverified；
-- Release 的三平台产品面、固定 Python、identity/digest/SHA/ZIP 验证保持；
-- Branch Protection、Review、CI、Change Archive、Issue Closure 等交付门禁不降低；
-- 无新依赖、无 Schema/Migration、无生产副作用。
+| 决策维度 | 当前决定 | 依据 | 影响 |
+| --- | --- | --- | --- |
+| Release hard gate | 只保留 Release workflow 可自动履行的 deterministic Evidence | E2/E3/E5 | 移除 qualification artifact lookup/download/validate |
+| Behavior Qualification | 独立保留、继续 fail-closed 验证真实 actual bundle | E4/E5 | workflow/evaluator/cases 不删除 |
+| 未运行模型语义 | unverified，不等于 pass/fail | E4/E5 | 不伪造跨宿主结论 |
+| Runtime/public Contract | 不变 | 当前任务目标 | 无迁移 |
+| Release/Deploy 授权 | 本轮不执行 | 用户请求只要求代码交付到 main | 只修改 workflow，不触发发布 |
 
-# 方案比较与决策
+# 修改方案与决策依据
 
-## 方案 A：维持当前 Release 硬依赖
+## 最小充分方案
 
-拒绝。GitHub Release workflow 不会启动四个外部宿主，也没有合法 actual run 自动生成器，因此门禁没有可执行闭环，会导致 Release 永久 fail closed。
+1. 永久测试先改为要求“Release 不含 Behavior Qualification hard dependency + Behavior Qualification workflow 仍存在”。
+2. Release preflight 删除 qualification artifact 查询/下载/validate 步骤，并移除只为该步骤需要的 `actions: read` job permission。
+3. canonical Outcome Eval Rule 将“Release Behavioral Qualification”调整为独立 Cross-host Behavior Qualification：保留真实 run contract，但不再要求普通 Release fresh readback。
+4. README 同步维护者实际发布流程；Behavior Qualification 说明移到独立验证能力，不再写成 Release 前置。
+5. 不修改 `evals/release_qualification.py` 的实际校验严格度，避免通过“放宽 validator”解决生命周期问题。
 
-## 方案 B：删除 Behavior Qualification
+## 证据到决策
 
-拒绝。真实跨模型/跨宿主 Outcome Eval 仍有独立质量价值；删除会丢失验证能力，并混淆“没有运行”与“已经通过”。
+| 决策 | 依据证据 | 为什么 |
+| --- | --- | --- |
+| D1 移除 Release artifact dependency | E2/E3/E5 | 当前 hard gate 没有可执行 Evidence 生产闭环 |
+| D2 保留 qualification workflow/validator | E4 | 真实跨模型验证仍有独立价值 |
+| D3 不新增模型 Provider/Secret | E3/E5 | 用户目标只是让现有 Release 可闭环，不扩大运行与安全面 |
+| D4 不降低三平台/Ready/registry | E5 + Maintenance | 解除错误依赖不等于降低可自动履行质量门禁 |
 
-## 方案 C：Behavior Qualification 独立化，Release 仅保留可自动履行硬门禁
+## 备选方案与取舍
 
-采用。它同时满足：
-- Release 路径可执行；
-- 不伪造真实 Agent 行为证据；
-- 不降低 deterministic 发布质量；
-- 保留未来真实跨宿主验证能力；
-- 用户操作恢复为 GitHub Actions → Release → 输入 tag。
+- **维持当前 Release 硬依赖**：拒绝。没有自动 actual 生产路径，正常 Release 永久阻塞。
+- **删除 Behavior Qualification**：拒绝。会丢失真实跨宿主效果验证能力，并混淆 unverified 与 passed。
+- **让 fixture / synthetic actual 代替真实宿主**：拒绝。违反当前 Outcome Eval 真值边界。
+- **为 Release 新增四宿主 Provider/Secret 自动执行基础设施**：拒绝。超出当前目标，引入新的成本、安全和宿主集成面。
+- **独立 Qualification + 可执行 Release hard gates**：采用，最小充分且职责闭环。
 
-# Requirement Traceability
+# 需求追溯
 
-| 编号 | 要求 | 来源 | 状态 | Evidence |
+| 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
 | R1 | 取消 Release 对 Behavior Qualification artifact 的硬依赖 | 用户本轮决定 / #310 | not_satisfied | 待实现 |
 | R2 | 保留 Behavior Qualification 与 actual 真值边界 | 用户本轮决定 / #310 | not_satisfied | 待实现与回归 |
 | R3 | deterministic Release hard gates 不降级 | 用户本轮决定 / Maintenance | not_satisfied | 待 workflow diff + tests/CI |
 | R4 | canonical Rule/README 与真实实现一致 | Docs Impact | not_satisfied | 待文档同步 |
 | R5 | #310 按新 Closure Contract 完成并关闭 | 用户本轮决定 | not_satisfied | 待 merge 后 Closure Audit |
-| R6 | 不执行 Release/Deploy | 用户本轮决定 | satisfied | 当前任务授权不包含 Release/Deploy |
+| R6 | 不执行 Release/Deploy | 用户本轮决定 | satisfied | 当前任务未触发发布动作 |
 
-# Validation Matrix
+# 计划改动
 
-| 验证层 | 是否要求 | 证明目标 |
+| 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 |
+| --- | --- | --- | --- |
+| `.agents/skills/coding/tests/test_final_release_behavior_contract.py` | 新增解耦 Contract 回归 | 防止重新引入不可执行硬依赖 | R1-R3 |
+| `.github/workflows/release.yml` | 移除 qualification artifact hard gate 与仅相关权限 | 恢复 Release 自闭环 | R1/R3 |
+| `.agents/skills/coding/references/31_跨模型效果评测与规则有效性.md` | 调整 qualification 生命周期定位 | canonical 规则与实现一致 | R2/R4 |
+| `README.md` | 更新独立 qualification 与正式 Release 操作 | 维护者使用说明正确 | R4 |
+| #310 | 更新 Acceptance / Closure Evidence，最终关闭 | Requirement Closure | R5 |
+
+# 验证矩阵
+
+| 验证层 | 是否要求 | 范围 / 证明目标 |
 | --- | --- | --- |
-| 行为 / Unit / Component | required | 新永久测试锁定 Release 与 Behavior Qualification 解耦 |
-| 接口 / Contract | required | Release workflow 不再消费 qualification artifact；validator/workflow 仍存在 |
-| 集成 / Runtime Dependency | required | 现有 self-contained suite 与 workflow contract tests 通过 |
-| 用户 / Workflow Acceptance | required | Release 的用户入口只需 main + tag，不再要求 qualification bundle |
-| 跨组件关键路径 | required | Rule → workflow → README → tests 一致 |
-| 外部依赖 Probe | not_applicable | 不调用真实模型 Provider；actual Evidence 本次明确不伪造 |
-| Build / Package / Runtime | required | PR/main required CI 中三平台 package gate 保持 Green |
-| Docs / Governance | required | README、Change、#310 Closure Contract 同步 |
+| 行为 / Unit / Component | required | 新永久测试锁定 Release/Qualification 解耦 |
+| 接口 / Contract | required | Release 不消费 qualification artifact；validator/workflow 仍存在 |
+| 集成 / Persistence / Runtime Dependency | required | full self-contained suite 与 workflow contract tests |
+| 用户 / Workflow Acceptance | required | Release 用户入口只需 main + tag，不要求 bundle |
+| 跨组件 Golden Path | required | Rule → workflow → README → tests 一致 |
+| 外部依赖 Probe | not_applicable | 不调用模型 Provider；actual 本次明确不伪造 |
+| Build / Package / Runtime | required | PR/main required CI 的三平台 package gate Green |
+| Docs / Governance / Other | required | README、Change、#310 Closure Contract 同步 |
 
-# 实施计划
+## 验证计划
 
-1. 先修改永久测试，使其要求“Behavior Qualification workflow/validator 保留，但 Release workflow 不包含 qualification artifact hard gate”，取得预期 Red。
-2. 修改 Release workflow，移除 qualification artifact 查询/下载/validate 步骤及仅因此需要的权限。
-3. 修改跨模型 canonical Rule，将 Release Behavioral Qualification 调整为独立 qualification，而非每次 Release 前置；保留 actual/fixture/revision/coverage 真值边界。
-4. 同步 README 正式 Release 说明；不向 USAGE 引入维护者级发布细节。
-5. 运行 targeted tests + full self-contained tests + ready_check；完成 Docs/Review/Completion Audit。
-6. current-head CI Green 后 guarded merge。
-7. merge 后验证 implementation main-fresh、repository-native Change Archive；更新并关闭 #310；清理任务分支。
+- Red：修正 Change 合法性后，由 PR #314 current-head CI 运行新 Contract test，预期因旧 Release hard gate 仍存在而失败。
+- Green targeted：`test_final_release_behavior_contract.py`、`test_release_qualification.py`、Release productization/only-surface 相关回归。
+- Green full：仓库 self-contained unittest suite。
+- Ready：`ready_check.py --root . --require-active-ready`。
+- PR required CI：Agent Skills Gate + 由 classifier 要求的 Runtime Package jobs。
+- Review：final head requirement-first independent review。
+- merge 后：implementation main-fresh + repository-native Change Archive + #310 Closure + cleanup。
 
-# 风险、兼容、迁移与回滚
+# 风险、兼容性、迁移与回滚
 
-- **主要风险**：错误地把“解除不可执行硬依赖”实现成“删除行为质量能力”，或误删三平台/Ready/registry 现有 Release 门禁。
-- **控制**：永久测试同时断言 Behavior Qualification 能力存在、Release 不消费它、三平台 jobs 保留；full CI 和独立 Review。
-- **兼容性**：不改 public Runtime/Release asset Contract。
-- **数据/Migration**：不适用。
-- **部署**：不执行。
-- **回滚**：revert 本 PR 即可；无不可逆数据或 Release 副作用。
+| 项目 | 结论 | 依据 / 处理 |
+| --- | --- | --- |
+| 主要风险 | 误删 Behavior Qualification 能力，或误删现有 Release hard gates | 双向 Contract 测试 + full CI + Review |
+| 兼容性 | public Runtime/Release asset Contract 不变 | 不改 CLI/MCP/schema/ZIP surface |
+| 数据 / Migration | 不适用 | 无数据变化 |
+| 部署 / 运行 | 不执行 Release/Deploy | workflow 代码变更仅在未来手工 Release 时生效 |
+| 回滚 | revert PR | 无不可逆副作用 |
 
-# Docs Impact
+# 文档、依赖、部署与发布影响
 
-targeted：README 的 Release 维护者流程必须同步；USAGE 面向已接入项目普通开发者，不承担 Release 运维步骤，若无事实变化则不修改。
+- **README**：targeted 更新正式 Release 和独立 Behavior Qualification 的职责。
+- **USAGE**：面向普通已接入项目开发者，不承担维护者发布流程；当前事实不要求修改。
+- **依赖**：无新增/升级。
+- **Runtime public Contract**：无变化。
+- **Secret/Provider**：无新增。
+- **Release**：修改未来 Release preflight 职责；本任务不执行 Release。
 
-# Completion Audit
+# 完成审计
 
-- [ ] upstream_re_read：Ready 前重读用户最新决定、#310、current main 和 Release/Behavior Qualification 实现。
+- [ ] upstream_re_read：Ready 前重读用户最新决定、#310、current main、Release 与 Behavior Qualification 实现。
 - [ ] change_coverage：R1-R6 全部 satisfied/not_applicable 且无 not_satisfied。
 - [ ] reverse_audit：从 GitHub 手工 Release 用户路径反查所有 required hard gates，并从独立 Behavior Qualification 反查 actual 真值边界。
-- [ ] unresolved_cleared：无未处理 blocker/TODO/TBD；未运行真实宿主明确保持 unverified 而非伪装 Green。
+- [ ] unresolved_cleared：无 blocker/TODO/TBD；未运行真实宿主明确保持 unverified。
 
-# 交付状态
+# 完成证据与状态
 
-- Branch：tech/release-hard-gate-closure
-- Change：in_progress
-- PR：未创建
-- Release/Deploy：not_applicable
+## 当前证据
+
+- main baseline：`aa7b1943c4aa7ecaf4acfba9630e4326edf6a9df`。
+- Branch：`tech/release-hard-gate-closure`。
+- PR：#314 Draft。
+- 第一轮 CI：run `35961897285` failure，原因是 Change 必需标题不完整；**不计作目标 Contract Red**。
+- Release/Deploy：not_applicable。
+
+## 未验证内容与剩余风险
+
+- 目标 Contract Red 尚待下一轮 CI。
+- 实现、Green、current-head package、独立 Review、merge/main-fresh/archive/Issue Closure/cleanup 尚未完成。
+- 真实跨宿主 actual Behavior Qualification 本任务不执行；其状态应保持 unverified，不是 blocker。
+
+## 交付状态
+
+- implementation: in_progress
+- delivery: draft_pr
+- validation: incomplete
+- main_fresh: not_applicable（未 merge）
+- change_archive: not_applicable（未 merge）
+- requirement_closure: incomplete
+- cleanup: incomplete
+- end_to_end: incomplete
