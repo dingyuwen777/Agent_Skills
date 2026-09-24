@@ -180,9 +180,9 @@ class TwoPassCrossSkillConvergenceContractTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         machine = (ROOT / "evals" / "agent_outcome_eval.py").read_text(encoding="utf-8")
 
-        self.assertIn("HIGH_VALUE_CONVERGENCE_CASES", outcome)
         self.assertIn("actual", outcome)
         self.assertIn("fixture", outcome)
+        self.assertIn("HIGH_VALUE_CONVERGENCE_CASES", machine)
         for marker in (
             "follow-up-recursion",
             "oos-blocker",
