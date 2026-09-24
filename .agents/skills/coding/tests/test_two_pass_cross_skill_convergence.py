@@ -180,14 +180,15 @@ class TwoPassCrossSkillConvergenceContractTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         for marker in (
-            "Follow-up explosion",
-            "out-of-scope delivery blocker",
-            "repair churn",
-            "Parent vs Reviewer",
-            "stale child",
-            "single writer",
-            "MUST_SPLIT fallback",
-            "cross-skill finding",
+            "follow-up-recursion",
+            "oos-blocker",
+            "repair-churn",
+            "parent-reviewer",
+            "stale-child",
+            "single-writer",
+            "must-split-fallback",
+            "simple-fp",
+            "cross-skill-finding",
             "actual",
             "fixture",
         ):
