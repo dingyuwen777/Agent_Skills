@@ -155,7 +155,7 @@ Requirement Source 为 GitHub Issue #308。用户要求把此前系统性审计�
 - MUST_SPLIT 表达“值得委派”与“必须独立复核”是不同维度，解耦后才能正确处理无 subagent 宿主。
 - 规则内容仍在不代表规则彼此一致，因此 Mutation 必须同时审计冲突。
 
-# 备选方案与取舍
+## 备选方案与取舍
 
 - **只在 Review ref02 增加一个 OUT_OF_SCOPE_BLOCKER 枚举**：局部改动小，但继续把 scope/blocking/action 混在一个枚举里，拒绝。
 - **新增中央 Workflow/Task Manager**：可统一状态，但引入永久控制面、存储和维护成本，明显超出当前需要，拒绝。
