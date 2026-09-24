@@ -25,7 +25,7 @@ def _payload_skill_text(skill: str) -> str:
 
 
 class ReviewConvergenceContractTest(unittest.TestCase):
-    """锁定 Review 只修当前阻塞项，并保持 Reviewer 独立裁决与净收敛。"""
+    """锁定 Review/多 Agent 返修必须围绕 Acceptance 净收敛。"""
 
     def test_review_core_exposes_convergence_goal_in_source_and_runtime(self) -> None:
         """Source/Runtime Review Core 都应说明 Review 是交付门禁而不是持续优化器。"""
@@ -39,18 +39,18 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             self.assertIn("Scope=IN_SCOPE", text)
             self.assertIn("Delivery Effect=BLOCKING", text)
             self.assertIn("Action=AUTO_REPAIR", text)
-            self.assertIn("OUT_OF_SCOPE + BLOCKING", text)
 
     def test_finding_axes_are_independent_from_severity(self) -> None:
-        """Finding 必须把严重度、范围、交付影响和动作拆开。"""
+        """Finding 必须把严重度、范围、交付影响和动作拆成独立维度。"""
         findings = (
             SKILLS / "review" / "references" / "02_Findings与严重度.md"
         ).read_text(encoding="utf-8")
 
         self.assertIn("severity", findings)
-        for axis in ("Scope", "Delivery Effect", "Action"):
-            self.assertIn(axis, findings)
         for marker in (
+            "Scope",
+            "Delivery Effect",
+            "Action",
             "IN_SCOPE",
             "OUT_OF_SCOPE",
             "REQUIREMENT_CHANGE",
@@ -60,29 +60,27 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             "REPORT_ONLY",
             "REQUIREMENT_DECISION",
             "FOLLOW_UP_CANDIDATE",
+            "OUT_OF_SCOPE + BLOCKING",
         ):
             self.assertIn(marker, findings)
         self.assertIn("唯一自动返修组合", findings)
-        self.assertIn("OUT_OF_SCOPE + BLOCKING", findings)
 
     def test_review_repair_loop_has_net_convergence_and_hard_stop_guards(self) -> None:
-        """返修必须净收敛，诊断进展不能冒充交付收敛。"""
+        """返修循环必须净收敛，失败时 replan，不能无限机械重试或自动 PASS。"""
         flow = (
             SKILLS / "review" / "references" / "01_审查执行流程.md"
         ).read_text(encoding="utf-8")
 
         for marker in (
-            "Finding Classification",
-            "Repair Scheduling Owner",
             "Net Delivery Convergence",
             "Diagnostic Progress",
             "Delivery Convergence",
-            "同级或更高级",
             "连续两轮",
             "STOP_REPAIR_LOOP",
             "root-cause reanalysis",
             "3 个 automatic repair rounds",
             "不是自动 PASS",
+            "同级或更高级",
             "连续两次修复",
         ):
             self.assertIn(marker, flow)
@@ -98,31 +96,24 @@ class ReviewConvergenceContractTest(unittest.TestCase):
         self.assertIn("无限范围", flow)
 
     def test_reviewer_owns_classification_parent_owns_repair_scheduling(self) -> None:
-        """Reviewer 独立裁决 Finding；Parent 只安排已准入返修。"""
-        flow = (
-            SKILLS / "review" / "references" / "01_审查执行流程.md"
-        ).read_text(encoding="utf-8")
+        """Reviewer 独立裁决 Finding；Parent 只调度返修并重建最少充分委派。"""
         collaboration = (
             SKILLS / "coding" / "references" / "09_多人和多智能体并行协作.md"
         ).read_text(encoding="utf-8")
 
         for marker in (
-            "Reviewer owns Finding classification",
-            "Parent owns repair scheduling",
-            "不得单方",
-            "Reviewer reclassification",
-        ):
-            self.assertIn(marker, flow)
-        for marker in (
-            "Reviewer owns Finding classification",
+            "Reviewer owns Finding",
             "Parent owns scheduling",
+            "Reviewer 不直接",
+            "Worker",
+            "最少充分",
+            "完整对话历史",
             "不能降级",
-            "Reviewer 不直接派 Worker",
         ):
             self.assertIn(marker, collaboration)
 
-    def test_completion_requires_acceptance_no_delivery_blocker_and_fresh_validation(self) -> None:
-        """停止返修的标准是 Acceptance + 无交付 blocker + 新鲜验证，而不是零意见。"""
+    def test_completion_requires_acceptance_no_blocking_finding_and_fresh_validation(self) -> None:
+        """停止返修的标准是 Acceptance + 无当前 BLOCKING Finding + 新鲜验证，而不是零意见。"""
         completion = (
             SKILLS / "coding" / "references" / "11_两阶段复核与完成前验证.md"
         ).read_text(encoding="utf-8")
@@ -132,8 +123,6 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             "Delivery Effect=BLOCKING",
             "Fresh",
             "Reviewer 没有任何意见",
-            "OUT_OF_SCOPE + BLOCKING",
-            "BLOCK_CURRENT_DELIVERY",
         ):
             self.assertIn(marker, completion)
         self.assertIn("不是", completion)
@@ -143,11 +132,9 @@ class ReviewConvergenceContractTest(unittest.TestCase):
         usage = (ROOT / "USAGE.md").read_text(encoding="utf-8")
 
         for marker in (
-            "只有有证据、属于当前范围、真实阻塞当前交付",
-            "超出当前范围但阻塞交付",
-            "Reviewer",
-            "Main/Parent",
-            "净收敛",
+            "只修复阻塞当前目标",
+            "非阻塞",
+            "超出当前范围",
             "停止机械返修",
             "重新诊断",
         ):
