@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260924-075600-two-pass-cross-skill-convergence
 title: 统一双遍有界分析与跨 Skill 收敛语义
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/two-pass-cross-skill-convergence
 created: 2026-09-24
