@@ -32,7 +32,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - `OWNER_DECISION`：业务/Acceptance/public Contract/Schema/Migration/数据/安全/重大兼容/长期架构或成本取舍且前五类不能解决 → ASK；
 - `AUTHORIZATION_REQUIRED`：超出 Effective Authorization → ASK/BLOCK；
 - `REQUIRED_USER_INPUT`：只有用户/Owner 可提供且不可恢复的必要输入 → ASK；
-- `CAPABILITY_BLOCKER`：必要能力有界调查后仍不可用 → 报告；仅用户可解除时 ASK。
+- `CAPABILITY_BLOCKER`：能力调查后仍不可用 → 报告；仅用户可解除时 ASK。
 
 **Human Input Admission Gate**：仅后四类允许请求用户。**No Choice-Prompt**：前五类不得包装成 A/B/C、“你想采用哪种方案”或重复确认。
 
