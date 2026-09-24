@@ -5,6 +5,8 @@ import json
 import unittest
 
 from evals import agent_outcome_eval
+from runtime.agent_skills_runtime.catalog import build_bundle
+from runtime.agent_skills_runtime.project_payload import build_project_payload, decode_payload_file
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -63,6 +65,39 @@ class FinalReleaseBehaviorContractTest(unittest.TestCase):
             "revision",
             "host",
             "model",
+        ):
+            self.assertIn(marker, text)
+
+    def test_runtime_project_facing_router_keeps_followup_stop_semantics(self) -> None:
+        """Runtime Project Payload 必须保留跨 Skill Follow-up 的项目侧停止语义。"""
+        payload = build_project_payload(ROOT, build_bundle(ROOT))
+        files = payload["files"]
+        router_text = None
+        for entry in files:
+            if isinstance(entry, dict) and entry.get("path") == "router/SKILL.md":
+                router_text = decode_payload_file(entry).decode("utf-8")
+                break
+        self.assertIsNotNone(router_text)
+        for marker in (
+            "FOLLOW_UP_CANDIDATE",
+            "BACKLOG_ITEM",
+            "新的 Requirement / Task",
+            "不自动创建",
+        ):
+            self.assertIn(marker, router_text)
+
+    def test_behavior_qualification_workflow_is_revision_bound(self) -> None:
+        """actual Evidence 必须由独立 workflow 绑定 main SHA，不写回被验证 revision。"""
+        path = ROOT / ".github" / "workflows" / "behavior-qualification.yml"
+        self.assertTrue(path.is_file())
+        text = path.read_text(encoding="utf-8")
+        for marker in (
+            "Behavior Qualification",
+            "workflow_dispatch",
+            "bundle_base64",
+            "refs/heads/main",
+            "release-behavior-qualification",
+            "--revision",
         ):
             self.assertIn(marker, text)
 

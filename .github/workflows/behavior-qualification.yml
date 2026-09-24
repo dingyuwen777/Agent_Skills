@@ -1,0 +1,83 @@
+name: Behavior Qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_base64:
+        description: "由真实支持宿主产生并经脱敏的 Release qualification bundle（base64 JSON）"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-skills-behavior-qualification-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate Actual Agent Behavior
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14.7"
+
+      - name: Verify qualification target
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main" || {
+            echo "Behavior Qualification 只能针对 main 当前 revision 运行；当前 ref=${GITHUB_REF}" >&2
+            exit 1
+          }
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+
+      - name: Decode qualification bundle
+        env:
+          QUALIFICATION_B64: ${{ inputs.bundle_base64 }}
+        run: |
+          python - <<'PY'
+          import base64
+          import binascii
+          import os
+          from pathlib import Path
+
+          raw = os.environ.get("QUALIFICATION_B64", "").strip()
+          if not raw:
+              raise SystemExit("qualification bundle 不能为空")
+          try:
+              payload = base64.b64decode(raw, validate=True)
+          except (binascii.Error, ValueError) as exc:
+              raise SystemExit("qualification bundle 不是合法 base64") from exc
+          path = Path(os.environ["RUNNER_TEMP"]) / "qualification-bundle.json"
+          path.write_bytes(payload)
+          PY
+
+      - name: Validate Outcome Eval case registry
+        run: python evals/agent_outcome_eval.py validate-registry --case-dir evals/cases
+
+      - name: Validate Release Qualification
+        run: |
+          set -euo pipefail
+          bundle="${RUNNER_TEMP}/qualification-bundle.json"
+          report="${RUNNER_TEMP}/qualification-report.json"
+          python evals/release_qualification.py validate             --root .             --bundle "${bundle}"             --revision "${GITHUB_SHA}"             --json | tee "${report}"
+          cp "${bundle}" qualification-bundle.json
+          cp "${report}" qualification-report.json
+
+      - name: Upload validated qualification
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-behavior-qualification
+          path: |
+            qualification-bundle.json
+            qualification-report.json
+          if-no-files-found: error
+          retention-days: 30

@@ -255,7 +255,19 @@ def _verify_installed_project(target: Path) -> Path:
     )
 
     router = target / ".agents/skills/router/SKILL.md"
-    _assert_contains(router, ("当前项目", "L1", "L2", "L3", "Fresh Evidence Contract"))
+    _assert_contains(
+        router,
+        (
+            "当前项目",
+            "L1",
+            "L2",
+            "L3",
+            "Fresh Evidence Contract",
+            "FOLLOW_UP_CANDIDATE",
+            "BACKLOG_ITEM",
+            "新的 Requirement / Task",
+        ),
+    )
     _assert_excludes(
         router,
         (
