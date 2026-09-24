@@ -68,6 +68,21 @@ class FinalReleaseBehaviorContractTest(unittest.TestCase):
         ):
             self.assertIn(marker, text)
 
+    def test_project_facing_followup_lifecycle_is_explicit(self) -> None:
+        """安装 managed block 与最终用户说明都必须明确 backlog stop/new-task 边界。"""
+        managed = (
+            SKILLS / "coding" / "assets" / "AGENTS.managed.md"
+        ).read_text(encoding="utf-8")
+        usage = (ROOT / "USAGE.md").read_text(encoding="utf-8")
+        for text in (managed, usage):
+            for marker in (
+                "FOLLOW_UP_CANDIDATE",
+                "BACKLOG_ITEM",
+                "新的 Requirement / Task",
+                "停止",
+            ):
+                self.assertIn(marker, text)
+
     def test_runtime_project_facing_router_keeps_followup_stop_semantics(self) -> None:
         """Runtime Project Payload 必须保留跨 Skill Follow-up 的项目侧停止语义。"""
         payload = build_project_payload(ROOT, build_bundle(ROOT))
