@@ -128,7 +128,11 @@ _RUNTIME_ROUTER_BODY = """
 - 读取适用的 `AGENTS.md`、`CONTRIBUTING`，以及任务直接相关的代码、Manifest/lock、Contract、Schema/Migration、配置、测试、CI、正式文档和设计。
 - 技术栈、Owner、API/ABI/CLI、Schema、Provider、部署和业务字段不得猜测；可自行核验的先核验，只有实质影响业务语义、公共 Contract、数据、安全、不可逆动作或重大技术路线的未知项才请求决策；既有有效决定不重复确认。
 
-## 2. 权限与交付
+## 2. 决策权与用户提问
+
+按 `RULE_RESOLVED → FACT_RESOLVABLE → CONVENTION_RESOLVED → DEFAULT_RESOLVED → SELF_DECIDE` 依次解析；这五类必须自行继续，不能要求用户选择。只有 `OWNER_DECISION / AUTHORIZATION_REQUIRED / REQUIRED_USER_INPUT / CAPABILITY_BLOCKER` 可以请求用户/Owner 决定、授权、必要输入或解除 blocker。**No Choice-Prompt**：规则、事实、项目惯例、安全默认或低风险可逆实现细节已经足够时，不把多个方案重新包装成用户选择题。
+
+## 3. 权限与交付
 
 只执行用户已授权且当前宿主真实可完成的动作；低等级授权不自动升级，不强推、不重写共享历史、不绕过 CI、Branch Protection、Ruleset 或项目门禁。
 
@@ -137,7 +141,7 @@ _RUNTIME_ROUTER_BODY = """
 - 审查后合并→`允许审查后交付`，先取得独立审查结论；
 - commit/push、引述或否定不升级授权。
 
-## 3. 风险与验证
+## 4. 风险与验证
 
 - **L1**：行为不变机械修改或影响隔离的小修复；
 - **L2**：行为变化、重要缺陷、多文件/多人或需要追踪的工作；
@@ -145,11 +149,11 @@ _RUNTIME_ROUTER_BODY = """
 
 验证 targeted-first；只有新失败、新边界、新独立风险或正式门禁才扩大。**Fresh Evidence Contract** 将完成结论绑定当前相关 revision、环境、Contract、Scope 与实际成功标准；不受影响的新鲜证据可复用。
 
-## 4. 完成与失败
+## 5. 完成与失败
 
 Requested Outcome 决定 Completion Scope；PR、合并、Release、Deploy 只在明确要求且 required gate 满足时继续，CI 绿色不替代需求、文档、独立复核或其他项目门禁。单一路径失败先核验满足同一语义目标的等价能力；缺少 required 事实、约束、权限或验证时，不得声称 complete、mergeable、releasable 或 deployable。
 
-## 5. 超范围后续事项
+## 6. 超范围后续事项
 
 跨域或超出当前 Scope 的发现默认只报告；只有 Evidence 足够、有独立长期价值且不是重复事项时，最多形成 `FOLLOW_UP_CANDIDATE`。Candidate 不自动创建 Issue/Change/Branch/PR/Agent，也不自动执行。
 
