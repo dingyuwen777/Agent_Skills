@@ -568,16 +568,16 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 → 每个 case 至少 2 个不同模型实现的 actual run
 → Codex / Claude Code / Cursor / DeepSeek Harness
    各至少覆盖 simple-fp + unnecessary-clarification + 1 个 delegation/convergence case
-→ run revision == 被验证 revision
+→ run revision == 当前 main SHA
 → 同一 grader PASS、无 case-defined forbidden violation
 → Behavior Qualification 保存只读 workflow artifact
 ```
 
-维护者只有在已经取得真实宿主 run、需要声明某个 revision 的跨模型/宿主行为资格或做回归比较时，才需要组成 `qualification-bundle.json` 并运行：
+维护者只有在已经取得真实宿主 run、需要声明当前 `main` revision 的跨模型/宿主行为资格或做回归比较时，才需要组成 `qualification-bundle.json` 并运行：
 
 ```bash
 python evals/agent_outcome_eval.py validate-registry --case-dir evals/cases
-python evals/release_qualification.py validate --root . --bundle qualification-bundle.json --revision <被验证revision的40位SHA> --json
+python evals/release_qualification.py validate --root . --bundle qualification-bundle.json --revision <当前main的40位SHA> --json
 python evals/release_qualification.py encode --bundle qualification-bundle.json
 ```
 
