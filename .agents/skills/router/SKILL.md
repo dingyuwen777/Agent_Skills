@@ -35,7 +35,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 ### Cross-Skill Follow-up Lifecycle
 
-`REPORT_ONLY → (Evidence+独立价值+非重复) FOLLOW_UP_CANDIDATE → Persistence Authorization Gate → 既有 backlog+dedup → BACKLOG_ITEM → STOP`。Candidate 不自动创建/执行/递归，无持久化授权即 STOP；`BACKLOG_ITEM` 当前任务不得继续执行，仅 `新 Requirement / 新 Task` 可重建 facts/Scope/Authorization/Risk/Evidence 后处理。
+`REPORT_ONLY → (Evidence+价值+去重) FOLLOW_UP_CANDIDATE → Persistence Authorization Gate → backlog+dedup → BACKLOG_ITEM → STOP`。Candidate 不自动创建/执行/递归；无持久化授权即 STOP。`BACKLOG_ITEM` 当前任务不得继续执行；仅 `新 Requirement / 新 Task` 重建 facts/Scope/Auth/Risk/Evidence 后处理。
 
 ## 2. 正式 Skill Catalog
 

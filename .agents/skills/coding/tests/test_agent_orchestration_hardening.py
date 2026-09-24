@@ -57,9 +57,9 @@ class AgentOrchestrationHardeningContractTest(unittest.TestCase):
         for marker in (
             "Persistence Authorization Gate",
             "BACKLOG_ITEM",
-            "Issue / Change / Branch / PR / Agent / Execution",
-            "不得继续执行",
-            "不得由它自动创建",
+            "不自动创建/执行/递归",
+            "当前任务不得继续执行",
+            "新 Requirement / 新 Task",
             "新 Requirement / 新 Task",
         ):
             self.assertIn(marker, router)
