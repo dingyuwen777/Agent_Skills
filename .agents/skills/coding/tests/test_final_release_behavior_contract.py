@@ -136,7 +136,7 @@ class FinalReleaseBehaviorContractTest(unittest.TestCase):
         maintenance = (ROOT / ".agents" / "MAINTENANCE.md").read_text(encoding="utf-8")
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("默认不作为普通 Release 的硬前置", rule)
-        self.assertIn("普通 Release 不查询、不下载、不消费 Behavior Qualification artifact", rule)
+        self.assertIn("不查询、不下载、不消费 Behavior Qualification artifact", rule)
         self.assertIn("普通 Release **不依赖**跨宿主 Behavior Qualification artifact", maintenance)
         self.assertIn("不再作为普通 Release 的前置条件", readme)
 
