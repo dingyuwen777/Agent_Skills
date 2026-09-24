@@ -45,7 +45,7 @@ Review **不复制** Coding 的编码、TDD、Git、兼容、安全、Contract�
 
 ## Review Convergence Guard（核心）
 
-Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；仅 Evidence 成立且 `Scope=IN_SCOPE`、`Delivery Effect=BLOCKING`、`Action=AUTO_REPAIR` 的 Finding 自动返修。`OUT_OF_SCOPE + BLOCKING` 可以阻塞当前交付，但不会因此自动扩大当前修复范围。Finding 形成后映射 Router 的 **Cross-Skill Terminal / Handoff Contract**。
+Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；仅 Evidence 成立且 `Scope=IN_SCOPE`、`Delivery Effect=BLOCKING`、`Action=AUTO_REPAIR` 的 Finding 自动返修。`OUT_OF_SCOPE + BLOCKING` 可以阻塞当前交付，但不会因此自动扩大当前修复范围。Finding 形成后映射 Router 的 **统一终态 / Handoff Contract**。
 
 ## 1. 规则事实源与集成边界
 
