@@ -41,13 +41,13 @@ Requirement / expected behavior
 
 同一个 Bug 不要求在所有层复制一遍。只有独立失败边界需要额外层。
 
-## 3. 修复回路与 Cross-Skill Terminal / Handoff Contract
+## 3. 修复回路
 
-Testing 发现生产缺陷后先判断它与当前 Requirement/Scope 的关系：
+Testing 发现生产缺陷后：
 
 ```text
-当前 Scope + 已有修复授权
-→ HANDOFF_CURRENT_SCOPE → Coding
+失败证据已确认
+→ Handoff Coding
 → Coding 根因诊断 / Red-Green / 最小修复
 → Coding 新鲜 Green
 → 返回 Testing
@@ -56,9 +56,7 @@ Testing 发现生产缺陷后先判断它与当前 Requirement/Scope 的关系�
 → 需要合并判断时 Handoff Review
 ```
 
-如果缺陷不属于当前 Scope，不直接进入 Coding：非阻塞独立问题为 `REPORT_ONLY` 或 `FOLLOW_UP_CANDIDATE`；虽然 `OUT_OF_SCOPE` 但阻塞当前交付时为 `BLOCK_CURRENT_DELIVERY`；需要改变 Requirement/Contract/Schema/Scope/Authorization 时为 `REQUIREMENT_DECISION`。结果已 stale 或 required 能力缺失时分别使用 `STALE_RESULT / CAPABILITY_BLOCKER`。
-
-Testing 默认不直接修改生产实现；用户显式授权完整 fix loop 也只能在**同目标、同范围、同副作用等级**内按 Coding canonical 规则修复，不能把当前任务授权扩展到 Follow-up 或其他 OUT_OF_SCOPE 问题。
+Testing 默认不直接修改生产实现；用户显式授权完整 fix loop 时，也应通过 Coding 的 canonical 规则执行实现修改。
 
 ## 4. 回归测试必须证明什么
 
