@@ -162,6 +162,30 @@ class DecisionAuthorityContractTest(unittest.TestCase):
         self.assertIn("Schema", router)
         self.assertIn("安全", router)
 
+    def test_decision_examples_cover_fact_local_and_must_ask_boundaries(self) -> None:
+        """典型投影必须落到正确 Ask/No-Ask 分类，而不是只保留状态名。"""
+        router = (SKILLS / "router" / "SKILL.md").read_text(encoding="utf-8")
+        planning = (
+            SKILLS / "coding" / "references" / "05_设计实施与根因调试.md"
+        ).read_text(encoding="utf-8")
+
+        fact_line = next(line for line in router.splitlines() if "FACT_RESOLVABLE" in line)
+        self.assertIn("Manifest/lock", fact_line)
+        self.assertIn("测试", fact_line)
+        self.assertIn("CI", fact_line)
+
+        self.assertIn("局部 helper", planning)
+        self.assertIn("SELF_DECIDE", planning)
+        self.assertIn("不得进入 Decision Package", planning)
+
+        owner_line = next(line for line in router.splitlines() if "OWNER_DECISION" in line)
+        self.assertIn("业务", owner_line)
+        self.assertIn("Schema/Migration", owner_line)
+        self.assertIn("安全", owner_line)
+
+        auth_line = next(line for line in router.splitlines() if "AUTHORIZATION_REQUIRED" in line)
+        self.assertIn("Effective Authorization", auth_line)
+
     def test_unnecessary_clarification_is_release_qualified_high_value_case(self) -> None:
         """真实多问问题必须进入现有 model-neutral registry 与 Release Qualification。"""
         self.assertIn("unnecessary-clarification", HIGH_VALUE_CONVERGENCE_CASES)
