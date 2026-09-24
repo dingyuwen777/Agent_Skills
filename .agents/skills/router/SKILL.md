@@ -31,6 +31,20 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - **Requested Outcome = Completion Scope**：**能力存在不等于继续追求更远阶段**。只读审查/测试/Mutation Audit 止于结论；提 PR→`允许开发并提交PR`（PR Ready）；合并主分支→`允许端到端交付`；审查后合并→`允许审查后交付`。先按真实命令归一化再路由，commit/push、引述或否定不升级授权；完整范围与收尾归[交付规则](../coding/references/23_端到端交付与合并后收尾.md)。
 - **Task-owned Cleanup**：Completion Scope 结束前删除本任务创建且无后续用途的临时/scratch/debug 产物；保留预存在/用户所有/仍作证据、交付物或输入的内容。未改变交付状态/运行输入时，不使既有 Green Evidence 失效。
 
+### 1.2 Cross-Skill Terminal / Handoff Contract
+
+Router 只拥有跨 Skill 的**终态与交接语义**，不判断专业 Finding 是否成立，也不复制 Review/Testing/Docs/Figma/Coding 的专业方法。专业 Owner 形成结论后统一映射为：
+
+- `HANDOFF_CURRENT_SCOPE`：已确认属于当前 Requirement/Scope，且现有授权可连续；交给对应专业 Owner 继续当前任务。
+- `REPORT_ONLY`：有记录价值，但不属于当前自动修复范围，也不阻塞当前 Completion Scope。
+- `BLOCK_CURRENT_DELIVERY`：Evidence 证明当前交付不能安全/正确继续；问题可以是 `OUT_OF_SCOPE + BLOCKING`，**阻塞交付不等于授权把它吸收进当前修复范围**。
+- `REQUIREMENT_DECISION`：需要改变 Requirement/Acceptance、public Contract、Schema/Data、Scope、Authorization 或其他上游决定，返回相应 Owner 决策。
+- `FOLLOW_UP_CANDIDATE`：独立且有证据的后续候选；candidate 不等于 Issue/Change/Backlog Item，不自动持久化、不自动执行、不递归派生。持久化必须另过项目既有 carrier 与相应授权边界。
+- `STALE_RESULT`：相关 revision/decision/事实已经漂移；重新核验后才能使用旧结果。
+- `CAPABILITY_BLOCKER`：required Context/工具/环境/权限缺失，只阻塞依赖该能力的动作和强结论。
+
+只有 `HANDOFF_CURRENT_SCOPE` 可以在**同目标、同范围、同副作用等级**内继承 Router 的 Authorization Continuity 直接进入后续专业链；其他终态不能自行升级权限。当前任务已有 Git/写权限也不能自动授权把 `FOLLOW_UP_CANDIDATE` 持久化为超出当前范围的 Issue/Change/Backlog Item。
+
 ## 2. 正式 Skill Catalog
 
 正式 Skill 按 `.agents/skills/*/SKILL.md` 动态发现；下表仅导航，**不是分发白名单**。
