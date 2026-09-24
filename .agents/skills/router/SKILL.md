@@ -33,9 +33,9 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 ### 1.2 Cross-Skill Terminal / Handoff Contract
 
-统一终态：`HANDOFF_CURRENT_SCOPE / REPORT_ONLY / BLOCK_CURRENT_DELIVERY / REQUIREMENT_DECISION / FOLLOW_UP_CANDIDATE / STALE_RESULT / CAPABILITY_BLOCKER`。Router 只拥有终态/交接，不裁决专业 Finding。
+终态：`HANDOFF_CURRENT_SCOPE / REPORT_ONLY / BLOCK_CURRENT_DELIVERY / REQUIREMENT_DECISION / FOLLOW_UP_CANDIDATE / STALE_RESULT / CAPABILITY_BLOCKER`。Router 只管终态/交接。
 
-仅 `HANDOFF_CURRENT_SCOPE` 可在同目标、同范围、同副作用等级内延续授权；`OUT_OF_SCOPE + BLOCKING` 可 `BLOCK_CURRENT_DELIVERY`，但不扩大修复 Scope；`FOLLOW_UP_CANDIDATE` 不等于持久对象，不自动持久化/执行/递归，当前 Git/写权限也不授权其持久化。
+仅 HANDOFF_CURRENT_SCOPE 可按同目标/范围/副作用连续授权；`OUT_OF_SCOPE + BLOCKING` 可阻塞但不扩修复 Scope；FOLLOW_UP_CANDIDATE 不自动持久化/执行/递归，当前 Git/写权限不授权其持久化。
 
 ## 2. 正式 Skill Catalog
 
