@@ -140,12 +140,12 @@ Issue #310 原本把 final-main 跨宿主 actual Behavior Qualification 作为�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 取消 Release 对 Behavior Qualification artifact 的硬依赖 | #310 | satisfied | `.github/workflows/release.yml` 已删除 artifact lookup/download/validate 与仅相关 `actions: read` |
-| R2 | 保留 Behavior Qualification 与 actual 真值边界 | #310 | satisfied | `behavior-qualification.yml`、`evals/release_qualification.py` 与 qualification tests 保留；fixture/host/revision fail-closed 未放宽 |
-| R3 | deterministic Release hard gates 不降级 | #310 | satisfied | Release 仍运行 full tests、Ready、Outcome Eval registry 与 Linux/Windows/macOS Runtime/package/identity/SHA/ZIP/Draft-Publish；run 35962731120 自包含测试 Green |
-| R4 | canonical Rule/README 与真实实现一致 | #310 | satisfied | cross-model canonical Rule、Maintenance Workflow Owner 与 README 正式 Release 说明已同步 |
-| R5 | #310 按新 Closure Contract 完成并关闭 | #310 | not_applicable | pre-merge Change 不自证 merge 后 Closure；由 Ready 后 Delivery Gate 在 main-fresh/archive 后回写并关闭 |
-| R6 | 不执行 Release/Deploy | #310 | satisfied | 未创建 tag、Release asset 或 Deploy；仅修改未来 Release workflow |
+| R1 | 取消 Release 对 Behavior Qualification artifact 的硬依赖 | #310 / AC10 | satisfied | `.github/workflows/release.yml` 已删除 artifact lookup/download/validate 与仅相关 `actions: read` |
+| R2 | 保留 Behavior Qualification 与 actual 真值边界 | #310 / AC9 | satisfied | `behavior-qualification.yml`、`evals/release_qualification.py` 与 qualification tests 保留；fixture/host/revision fail-closed 未放宽 |
+| R3 | deterministic Release hard gates 不降级 | #310 / AC10 | satisfied | Release 仍运行 full tests、Ready、Outcome Eval registry 与 Linux/Windows/macOS Runtime/package/identity/SHA/ZIP/Draft-Publish；run 35962731120 自包含测试 Green |
+| R4 | canonical Rule/README 与真实实现一致 | #310 / AC10 | satisfied | cross-model canonical Rule、Maintenance Workflow Owner 与 README 正式 Release 说明已同步 |
+| R5 | #310 按新 Closure Contract 完成并关闭 | #310 / AC13 | not_applicable | pre-merge Change 不自证 merge 后 Closure；由 Ready 后 Delivery Gate 在 main-fresh/archive 后回写并关闭 |
+| R6 | 不执行 Release/Deploy | #310 / AC14 | satisfied | 未创建 tag、Release asset 或 Deploy；仅修改未来 Release workflow |
 
 # 计划改动
 
@@ -234,6 +234,7 @@ Issue #310 原本把 final-main 跨宿主 actual Behavior Qualification 作为�
 - Red：run `35962022255`。
 - pre-Ready semantic Green：run `35962731120`，702 tests OK；唯一最终 blocker 为 Change status enforcement。
 - Ready-head run `35962909334`：702 self-contained tests Green；仅暴露 Traceability Source 语法歧义，本提交已将 R1-R6 来源统一绑定为 `#310`。
+- Ready-head run `35963071655`：702 self-contained tests Green；Ready Check 明确要求稳定 Acceptance ID，本提交进一步绑定到 `#310 / ACx`。
 - PR Ready current-head CI/package：由本提交触发后取得。
 - 独立 Review：final head 执行。
 - merge/main-fresh/archive/#310 Closure/cleanup：由 Delivery Gate 完成。
