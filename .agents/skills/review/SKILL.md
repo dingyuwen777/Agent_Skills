@@ -45,7 +45,7 @@ Review **不复制** Coding 的编码、TDD、Git、兼容、安全、Contract�
 
 ## Review Convergence Guard（核心）
 
-Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；仅 `IN_SCOPE_BLOCKING` 自动返修。
+Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；仅 Evidence 成立且 `Scope=IN_SCOPE`、`Delivery Effect=BLOCKING`、`Action=AUTO_REPAIR` 的 Finding 自动返修。`OUT_OF_SCOPE + BLOCKING` 可以阻塞当前交付，但不会因此自动扩大当前修复范围。Finding 形成后映射 Router 的 **Cross-Skill Terminal / Handoff Contract**。
 
 ## 1. 规则事实源与集成边界
 
@@ -243,6 +243,9 @@ Review 不设置固定测试数量配额，也不要求所有状态复制成昂�
 
 ```text
 严重度
+Scope
+Delivery Effect
+Action
 位置 / 影响范围
 问题是什么
 触发条件
@@ -252,6 +255,8 @@ Review 不设置固定测试数量配额，也不要求所有状态复制成昂�
 建议修复方向
 需要增加/调整什么验证（适用时）
 ```
+
+其中三轴 classification 由 Reviewer 独立拥有；Parent 只拥有 repair scheduling，不能自行覆盖 Reviewer 的 Scope / Delivery Effect / Action。
 
 没有足够证据时写成“风险/待验证假设”，不要伪装成确定 Bug。
 
