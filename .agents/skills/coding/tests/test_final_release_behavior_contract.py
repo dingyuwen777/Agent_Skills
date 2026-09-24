@@ -21,6 +21,7 @@ HIGH_VALUE_CASES = {
     "must-split-fallback",
     "simple-fp",
     "cross-skill-finding",
+    "unnecessary-clarification",
 }
 
 
