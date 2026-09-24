@@ -308,17 +308,16 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 5. 多 Agent / 多人协作
 
-实质工程任务对两个**正交维度**分别判断：
+实质工程任务分开判断：
 
 ```text
 Delegation Value = NO_SPLIT | MAY_SPLIT | MUST_SPLIT
 Independence Requirement = OPTIONAL | REQUIRED
 ```
 
-- **Delegation Value** 只回答“把工作委派给多个 Agent 是否有独立并行、上下文隔离或专业分工收益”：无独立收益或成本≥收益→`NO_SPLIT`；收益不确定→`MAY_SPLIT`；存在可独立验收单元且 delegation 收益明确→`MUST_SPLIT`。MAY/MUST 带 `能力=多 Agent` 并读 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)。只并行互不依赖且不写共享状态的工作。
-- **Independence Requirement** 回答“当前结论是否必须由独立 Reviewer/Tester/Verifier 取得”。`REQUIRED` 来自 L3、项目门禁、正式 Review/Testing 要求或其他真实独立性边界；它不由 Delegation Value 推导，也不能因为当前工作适合单 Agent 就自动降为 `OPTIONAL`。
-- `MUST_SPLIT` 但宿主无 delegation 时，可以明确损失并行/隔离收益后降级为单 Agent继续可安全完成的实现；**不能因此降级 `Independence Requirement=REQUIRED`**。如果宿主没有满足 required independence 的独立复核能力，只阻塞依赖该独立性的 Review/可合并/可交付强结论，其他无依赖工作继续。
-- Main/Parent 复核所有 child 结果；独立 Review 的 Finding classification 仍由 Reviewer 拥有，Parent 只负责 repair scheduling。
+**Delegation Value 只拆有真实独立价值**：NO=成本≥收益，MAY=收益不确定，MUST=存在独立可验收单元且并行/上下文隔离/专业分工收益明确；MAY/MUST 命中多 Agent Reference。**Independence Requirement** 只回答当前结论是否必须由独立 Reviewer/Tester/Verifier 取得，不能由 Delegation Value 推导。
+
+`MUST_SPLIT` 无 delegation 时可损失并行收益后降级单 Agent实施，但**不能因此降级 `REQUIRED` independence**；缺独立能力只阻塞依赖它的 Review/可合并/交付结论。Parent 复核 child 结果；Finding classification 属于 Reviewer，Parent 只负责 repair scheduling。
 
 ## 6. Git、依赖、安全、交付与宿主能力边界
 
