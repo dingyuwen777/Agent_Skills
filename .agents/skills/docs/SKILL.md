@@ -61,15 +61,7 @@ Docs 的目标不是“让 Markdown 看起来更完整”，而是让读者能�
 
 ## 1.1 统一终态 / Handoff Contract
 
-Docs 发现实现、测试、设计或治理问题时，先按 Router 的跨 Skill 终态收口，而不是因为“文档与代码冲突”就自动进入修改链：
-
-- 当前 Requirement/Scope 内、已有修复授权的实现问题 → `HANDOFF_CURRENT_SCOPE` → Coding；
-- 不阻塞当前交付的独立问题 → `REPORT_ONLY`；确有独立长期价值时可标记 `FOLLOW_UP_CANDIDATE`；
-- `OUT_OF_SCOPE` 但实际阻塞当前正确交付 → `BLOCK_CURRENT_DELIVERY`，不让文档改写错误实现，也不自动扩大代码 Scope；
-- 需要改变正式 Requirement/Contract/Schema/Scope/Authorization → `REQUIREMENT_DECISION`；
-- 旧事实结果 → `STALE_RESULT`；required 事实/能力不可得 → `CAPABILITY_BLOCKER`。
-
-Docs 继续只拥有文档专业判断；Follow-up 持久化、生产实现修改和 Git 副作用不由本 Skill 自动授权。
+Docs 发现跨域问题时：当前 Scope + 既有修复授权才 `HANDOFF_CURRENT_SCOPE`；其余按 `REPORT_ONLY / FOLLOW_UP_CANDIDATE / BLOCK_CURRENT_DELIVERY / REQUIREMENT_DECISION` 收口。Docs 不自动修改生产实现、扩大 Scope 或持久化 Follow-up。
 
 ## 2. Docs Impact：让同步有效但不变重
 
