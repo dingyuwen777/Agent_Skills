@@ -71,6 +71,18 @@ Review 仍负责：
 
 Review 需要新增测试、系统性黑盒/探索式测试或复杂测试设计时，Handoff 到 Testing；Review 不维护第二套测试工程方法。
 
+### Cross-Skill Terminal / Handoff Contract
+
+Testing 发现跨专业域问题时，不因为“已经确认一个生产缺陷”就自动获得修生产代码、扩大 Scope 或创建后续任务的权限；先按 Router 统一终态映射：
+
+- 当前 Requirement/Scope 内、已有修复授权的生产缺陷 → `HANDOFF_CURRENT_SCOPE` → Coding；
+- 独立的非阻塞问题 → `REPORT_ONLY`，有长期独立价值时才标记 `FOLLOW_UP_CANDIDATE`；
+- 问题虽为 `OUT_OF_SCOPE`，但 Evidence 证明它阻止当前验证/交付 → `BLOCK_CURRENT_DELIVERY`，不自动吸收进当前修复；
+- 需要改变 Requirement/Acceptance/Contract/Schema/Scope/Authorization → `REQUIREMENT_DECISION`；
+- 结果基于旧 revision/decision → `STALE_RESULT`；required 能力缺失 → `CAPABILITY_BLOCKER`。
+
+Testing 只负责自己的测试 Evidence 和 Test Target；Follow-up 持久化与是否执行由 Router/项目授权边界决定。
+
 ## 2. Testing 工作模式
 
 ### `test-only`（默认）
@@ -90,15 +102,17 @@ Review 需要新增测试、系统性黑盒/探索式测试或复杂测试设计
 
 ### `test-and-fix`
 
-Testing 自身不维护生产修复流程。发现确定生产缺陷后：
+Testing 自身不维护生产修复流程。只有确定生产缺陷属于**当前 Requirement/Scope** 且已有相应修改授权时：
 
 ```text
 可复现失败证据
-→ Handoff Coding
+→ HANDOFF_CURRENT_SCOPE → Coding
 → Coding 最小修复并取得 Green
 → 返回 Testing 执行 Regression
 → 需要独立判断时返回 Review
 ```
+
+超出当前范围的缺陷按前述 `REPORT_ONLY / BLOCK_CURRENT_DELIVERY / FOLLOW_UP_CANDIDATE / REQUIREMENT_DECISION` 收口，不能用 Testing Handoff 绕过 Scope 或授权。
 
 只有用户明确授权完整修复链时才允许跨 Skill 继续；权限不会因为 Testing 发现 Bug 自动扩大。已经在同一任务中明确授予、且目标/范围/副作用等级没有变化的授权按 Router 的 Authorization Continuity 沿 Handoff 继续有效，不要求重复索要同一批准；进入更高副作用等级仍必须已有对应授权。
 
