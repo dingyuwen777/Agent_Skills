@@ -329,21 +329,29 @@ CI 消重顺序固定为：
 
 专业 Skill targeted Evidence 只能跳过已证明不相关的边界，不能用局部测试冒充 Runtime/package；反过来，纯人类文档也不能因为“同仓有 Runtime”就运行无关 binary Evidence。
 
-永久 Workflow 仍保持三个唯一 Owner：
+永久 Workflow 保持四个互不替代的 Evidence / lifecycle Owner：
 
 ```text
 skill-tests.yml
-→ PR/main 的 changed-scope semantic + Runtime/package required Evidence
+→ PR/main changed-scope semantic + Runtime/package required Evidence
 
 change-archive.yml
 → merge 后 Change carrier active→archive/status done
-→ 自身 completion/exact allowlist/main drift 证明通过后 archive commit [skip ci]
+→ 只拥有归档 lifecycle，不重复产品 CI / Release
+
+behavior-qualification.yml
+→ 手工接收真实支持宿主产生的脱敏 actual Outcome bundle
+→ 只校验 exact main SHA / case / grader / model+host coverage 并保存短期 artifact
+→ 不调用模型 Provider、不修改 main、不构建 Runtime、不创建 Release
 
 release.yml
 → 手工正式 Release
+→ exact main SHA fresh 读取 behavior qualification artifact 并重验
 → 不使用日常 selector 快速路径
 → 对最终版本重新构建和验证 Linux/Windows/macOS artifact
 ```
+
+**Workflow Responsibility Audit**：Behavior Qualification 证明“真实 Agent 在支持宿主上的关键行为”；Skill Tests 证明源码/路由/Runtime Contract，Release 证明最终三平台 artifact，Change Archive 证明施工载体生命周期。四者证明对象、触发阶段和 Evidence carrier 不同，不能相互删除或用较弱证据替代。Behavior Qualification 不增加常规 PR/main Runner 成本，只在维护者已有真实 actual bundle 且准备资格验证时手工运行。
 
 不再寻找或额外触发已经移除的独立 `.github/workflows/runtime-package-tests.yml`。selector 保留旧路径只用于删除/意外恢复控制面时 fail-closed，不表示 Workflow 当前存在。
 

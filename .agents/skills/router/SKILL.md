@@ -35,25 +35,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 ### Cross-Skill Follow-up Lifecycle
 
-跨专业、跨 Owner 或超出当前 Scope 的发现默认收口为 `REPORT_ONLY / RECORD_ONLY`，不能因为 Agent 仍有写权限、Git 权限或子 Agent 能力就继续派生工作。只有同时满足 **Evidence 足够 + 有独立长期价值 + 非重复事项**，才允许进入 `FOLLOW_UP_CANDIDATE`。
-
-```text
-RECORD_ONLY
-→ Follow-up Admission
-→ FOLLOW_UP_CANDIDATE
-→ Persistence Authorization Gate
-→ 项目既有 backlog carrier
-→ dedup
-→ BACKLOG_ITEM
-→ STOP
-```
-
-- `FOLLOW_UP_CANDIDATE` **不等于** Issue / Change / Branch / PR / Agent / Execution；没有独立持久化授权时保持 candidate 并 **STOP**。
-- Persistence Authorization 只能来自项目规则、已存在的长期授权或用户对该持久化动作的明确授权；当前任务已有的文件写入、commit/push/PR/merge 权限**不自动授权**把超范围事项写入 backlog。
-- 持久化只能复用项目既有 backlog carrier，并在写入前 **dedup**；通用治理不为 Follow-up 发明第二套任务系统。
-- `BACKLOG_ITEM` 创建/复用后**当前任务不得继续执行**该事项，也不得由它自动创建新 Issue、Change、Agent 或新的 Follow-up。
-- 未来只有以**新 Requirement / 新 Task**重新进入时，才重新恢复 facts / Scope / Authorization / Risk / Evidence；旧 revision、decision_epoch、测试和当前任务授权不自动继承。
-
+`REPORT_ONLY → (Evidence+独立价值+非重复) FOLLOW_UP_CANDIDATE → Persistence Authorization Gate → 既有 backlog+dedup → BACKLOG_ITEM → STOP`。Candidate 不自动创建/执行/递归，无持久化授权即 STOP；`BACKLOG_ITEM` 当前任务不得继续执行，仅 `新 Requirement / 新 Task` 可重建 facts/Scope/Authorization/Risk/Evidence 后处理。
 
 ## 2. 正式 Skill Catalog
 

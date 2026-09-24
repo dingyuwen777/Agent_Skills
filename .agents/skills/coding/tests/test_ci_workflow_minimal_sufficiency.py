@@ -123,8 +123,8 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertNotIn("### Workflow Responsibility Audit", text)
         self.assertNotIn("### CI Sufficiency", text)
 
-    def test_current_source_workflows_remain_three_explicit_owners(self) -> None:
-        """永久 Workflow 只保留统一 CI、Release 与 Change lifecycle Owner。"""
+    def test_current_source_workflows_remain_four_explicit_owners(self) -> None:
+        """永久 Workflow 只保留 CI、Behavior Qualification、Release 与 Change lifecycle Owner。"""
         names = sorted(
             path.name
             for path in WORKFLOW_DIR.glob("*.yml")
@@ -132,7 +132,7 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         )
         self.assertEqual(
             names,
-            ["change-archive.yml", "release.yml", "skill-tests.yml"],
+            ["behavior-qualification.yml", "change-archive.yml", "release.yml", "skill-tests.yml"],
             "永久 Workflow 集合发生变化；必须重新执行 Responsibility Audit",
         )
         maintenance = self._read(MAINTENANCE)
@@ -142,6 +142,28 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
             "Core + package matrix",
         ):
             self.assertIn(marker, maintenance)
+
+    def test_behavior_qualification_is_evidence_carrier_not_duplicate_ci_or_release(self) -> None:
+        """Behavior Qualification 只校验 actual bundle，不复制产品 CI、构建或发布责任。"""
+        workflow = self._read(WORKFLOW_DIR / "behavior-qualification.yml")
+        for marker in (
+            "name: Behavior Qualification",
+            "workflow_dispatch:",
+            "bundle_base64:",
+            "Validate Outcome Eval case registry",
+            "Validate Release Qualification",
+            "release-behavior-qualification",
+        ):
+            self.assertIn(marker, workflow, marker)
+        for forbidden in (
+            "python -m unittest discover",
+            "scripts/runtime_platform_smoke.py",
+            "scripts/build_runtime.py",
+            "gh release create",
+            "gh release edit",
+            "contents: write",
+        ):
+            self.assertNotIn(forbidden, workflow, forbidden)
 
     def test_change_archive_is_lifecycle_owner_not_duplicate_ci_or_release(self) -> None:
         workflow = self._read(WORKFLOW_DIR / "change-archive.yml")
