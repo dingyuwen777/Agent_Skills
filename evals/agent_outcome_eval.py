@@ -29,6 +29,7 @@ HIGH_VALUE_CONVERGENCE_CASES = (
     "must-split-fallback",
     "simple-fp",
     "cross-skill-finding",
+    "unnecessary-clarification",
 )
 
 _CASE_FIELDS = {
