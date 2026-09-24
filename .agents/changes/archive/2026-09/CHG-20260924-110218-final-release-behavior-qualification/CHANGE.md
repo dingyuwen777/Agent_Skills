@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260924-110218-final-release-behavior-qualification
 title: 发版前 Agent 行为治理与 Release Qualification 最终收口
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/final-release-behavior-qualification
 created: 2026-09-24
