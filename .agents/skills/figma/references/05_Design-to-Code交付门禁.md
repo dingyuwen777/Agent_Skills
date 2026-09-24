@@ -609,15 +609,13 @@ Implementation ↔ Figma Conformance 通过
 
 ```text
 生产实现偏离正式 Figma / 已批准需求，而正式 Contract 支持设计
-→ 当前 Design-to-Code Requirement/Scope 已包含实现修复且授权成立：HANDOFF_CURRENT_SCOPE → Coding 修前端 / 实现
-→ 若是本次范围外独立实现问题：REPORT_ONLY / BLOCK_CURRENT_DELIVERY / FOLLOW_UP_CANDIDATE，不自动扩大 Scope
+→ 返回 Coding 修前端 / 实现
 
 Figma 已经过期，当前正式 Requirement / Contract / 正确实现已变化
 → 按 Figma Owner-first 规则更新设计、Annotation、Prototype 或公共组件
 
 后端 / SDK / Store 违反正式 Contract 或已批准需求
-→ 当前 Requirement/Scope 已包含该实现修复且授权成立：HANDOFF_CURRENT_SCOPE → Coding 修真实机器 Owner
-→ 范围外问题按 Cross-Skill Terminal / Handoff Contract 收口，不因 Figma conformance 自动获得代码修改权限
+→ 返回 Coding 修真实机器 Owner
 
 正式需求已经改变
 → 同步 Requirement / Contract / Figma / Code 的受影响事实源
@@ -633,8 +631,7 @@ Implementation ↔ Figma Conformance 发现 Drift 后，**不能把偶然实现�
 
 ```text
 实现错误 / 偶然偏移 / 未批准 workaround
-→ 当前 Requirement/Scope 已授权修复：HANDOFF_CURRENT_SCOPE → Coding 修代码
-→ 范围外则 REPORT_ONLY / BLOCK_CURRENT_DELIVERY / FOLLOW_UP_CANDIDATE
+→ 返回 Coding 修代码
 → 不回写 Figma
 
 Figma 已过期 + 当前 Requirement / Contract / 正确实现已成为正式长期事实
