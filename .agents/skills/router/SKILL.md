@@ -33,17 +33,17 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 ### 1.2 Cross-Skill Terminal / Handoff Contract
 
-Router 只拥有跨 Skill 的**终态与交接语义**，不判断专业 Finding 是否成立，也不复制 Review/Testing/Docs/Figma/Coding 的专业方法。专业 Owner 形成结论后统一映射为：
+Router 只拥有跨专业**终态/交接**，不裁决专业 Finding，也不复制专业方法：
 
-- `HANDOFF_CURRENT_SCOPE`：已确认属于当前 Requirement/Scope，且现有授权可连续；交给对应专业 Owner 继续当前任务。
-- `REPORT_ONLY`：有记录价值，但不属于当前自动修复范围，也不阻塞当前 Completion Scope。
-- `BLOCK_CURRENT_DELIVERY`：Evidence 证明当前交付不能安全/正确继续；问题可以是 `OUT_OF_SCOPE + BLOCKING`，**阻塞交付不等于授权把它吸收进当前修复范围**。
-- `REQUIREMENT_DECISION`：需要改变 Requirement/Acceptance、public Contract、Schema/Data、Scope、Authorization 或其他上游决定，返回相应 Owner 决策。
-- `FOLLOW_UP_CANDIDATE`：独立且有证据的后续候选；candidate 不等于 Issue/Change/Backlog Item，不自动持久化、不自动执行、不递归派生。持久化必须另过项目既有 carrier 与相应授权边界。
-- `STALE_RESULT`：相关 revision/decision/事实已经漂移；重新核验后才能使用旧结果。
-- `CAPABILITY_BLOCKER`：required Context/工具/环境/权限缺失，只阻塞依赖该能力的动作和强结论。
+- `HANDOFF_CURRENT_SCOPE`：当前 Requirement/Scope 且同目标、同范围、同副作用等级的既有授权可连续；
+- `REPORT_ONLY`：只报告，不阻塞当前 Completion Scope；
+- `BLOCK_CURRENT_DELIVERY`：Evidence 证明当前交付不能继续；允许 `OUT_OF_SCOPE + BLOCKING`，但**阻塞不等于扩大当前修复范围**；
+- `REQUIREMENT_DECISION`：需改变 Requirement/Acceptance/Contract/Schema/Data/Scope/Authorization，回上游 Owner；
+- `FOLLOW_UP_CANDIDATE`：独立后续候选；不等于持久对象，不自动持久化/执行/递归；
+- `STALE_RESULT`：revision/decision/事实漂移，重验后才能使用；
+- `CAPABILITY_BLOCKER`：required Context/工具/环境/权限缺失，只阻塞依赖动作/强结论。
 
-只有 `HANDOFF_CURRENT_SCOPE` 可以在**同目标、同范围、同副作用等级**内继承 Router 的 Authorization Continuity 直接进入后续专业链；其他终态不能自行升级权限。当前任务已有 Git/写权限也不能自动授权把 `FOLLOW_UP_CANDIDATE` 持久化为超出当前范围的 Issue/Change/Backlog Item。
+只有 `HANDOFF_CURRENT_SCOPE` 可按 Authorization Continuity 直接交接；当前 Git/写权限**不授权**把超范围 `FOLLOW_UP_CANDIDATE` 持久化。
 
 ## 2. 正式 Skill Catalog
 
