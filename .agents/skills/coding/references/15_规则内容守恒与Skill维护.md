@@ -179,6 +179,7 @@ Cross-Owner Semantic Conflict Audit
 + 当前受影响 live 引用无残留
 + 与 Evidence Profile 匹配的 preservation / portability / routing / runtime 证据通过
 + 人工内容守恒 Review 无 blocker
++ Cross-Owner Semantic Conflict Audit 对本次受影响 Owner / 权限 / 默认动作 / 停止条件 / 强度无 blocker
 ```
 
 篇幅减少、targeted test 或 CI 绿色不能代替上述条件；条件已有风险匹配 Evidence 后，不因“更全面”继续扩大验证。
