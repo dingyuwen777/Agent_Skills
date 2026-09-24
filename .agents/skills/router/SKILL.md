@@ -23,22 +23,23 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 #### Decision Authority Contract / Human Input Admission Gate
 
-提问前按序取首个可决状态：
-- `RULE_RESOLVED`：已确认决定/Requirement/项目规则已定 → NO_ASK；
+提问前按序取首个状态：
+- `RULE_RESOLVED`：决定/Requirement/项目规则已定 → NO_ASK；
 - `FACT_RESOLVABLE`：代码/Git/配置/Manifest/lock/Contract/Schema/测试/CI/工具/运行结果可恢复 → NO_ASK；
-- `CONVENTION_RESOLVED`：稳定无冲突项目模式 → NO_ASK；
-- `DEFAULT_RESOLVED`：已有安全默认 → NO_ASK；
-- `SELF_DECIDE`：局部、低风险、可逆且不改业务/public Contract/数据/安全/权限/Scope → NO_ASK；
+- `CONVENTION_RESOLVED`：稳定项目模式 → NO_ASK；
+- `DEFAULT_RESOLVED`：安全默认 → NO_ASK；
+- `SELF_DECIDE`：局部低风险可逆且不改业务/public Contract/数据/安全/权限/Scope → NO_ASK；
 - `OWNER_DECISION`：业务/Acceptance/public Contract/Schema/Migration/数据/安全/重大兼容/长期架构或成本取舍且前五类不能解决 → ASK；
 - `AUTHORIZATION_REQUIRED`：超出 Effective Authorization → ASK/BLOCK；
-- `REQUIRED_USER_INPUT`：只有用户/Owner 能提供且不可恢复的必要输入 → ASK；
+- `REQUIRED_USER_INPUT`：只有用户/Owner 可提供且不可恢复的必要输入 → ASK；
 - `CAPABILITY_BLOCKER`：必要能力有界调查后仍不可用 → 报告；仅用户可解除时 ASK。
 
 **Human Input Admission Gate**：仅后四类允许请求用户。**No Choice-Prompt**：前五类不得包装成 A/B/C、“你想采用哪种方案”或重复确认。
 
 - **事实恢复 / 核验**：默认由 Agent 自行；只有条款明确要求且命中后四类才**提请用户 / Owner 决策**；已固化决定**不重复确认**。
-- **Authorization Continuity**：同目标/范围/副作用等级的既有授权延续；只读 < 测试写 < 生产写 < commit/push/PR < merge < Release < Deploy；升级须已有 Requested Action + Effective Authorization。
-- **Cross-model Behavior Contract**：模型/宿主不改变同一事实的 Ask/No-Ask 分类；推理与工具顺序可不同。
+- **Non-material Ambiguity Default**：`SELF_DECIDE` 按“**项目既有模式 → 最小范围 → 最小副作用 → 最可逆 → 最少新机制**”处理。
+- **Authorization Continuity**：既有授权只在**同目标、同范围、同副作用等级**延续；**不得继承升级**；升级须 Requested Action + Effective Authorization。
+- **Cross-model Behavior Contract**：模型/宿主不改变同一事实的 Ask/No-Ask 分类。
 
 - **Fresh Evidence Contract**：Evidence 绑定当前 **environment / Contract / Scope 与被验证的相关实现 revision**，未发生影响结论的变化即可复用；**不是由当前 Agent 启动**本身**不构成重新执行理由**。只有相关实现/Contract/输入/依赖/配置/环境/外部事实变化、现有证据不覆盖结论，或 **required gate** 明确要求 current-head/current-revision 时才重跑对应层；Change/Issue/PR 描述、Evidence 记录、排版等**不影响已验证边界的载体变化**不使开发侧 Evidence 失效。
 - `完整验证证据 / 完整命令 / 完整输出` 只表示完整执行并检查**已选择的风险匹配 Evidence**，**不表示运行全仓测试、全部测试层或所有平台验证**；仍按 targeted-first 单调升级。
