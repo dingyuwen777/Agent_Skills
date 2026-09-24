@@ -71,7 +71,7 @@ Review 仍负责：
 
 Review 需要新增测试、系统性黑盒/探索式测试或复杂测试设计时，Handoff 到 Testing；Review 不维护第二套测试工程方法。
 
-### Cross-Skill Terminal / Handoff Contract
+### 统一终态 / Handoff Contract
 
 Testing 发现跨专业域问题时，不因为“已经确认一个生产缺陷”就自动获得修生产代码、扩大 Scope 或创建后续任务的权限；先按 Router 统一终态映射：
 
