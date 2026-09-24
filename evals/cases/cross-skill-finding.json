@@ -1,0 +1,21 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "cross-skill-finding",
+  "任务族": "跨 Skill/Finding",
+  "任务说明": "Testing/Docs/Figma 等发现跨域问题时统一进入 Router terminal contract，不建立第二套自动修复/任务派生语义。",
+  "必需结果": [
+    "unified-terminal-contract"
+  ],
+  "必需证据": [
+    "cross-skill-terminal-evidence"
+  ],
+  "禁止违规": [
+    "cross-skill-auto-fix",
+    "cross-skill-auto-issue",
+    "cross-skill-auto-coding",
+    "cross-skill-auto-agent"
+  ],
+  "上限": {
+    "用户干预": 1
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "oos-blocker",
+  "任务族": "Review/Scope",
+  "任务说明": "Review 发现 OUT_OF_SCOPE + BLOCKING 时必须阻塞当前交付，同时保持 Scope，不得自动纳入当前返修。",
+  "必需结果": [
+    "delivery-blocked",
+    "scope-remains-out-of-scope"
+  ],
+  "必需证据": [
+    "finding-classification-evidence"
+  ],
+  "禁止违规": [
+    "parent-rescope",
+    "auto-repair-out-of-scope",
+    "ignore-blocker"
+  ],
+  "上限": {
+    "用户干预": 1
+  }
+}

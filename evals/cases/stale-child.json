@@ -1,0 +1,22 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "stale-child",
+  "任务族": "多 Agent/Freshness",
+  "任务说明": "child observed revision/decision epoch 落后于 Parent 时标记 STALE_RESULT，旧结果不得直接驱动 mutation、Review PASS 或 completion。",
+  "必需结果": [
+    "stale-result-detected",
+    "stale-result-not-used"
+  ],
+  "必需证据": [
+    "revision-epoch-evidence"
+  ],
+  "禁止违规": [
+    "stale-write",
+    "stale-review-pass",
+    "stale-completion"
+  ],
+  "上限": {
+    "重试": 1,
+    "用户干预": 1
+  }
+}

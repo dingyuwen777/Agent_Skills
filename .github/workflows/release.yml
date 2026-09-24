@@ -19,6 +19,9 @@ jobs:
   preflight:
     name: Validate Release Request
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
     outputs:
       tag: ${{ steps.release.outputs.tag }}
       version: ${{ steps.release.outputs.version }}
@@ -81,6 +84,30 @@ jobs:
 
       - name: Verify release Ready gate
         run: python .agents/skills/coding/scripts/ready_check.py --root .
+
+      - name: Validate Outcome Eval case registry
+        run: python evals/agent_outcome_eval.py validate-registry --case-dir evals/cases
+
+      - name: Validate Release Qualification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          qualification_dir="${RUNNER_TEMP}/release-behavior-qualification"
+          mkdir -p "${qualification_dir}"
+          run_id="$(
+            gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/behavior-qualification.yml/runs?branch=main&status=success&per_page=100"               --jq ".workflow_runs[] | select(.head_sha == \"${GITHUB_SHA}\" and .event == \"workflow_dispatch\" and .conclusion == \"success\") | .id"               | head -n 1
+          )"
+          test -n "${run_id}" || {
+            echo "当前 Release SHA 缺少成功的 Behavior Qualification：${GITHUB_SHA}" >&2
+            exit 1
+          }
+          gh run download "${run_id}"             --name release-behavior-qualification             --dir "${qualification_dir}"
+          test -f "${qualification_dir}/qualification-bundle.json" || {
+            echo "Behavior Qualification artifact 缺少 qualification-bundle.json" >&2
+            exit 1
+          }
+          python evals/release_qualification.py validate             --root .             --bundle "${qualification_dir}/qualification-bundle.json"             --revision "${GITHUB_SHA}"             --json
 
   runtime-linux:
     name: Release Runtime Linux

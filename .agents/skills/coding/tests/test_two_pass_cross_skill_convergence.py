@@ -100,21 +100,29 @@ class TwoPassCrossSkillConvergenceContractTest(unittest.TestCase):
             self.assertIn(marker, flow)
 
     def test_follow_up_lifecycle_has_persistence_authorization_gate(self) -> None:
-        """Follow-up candidate 不能借当前任务 Git 权限直接变成持久任务。"""
+        """Review 只做 candidate 分类；持久化/停止生命周期由 Router 唯一拥有。"""
         findings = (
             SKILLS / "review" / "references" / "02_Findings与严重度.md"
         ).read_text(encoding="utf-8")
+        router = (SKILLS / "router" / "SKILL.md").read_text(encoding="utf-8")
 
         for marker in (
+            "OUT_OF_SCOPE",
+            "REPORT_ONLY",
             "FOLLOW_UP_CANDIDATE",
-            "Persistence Authorization Gate",
-            "BACKLOG_ITEM",
-            "既有 backlog",
-            "当前任务 Git 权限",
-            "不自动执行",
-            "新 Requirement",
+            "Review 只负责",
+            "Router",
         ):
             self.assertIn(marker, findings)
+        for marker in (
+            "Cross-Skill Follow-up Lifecycle",
+            "Persistence Authorization Gate",
+            "BACKLOG_ITEM",
+            "dedup",
+            "当前任务不得继续执行",
+            "新 Requirement / 新 Task",
+        ):
+            self.assertIn(marker, router)
 
     def test_router_owns_thin_cross_skill_terminal_contract(self) -> None:
         """跨 Skill 只共享终态/交接语义，不共享专业方法。"""

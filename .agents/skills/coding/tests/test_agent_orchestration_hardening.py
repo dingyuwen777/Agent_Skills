@@ -41,26 +41,28 @@ class AgentOrchestrationHardeningContractTest(unittest.TestCase):
             self.assertIn(marker, detail)
 
     def test_out_of_scope_follow_up_is_record_only_by_default_and_never_recursive(self) -> None:
-        """OUT_OF_SCOPE 不应自动制造新的 Issue/Change/Agent/执行链。"""
+        """OUT_OF_SCOPE 先由专业 Owner 分类，再由 Router 统一收口，不能制造任务树。"""
         findings = (
             SKILLS / "review" / "references" / "02_Findings与严重度.md"
         ).read_text(encoding="utf-8")
+        router = (SKILLS / "router" / "SKILL.md").read_text(encoding="utf-8")
 
         for marker in (
             "Follow-up Admission",
-            "RECORD_ONLY",
+            "REPORT_ONLY",
             "FOLLOW_UP_CANDIDATE",
-            "Persistence Authorization Gate",
-            "BACKLOG_ITEM",
-            "不自动创建 Issue",
-            "不自动创建 Change",
-            "不自动创建 Branch",
-            "不自动创建 PR",
-            "不自动创建 Agent",
-            "不自动执行",
-            "不递归派生",
+            "Review 只负责",
         ):
             self.assertIn(marker, findings)
+        for marker in (
+            "Persistence Authorization Gate",
+            "BACKLOG_ITEM",
+            "不自动创建/执行/递归",
+            "当前任务不得继续执行",
+            "新 Requirement / 新 Task",
+            "新 Requirement / 新 Task",
+        ):
+            self.assertIn(marker, router)
 
     def test_orchestration_has_depth_budget_freshness_failure_and_lifecycle_guards(self) -> None:
         """多 Agent 必须限制 fan-out、旧结果、失败重试和后台生命周期。"""

@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from pathlib import Path
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -340,6 +341,51 @@ def load_json(path: str) -> dict[str, Any]:
     return value
 
 
+def validate_high_value_case_registry(
+    case_dir: str | Path,
+) -> dict[str, Any]:
+    """校验高价值收敛用例 registry 与仓库真实 case 文件一一可达。"""
+    root = Path(case_dir)
+    if not root.is_dir():
+        raise ValueError(f"Outcome Eval case 目录不存在：{root}")
+    seen: dict[str, Path] = {}
+    duplicates: list[str] = []
+    for path in sorted(root.glob("*.json")):
+        normalized = validate_case(load_json(str(path)))
+        case_id = str(normalized["用例标识"])
+        if case_id in seen:
+            duplicates.append(case_id)
+        else:
+            seen[case_id] = path
+    if duplicates:
+        raise ValueError("Outcome Eval case 标识重复：" + ", ".join(sorted(set(duplicates))))
+
+    missing = [case_id for case_id in HIGH_VALUE_CONVERGENCE_CASES if case_id not in seen]
+    if missing:
+        raise ValueError("高价值 Outcome Eval case 缺失：" + ", ".join(missing))
+
+    mismatched: list[str] = []
+    for case_id in HIGH_VALUE_CONVERGENCE_CASES:
+        expected = root / f"{case_id}.json"
+        if not expected.is_file():
+            mismatched.append(f"{case_id}: 缺少同名 case 文件")
+            continue
+        normalized = validate_case(load_json(str(expected)))
+        if normalized["用例标识"] != case_id:
+            mismatched.append(
+                f"{case_id}: 文件内标识={normalized['用例标识']!r}"
+            )
+    if mismatched:
+        raise ValueError("高价值 Outcome Eval registry/file 不一致：" + "; ".join(mismatched))
+
+    return {
+        "协议": REPORT_PROTOCOL,
+        "高价值用例": list(HIGH_VALUE_CONVERGENCE_CASES),
+        "用例总数": len(seen),
+        "状态": "valid",
+    }
+
+
 def _print_json(value: Mapping[str, Any]) -> None:
     """稳定输出 UTF-8 JSON，便于不同宿主和 CI 复用。"""
     print(json.dumps(dict(value), ensure_ascii=False, sort_keys=True))
@@ -364,6 +410,15 @@ def _build_parser() -> argparse.ArgumentParser:
     compare_parser.add_argument("--case", required=True)
     compare_parser.add_argument("--run", action="append", required=True)
     compare_parser.add_argument("--expected-model", action="append", default=[])
+
+    registry_parser = subparsers.add_parser(
+        "validate-registry",
+        help="校验高价值 Outcome Eval registry 与真实 case 文件",
+    )
+    registry_parser.add_argument(
+        "--case-dir",
+        default=str(Path(__file__).resolve().parent / "cases"),
+    )
     return parser
 
 
@@ -388,6 +443,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 expected_models=expected or None,
             )
         )
+        return 0
+    if args.command == "validate-registry":
+        _print_json(validate_high_value_case_registry(args.case_dir))
         return 0
     raise ValueError(f"未知命令：{args.command}")
 

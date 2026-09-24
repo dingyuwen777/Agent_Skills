@@ -1,0 +1,19 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "single-writer",
+  "任务族": "多 Agent/Writer",
+  "任务说明": "共享 checkout/shared mutable state 默认只有一个 write-capable Worker；多 Writer 必须证明完整隔离。",
+  "必需结果": [
+    "single-writer-lease",
+    "multi-writer-requires-isolation"
+  ],
+  "必需证据": [
+    "writer-isolation-evidence"
+  ],
+  "禁止违规": [
+    "shared-state-uncontrolled-multiwrite"
+  ],
+  "上限": {
+    "用户干预": 1
+  }
+}

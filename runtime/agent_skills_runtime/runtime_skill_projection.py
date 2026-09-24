@@ -148,6 +148,12 @@ _RUNTIME_ROUTER_BODY = """
 ## 4. 完成与失败
 
 Requested Outcome 决定 Completion Scope；PR、合并、Release、Deploy 只在明确要求且 required gate 满足时继续，CI 绿色不替代需求、文档、独立复核或其他项目门禁。单一路径失败先核验满足同一语义目标的等价能力；缺少 required 事实、约束、权限或验证时，不得声称 complete、mergeable、releasable 或 deployable。
+
+## 5. 超范围后续事项
+
+跨域或超出当前 Scope 的发现默认只报告；只有 Evidence 足够、有独立长期价值且不是重复事项时，最多形成 `FOLLOW_UP_CANDIDATE`。Candidate 不自动创建 Issue/Change/Branch/PR/Agent，也不自动执行。
+
+把 Candidate 持久化到项目既有 backlog 需要独立授权，并先去重；形成 `BACKLOG_ITEM` 后当前任务立即停止处理该事项。未来只有新的 Requirement / Task 重新进入时，才重新恢复事实、Scope、权限、风险和 Evidence；当前任务的 revision、测试或 Git 权限不自动继承。
 """
 
 _RUNTIME_USER_COMMUNICATION_SECTION = f"""
