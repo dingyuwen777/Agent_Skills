@@ -117,16 +117,7 @@ profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required c
 
 ## 3.1 Cross-Owner Semantic Conflict Audit
 
-**内容守恒 ≠ 语义无冲突。** Mutation 涉及跨专业 Handoff、权限、状态、完成/阻塞、project-facing projection 或长期说明时，还要沿实际可达链检查 `Router/Entry → Core → Reference → projection/USAGE/Runtime（受影响时）` 的：
-
-- **Owner**：最终分类/决策/执行/验证责任唯一；
-- **权限**：只读、修改、Git、merge、Release/Deploy、Follow-up 持久化不被扩大；
-- **默认动作**：报告/Handoff/修复/阻塞/持久化/停止一致；
-- **停止条件**：STOP/replan/new-task 边界一致；
-- **强度**：required/optional、BLOCKING/NON_BLOCKING、fail-closed/fallback 不被无依据降级；
-- **例外/失败处理**：更具体规则是真正覆盖，不是第二套冲突解释。
-
-任一项无法建立唯一解释即未闭环；优先收敛到 canonical Owner，其他位置只保留 trigger/terminal/project-facing 薄表达。历史 Change/PR 不参与 current live 冲突审计。
+**内容守恒 ≠ 语义无冲突。** Mutation 改跨专业 Handoff、状态/权限、完成/阻塞或 projection/USAGE 时，沿实际 `Router/Entry → Core → Reference → projection/USAGE/Runtime` 检查：**Owner** 是否唯一、**权限**是否扩大、**默认动作**是否一致、**停止条件**是否一致、**强度**是否无依据降级，以及例外/失败处理是否冲突。任一项无唯一解释即未闭环；收敛到 canonical Owner，其他位置只留 trigger/terminal/project-facing 薄表达。
 
 ## 4. 测试和人工语义对照都需要
 
