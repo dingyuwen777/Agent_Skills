@@ -21,10 +21,28 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 ### 1.1 核验、决策、授权、证据与完成
 
+#### Decision Authority Contract / Human Input Admission Gate
+
+任何准备向用户提问、请求选择或要求再次确认之前，必须按以下顺序解析；前一层已能决定时，不得继续向后升级：
+
+1. `RULE_RESOLVED`：用户已确认决定、Requirement/ADR/Spec、项目规则或当前工程约束已经给出答案 → 直接遵守，**NO_ASK**；
+2. `FACT_RESOLVABLE`：可从当前代码、Git、配置、Manifest/lock、Contract/Schema、测试、CI、工具或运行结果恢复 → 先调查并恢复事实，**NO_ASK**；
+3. `CONVENTION_RESOLVED`：没有显式规则，但当前项目已有稳定且无冲突的既有模式 → 遵循现有模式，**NO_ASK**；
+4. `DEFAULT_RESOLVED`：项目未规定但当前规则已提供安全、确定的默认 → 使用默认，**NO_ASK**；
+5. `SELF_DECIDE`：仍有多个等价选择，但属于局部、低风险、可逆、不改变业务/public Contract/数据/安全/权限/Scope 的实现细节 → 按“项目既有模式 → 最小范围 → 最小副作用 → 最可逆 → 最少新机制”自行选择，**NO_ASK**；
+6. `OWNER_DECISION`：不同答案会实质改变业务语义、Acceptance、public Contract、Schema/Migration/数据、隐私/安全、重大兼容、长期架构/能力 Owner 或真实业务/成本取舍，且前五层都不能解决 → 请求用户/Owner 决策；
+7. `AUTHORIZATION_REQUIRED`：所需动作超过当前 Effective Authorization → 请求对应授权或停止该高副作用动作；
+8. `REQUIRED_USER_INPUT`：完成任务必须取得只有用户/外部 Owner 能提供且无法从当前事实源恢复的必要输入 → 只请求该最小输入；
+9. `CAPABILITY_BLOCKER`：必要能力在有界等价能力调查后仍不可用 → 报告具体 blocker；只有用户动作确实能解除时才请求该动作。
+
+**Human Input Admission Gate**：只有 `OWNER_DECISION / AUTHORIZATION_REQUIRED / REQUIRED_USER_INPUT / CAPABILITY_BLOCKER` 可以产生用户请求；前五类不得为了“稳妥”重新提问。
+
+**No Choice-Prompt**：已经能由规则、事实、项目惯例、安全默认或 `SELF_DECIDE` 解决的问题，不得重新包装成 A/B/C、“你想采用哪种方案”或重复确认。可以在必要时简短说明自主选择及依据，但不能把实现责任转回用户。
+
 - **事实恢复 / 核验**：默认由 Agent 自行查；能查出的不问。只有条款明确要求“提请用户 / Owner 决策 / 批准”且答案会实质改变业务/public Contract、Schema/数据、安全/权限、不可逆动作或重大技术路线时才问；已固化决定**不重复确认**。
 - **Non-material Ambiguity Default**：未达到上述门槛时不阻塞、不提问；按“**项目既有模式 → 最小范围 → 最小副作用 → 最可逆 → 最少新机制**”自行决定，证据推翻后局部 re-plan。
 - **Authorization Continuity**：已明确且未撤销的授权仅在**同目标、同范围、同副作用等级**跨 Handoff 延续，不重复确认。只读 < 测试资产写 < 生产代码写 < commit/push/PR < merge < Release < Deploy/生产变更；更高等级**不得继承升级**，必须已有对应 Requested Action + Effective Authorization。
-- **Cross-model Behavior Contract**：模型名称、版本、推理强弱或宿主差异**不成为治理路由维度**。同一任务事实必须得到同一 Owner / required Context / risk floor / Authorization / Evidence / Completion Contract；模型可以采用不同推理与工具顺序，但不能因“模型更强/更弱”自动降低或另建一套工程标准。具体 Outcome Eval 与规则有效性生命周期由 Coding 专项 Reference 按需承担。
+- **Cross-model Behavior Contract**：模型名称、版本、推理强弱或宿主差异**不成为治理路由维度**。同一任务事实必须得到同一 Owner / required Context / risk floor / Authorization / Evidence / Completion Contract，且必须得到同一 **Ask/No-Ask 分类**；模型可以采用不同推理与工具顺序，但不能因“模型更强/更弱”改变 Human Input Admission Gate 或另建一套工程标准。具体 Outcome Eval 与规则有效性生命周期由 Coding 专项 Reference 按需承担。
 - **Fresh Evidence Contract**：Evidence 绑定当前 **environment / Contract / Scope 与被验证的相关实现 revision**，未发生影响结论的变化即可复用；**不是由当前 Agent 启动**本身**不构成重新执行理由**。只有相关实现/Contract/输入/依赖/配置/环境/外部事实变化、现有证据不覆盖结论，或 **required gate** 明确要求 current-head/current-revision 时才重跑对应层；Change/Issue/PR 描述、Evidence 记录、排版等**不影响已验证边界的载体变化**不使开发侧 Evidence 失效。
 - `完整验证证据 / 完整命令 / 完整输出` 只表示完整执行并检查**已选择的风险匹配 Evidence**，**不表示运行全仓测试、全部测试层或所有平台验证**；仍按 targeted-first 单调升级。
 - **阻塞按依赖边界传播**：单一路径失败先回读结果并核验宿主等价能力，不直接判定仓库不可写；Git 细则归 Coding 交付 Reference。仅阻塞确实缺少事实/Context/工具/环境/权限的依赖动作及声明，其他已授权工作继续；不绕过权限或质量门禁。required gate 受阻时整体才 `blocked/incomplete`。
