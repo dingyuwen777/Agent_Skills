@@ -20,6 +20,17 @@
 - 既有本地实现接管：保留工作、不伪造历史；以当前 revision 按 Requirement Source 与现有 Change/Validation/Review/Git 门禁做到 PR Ready；可安全复现的 `base Red → current Green` 仅作事后回归证据，Issue/Change/测试仍按既有触发。
 - Merge/Rebase 冲突先恢复状态、双方 **Primary Requirement Source** / Issue / PR / Change / commit 与 hunk；逐 hunk 合并兼容意图，不按 `ours/theirs`；语义冲突回决策门禁，错误/危险操作可 `abort`；回归后 Git 授权不变。
 
+### Branch Name Resolution
+
+分支名属于普通可逆 Git 实施细节，按以下顺序自行解析：
+
+1. **项目显式规则**：项目已规定 branch naming → 必须遵守；
+2. **稳定分支模式**：没有显式规则，但当前仓库存在稳定、无冲突的同类任务分支模式 → 跟随该模式；
+3. **Requirement / Issue**：存在稳定 Requirement/Issue ID 时，使用任务类型 + ID + 简短语义，例如 `fix/123-login-timeout`；
+4. 仍无项目模式时使用 `<type>/<short-task-slug>`，其中 type 从 `feature / fix / refactor / docs / test / tech` 选择最贴近当前主要任务的值，slug 使用简短、稳定、可读的小写连字符语义。
+
+除非项目显式规则要求由人命名，或候选名称会触发真实外部 Contract/权限冲突，否则**不得向用户询问** branch name，也不得把多个分支名作为选择题。分支命名不提升 Git 授权；创建/推送/删除分支仍受当前 Effective Authorization 和项目门禁约束。
+
 ### Requested Action 与 Effective Authorization
 
 **Requested Action** 是用户请求；**Effective Authorization** 仍须核验项目规则、authenticated principal、保护规则/Ruleset 和宿主能力；Git 能力不等于任务权限。

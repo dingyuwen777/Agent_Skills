@@ -40,7 +40,7 @@ QUALIFICATION_PROTOCOL = "Agent Skills Release Qualification/v1"
 QUALIFICATION_REPORT_PROTOCOL = "Agent Skills Release Qualification Report/v1"
 SUPPORTED_HOSTS = ("codex", "claude-code", "cursor", "deepseek-harness")
 DEFAULT_HOST_CASES = {
-    host: ("simple-fp", "must-split-fallback")
+    host: ("simple-fp", "must-split-fallback", "unnecessary-clarification")
     for host in SUPPORTED_HOSTS
 }
 _BUNDLE_FIELDS = {

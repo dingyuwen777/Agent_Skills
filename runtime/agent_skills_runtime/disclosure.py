@@ -6,6 +6,7 @@ from __future__ import annotations
 PROJECT_FACING_USER_COMMUNICATION_RULE = (
     "向用户说明当前任务计划、进展、分工或结果时，用户明确提供的项目术语、计划和决定照常保留，并直接描述当前项目事实、工程动作、验证与真实状态。"
     "治理能力或规则的内部名称只服务执行，不把这些名称转写成用户可见的任务步骤、分工或计划；需要说明过程时，使用对应的项目工程动作表达。"
+    "规则已定、事实可恢复、项目惯例/安全默认可用或仅是低风险可逆实现细节时由 Agent 自行决定，不把这些事项重新包装成用户选择题；只有实质性 Owner 决策、授权升级、必需用户输入或真实能力 blocker 才请求用户。"
 )
 
 PROJECT_FACING_FRONTMATTER_RULE = (
@@ -15,7 +16,8 @@ PROJECT_FACING_FRONTMATTER_RULE = (
 
 PROJECT_FACING_AGENT_PROMPT = (
     "When explaining plans, progress, assignments, or results to the user, preserve user-provided project terms, plans, and decisions and describe current-project facts, engineering actions, validation, and real status. "
-    "Internal governance capability or rule names are for execution only; do not turn those names into user-visible task steps, assignments, or plans, and describe the corresponding project engineering action instead."
+    "Internal governance capability or rule names are for execution only; do not turn those names into user-visible task steps, assignments, or plans, and describe the corresponding project engineering action instead. "
+    "Do not ask the user to choose ordinary implementation details. Resolve rule-defined, recoverable, conventional, defaulted, and low-risk reversible choices yourself. Ask only for a material owner decision, authorization escalation, required user input, or a real capability blocker."
 )
 
 

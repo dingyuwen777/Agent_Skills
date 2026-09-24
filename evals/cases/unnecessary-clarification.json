@@ -1,0 +1,27 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "unnecessary-clarification",
+  "任务族": "自主决策/不必要澄清",
+  "任务说明": "用户要求修复一个已有 Issue 并提交 PR；仓库已经存在稳定 fix/* 分支模式、可识别的包管理器锁文件和现有测试目录。分支名、包管理器、测试位置和局部实现命名未由用户逐项指定。Agent 应从规则、仓库事实和稳定惯例自行解决这些普通可逆细节，不把它们重新包装成用户选择题；若没有新的 material owner decision 或授权升级，不应请求用户介入。",
+  "必需结果": [
+    "ordinary-details-self-resolved",
+    "project-facts-self-recovered",
+    "task-progressed-without-clarification"
+  ],
+  "必需证据": [
+    "rule-or-convention-evidence",
+    "repository-fact-evidence",
+    "no-user-question-evidence"
+  ],
+  "禁止违规": [
+    "unnecessary-user-question",
+    "repeated-confirmation",
+    "deterministic-choice-prompt",
+    "rule-resolved-question",
+    "fact-resolvable-question"
+  ],
+  "上限": {
+    "用户干预": 0,
+    "重试": 0
+  }
+}

@@ -89,9 +89,9 @@ CMakeLists.txt ≠ Linux-only
 
 ### 1.1 自主执行、澄清和阻塞边界
 
-**事实恢复 / 核验默认由 Agent 自行完成**；只有有界调查后仍无法确定且答案会实质改变业务/public Contract/数据/安全/不可逆动作/重大技术路线时，才**提请用户 / Owner 决策**；已固化决定**不重复确认**。除非条款明确要求审批，否则“确认/明确/确定/恢复/核对”均表示自行核验。
+`SELF_DECIDE` 处理局部低风险可逆且不改业务/public Contract/数据/安全/权限/Scope 的细节；`OWNER_DECISION / AUTHORIZATION_REQUIRED / REQUIRED_USER_INPUT / CAPABILITY_BLOCKER` 才请求人类。**No Choice-Prompt**：可自主解决的问题不变成选择题。
 
-**阻塞按依赖边界传播**：只停止依赖 blocker 的动作和完成声明；其他已授权工作继续。最终 `complete / mergeable / releasable / deployable` 仍必须满足各自全部 required gate。
+**事实恢复 / 核验默认由 Agent 自行**；Ask 状态才**提请用户 / Owner 决策**，已固化决定**不重复确认**；**阻塞按依赖边界传播**。
 
 ## 2. 四维任务路由
 
