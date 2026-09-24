@@ -136,7 +136,7 @@ class TwoPassCrossSkillConvergenceContractTest(unittest.TestCase):
         """Testing/Docs/Figma 发现跨域问题时必须使用同一终态语义。"""
         for skill in ("testing", "docs", "figma"):
             core = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
-            self.assertIn("Cross-Skill Terminal / Handoff Contract", core)
+            self.assertIn("统一终态 / Handoff Contract", core)
             self.assertIn("FOLLOW_UP_CANDIDATE", core)
             self.assertIn("BLOCK_CURRENT_DELIVERY", core)
 
