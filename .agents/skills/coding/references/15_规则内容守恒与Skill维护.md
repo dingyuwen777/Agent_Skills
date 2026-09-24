@@ -4,7 +4,7 @@
 
 # 规则内容守恒与 Skill 维护
 
-处理 Skill/reference/模板/Overlay 的重组、精简、拆并、改名、迁移/通用化；Mutation 前读取，**内容守恒优先**，原规则必须完整、可达、可验证。
+处理 Skill/reference/模板/Overlay 的重组、精简、拆并、改名、迁移/通用化；Mutation 前读取，**内容守恒优先于篇幅精简**，原规则必须完整、可达、可验证。
 
 ## 0. Mutation Audit / Proposal 与 Mutation Apply
 
