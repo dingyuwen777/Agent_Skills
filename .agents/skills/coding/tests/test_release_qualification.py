@@ -80,7 +80,7 @@ class ReleaseQualificationTest(unittest.TestCase):
     """验证 Release qualification 只接受当前 revision 的真实行为 Evidence。"""
 
     def test_high_value_registry_is_complete(self) -> None:
-        """九个 registry 项必须都有合法同名 case 文件。"""
+        """当前高价值 registry 项必须都有合法同名 case 文件。"""
         report = validate_high_value_case_registry(ROOT / "evals" / "cases")
         self.assertEqual(report["状态"], "valid")
         self.assertEqual(set(report["高价值用例"]), set(HIGH_VALUE_CONVERGENCE_CASES))
