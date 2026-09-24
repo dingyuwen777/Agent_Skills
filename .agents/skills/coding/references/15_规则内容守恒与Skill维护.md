@@ -115,9 +115,7 @@ profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required c
 
 必需原文/MCP 路由链失败时，不用“以前读过”冒充已执行；只阻塞依赖缺失 Context 的动作，其他只读事实恢复/建议继续。
 
-## 3.1 Cross-Owner Semantic Conflict Audit
-
-跨专业 Mutation 另查 **Owner / 权限 / 默认动作 / 停止条件 / 强度** 与失败处理；live 消费链有冲突即未闭环，收敛到唯一 canonical Owner，其他位置只留薄表达。
+**Cross-Owner Semantic Conflict Audit**：跨专业 Mutation 另查 **Owner / 权限 / 默认动作 / 停止条件 / 强度** 与失败处理；冲突即未闭环，收敛到唯一 canonical Owner。
 
 ## 4. 测试和人工语义对照都需要
 
@@ -145,7 +143,6 @@ profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required c
 + 当前受影响 live 引用无残留
 + 与 Evidence Profile 匹配的 preservation / portability / routing / runtime 证据通过
 + 人工内容守恒 Review 无 blocker
-+ Cross-Owner Semantic Conflict Audit 对本次受影响 Owner / 权限 / 默认动作 / 停止条件 / 强度无 blocker
 ```
 
 篇幅减少、targeted test 或 CI 绿色不能代替上述条件；条件已有风险匹配 Evidence 后，不因“更全面”继续扩大验证。
