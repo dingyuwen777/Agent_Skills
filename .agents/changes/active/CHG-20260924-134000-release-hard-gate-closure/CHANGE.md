@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260924-134000-release-hard-gate-closure
 title: 解除 Release 对跨宿主 Behavior Qualification 的不可执行硬依赖
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/release-hard-gate-closure
 created: 2026-09-24
@@ -79,14 +79,14 @@ Issue #310 原本把 final-main 跨宿主 actual Behavior Qualification 作为�
 
 ## 成功标准
 
-- [ ] Release preflight 不再查询/下载/强制验证 Behavior Qualification workflow artifact。
-- [ ] Release 保留 main/tag/Release identity、full self-contained tests、Ready、Outcome Eval registry、Linux/Windows/macOS Runtime smoke、三平台 identity、artifact SHA256、ZIP、Draft/Publish 校验。
-- [ ] Behavior Qualification workflow、Outcome Eval cases、actual/fixture 区分、grader、revision/host/model coverage validator 保留。
-- [ ] canonical 跨模型规则明确 Behavior Qualification 为独立验证能力，不是普通 Release 前置；没有 actual run 时只能声明 unverified。
-- [ ] README 正式 Release 流程与 workflow 一致，不再要求先人工准备 qualification bundle 才能发版。
-- [ ] 永久测试同时锁定“Behavior Qualification 能力存在”和“Release 不依赖它”。
-- [ ] current-head required CI、独立 Review、guarded merge、implementation main-fresh、repository-native Change Archive、#310 Acceptance/Closure 与任务分支 cleanup 闭环。
-- [ ] 本任务不执行实际 Release/Deploy。
+- [x] Release preflight 不再查询/下载/强制验证 Behavior Qualification workflow artifact。
+- [x] Release 保留 main/tag/Release identity、full self-contained tests、Ready、Outcome Eval registry、Linux/Windows/macOS Runtime smoke、三平台 identity、artifact SHA256、ZIP、Draft/Publish 校验。
+- [x] Behavior Qualification workflow、Outcome Eval cases、actual/fixture 区分、grader、revision/host/model coverage validator 保留。
+- [x] canonical 跨模型规则明确 Behavior Qualification 为独立验证能力，不是普通 Release 前置；没有 actual run 时只能声明 unverified。
+- [x] README 正式 Release 流程与 workflow 一致，不再要求先人工准备 qualification bundle 才能发版。
+- [x] 永久测试同时锁定“Behavior Qualification 能力存在”和“Release 不依赖它”。
+- [ ] current-head required CI、独立 Review、guarded merge、implementation main-fresh、repository-native Change Archive、#310 Acceptance/Closure 与任务分支 cleanup 由 Ready 后 Delivery Gate 完成。
+- [x] 本任务不执行实际 Release/Deploy。
 
 ## 非目标
 
@@ -139,12 +139,12 @@ Issue #310 原本把 final-main 跨宿主 actual Behavior Qualification 作为�
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 取消 Release 对 Behavior Qualification artifact 的硬依赖 | 用户本轮决定 / #310 | not_satisfied | 待实现 |
-| R2 | 保留 Behavior Qualification 与 actual 真值边界 | 用户本轮决定 / #310 | not_satisfied | 待实现与回归 |
-| R3 | deterministic Release hard gates 不降级 | 用户本轮决定 / Maintenance | not_satisfied | 待 workflow diff + tests/CI |
-| R4 | canonical Rule/README 与真实实现一致 | Docs Impact | not_satisfied | 待文档同步 |
-| R5 | #310 按新 Closure Contract 完成并关闭 | 用户本轮决定 | not_satisfied | 待 merge 后 Closure Audit |
-| R6 | 不执行 Release/Deploy | 用户本轮决定 | satisfied | 当前任务未触发发布动作 |
+| R1 | 取消 Release 对 Behavior Qualification artifact 的硬依赖 | 用户本轮决定 / #310 | satisfied | `.github/workflows/release.yml` 已删除 artifact lookup/download/validate 与仅相关 `actions: read` |
+| R2 | 保留 Behavior Qualification 与 actual 真值边界 | 用户本轮决定 / #310 | satisfied | `behavior-qualification.yml`、`evals/release_qualification.py` 与 qualification tests 保留；fixture/host/revision fail-closed 未放宽 |
+| R3 | deterministic Release hard gates 不降级 | 用户本轮决定 / Maintenance | satisfied | Release 仍运行 full tests、Ready、Outcome Eval registry 与 Linux/Windows/macOS Runtime/package/identity/SHA/ZIP/Draft-Publish；run 35962731120 自包含测试 Green |
+| R4 | canonical Rule/README 与真实实现一致 | Docs Impact | satisfied | cross-model canonical Rule、Maintenance Workflow Owner 与 README 正式 Release 说明已同步 |
+| R5 | #310 按新 Closure Contract 完成并关闭 | 用户本轮决定 | not_applicable | pre-merge Change 不自证 merge 后 Closure；由 Ready 后 Delivery Gate 在 main-fresh/archive 后回写并关闭 |
+| R6 | 不执行 Release/Deploy | 用户本轮决定 | satisfied | 未创建 tag、Release asset 或 Deploy；仅修改未来 Release workflow |
 
 # 计划改动
 
@@ -200,34 +200,39 @@ Issue #310 原本把 final-main 跨宿主 actual Behavior Qualification 作为�
 
 # 完成审计
 
-- [ ] upstream_re_read：Ready 前重读用户最新决定、#310、current main、Release 与 Behavior Qualification 实现。
-- [ ] change_coverage：R1-R6 全部 satisfied/not_applicable 且无 not_satisfied。
-- [ ] reverse_audit：从 GitHub 手工 Release 用户路径反查所有 required hard gates，并从独立 Behavior Qualification 反查 actual 真值边界。
-- [ ] unresolved_cleared：无 blocker/TODO/TBD；未运行真实宿主明确保持 unverified。
+- [x] upstream_re_read：已重读用户最新决定、#310 Owner Decision Revision、current main 基线以及 final implementation 的 Release / Behavior Qualification 文件。
+- [x] change_coverage：R1-R6 已映射为 satisfied/not_applicable，无 not_satisfied；post-merge Closure 明确归 Delivery Gate。
+- [x] reverse_audit：已从 GitHub 手工 Release 路径反查 full tests、Ready、Outcome Eval registry、三平台 Runtime/package/identity/SHA/ZIP/Draft-Publish，并从独立 Behavior Qualification 反查 actual/fixture/revision/host/model 真值边界。
+- [x] unresolved_cleared：implementation Ready 范围无 blocker/TODO/TBD；真实跨宿主未运行状态明确为 unverified，不冒充 Green，也不阻塞普通 Release。
 
 # 完成证据与状态
 
-## 当前证据
+## 新鲜证据
 
-- main baseline：`aa7b1943c4aa7ecaf4acfba9630e4326edf6a9df`。
-- Branch：`tech/release-hard-gate-closure`。
-- PR：#314 Draft。
-- 第一轮 CI：run `35961897285` failure，原因是 Change 必需标题不完整；**不计作目标 Contract Red**。
-- Release/Deploy：not_applicable。
+| 证据 | revision / run | 结果 | 证明 |
+| --- | --- | --- | --- |
+| V1 | main `aa7b1943c4aa7ecaf4acfba9630e4326edf6a9df` + #310 Owner Decision Revision | confirmed | 本轮 Requirement Source 与 main 基线 |
+| V2 | PR #314 run `35962022255` @ `63befe58f3aa1cd592f7911614e41356f4b2a3ed` | 目标 Red：新解耦回归因旧 Release 仍含 `Validate Release Qualification` 失败 | 证明旧 hard dependency 被测试捕获 |
+| V3 | PR #314 run `35962731120` @ `cd459bc1faca05faeb4c84fdfaf2400142171764` | compile / CLI smoke / 702 self-contained tests 全部 Green；workflow 最终仅因 Change 仍为 `in_progress` 的 Ready enforcement 失败 | implementation semantic Green，且没有通过放宽既有测试制造 Green |
+| V4 | final diff readback | Release 只删除 qualification artifact consumer；Behavior workflow/evaluator/cases 保留；Maintenance/Rule/README 同步 | 内容守恒与 Workflow Responsibility Audit |
+| V5 | repository metadata | `delete_branch_on_merge=true` | merge 后任务分支应由仓库自动清理，仍需 fresh readback |
 
 ## 未验证内容与剩余风险
 
-- 目标 Contract Red 尚待下一轮 CI。
-- 实现、Green、current-head package、独立 Review、merge/main-fresh/archive/Issue Closure/cleanup 尚未完成。
-- 真实跨宿主 actual Behavior Qualification 本任务不执行；其状态应保持 unverified，不是 blocker。
+- 本提交只把 Change 推进为 `ready_for_review`，因此会形成新的 PR head；required current-head CI、三平台 package Evidence 与 final independent Review 必须重新取得。
+- merge 后还需要 implementation main-fresh、repository-native Change Archive、#310 Acceptance/Closure 与分支删除 fresh readback。
+- 真实跨宿主 actual Behavior Qualification 本任务不执行；对应模型/宿主保持 unverified，不是普通 Release blocker。
+- 当前执行容器无法解析 `github.com`，所以本地 clone 验证不可用；GitHub App 文件读写和 GitHub Actions 证据链正常，required CI 不受影响。
 
 ## 交付状态
 
-- implementation: in_progress
-- delivery: draft_pr
-- validation: incomplete
-- main_fresh: not_applicable（未 merge）
-- change_archive: not_applicable（未 merge）
-- requirement_closure: incomplete
-- cleanup: incomplete
-- end_to_end: incomplete
+- Requirement Source：#310 open，已写入最新 Owner Decision Revision。
+- 分支：`tech/release-hard-gate-closure`。
+- Change：本提交置为 `ready_for_review`。
+- PR：#314 Draft；Ready-head CI 后转 Ready。
+- Red：run `35962022255`。
+- pre-Ready semantic Green：run `35962731120`，702 tests OK；唯一最终 blocker 为 Change status enforcement。
+- PR Ready current-head CI/package：由本提交触发后取得。
+- 独立 Review：final head 执行。
+- merge/main-fresh/archive/#310 Closure/cleanup：由 Delivery Gate 完成。
+- Release/Deploy：not_applicable；本任务不会运行正式 Release。
