@@ -34,7 +34,7 @@ Finding 使用 `severity + Scope + Delivery Effect + Action`；四者正交，se
 
 ## 3. Follow-up Admission 与生命周期
 
-`OUT_OF_SCOPE` 默认 `REPORT_ONLY / RECORD_ONLY`，**不自动创建 Issue/Change/Branch/PR/Agent，不自动执行、不递归派生**。只有 Evidence 足够、独立长期价值成立且非重复，才可标为 `FOLLOW_UP_CANDIDATE`。
+`OUT_OF_SCOPE` 默认 `REPORT_ONLY / RECORD_ONLY`：**不自动创建 Issue、不自动创建 Change、不自动创建 Branch、不自动创建 PR、不自动创建 Agent、不自动执行、不递归派生**。只有 Evidence 足够、独立长期价值成立且非重复，才可标为 `FOLLOW_UP_CANDIDATE`。
 
 ```text
 RECORD_ONLY
