@@ -27,6 +27,7 @@ def _case(
     *,
     unknown: list[str] | None = None,
     forbidden_references: list[str] | None = None,
+    allowed_references: list[str] | None = None,
 ) -> dict[str, object]:
     """构造一条可审查的 conformance fixture。"""
     return {
@@ -35,6 +36,7 @@ def _case(
         "未知项": list(unknown or []),
         "预期Skill": skills,
         "最低必需Reference": references,
+        "允许Reference": list(allowed_references or references),
         "禁止Reference": list(forbidden_references or []),
         "最低风险": risk,
     }
@@ -82,6 +84,7 @@ CASES = [
     _case("Performance", {"执行模式": ["诊断", "实现"], "阶段": ["性能优化"], "风险": ["L2"]}, LIGHT_L2_CORE + ["coding.reference.05"], ["coding"], "L2", forbidden_references=["coding.reference.04", "coding.reference.10", "coding.reference.11", "coding.reference.19", "coding.reference.21"]),
     _case("Schema Migration", {"执行模式": ["方案", "实现"], "阶段": ["需求设计"], "风险": ["L3"], "范围": ["Schema", "Migration"]}, GATED_L2_CORE + ["coding.reference.05", "coding.reference.06"], ["coding"], "L3"),
     _case("Frontend", {"执行模式": ["实现"], "项目形态": ["前端Web"], "阶段": ["功能开发"], "风险": ["L2"], "范围": ["前端"]}, LIGHT_L2_CORE + ["coding.reference.05", "coding.reference.08", "coding.reference.17"], ["coding"], "L2", forbidden_references=["coding.reference.04", "coding.reference.10", "coding.reference.11", "coding.reference.19", "coding.reference.21", "figma.reference.00"]),
+    _case("Testing-only", {"风险": ["L2"], "意图": ["独立验证"], "能力": ["测试"]}, ["testing.reference.01", "testing.reference.03"], ["testing"], "L2", forbidden_references=["coding.reference.02", "review.reference.01"]),
     _case("Figma review-only", {"执行模式": ["审查"], "风险": ["L2"], "意图": ["Figma review-only"], "能力": ["Figma"]}, ["figma.reference.00", "figma.reference.01", "figma.reference.06", "figma.reference.07"], ["figma"], "L2", forbidden_references=REVIEW_CORE),
     _case("Figma review-and-fix", {"执行模式": ["实现"], "风险": ["L2"], "意图": ["Figma review-and-fix"], "能力": ["Figma"]}, ["figma.reference.00", "figma.reference.01", "figma.reference.03", "figma.reference.06", "figma.reference.07"], ["figma"], "L2", forbidden_references=LIGHT_L2_CORE + ["coding.reference.19", "coding.reference.21"]),
     _case("Figma baseline-ready", {"执行模式": ["方案"], "风险": ["L2"], "意图": ["Figma baseline-ready"], "能力": ["Figma"]}, ["figma.reference.00", "figma.reference.01", "figma.reference.02", "figma.reference.03", "figma.reference.04", "figma.reference.05", "figma.reference.06", "figma.reference.07"], ["figma"], "L2", forbidden_references=LIGHT_L2_CORE + ["coding.reference.19", "coding.reference.21"]),
@@ -103,6 +106,7 @@ CASES = [
     _case("Runtime Upgrade", {"执行模式": ["实现"], "风险": ["L2"], "意图": ["Runtime 升级"]}, LIGHT_L2_CORE + ["coding.reference.13"], ["coding"], "L2"),
     _case("Runtime Bundle", {"执行模式": ["实现"], "风险": ["L3"], "工具链": ["已确认"], "范围": ["Runtime", "Runtime Bundle", "MCP"], "意图": ["Runtime Bundle"]}, RUNTIME_CORE, ["coding"], "L3"),
     _case("Project Payload", {"执行模式": ["实现"], "风险": ["L3"], "工具链": ["已确认"], "范围": ["Runtime", "Project Payload"], "意图": ["Project Payload"]}, RUNTIME_CORE, ["coding"], "L3"),
+    _case("Skill Mutation Audit", {"执行模式": ["只读分析"], "风险": ["L2"], "意图": ["Skill Mutation Audit"], "授权": ["允许只读"]}, LIGHT_L2_CORE + ["coding.reference.16"], ["coding"], "L2", forbidden_references=["coding.reference.04", "coding.reference.10", "coding.reference.11", "coding.reference.19", "coding.reference.29", "coding.reference.32"]),
     _case("Skill Mutation", {"执行模式": ["实现"], "风险": ["L2"], "意图": ["Skill Mutation"]}, GATED_L2_CORE + ["coding.reference.11", "coding.reference.16"], ["coding"], "L2"),
     _case("Agent Outcome Eval", {"执行模式": ["验证"], "风险": ["L2"], "意图": ["Agent Outcome Eval"]}, LIGHT_L2_CORE + ["coding.reference.32"], ["coding"], "L2"),
     _case("General Analysis", {"风险": ["L1"], "意图": ["通用分析"]}, ["analysis.reference.01", "analysis.reference.04"], ["analysis"], "L1", forbidden_references=["coding.reference.02", "research.reference.01"]),
@@ -116,6 +120,27 @@ CASES = [
     _case("Unknown facts", {"执行模式": ["方案"], "风险": ["L2"]}, RUNTIME_V3_UNKNOWN_PROJECT_SHAPE, ["coding"], "L2", unknown=["项目形态"], forbidden_references=["coding.reference.14", "docs.reference.01", "figma.reference.00", "review.reference.01"]),
     _case("复杂多条件叠加", {"执行模式": ["实现", "审查", "验证", "Git"], "项目形态": ["前端Web", "全栈应用"], "阶段": ["功能开发", "交付"], "风险": ["L3"], "工具链": ["TypeScript"], "范围": ["前端", "API", "公共契约", "Runtime Bundle"], "意图": ["设计转代码", "Docs full", "Review-and-fix", "Git 交付"], "治理": ["多个活动变更", "要求完成门禁"], "能力": ["Figma", "Git", "测试", "多 Agent"], "授权": ["允许修改项目"]}, RUNTIME_CORE + ["coding.reference.05", "coding.reference.08", "coding.reference.09", "coding.reference.11", "coding.reference.15", "coding.reference.17", "docs.reference.01", "docs.reference.02", "docs.reference.03", "figma.reference.00", "figma.reference.01", "figma.reference.02", "figma.reference.03", "figma.reference.05", "review.reference.01", "review.reference.02", "review.reference.03"], ["coding", "docs", "figma", "review"], "L3"),
 ]
+
+
+EXACT_CASE_NAMES = {
+    "Ad-hoc snippet",
+    "L1 mechanical",
+    "L2 Feature",
+    "Testing-only",
+    "Figma review-only",
+    "Docs targeted",
+    "Review-only",
+    "Git Delivery",
+    "Skill Mutation Audit",
+    "General Analysis",
+    "First-principles Analysis",
+    "Current Research",
+}
+
+ALLOWED_CONTEXT_CASE_NAMES = {
+    "Unknown facts",
+    "复杂多条件叠加",
+}
 
 
 class RoutingConformanceTest(unittest.TestCase):
@@ -140,9 +165,19 @@ class RoutingConformanceTest(unittest.TestCase):
                 actual = evaluate_route(self.manifest, route)
                 actual_references = set(actual["必需Reference"])
                 expected = set(case["最低必需Reference"])
-                self.assertTrue(expected.issubset(actual_references), expected - actual_references)
-                self.assertIn("router", actual["命中Skill"])
-                self.assertTrue(set(case["预期Skill"]).issubset(actual["命中Skill"]))
+                name = str(case["名称"])
+                if name in EXACT_CASE_NAMES:
+                    self.assertEqual(actual_references, expected)
+                    self.assertEqual(set(actual["命中Skill"]), {"router", *set(case["预期Skill"])})
+                elif name in ALLOWED_CONTEXT_CASE_NAMES:
+                    allowed = set(case["允许Reference"])
+                    self.assertTrue(expected.issubset(actual_references), expected - actual_references)
+                    self.assertTrue(actual_references.issubset(allowed), actual_references - allowed)
+                else:
+                    self.assertTrue(expected.issubset(actual_references), expected - actual_references)
+                    self.assertTrue(actual_references.issubset(set(case["允许Reference"]) | (all_reference_ids - set(case["禁止Reference"]))))
+                    self.assertIn("router", actual["命中Skill"])
+                    self.assertTrue(set(case["预期Skill"]).issubset(actual["命中Skill"]))
                 self.assertEqual(actual["最低风险"], case["最低风险"])
                 self.assertFalse(set(case["禁止Reference"]) & actual_references)
                 if case["未知项"]:
@@ -155,11 +190,11 @@ class RoutingConformanceTest(unittest.TestCase):
             "Ad-hoc snippet", "Greenfield", "Fact Recovery", "L1 mechanical", "L1 known-root Bug",
             "L1 unknown-root Bug", "L2 Feature", "Light L2 targeted validation", "Gated L2",
             "L3 public API", "Bug", "Failure / Incident", "Refactor", "Performance", "Schema Migration",
-            "Frontend", "Figma review-only", "Figma review-and-fix", "Figma baseline-ready", "Figma → Code",
+            "Frontend", "Testing-only", "Figma review-only", "Figma review-and-fix", "Figma baseline-ready", "Figma → Code",
             "Docs not_applicable", "Docs targeted", "Docs full", "Review-only", "Review-and-test",
             "Review-and-fix", "Multi-Agent", "Multiple Active Changes", "Dependency Upgrade", "CI Workflow Change",
             "Git Delivery", "PR Ready", "Release", "Runtime Install", "Runtime Upgrade", "Runtime Bundle",
-            "Project Payload", "Skill Mutation", "Agent Outcome Eval", "General Analysis", "First-principles Analysis",
+            "Project Payload", "Skill Mutation Audit", "Skill Mutation", "Agent Outcome Eval", "General Analysis", "First-principles Analysis",
             "Current Research", "Research + Analysis", "Security / Permission", "Unknown facts", "复杂多条件叠加",
         }
         self.assertTrue(mandatory.issubset(names), mandatory - names)

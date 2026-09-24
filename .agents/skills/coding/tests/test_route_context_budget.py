@@ -10,6 +10,17 @@ ROOT = Path(__file__).resolve().parents[4]
 SKILLS_ROOT = ROOT / ".agents" / "skills"
 ENTRY = SKILLS_ROOT / "ENTRY.md"
 
+CONTEXT_BASELINE_BYTES = {
+    "testing-only-web-l2": 39806,
+    "coding-l1": 99984,
+    "general-analysis": 29412,
+    "external-research": 22915,
+    "docs-targeted": 127079,
+    "review-only-l2": 204903,
+    "figma-baseline-ready": 132425,
+}
+
+
 
 class RouteContextBudgetTest(unittest.TestCase):
     """对代表性真实 Task Route 计算最终 Skill Core + required Reference 上下文预算。"""
@@ -128,6 +139,35 @@ class RouteContextBudgetTest(unittest.TestCase):
                     full_corpus,
                     f"{name} 不得退化为完整治理 corpus",
                 )
+
+    def test_context_delta_is_observability_only(self) -> None:
+        """Context Delta 只报告相对基线变化（non-blocking）；绝对预算仍由上一测试硬失败。"""
+        cases = {
+            "testing-only-web-l2": {
+                "项目形态": ["前端Web"],
+                "风险": ["L2"],
+                "意图": ["黑盒测试", "用户场景验收"],
+                "能力": ["测试"],
+            },
+            "coding-l1": {"执行模式": ["实现"], "风险": ["L1"]},
+            "general-analysis": {"风险": ["L1"], "意图": ["通用分析"]},
+            "external-research": {"风险": ["L1"], "意图": ["外部研究"]},
+            "docs-targeted": {"执行模式": ["实现"], "风险": ["L1"], "意图": ["Docs targeted"]},
+            "review-only-l2": {"执行模式": ["审查"], "风险": ["L2"], "意图": ["Review-only"]},
+            "figma-baseline-ready": {
+                "执行模式": ["方案"],
+                "风险": ["L2"],
+                "意图": ["Figma baseline-ready"],
+                "能力": ["Figma"],
+            },
+        }
+        for name, signals in cases.items():
+            with self.subTest(name=name):
+                current = self._context_bytes(self._evaluate(signals))
+                baseline = CONTEXT_BASELINE_BYTES[name]
+                delta = current - baseline
+                print(f"Context Delta {name}: base={baseline} current={current} delta={delta:+d}")
+                self.assertIsInstance(delta, int)
 
     def test_testing_only_budget_excludes_coding_core(self) -> None:
         """Testing-only 的低预算必须来自 Owner 隔离，而不是仅靠提高阈值掩盖 Coding Core 误加载。"""
