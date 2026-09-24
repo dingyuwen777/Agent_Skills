@@ -308,9 +308,7 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 5. 多 Agent / 多人协作
 
-实质工程任务**先报** `Delegation Value = NO_SPLIT | MAY_SPLIT | MUST_SPLIT`，并独立判断 `Independence Requirement = OPTIONAL | REQUIRED`。前者**只拆有真实独立价值**，MUST 要有**可独立验收**单元和明确收益；细节读多 Agent Reference。
-
-无 delegation 时 MUST 可**降级为单 Agent**实施，但不能因此降级 REQUIRED independence；缺独立能力只阻塞依赖它的 Review/交付结论。Finding classification 属于 Reviewer，Parent 只负责 repair scheduling。
+实质工程任务**先报** `NO_SPLIT/MAY_SPLIT/MUST_SPLIT`，**只拆有真实独立价值**，MUST 要有**可独立验收**单元；另判 `Independence Requirement=OPTIONAL/REQUIRED`。无 delegation 时可**降级为单 Agent**，但不能降级 REQUIRED；Reviewer 判 Finding，Parent 只调度返修。细节见 [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md)。
 
 ## 6. Git、依赖、安全、交付与宿主能力边界
 
