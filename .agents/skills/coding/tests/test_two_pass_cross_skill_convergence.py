@@ -174,27 +174,26 @@ class TwoPassCrossSkillConvergenceContractTest(unittest.TestCase):
             self.assertIn(marker, mutation)
 
     def test_outcome_eval_names_high_value_new_failure_families(self) -> None:
-        """高价值失效族进入 Eval 机器契约，Reference 保持 actual/fixture 边界。"""
+        """高价值失效族由 canonical Eval 规则维护；机器层继续锁定 actual/fixture 语义。"""
         outcome = (
             SKILLS / "coding" / "references" / "31_跨模型效果评测与规则有效性.md"
         ).read_text(encoding="utf-8")
         machine = (ROOT / "evals" / "agent_outcome_eval.py").read_text(encoding="utf-8")
 
-        self.assertIn("actual", outcome)
-        self.assertIn("fixture", outcome)
-        self.assertIn("HIGH_VALUE_CONVERGENCE_CASES", machine)
         for marker in (
-            "follow-up-recursion",
-            "oos-blocker",
-            "repair-churn",
-            "parent-reviewer",
-            "stale-child",
-            "single-writer",
-            "must-split-fallback",
-            "simple-fp",
-            "cross-skill-finding",
+            "Follow-up explosion",
+            "out-of-scope delivery blocker",
+            "repair churn",
+            "Parent vs Reviewer",
+            "stale child",
+            "single writer",
+            "MUST_SPLIT fallback",
+            "simple-task false-positive",
+            "cross-skill finding",
         ):
-            self.assertIn(marker, machine)
+            self.assertIn(marker, outcome)
+        self.assertIn('_RUN_TYPES = {"actual", "fixture"}', machine)
+        self.assertIn('"unverified"', machine)
 
     def test_project_facing_docs_explain_bounded_analysis_and_followup_authorization(self) -> None:
         """最终用户和项目规则应得到停止条件、独立性和 Follow-up 授权边界。"""
