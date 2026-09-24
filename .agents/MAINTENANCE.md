@@ -340,13 +340,9 @@ change-archive.yml
 → 只拥有归档 lifecycle，不重复产品 CI / Release
 
 behavior-qualification.yml
-→ 手工接收真实支持宿主产生的脱敏 actual Outcome bundle
-→ 只校验 exact main SHA / case / grader / model+host coverage 并保存短期 artifact
+→ 手工独立 Cross-host Behavior Qualification，只在维护者已有真实 actual bundle、需要真实模型/宿主资格结论时运行
+→ 校验 exact current-main SHA / case / grader / model+host coverage 并保存短期 artifact
 → 不调用模型 Provider、不修改 main、不构建 Runtime、不创建 Release
-
-behavior-qualification.yml
-→ 手工独立 Cross-host Behavior Qualification
-→ 只在维护者已有真实 actual bundle、需要真实模型/宿主资格结论时运行
 → 不作为普通 PR/main/Release hard gate
 
 release.yml
