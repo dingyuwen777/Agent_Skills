@@ -381,7 +381,7 @@ release.yml
 - L2/L3 Implementation PR 中的 Change 保持 `active/ready_for_review`；merge 后由 `.github/workflows/change-archive.yml` 的 repository-native **Change Archive** 基础设施使用专用归档身份完成 `active → archive/YYYY-MM` 与 `status → done`。**Agent 不执行归档 commit，Agent 不创建归档 PR**；自动归档失败时保持 `blocked/incomplete`，修复平台/基础设施后重跑并验证，不由 Agent 接管；
 - implementation main fresh CI 与 Change Archive 可以按真实 GitHub Actions 独立运行；完整 Closure 前必须同时取得当前 implementation merge revision 的 required main-fresh Evidence，以及同一 Change 的 repository-native archive/done 结果。Archivist 纯 carrier commit 在 Section 9 的 completion/exact allowlist/main drift 门禁成立后使用 `[skip ci]`，**不要求为了归档 revision 再重复功能性 CI**；archive/done 仍不等价于 Requirement 已完成；
 - Release 只从 main 手工运行 `.github/workflows/release.yml`，输入唯一正式版本来源 `v<SemVer>`；仓库不维护第二份根版本文件；
-- Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并拒绝覆盖已有 tag/Release；
+- Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并 fresh 读取同一 SHA 的成功 Behavior Qualification artifact、重新验证 actual/case/grader/model+host coverage；缺失或 revision 漂移时 fail closed，同时拒绝覆盖已有 tag/Release；
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
 - Builder 不生成 identity manifest；三个平台 job 通过 `GITHUB_OUTPUT` 传递 release/source/python/protocol/digest/integrity identity 和各自 `artifact_sha256`；发布 job 比较三平台公共 identity，并对下载后的 Linux/Windows/macOS binary 分别重算 SHA256；
 - 使用显式白名单分别组装并重新打开验证 `agent-skills-v<SemVer>-linux.zip`、`agent-skills-v<SemVer>-windows.zip`、`agent-skills-v<SemVer>-macos.zip`；每个 ZIP 必须精确只有当前平台 binary 与 [`USAGE.md`](../USAGE.md)；
