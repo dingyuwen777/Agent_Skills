@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260924-134000-release-hard-gate-closure
 title: 解除 Release 对跨宿主 Behavior Qualification 的不可执行硬依赖
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/release-hard-gate-closure
 created: 2026-09-24
