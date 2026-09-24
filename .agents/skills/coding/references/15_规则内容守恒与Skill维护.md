@@ -117,7 +117,7 @@ profile 仅选择开发侧 Evidence，不是 CI 模式；classifier、required c
 
 ## 3.1 Cross-Owner Semantic Conflict Audit
 
-内容守恒之外，跨专业 Mutation 必须检查同一语义的 **Owner、权限、默认动作、停止条件、强度** 与失败处理；沿实际 Router/Core/Reference/projection/USAGE 消费链出现无法唯一解释的冲突即未闭环，收敛到唯一 canonical Owner，其他位置只留薄表达。
+跨专业 Mutation 另查 **Owner / 权限 / 默认动作 / 停止条件 / 强度** 与失败处理；live 消费链有冲突即未闭环，收敛到唯一 canonical Owner，其他位置只留薄表达。
 
 ## 4. 测试和人工语义对照都需要
 
