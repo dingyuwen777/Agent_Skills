@@ -1,8 +1,10 @@
-"""Release 前的 model-neutral Agent 行为资格机器契约。
+"""独立 Cross-host Behavior Qualification 的 model-neutral 机器契约。
 
-该模块不调用模型 Provider，也不生成 actual run。真实支持宿主负责产生
-Agent Skills Outcome Eval Run/v1；本模块只对当前 release revision 的真实
-run bundle 做确定性校验，fixture 永远不能满足 Release qualification。
+文件名与 `Agent Skills Release Qualification/v1` 协议标识作为现有机器 Contract
+保持稳定，但其生命周期不再是普通 Release 的硬前置。该模块不调用模型 Provider，
+也不生成 actual run；真实支持宿主负责产生 Agent Skills Outcome Eval Run/v1，
+本模块只对指定 revision 的真实 run bundle 做确定性校验。fixture 永远不能把
+未真实运行的模型或宿主标记为 verified。
 """
 
 from __future__ import annotations

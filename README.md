@@ -559,20 +559,21 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 
 仓库不维护独立 `VERSION` 文件。正式 Release 的唯一版本输入是手工 Release workflow 的 `tag`：输入 `v<SemVer>` 后，workflow 去掉前缀 `v` 得到 `release_version`，并把同一个值显式传给 Linux / Windows / macOS 三个平台 Runtime Builder。
 
-正式 Release 之前，当前 `main` 还必须有一条绑定**同一 SHA**的成功 [`.github/workflows/behavior-qualification.yml`](.github/workflows/behavior-qualification.yml) 运行。它不调用模型 Provider，只校验真实支持宿主已经产生的脱敏 `Agent Skills Outcome Eval Run/v1`：
+### 独立跨宿主 Behavior Qualification
+
+[`.github/workflows/behavior-qualification.yml`](.github/workflows/behavior-qualification.yml) 保留为**独立的真实跨模型 / 跨宿主效果验证**，但不再作为普通 Release 的前置条件。它不调用模型 Provider，只校验真实支持宿主已经产生的脱敏 `Agent Skills Outcome Eval Run/v1`：
 
 ```text
-九个 HIGH_VALUE_CONVERGENCE_CASES
+当前 HIGH_VALUE_CONVERGENCE_CASES
 → 每个 case 至少 2 个不同模型实现的 actual run
 → Codex / Claude Code / Cursor / DeepSeek Harness
-   各至少覆盖 simple-fp + 1 个 delegation/convergence case
+   各至少覆盖 simple-fp + unnecessary-clarification + 1 个 delegation/convergence case
 → run revision == 当前 main SHA
 → 同一 grader PASS、无 case-defined forbidden violation
 → Behavior Qualification 保存只读 workflow artifact
-→ Release preflight 对 exact main SHA 重新下载并验证
 ```
 
-维护者先把真实宿主 run 组成 `qualification-bundle.json`，然后在本地检查：
+维护者只有在已经取得真实宿主 run、需要声明当前 `main` revision 的跨模型/宿主行为资格或做回归比较时，才需要组成 `qualification-bundle.json` 并运行：
 
 ```bash
 python evals/agent_outcome_eval.py validate-registry --case-dir evals/cases
@@ -580,7 +581,7 @@ python evals/release_qualification.py validate --root . --bundle qualification-b
 python evals/release_qualification.py encode --bundle qualification-bundle.json
 ```
 
-把最后一条命令输出的 base64 作为 `Behavior Qualification` workflow 的 `bundle_base64` 输入，并确保从 `main` 运行。只有该 workflow 对当前 `main` SHA 成功后，才运行正式 Release。fixture、静态单测、旧 revision 或普通 package smoke 都不能替代这一步。
+把最后一条命令输出的 base64 作为 `Behavior Qualification` workflow 的 `bundle_base64` 输入。fixture、静态单测或旧 revision 不能把未真实运行的模型/宿主标记为 verified；没有运行时保持 `unverified` 即可，**不会阻塞普通 Release**。
 
 正式发布通过 [`.github/workflows/release.yml`](.github/workflows/release.yml) 手工触发：
 
@@ -588,7 +589,7 @@ python evals/release_qualification.py encode --bundle qualification-bundle.json
 main
 → 输入 v<SemVer>
 → 由 tag 派生 release_version
-→ Preflight 校验 main/tag/Release + 全量自包含测试 + Ready + exact-SHA Behavior Qualification
+→ Preflight 校验 main/tag/Release + 全量自包含测试 + Ready + Outcome Eval registry
 → Linux / Windows / macOS 使用 Python 3.14.7 分别构建并验证
 → 交叉校验 identity / artifact SHA256
 → 创建 Draft Release 并上传完整正式资产

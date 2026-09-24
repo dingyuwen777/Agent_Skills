@@ -340,18 +340,20 @@ change-archive.yml
 → 只拥有归档 lifecycle，不重复产品 CI / Release
 
 behavior-qualification.yml
-→ 手工接收真实支持宿主产生的脱敏 actual Outcome bundle
-→ 只校验 exact main SHA / case / grader / model+host coverage 并保存短期 artifact
+→ 手工独立 Cross-host Behavior Qualification，只在维护者已有真实 actual bundle、需要真实模型/宿主资格结论时运行
+→ 校验 exact current-main SHA / case / grader / model+host coverage 并保存短期 artifact
 → 不调用模型 Provider、不修改 main、不构建 Runtime、不创建 Release
+→ 不作为普通 PR/main/Release hard gate
 
 release.yml
 → 手工正式 Release
-→ exact main SHA fresh 读取 behavior qualification artifact 并重验
+→ 在目标 main SHA 重跑完整 self-contained tests、Ready 与 Outcome Eval registry
 → 不使用日常 selector 快速路径
 → 对最终版本重新构建和验证 Linux/Windows/macOS artifact
+→ 不依赖 Release workflow 无法自动产生的跨宿主 actual bundle
 ```
 
-**Workflow Responsibility Audit**：Behavior Qualification 证明“真实 Agent 在支持宿主上的关键行为”；Skill Tests 证明源码/路由/Runtime Contract，Release 证明最终三平台 artifact，Change Archive 证明施工载体生命周期。四者证明对象、触发阶段和 Evidence carrier 不同，不能相互删除或用较弱证据替代。Behavior Qualification 不增加常规 PR/main Runner 成本，只在维护者已有真实 actual bundle 且准备资格验证时手工运行。
+**Workflow Responsibility Audit**：Behavior Qualification 证明“真实 Agent 在支持宿主上的关键行为”，状态可以是 verified / unverified；Skill Tests 证明源码/路由/Runtime Contract，Release 证明最终三平台 artifact 与可发布产品面，Change Archive 证明施工载体生命周期。四者证明对象、触发阶段和 Evidence carrier 不同，不能相互删除或用较弱证据替代。Behavior Qualification 不增加常规 PR/main/Release Runner 的前置依赖，只在维护者已有真实 actual bundle 且需要资格结论时手工运行。
 
 不再寻找或额外触发已经移除的独立 `.github/workflows/runtime-package-tests.yml`。selector 保留旧路径只用于删除/意外恢复控制面时 fail-closed，不表示 Workflow 当前存在。
 
@@ -381,7 +383,7 @@ release.yml
 - L2/L3 Implementation PR 中的 Change 保持 `active/ready_for_review`；merge 后由 `.github/workflows/change-archive.yml` 的 repository-native **Change Archive** 基础设施使用专用归档身份完成 `active → archive/YYYY-MM` 与 `status → done`。**Agent 不执行归档 commit，Agent 不创建归档 PR**；自动归档失败时保持 `blocked/incomplete`，修复平台/基础设施后重跑并验证，不由 Agent 接管；
 - implementation main fresh CI 与 Change Archive 可以按真实 GitHub Actions 独立运行；完整 Closure 前必须同时取得当前 implementation merge revision 的 required main-fresh Evidence，以及同一 Change 的 repository-native archive/done 结果。Archivist 纯 carrier commit 在 Section 9 的 completion/exact allowlist/main drift 门禁成立后使用 `[skip ci]`，**不要求为了归档 revision 再重复功能性 CI**；archive/done 仍不等价于 Requirement 已完成；
 - Release 只从 main 手工运行 `.github/workflows/release.yml`，输入唯一正式版本来源 `v<SemVer>`；仓库不维护第二份根版本文件；
-- Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests 与 Ready Check，并 fresh 读取同一 SHA 的成功 Behavior Qualification artifact、重新验证 actual/case/grader/model+host coverage；缺失或 revision 漂移时 fail closed，同时拒绝覆盖已有 tag/Release；
+- Release preflight 必须在目标 main SHA 上重新运行完整 self-contained tests、Ready Check 与 Outcome Eval registry，并拒绝覆盖已有 tag/Release；普通 Release **不依赖**跨宿主 Behavior Qualification artifact。Behavior Qualification 保持独立真实行为验证能力，未运行时为 unverified，但不阻塞普通 Release；
 - 三平台构建必须使用同一固定 Python 版本，并把 tag 派生的同一 `release_version` 显式传给 Builder；
 - Builder 不生成 identity manifest；三个平台 job 通过 `GITHUB_OUTPUT` 传递 release/source/python/protocol/digest/integrity identity 和各自 `artifact_sha256`；发布 job 比较三平台公共 identity，并对下载后的 Linux/Windows/macOS binary 分别重算 SHA256；
 - 使用显式白名单分别组装并重新打开验证 `agent-skills-v<SemVer>-linux.zip`、`agent-skills-v<SemVer>-windows.zip`、`agent-skills-v<SemVer>-macos.zip`；每个 ZIP 必须精确只有当前平台 binary 与 [`USAGE.md`](../USAGE.md)；

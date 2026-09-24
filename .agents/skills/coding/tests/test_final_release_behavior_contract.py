@@ -117,13 +117,28 @@ class FinalReleaseBehaviorContractTest(unittest.TestCase):
         ):
             self.assertIn(marker, text)
 
-    def test_release_preflight_validates_behavioral_qualification(self) -> None:
-        """现有 Release workflow 只增加资格门禁，不替换三平台产品验证。"""
+    def test_release_keeps_behavior_qualification_independent(self) -> None:
+        """Release 只执行可自动履行硬门禁，跨宿主 qualification 独立保留。"""
         workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
         self.assertIn("Validate Outcome Eval case registry", workflow)
-        self.assertIn("Validate Release Qualification", workflow)
+        self.assertNotIn("Validate Release Qualification", workflow)
+        self.assertNotIn("release-behavior-qualification", workflow)
+        self.assertNotIn("behavior-qualification.yml/runs", workflow)
         for marker in ("runtime-linux:", "runtime-windows:", "runtime-macos:"):
             self.assertIn(marker, workflow)
+
+        behavior = (ROOT / ".github" / "workflows" / "behavior-qualification.yml").read_text(encoding="utf-8")
+        self.assertIn("Behavior Qualification", behavior)
+        self.assertIn("bundle_base64", behavior)
+        self.assertIn("release-behavior-qualification", behavior)
+
+        rule = (SKILLS / "coding" / "references" / "31_跨模型效果评测与规则有效性.md").read_text(encoding="utf-8")
+        maintenance = (ROOT / ".agents" / "MAINTENANCE.md").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("默认不作为普通 Release 的硬前置", rule)
+        self.assertIn("不查询、不下载、不消费 Behavior Qualification artifact", rule)
+        self.assertIn("普通 Release **不依赖**跨宿主 Behavior Qualification artifact", maintenance)
+        self.assertIn("不再作为普通 Release 的前置条件", readme)
 
     def test_routing_conformance_has_exact_and_allowed_contracts(self) -> None:
         """facts-complete 与 unknown/complex 必须分别限制 exact / bounded allowed Context。"""
