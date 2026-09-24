@@ -164,23 +164,23 @@ data_changes: []
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | 通用 Two-Pass Independent Analysis | external: GitHub Issue #308 / AC1 | satisfied | analysis Core + ref04 |
-| R2 | Bounded Closure / Decision Relevance / bounded counterexample / information gain / reopen guard | external: GitHub Issue #308 / AC2 | satisfied | analysis ref04 + USAGE |
-| R3 | Finding Scope / Delivery Effect / Action 三轴 | external: GitHub Issue #308 / AC3 | satisfied | review Core + ref02 |
-| R4 | 自动返修只接受 IN_SCOPE + BLOCKING + AUTO_REPAIR + Evidence | external: GitHub Issue #308 / AC4 | satisfied | review Core/ref01/ref02 |
-| R5 | Reviewer classification / Parent scheduling Owner 分离 | external: GitHub Issue #308 / AC5 | satisfied | review ref01 + coding ref09 |
-| R6 | Net Delivery Convergence + Diagnostic Progress 分离 | external: GitHub Issue #308 / AC6 | satisfied | review ref01 + USAGE |
-| R7 | Follow-up candidate → persistence authorization → backlog → new-task readmission | external: GitHub Issue #308 / AC7 | satisfied | review ref02 + managed AGENTS + USAGE |
-| R8 | 当前任务写/Git 权限不自动授权 OUT_OF_SCOPE 持久化 | external: GitHub Issue #308 / AC8 | satisfied | review ref02 + Router + managed AGENTS |
-| R9 | Router terminal/handoff + Testing/Docs/Figma/Review 同语义 | external: GitHub Issue #308 / AC9 | satisfied | Router + specialist Cores |
-| R10 | Delegation Value 与 Independence Requirement 解耦 | external: GitHub Issue #308 / AC10 | satisfied | coding Core/ref09 + managed AGENTS + USAGE |
-| R11 | Cross-Owner Semantic Conflict Audit | external: GitHub Issue #308 / AC11 | satisfied | coding ref15 |
-| R12 | Outcome Eval 高价值 failure families + actual/fixture 边界 | external: GitHub Issue #308 / AC12 | satisfied | evals/agent_outcome_eval.py + coding ref31 |
-| R13 | managed AGENTS / USAGE 同步且无第二专业 Owner | external: GitHub Issue #308 / AC13 | satisfied | project-facing projection tests + USAGE |
-| R14 | 永久 contract Red→Green 且旧回归不削弱 | external: GitHub Issue #308 / AC14 | satisfied | Red 35938644999；Green 35943593916 |
-| R15 | context budget 不提高 | external: GitHub Issue #308 / AC15 | satisfied | 多轮 over-budget 被 contract 捕获；最终 35943593916 无 budget failure，阈值未修改 |
-| R16 | fresh Review + final-head required CI/package | external: GitHub Issue #308 / AC16 | not_applicable | Review 5298706847 已完成；Ready commit 后重新取得 exact-head CI/package 与增量 Review |
-| R17 | guarded merge/main-fresh/archive/closure/cleanup | external: GitHub Issue #308 / AC17 | not_applicable | pre-merge Change 不自证未来交付动作；由 Delivery Gate 完成 |
+| R1 | 通用 Two-Pass Independent Analysis | #308 / AC1 | satisfied | analysis Core + ref04 |
+| R2 | Bounded Closure / Decision Relevance / bounded counterexample / information gain / reopen guard | #308 / AC2 | satisfied | analysis ref04 + USAGE |
+| R3 | Finding Scope / Delivery Effect / Action 三轴 | #308 / AC3 | satisfied | review Core + ref02 |
+| R4 | 自动返修只接受 IN_SCOPE + BLOCKING + AUTO_REPAIR + Evidence | #308 / AC4 | satisfied | review Core/ref01/ref02 |
+| R5 | Reviewer classification / Parent scheduling Owner 分离 | #308 / AC5 | satisfied | review ref01 + coding ref09 |
+| R6 | Net Delivery Convergence + Diagnostic Progress 分离 | #308 / AC6 | satisfied | review ref01 + USAGE |
+| R7 | Follow-up candidate → persistence authorization → backlog → new-task readmission | #308 / AC7 | satisfied | review ref02 + managed AGENTS + USAGE |
+| R8 | 当前任务写/Git 权限不自动授权 OUT_OF_SCOPE 持久化 | #308 / AC8 | satisfied | review ref02 + Router + managed AGENTS |
+| R9 | Router terminal/handoff + Testing/Docs/Figma/Review 同语义 | #308 / AC9 | satisfied | Router + specialist Cores |
+| R10 | Delegation Value 与 Independence Requirement 解耦 | #308 / AC10 | satisfied | coding Core/ref09 + managed AGENTS + USAGE |
+| R11 | Cross-Owner Semantic Conflict Audit | #308 / AC11 | satisfied | coding ref15 |
+| R12 | Outcome Eval 高价值 failure families + actual/fixture 边界 | #308 / AC12 | satisfied | evals/agent_outcome_eval.py + coding ref31 |
+| R13 | managed AGENTS / USAGE 同步且无第二专业 Owner | #308 / AC13 | satisfied | project-facing projection tests + USAGE |
+| R14 | 永久 contract Red→Green 且旧回归不削弱 | #308 / AC14 | satisfied | Red 35938644999；Green 35943593916 |
+| R15 | context budget 不提高 | #308 / AC15 | satisfied | 多轮 over-budget 被 contract 捕获；最终 35943593916 无 budget failure，阈值未修改 |
+| R16 | fresh Review + final-head required CI/package | #308 / AC16 | not_applicable | Review 5298706847 已完成；Ready commit 后重新取得 exact-head CI/package 与增量 Review |
+| R17 | guarded merge/main-fresh/archive/closure/cleanup | #308 / AC17 | not_applicable | pre-merge Change 不自证未来交付动作；由 Delivery Gate 完成 |
 
 # 计划改动
 
