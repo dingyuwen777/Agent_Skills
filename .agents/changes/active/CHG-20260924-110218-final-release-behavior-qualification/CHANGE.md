@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260924-110218-final-release-behavior-qualification
 title: 发版前 Agent 行为治理与 Release Qualification 最终收口
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/final-release-behavior-qualification
 created: 2026-09-24
@@ -29,6 +29,10 @@ affected_paths:
   - .agents/skills/figma/
   - evals/
   - .github/workflows/release.yml
+  - .github/workflows/behavior-qualification.yml
+  - runtime/agent_skills_runtime/runtime_skill_projection.py
+  - scripts/runtime_platform_smoke.py
+  - README.md
   - USAGE.md
 contracts:
   - Cross-Skill Follow-up Lifecycle
@@ -93,9 +97,9 @@ data_changes: []
 
 ## 成功标准
 
-- [ ] #310 AC1-AC12 全部由当前实现与永久回归覆盖。
-- [ ] #310 AC13 的 PR/merge/main-fresh/archive/closure/cleanup 由交付阶段新鲜 Evidence 覆盖。
-- [ ] #310 AC14 保持：本轮不执行 Release/Deploy，只把 main 准备到可发版条件；若 actual qualification Evidence 缺失则如实报告剩余 blocker。
+- [x] #310 AC1-AC12 已由当前实现、永久回归和 pre-Ready Green Evidence 覆盖。
+- [ ] #310 AC13 的 final-head PR CI / Review / merge / main-fresh / archive / closure / cleanup 由下游 Delivery Gate 完成，不在 pre-merge Change 中自证未来动作。
+- [x] #310 AC14 保持：本轮不执行 Release/Deploy；actual qualification 必须在 implementation merge 后绑定 final main SHA，缺失时 Release fail closed。
 
 ## 范围
 
@@ -165,20 +169,20 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Follow-up lifecycle 跨 Skill 唯一 Owner | #310 / AC1 | not_satisfied | 待实现 |
-| R2 | Candidate persistence/backlog/STOP 与新 Task readmission | #310 / AC2 | not_satisfied | 待实现 |
-| R3 | facts-complete exact / unknown bounded routing | #310 / AC3 | not_satisfied | 待实现 |
-| R4 | routing 关键负例 | #310 / AC4 | not_satisfied | 待实现 |
-| R5 | absolute budget 保留 + delta observation | #310 / AC5 | not_satisfied | 待实现 |
-| R6 | 九个 Outcome Eval case | #310 / AC6 | not_satisfied | 待实现 |
-| R7 | registry↔case fail-closed | #310 / AC7 | not_satisfied | 待实现 |
-| R8 | 文本 + Contract + Outcome Evidence | #310 / AC8 | not_satisfied | 待实现 |
-| R9 | Release Qualification Contract | #310 / AC9 | not_satisfied | 待实现；actual 外部 runs 待取得 |
-| R10 | Release preflight 接线且保留三平台流程 | #310 / AC10 | not_satisfied | 待实现 |
-| R11 | 不增加禁止机制/不放宽预算 | #310 / AC11 | satisfied | 当前计划与 Red test 不新增禁止项 |
-| R12 | project-facing/plaintext + private parity | #310 / AC12 | not_satisfied | 待回归 |
-| R13 | final-head CI/Review/merge/main/archive/closure/cleanup | #310 / AC13 | not_satisfied | 待交付 |
-| R14 | 不执行 Release/Deploy | #310 / AC14 | satisfied | 本轮授权边界 |
+| R1 | Follow-up lifecycle 跨 Skill 唯一 Owner | #310 / AC1 | satisfied | Router thin lifecycle + Review classification-only + cross-Skill regression |
+| R2 | Candidate persistence/backlog/STOP 与新 Task readmission | #310 / AC2 | satisfied | Router / managed AGENTS / Runtime project-facing Router / USAGE |
+| R3 | facts-complete exact / unknown bounded routing | #310 / AC3 | satisfied | test_routing_conformance exact/allowed cases Green |
+| R4 | routing 关键负例 | #310 / AC4 | satisfied | Testing-only / Analysis-only / Figma review-only / L1 / Mutation Audit conformance Green |
+| R5 | absolute budget 保留 + delta observation | #310 / AC5 | satisfied | 现有 absolute threshold 未修改；run 35951626548 全部 budget Green + Context Delta 输出 |
+| R6 | 九个 Outcome Eval case | #310 / AC6 | satisfied | evals/cases 九个同名 case + registry test Green |
+| R7 | registry↔case fail-closed | #310 / AC7 | satisfied | validate_high_value_case_registry + CLI validate-registry + negative contract tests |
+| R8 | 文本 + Contract + Outcome Evidence 分层 | #310 / AC8 | satisfied | preservation + routing/contract + case/grader machine contract；actual 结果留给 exact-main Release qualification |
+| R9 | Release Qualification Contract | #310 / AC9 | satisfied | evals/release_qualification.py + fixture/stale/host/model fail-closed unit tests + Behavior Qualification workflow |
+| R10 | Release preflight 接线且保留三平台流程 | #310 / AC10 | satisfied | release.yml 仅新增 registry/qualification preflight；Linux/Windows/macOS jobs 未删除 |
+| R11 | 不增加禁止机制/不放宽预算 | #310 / AC11 | satisfied | 无 Planner/Scheduler/DB/模型专属 Skill；absolute budgets 未提高；Workflow Responsibility Audit 完成 |
+| R12 | project-facing/plaintext + private parity | #310 / AC12 | satisfied | Runtime Router projection + project payload/source-runtime tests Green；package smoke 待 PR Ready current-head |
+| R13 | final-head CI/Review/merge/main/archive/closure/cleanup | #310 / AC13 | not_applicable | pre-merge Change 不自证下游 Delivery Gate；由 PR Ready / merge 后流程完成 |
+| R14 | 不执行 Release/Deploy | #310 / AC14 | satisfied | 本任务只建立 release gate；未创建 tag/Release/Deploy |
 
 # 计划改动
 
@@ -192,24 +196,25 @@ data_changes: []
 
 # 验证矩阵
 
-| 验证层 | 是否要求 | 范围 / 证据 |
+| 验证层 | 是否要求 | 范围 / 当前证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | Outcome Eval registry/case/grader、Follow-up/repair/delegation contract |
-| 接口 / 契约 | required | routing exact/allowed、qualification schema、Source/Runtime parity |
-| 集成 / 持久化 / 运行依赖 | required | Runtime project payload/install/MCP/self-test |
-| 用户 / 工作流验收 | required | simple-fp 与跨 Skill/多 Agent behavioral case 的 actual Evidence；无法运行的宿主明确 blocked |
-| 跨组件关键路径 | required | canonical→routing→bundle/context→release preflight |
-| 外部依赖 / 供应方探测 | not_applicable | 不新增 Provider/API；真实模型宿主 runs 作为外部 Evidence，不由本 PR 发明 Provider |
-| 构建 / 打包 / 运行 | required | 现有 Linux/Windows/macOS package smoke 与 Release preflight |
-| 文档 / 治理 / 其他 | required | Change/Issue/USAGE/managed projection/Review/CI |
+| 行为 / 单元 / 组件 | required | Red run 35950071178；pre-Ready head e33e7cdf 的 run 35951626548：693 tests OK |
+| 接口 / 契约 | required | exact/allowed routing、qualification schema、registry、Source/Runtime parity 全部 Green |
+| 集成 / 持久化 / 运行依赖 | required | Project Payload / Runtime projection 自包含回归 Green；三平台 package/install/MCP 在 PR Ready current-head 由 package gate 执行 |
+| 用户 / 工作流验收 | not_applicable | **当前 implementation PR** 无法产生绑定未来 final main SHA 的真实宿主 run；actual Codex/Claude Code/Cursor/DeepSeek Harness Evidence 是 implementation merge 后的 Release qualification gate，fixture 不替代 |
+| 跨组件关键路径 | required | canonical→routing→bundle/context→Release/Behavior Qualification workflow wiring Green |
+| 外部依赖 / 供应方探测 | not_applicable | 本 PR 不新增 Provider/API；真实模型宿主 run 由外部宿主在 final main SHA 上产生 |
+| 构建 / 打包 / 运行 | required | compile/CLI smoke Green；PR Ready 后要求 Linux/Windows/macOS package smoke |
+| 文档 / 治理 / 其他 | required | Issue #310、Change、README、USAGE、managed projection、Workflow Responsibility Audit 已同步 |
 
 ## 验证计划
 
-- 目标测试：新增 final release behavior contract、Outcome Eval registry/qualification、routing exact/allowed。
-- 相关回归：现有 coding tests 全量。
-- 静态检查或构建：现有 Release preflight / package selector。
-- 专项真实边界：Runtime package smoke；actual host/model runs 只接受真实 artifact。
-- 就绪检查：ready_check + current-head CI。
+- 目标测试：final release behavior contract、Outcome Eval registry/qualification、routing exact/allowed；
+- 相关回归：全量 self-contained semantic suite；
+- 静态/CLI：maintained entrypoints compile + CLI smoke；
+- Runtime：Project Payload / project-facing projection；PR Ready 后三平台 runtime_platform_smoke；
+- Release：Behavior Qualification artifact exact-main gate + 既有三平台 Release 构建；
+- 就绪：ready_check + current-head required CI +独立 Review。
 
 # 风险、兼容性、迁移与回滚
 
@@ -231,32 +236,44 @@ data_changes: []
 
 # 完成审计
 
-- [ ] upstream_re_read：最终 Ready 前重新读取 #310 与当前 main。
-- [ ] change_coverage：逐条 #310 AC1-AC14 映射。
-- [ ] reverse_audit：反查 Router/Review/Runtime/Eval/Release/USAGE 和 Context。
-- [ ] unresolved_cleared：Ready 前清除所有 required not_satisfied；真实 external actual run 若不可得则不得伪造 satisfied。
+- [x] upstream_re_read：已重读 #310、当前 main 基线、最终 implementation Owner 与 Release/Runtime/CI 事实。
+- [x] change_coverage：#310 AC1-AC12 已逐条映射；AC13 明确属于下游 Delivery Gate；AC14 保持不执行 Release/Deploy。
+- [x] reverse_audit：已反查 Router/Review/Multi-Agent/Runtime Project Payload/Outcome Eval/Behavior Qualification/Release/README/USAGE/Context；新增 Workflow 完成 Responsibility Audit。
+- [x] unresolved_cleared：当前 implementation Ready 范围不存在 not_satisfied；真实 external actual run 不属于 pre-merge implementation Evidence，且 Release gate 会在缺失时 fail closed。
 
 # 完成证据与状态
 
 ## 新鲜证据
 
-当前先建立 Red contract；Green、Review、CI、main-fresh 在后续填写。
+| 证据 | revision / run | 结果 | 证明 |
+| --- | --- | --- | --- |
+| V1 | main e4bcebb03a1ca25f3b9db37cf1a35b3128ea6d48 / Issue #310 | confirmed | canonical 基线与 Requirement Source |
+| V2 | run 35950071178 @ b9d87725 | Red：新 contract tests 按预期失败 | 四类缺口在旧实现上可被机器捕获 |
+| V3 | 多轮中间 CI | over-disclosure、Workflow owner、Context budget 分别被回归捕获 | 未通过放宽预算/删测试制造 Green |
+| V4 | run 35951626548 @ e33e7cdf | compile/CLI Green；693 tests OK；absolute context budgets Green；仅 Change status=in_progress 门禁阻塞 | pre-Ready implementation semantic Green |
+| V5 | Context Delta @ e33e7cdf | testing/general/research/figma +359B；coding/docs +1771B；review +3263B，均仍在 absolute budget 内 | 新跨 Skill Contract 保持薄，增长可观测 |
+| V6 | Workflow Responsibility Audit | 四个独立 Owner：Skill Tests / Change Archive / Behavior Qualification / Release | 新 workflow 不是重复 CI/Release owner |
 
 ## 未验证内容与剩余风险
 
-- 当前宿主不能真实运行 Codex/Claude/Cursor/DeepSeek Harness 的模型任务，因此跨宿主 actual qualification 尚无 Evidence。
-- 不会用 fixture、静态测试或当前 ChatGPT 会话冒充这些宿主 actual run。
+- 当前宿主没有 Codex / Claude Code / Cursor / DeepSeek Harness 的真实模型执行接口，**尚未取得 final-main actual Release qualification**。这不会由 fixture/静态 CI 冒充；implementation merge 后若仍缺少该 artifact，正式 Release 会 fail closed。
+- 当前 commit 将 Change 置为 `ready_for_review`，会形成新的 PR head；必须重新取得该 head 的 required CI、三平台 package Evidence 与独立 Review。
+- 本任务不执行 Release / Deploy。
 
 ## 交付状态
 
 - Requirement Source：#310 open
 - 分支：tech/final-release-behavior-qualification
-- Change：in_progress
-- PR：尚未创建
-- CI/Review：待 Red commit 后建立
-- merge/main-fresh/archive/closure/cleanup：待交付
+- Change：ready_for_review
+- PR：#311 Draft；本 commit 后待转 Ready
+- Red：35950071178
+- pre-Ready Green：35951626548（693 tests OK；Change status gate 是唯一阻塞）
+- PR Ready current-head CI/package：待本 commit 后重新取得
+- 独立 Review：待 final head
+- merge/main-fresh/archive/Issue Closure/cleanup：待 Delivery Gate
+- Behavior Qualification actual artifact：implementation merge 后对 final main SHA 取得
 - Release/Deploy：not_applicable
 
 ## 备注
 
-本轮实施范围冻结为 #310 四类机制；除非实施中发现会直接使这四类机制错误或不可验证的 blocker，不新增其他优化项。
+本轮范围继续冻结为 #310 四类机制。后续只处理 current-head CI/Review/Delivery/actual qualification 暴露的 blocker，不继续凭理论可能增加新优化项。
