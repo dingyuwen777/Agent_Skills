@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260924-122500-decision-authority-human-input-gate
 title: 统一跨模型自主决策与用户提问准入
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/decision-authority-human-input-gate
 created: 2026-09-24
@@ -97,9 +97,9 @@ Requirement Source 为 GitHub Issue #312。该 Issue 来自真实使用失败，
 
 ## 成功标准
 
-- [ ] #312 AC1–AC14 的实现、投影和永久回归全部满足。
-- [ ] #312 AC15 的 Review/CI/merge/main-fresh/archive/closure/cleanup 完成。
-- [ ] #312 AC16 的 Release/Deploy 保持不执行，#310 继续等待新 main 的 actual qualification。
+- [x] #312 AC1–AC14 的实现、投影和永久回归全部满足。
+- [ ] #312 AC15 的 Ready 后 Delivery Gate 待完成。
+- [x] #312 AC16：本任务不执行 Release/Deploy，#310 保持 open 并等待新 main 的 actual qualification。
 
 ## 范围
 
@@ -161,20 +161,20 @@ Router、Coding/Git、managed/Runtime project-facing、host child prompt、Outco
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | Decision Resolution Ladder | #312 / AC1 | not_satisfied | 待实现 |
-| R2 | Human Input Admission Gate + Ask states | #312 / AC2 | not_satisfied | 待实现 |
-| R3 | No Choice-Prompt | #312 / AC3 | not_satisfied | 待实现 |
-| R4 | Coding/Planning SELF_DECIDE 边界 | #312 / AC4 | not_satisfied | 待实现 |
-| R5 | Branch Name Resolution fallback | #312 / AC5 | not_satisfied | 待实现 |
-| R6 | managed/Runtime main prompt parity | #312 / AC6 | not_satisfied | 待实现 |
-| R7 | child/subagent Parent decision boundary | #312 / AC7 | not_satisfied | 待实现 |
-| R8 | 正反永久回归 | #312 / AC8 | not_satisfied | 待实现 |
-| R9 | unnecessary-clarification Outcome Eval | #312 / AC9 | not_satisfied | 待实现 |
-| R10 | registry/Release Qualification 自动纳入新 case | #312 / AC10 | not_satisfied | 待实现 |
-| R11 | Cross-model Ask/No-Ask parity | #312 / AC11 | not_satisfied | 待实现 |
-| R12 | Source/Runtime/project-facing/child/USAGE 同语义 | #312 / AC12 | not_satisfied | 待实现 |
-| R13 | context budget 不提高 | #312 / AC13 | not_satisfied | 待验证 |
-| R14 | Red→Green 且旧回归不削弱 | #312 / AC14 | not_satisfied | 待验证 |
+| R1 | Decision Resolution Ladder | #312 / AC1 | satisfied | Router §1.1 Decision Authority Contract |
+| R2 | Human Input Admission Gate + Ask states | #312 / AC2 | satisfied | Router Human Input Admission Gate + permanent decision-authority regression |
+| R3 | No Choice-Prompt | #312 / AC3 | satisfied | Router/Coding/Runtime No Choice-Prompt |
+| R4 | Coding/Planning SELF_DECIDE 边界 | #312 / AC4 | satisfied | Coding Core + planning Plan Review Gate |
+| R5 | Branch Name Resolution fallback | #312 / AC5 | satisfied | coding Git reference Branch Name Resolution |
+| R6 | managed/Runtime main prompt parity | #312 / AC6 | satisfied | AGENTS.managed + runtime_skill_projection + disclosure |
+| R7 | child/subagent Parent decision boundary | #312 / AC7 | satisfied | host_agent_projection across Codex/Claude/Cursor/DeepSeek Harness |
+| R8 | 正反永久回归 | #312 / AC8 | satisfied | test_decision_authority_contract.py positive/negative scenarios |
+| R9 | unnecessary-clarification Outcome Eval | #312 / AC9 | satisfied | evals/cases/unnecessary-clarification.json |
+| R10 | registry/Release Qualification 自动纳入新 case | #312 / AC10 | satisfied | HIGH_VALUE_CONVERGENCE_CASES + DEFAULT_HOST_CASES + Release Qualification tests |
+| R11 | Cross-model Ask/No-Ask parity | #312 / AC11 | satisfied | Router Cross-model Behavior Contract + project-facing parity |
+| R12 | Source/Runtime/project-facing/child/USAGE 同语义 | #312 / AC12 | satisfied | managed/Runtime/child/USAGE contract tests |
+| R13 | context budget 不提高 | #312 / AC13 | satisfied | run 35958667459: existing absolute context budgets Green; thresholds unchanged |
+| R14 | Red→Green 且旧回归不削弱 | #312 / AC14 | satisfied | Red 35956572754; Green 35958667459; existing regressions preserved |
 | R15 | Review/CI/merge/main-fresh/archive/closure/cleanup | #312 / AC15 | not_satisfied | 待交付 |
 | R16 | 不 Release/Deploy；#310 保持等待新 main actual qualification | #312 / AC16 | not_satisfied | 待交付 |
 
@@ -190,11 +190,11 @@ Router、Coding/Git、managed/Runtime project-facing、host child prompt、Outco
 
 - [x] 调查当前实现和事实源
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据
-- [ ] 完成最小实现
-- [ ] 同步长期文档
-- [ ] 取得新鲜验证
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 行为变化建立失败证据
+- [x] 完成最小实现
+- [x] 同步长期文档
+- [x] 取得新鲜验证
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -237,10 +237,10 @@ Router、Coding/Git、managed/Runtime project-facing、host child prompt、Outco
 
 # 完成审计
 
-- [ ] upstream_re_read：Ready 前重读 #312、#310 和 final-head canonical owners。
-- [ ] change_coverage：逐 AC 映射。
-- [ ] reverse_audit：从“该不该问”正反路径反查 Source/Runtime/child/Eval。
-- [ ] unresolved_cleared：Ready 前清零 not_satisfied。
+- [x] upstream_re_read：Ready 前重读 #312、#310 和 final-head canonical owners。
+- [x] change_coverage：逐 AC 映射。
+- [x] reverse_audit：从“该不该问”正反路径反查 Source/Runtime/child/Eval。
+- [x] unresolved_cleared：Ready 前清零 not_satisfied。
 
 # 完成证据与状态
 
@@ -248,21 +248,25 @@ Router、Coding/Git、managed/Runtime project-facing、host child prompt、Outco
 
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
-| V1 | main 6b62160... | current canonical readback | confirmed | 起始事实与缺口 |
+| V1 | main `6b62160af9842098164cfe1143bad2117c3029e4` | current canonical readback | confirmed | 起始事实与缺口 |
+| V2 | PR #313 / run `35956572754` | 新 decision-authority regression | 8/8 预期失败 | 有效 Red，证明旧行为缺失 Contract |
+| V3 | head `ebe7d27072d838ff4f12a50b25cd0d5ad003e430` / run `35958667459` | compile + CLI smoke + selected self-contained tests | Green；唯一 workflow failure=status in_progress enforcement | 实现/Runtime/Eval/context semantic Green |
+| V4 | PR review `5300070060` @ `ebe7d270...` | Requirement-first Review | NO_BLOCKING_FINDINGS_WITHIN_SCOPE | AC1–AC14 独立复核通过 |
 
 ## 未验证内容与剩余风险
 
-- 尚未取得 Red/Green。
-- 本聊天宿主不执行真实 Codex/Claude/Cursor/DeepSeek actual qualification；该证据由 #310 Release Qualification 继续持有。
+- Ready commit 会形成新 HEAD；必须重新取得 exact-head CI/package 与增量 Review。
+- 本聊天宿主不执行真实 Codex/Claude/Cursor/DeepSeek actual qualification；该证据继续由 #310 Release Qualification 持有，不用 fixture/static CI 冒充。
 
 ## 交付状态
 
-- 提交：in progress
-- 拉取请求：未创建
-- CI：未运行
-- 合并：未执行
-- Change 归档：未执行
-- 发布 / 部署：不执行
+- 分支：`tech/decision-authority-human-input-gate`
+- 拉取请求：#313，open / non-draft
+- Change：本提交置为 `ready_for_review`
+- CI：有效 Red 已取得；pre-Ready semantic Green 已取得；Ready-head required CI/package 待执行
+- Review：5300070060 @ ebe7d270，无 blocking Finding；Ready commit 后需增量 re-review
+- 合并 / main-fresh / archive / #312 Closure / cleanup：待 Delivery Gate
+- 发布 / 部署：not_applicable；#310 继续 open
 
 ## 备注
 
