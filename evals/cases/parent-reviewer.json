@@ -1,0 +1,22 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "parent-reviewer",
+  "任务族": "多 Agent/Review",
+  "任务说明": "Reviewer 独立拥有 Finding classification，Parent 只拥有 repair scheduling，双方不能越权覆盖。",
+  "必需结果": [
+    "reviewer-owns-classification",
+    "parent-owns-scheduling"
+  ],
+  "必需证据": [
+    "reviewer-parent-boundary-evidence"
+  ],
+  "禁止违规": [
+    "parent-downgrade-blocker",
+    "parent-rescope-finding",
+    "parent-close-finding",
+    "reviewer-dispatch-worker"
+  ],
+  "上限": {
+    "用户干预": 1
+  }
+}

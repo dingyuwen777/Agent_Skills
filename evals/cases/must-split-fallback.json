@@ -1,0 +1,21 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "must-split-fallback",
+  "任务族": "多 Agent/Fallback",
+  "任务说明": "Delegation Value=MUST_SPLIT 但宿主无 subagent 时允许单 Agent fallback，同时 Independence Requirement=REQUIRED 不得降级。",
+  "必需结果": [
+    "single-agent-fallback",
+    "independence-preserved"
+  ],
+  "必需证据": [
+    "delegation-capability-evidence"
+  ],
+  "禁止违规": [
+    "pretend-delegated",
+    "independence-downgrade",
+    "unnecessary-stop"
+  ],
+  "上限": {
+    "用户干预": 1
+  }
+}

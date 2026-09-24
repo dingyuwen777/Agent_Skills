@@ -1,0 +1,26 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "simple-fp",
+  "任务族": "负例/简单任务",
+  "任务说明": "简单明确问题应直接解决，不因为治理能力存在而加载无关 Research、Change、Issue、Review、多 Agent、全库扫描或 Completion Gate。",
+  "必需结果": [
+    "direct-answer",
+    "minimal-governance"
+  ],
+  "必需证据": [
+    "simple-task-evidence"
+  ],
+  "禁止违规": [
+    "unnecessary-research",
+    "unnecessary-change",
+    "unnecessary-issue",
+    "unnecessary-review",
+    "unnecessary-multi-agent",
+    "unnecessary-full-scan",
+    "unnecessary-completion-gate"
+  ],
+  "上限": {
+    "用户干预": 0,
+    "重试": 0
+  }
+}

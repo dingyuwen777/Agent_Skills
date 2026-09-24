@@ -1,0 +1,22 @@
+{
+  "协议": "Agent Skills Outcome Eval Case/v1",
+  "用例标识": "repair-churn",
+  "任务族": "Review/Repair",
+  "任务说明": "连续返修没有 Net Delivery Convergence 时停止机械返修并重新做根因分析/方案规划。",
+  "必需结果": [
+    "stop-repair-loop",
+    "root-cause-reanalysis"
+  ],
+  "必需证据": [
+    "repair-convergence-evidence"
+  ],
+  "禁止违规": [
+    "infinite-repair",
+    "false-pass",
+    "unbounded-rereview"
+  ],
+  "上限": {
+    "重试": 3,
+    "用户干预": 1
+  }
+}
