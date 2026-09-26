@@ -25,6 +25,34 @@ class ReviewSkillIntegrationTest(unittest.TestCase):
         self.assertIn(".agents/skills/review/SKILL.md", coding)
         self.assertIn("re-review", coding)
 
+
+    def test_reverse_documentation_audit_is_review_owner_behavior(self) -> None:
+        """PR/代码审查遇到 docs diff 时必须反查旧 Owner，但不靠文本相似度误报。"""
+        skill = self._read(".agents/skills/review/SKILL.md")
+        workflow = self._read(".agents/skills/review/references/01_审查执行流程.md")
+
+        for marker in (
+            "Reverse Documentation Audit",
+            "维护责任是否重复",
+            "不能用词汇/主题相似度代替 Owner 判断",
+            "review-only 只报告 Finding",
+        ):
+            self.assertIn(marker, skill)
+
+        for marker in (
+            "Existing Owner",
+            "Machine Owner",
+            "Reverse impact",
+            "不是相似度检查",
+            "同一事实变化时，多个位置都必须独立同步同一完整解释/精确清单",
+            "review-only 不修改/删除文档",
+            "Handoff Docs",
+        ):
+            self.assertIn(marker, workflow)
+
+        self.assertNotIn("AIMA", skill)
+        self.assertNotIn("AIMA", workflow)
+
     def test_review_owns_adequacy_and_testing_owns_test_methods(self) -> None:
         """Review 只审测试充分性，具体分层测试和项目映射由 Testing 专业 Owner 承担。"""
         review = self._read(".agents/skills/review/references/03_测试专家审查方法.md")

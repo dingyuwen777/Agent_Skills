@@ -31,6 +31,7 @@ Review 的职责不是再写一遍“怎样开发/怎样测试”，而是作为
 → 同仓有 Testing 时把它作为测试工程方法 Owner
 → 独立重建需求、风险和应有证据
 → 审查实现 / diff / 测试 / 文档
+→ docs 发生变化时执行 Reverse Documentation Audit
 → 判断测试充分性与 Evidence boundary
 → Test Gap 需要专业测试时 Handoff Testing
 → 输出 Findings 与证据边界
@@ -107,6 +108,8 @@ Review 发现技术文档缺陷时：
 - 只读 Review：作为 Finding 报告；
 - 已授权修文档且存在 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)：按 Docs 的工作流处理，不由 Review 复制 Docs 写作规则；
 - Docs 发现实现问题后仍返回 Coding，不由 Review 越权直接改生产实现。
+
+当 Review Target 的 diff **新增、删除或实质修改技术文档**时，Review 还必须执行 **Reverse Documentation Audit**：独立检查本次变化是否与已有完整解释 Owner 冲突、是否重新手抄机器事实、以及本次变化是否让旧文档应收缩/合并/退出。详细执行归 [01_审查执行流程.md](references/01_审查执行流程.md)；具体文档准入、写作和生命周期规则仍由 Docs Skill 负责。
 
 ## 2. 三种工作模式
 
@@ -235,6 +238,27 @@ Review 不是问：
 
 Review 不设置固定测试数量配额，也不要求所有状态复制成昂贵 Real Full-stack。具体测试成本、场景和分层方法由 Testing 按风险和证据价值选择。
 
+## 5.1 Reverse Documentation Audit（文档变化时）
+
+Reverse Documentation Audit 解决的不是“文本像不像”，而是“维护责任是否重复”。
+
+触发：Review Target 新增、删除或实质修改技术文档；仅代码变化但 Docs Impact 为 not_applicable 时不机械执行。
+
+最小反查：
+
+```text
+changed doc / new doc
+→ 它声称承担的读者任务与完整解释 Owner
+→ 项目本地文档规则 + 最直接相关已有 Owner
+→ 是否复制机器事实形成第二 Owner
+→ 当前变更是否让旧文档失去完整解释 Owner 身份
+→ 旧文档是否应收缩、合并、迁移或按既有生命周期退出
+```
+
+正常交叉引用不是 Finding：两个文档可以讨论同一主题，只要职责不同，且非 Owner 位置只保留完成自身读者任务所需的最小上下文与导航。**不能用词汇/主题相似度代替 Owner 判断。**
+
+Review-only 只报告 Finding，不自动改、删或合并文档；超出当前 Scope 的治理问题按既有 Finding Classification / Follow-up Lifecycle 收口，不因为“顺手整理 docs”扩大当前修复范围。
+
 ## 6. Findings 必须可执行、可验证
 
 读取 [02_Findings与严重度.md](references/02_Findings与严重度.md)。
@@ -284,11 +308,12 @@ Action
 3. 独立重建上游要求
 4. 识别高风险不变量/失败模式
 5. 审查现有测试与证据等级
-6. 必要时运行已有验证 / Handoff Testing 补证据
-7. 形成 Findings
-8. 复查误报和证据边界
-9. 按模式：报告 / Testing 补证据 / Coding 修复
-10. 修复后 Testing Regression（适用时）+ Review re-review
+6. docs 发生变化时执行 Reverse Documentation Audit
+7. 必要时运行已有验证 / Handoff Testing 补证据
+8. 形成 Findings
+9. 复查误报和证据边界
+10. 按模式：报告 / Testing 补证据 / Coding 修复
+11. 修复后 Testing Regression（适用时）+ Review re-review
 ```
 
 Review 应优先找“如果错了会造成什么”的高价值问题，不以发现数量作为质量指标。

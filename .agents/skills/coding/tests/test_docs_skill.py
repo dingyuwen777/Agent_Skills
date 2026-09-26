@@ -78,6 +78,45 @@ class DocsSkillIntegrationTest(unittest.TestCase):
         self.assertIn("不机械链接化", skill)
         self.assertIn("不机械链接化", workflow)
 
+
+    def test_new_document_admission_and_lifecycle_gates_are_canonical(self) -> None:
+        """Docs 必须先找 Owner 再准入新文档，并为阶段性文档保留退出与知识迁移。"""
+        skill = self._read(".agents/skills/docs/SKILL.md")
+        workflow = self._read(".agents/skills/docs/references/03_审查编写与修复流程.md")
+
+        for marker in (
+            "Single Explanation Owner",
+            "New Document Admission Gate",
+            "已有 Owner 可以合法承载时更新已有 Owner",
+            "独立读者任务",
+            "Temporary Document Lifecycle / Exit Gate",
+            "targeted-first",
+        ):
+            self.assertIn(marker, skill)
+
+        for marker in (
+            "new_document_admitted",
+            "new_document not_admitted",
+            "targeted owner search",
+            "临时文档的知识迁移与退出",
+            "无法证明知识迁移完成时",
+        ):
+            self.assertIn(marker, workflow)
+
+        self.assertNotIn("AIMA", skill)
+        self.assertNotIn("AIMA", workflow)
+
+    def test_owner_overlap_is_not_defined_by_topic_similarity(self) -> None:
+        """Docs 必须区分正常交叉引用与多个位置承担完整解释 Owner。"""
+        skill = self._read(".agents/skills/docs/SKILL.md")
+        workflow = self._read(".agents/skills/docs/references/03_审查编写与修复流程.md")
+
+        self.assertIn("维护责任是否重复", skill)
+        self.assertIn("最小上下文", skill)
+        self.assertIn("词汇是否相似", skill)
+        self.assertIn("主题词相似", workflow)
+        self.assertIn("完整解释职责", workflow)
+
     def test_coding_routes_docs_without_copying_second_rulebook(self) -> None:
         """Coding 有 Docs Impact 硬路由，但详细文档方法仍由 Docs 承担。"""
         coding = self._read(".agents/skills/coding/SKILL.md")
