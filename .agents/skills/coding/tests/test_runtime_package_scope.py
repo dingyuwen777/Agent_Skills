@@ -84,11 +84,9 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
 
     def test_unicode_professional_reference_paths_remain_targeted_content(self) -> None:
         """中文 Reference 原始 UTF-8 路径应命中专业 Skill，而不是 unknown/package。"""
-        selection = MODULE.select_evidence(
-            [
-                ".agents/skills/docs/references/03_审查编写与修复流程.md",
-                ".agents/skills/review/references/01_审查执行流程.md",
-            ]
+        selection = _selection(
+            ".agents/skills/docs/references/03_审查编写与修复流程.md",
+            ".agents/skills/review/references/01_审查执行流程.md",
         )
 
         self.assertEqual(selection.runtime_scope, "content")
