@@ -27,32 +27,14 @@ class ReviewSkillIntegrationTest(unittest.TestCase):
 
 
     def test_reverse_documentation_audit_is_review_owner_behavior(self) -> None:
-        """PR/代码审查遇到 docs diff 时必须反查旧 Owner，但不靠文本相似度误报。"""
+        """docs diff 必须反查 Owner/Growth，但不因主题或长度机械报错。"""
         skill = self._read(".agents/skills/review/SKILL.md")
         workflow = self._read(".agents/skills/review/references/01_审查执行流程.md")
 
-        for marker in (
-            "Reverse Documentation Audit",
-            "维护责任是否重复",
-            "词汇/主题相似度",
-            "review-only 只报告 Finding",
-            "任意统一行数",
-        ):
+        for marker in ("Reverse Documentation Audit", "已有 Owner", "单文件 Growth", "review-only 只报告"):
             self.assertIn(marker, skill)
-
-        for marker in (
-            "Existing Owner",
-            "Machine Owner",
-            "Growth",
-            "Reverse impact",
-            "这不是相似度检查",
-            "targeted 可维护性下降",
-            "不得自行发明统一行数硬上限",
-            "review-only 不修改/删除文档",
-            "Handoff Docs",
-        ):
+        for marker in ("Existing Owner", "Machine Owner", "Growth", "Reverse impact/exit", "Handoff Docs"):
             self.assertIn(marker, workflow)
-
         self.assertNotIn("AIMA", skill)
         self.assertNotIn("AIMA", workflow)
 

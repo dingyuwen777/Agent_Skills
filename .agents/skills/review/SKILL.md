@@ -30,8 +30,7 @@ Review 的职责不是再写一遍“怎样开发/怎样测试”，而是作为
 → 同仓有 Coding 时读取 Coding 作为唯一研发规范源
 → 同仓有 Testing 时把它作为测试工程方法 Owner
 → 独立重建需求、风险和应有证据
-→ 审查实现 / diff / 测试 / 文档
-→ docs 发生变化时执行 Reverse Documentation Audit
+→ 审查实现 / diff / 测试 / 文档（docs diff 时做 Reverse Documentation Audit）
 → 判断测试充分性与 Evidence boundary
 → Test Gap 需要专业测试时 Handoff Testing
 → 输出 Findings 与证据边界
@@ -107,9 +106,8 @@ Review 发现技术文档缺陷时：
 
 - 只读 Review：作为 Finding 报告；
 - 已授权修文档且存在 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)：按 Docs 的工作流处理，不由 Review 复制 Docs 写作规则；
-- Docs 发现实现问题后仍返回 Coding，不由 Review 越权直接改生产实现。
-
-当 Review Target 的 diff **新增、删除或实质修改技术文档**时，Review 还必须执行 **Reverse Documentation Audit**：独立检查本次变化是否与已有完整解释 Owner 冲突、是否重新手抄机器事实、以及本次变化是否让旧文档应收缩/合并/退出。详细执行归 [01_审查执行流程.md](references/01_审查执行流程.md)；具体文档准入、写作和生命周期规则仍由 Docs Skill 负责。
+- Docs 发现实现问题后仍返回 Coding，不由 Review 越权直接改生产实现；
+- Review Target 含 docs diff 时 targeted 反查已有 Owner、机器事实镜像、单文件 Growth 与旧文档退出；主题相似或文件长本身不算 Finding，项目已有 budget 优先；review-only 只报告。
 
 ## 2. 三种工作模式
 
@@ -238,12 +236,6 @@ Review 不是问：
 
 Review 不设置固定测试数量配额，也不要求所有状态复制成昂贵 Real Full-stack。具体测试成本、场景和分层方法由 Testing 按风险和证据价值选择。
 
-## 5.1 Reverse Documentation Audit（文档变化时）
-
-docs diff 新增/删除/实质修改技术文档时，Review 必须 targeted 反查：已有完整 Owner、机器事实镜像、changed doc 的 Growth（读者任务/Owner/Lifecycle/targeted 可维护性）、旧文档 Reverse impact 与退出条件。
-
-判定看**维护责任是否重复**，不能用词汇/主题相似度或任意统一行数代替 Owner 判断；单文件长但职责单一、生命周期一致、可定位且未违反项目 budget，不自动形成 Finding。review-only 只报告 Finding；详细步骤和 Scope/Handoff 边界见 [01_审查执行流程.md](references/01_审查执行流程.md)。
-
 ## 6. Findings 必须可执行、可验证
 
 读取 [02_Findings与严重度.md](references/02_Findings与严重度.md)。
@@ -293,12 +285,11 @@ Action
 3. 独立重建上游要求
 4. 识别高风险不变量/失败模式
 5. 审查现有测试与证据等级
-6. docs 发生变化时执行 Reverse Documentation Audit
-7. 必要时运行已有验证 / Handoff Testing 补证据
-8. 形成 Findings
-9. 复查误报和证据边界
-10. 按模式：报告 / Testing 补证据 / Coding 修复
-11. 修复后 Testing Regression（适用时）+ Review re-review
+6. 必要时运行已有验证 / Handoff Testing 补证据
+7. 形成 Findings
+8. 复查误报和证据边界
+9. 按模式：报告 / Testing 补证据 / Coding 修复
+10. 修复后 Testing Regression（适用时）+ Review re-review
 ```
 
 Review 应优先找“如果错了会造成什么”的高价值问题，不以发现数量作为质量指标。

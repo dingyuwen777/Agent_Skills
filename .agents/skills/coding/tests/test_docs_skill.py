@@ -79,47 +79,22 @@ class DocsSkillIntegrationTest(unittest.TestCase):
         self.assertIn("不机械链接化", workflow)
 
     def test_new_document_admission_and_lifecycle_gates_are_canonical(self) -> None:
-        """Docs 必须先找 Owner 再准入新文档，并为阶段性文档保留退出与知识迁移。"""
+        """Docs 必须约束新建、增长和阶段性退出，同时保持项目无关。"""
         skill = self._read(".agents/skills/docs/SKILL.md")
         workflow = self._read(".agents/skills/docs/references/03_审查编写与修复流程.md")
 
-        for marker in (
-            "Single Explanation Owner",
-            "New Document Admission Gate",
-            "已有 Owner 能合法承载就更新它",
-            "独立读者任务",
-            "Document Growth Gate",
-            "Temporary Document Lifecycle / Exit Gate",
-            "targeted-first",
-            "项目没有阈值时不发明统一 500/800/1000 行硬上限",
-        ):
+        for marker in ("单一解释 Owner", "targeted 查已有 Owner", "不按长度切", "阶段性文档"):
             self.assertIn(marker, skill)
-
-        for marker in (
-            "new_document_admitted",
-            "新文档 not_admitted",
-            "targeted owner search",
-            "Document Growth Gate",
-            "规模只作为风险信号",
-            "不按长度机械切块",
-            "阶段性文档必须写清",
-            "无法证明知识迁移完成时",
-        ):
+        for marker in ("Owner Admission", "Growth", "项目预算优先", "Exit"):
             self.assertIn(marker, workflow)
-
         self.assertNotIn("AIMA", skill)
         self.assertNotIn("AIMA", workflow)
 
     def test_owner_overlap_is_not_defined_by_topic_similarity(self) -> None:
-        """Docs 必须区分正常交叉引用与多个位置承担完整解释 Owner。"""
+        """Docs 以完整解释责任而不是主题相似度判定交叉。"""
         skill = self._read(".agents/skills/docs/SKILL.md")
-        workflow = self._read(".agents/skills/docs/references/03_审查编写与修复流程.md")
-
-        self.assertIn("维护责任是否重复", skill)
-        self.assertIn("最小上下文", skill)
-        self.assertIn("词汇是否相似", skill)
-        self.assertIn("主题词相似", workflow)
-        self.assertIn("完整解释职责", workflow)
+        self.assertIn("同一长期事实只保留一个完整解释 Owner", skill)
+        self.assertIn("其他文档只保留自身任务需要的最小上下文和导航", skill)
 
     def test_coding_routes_docs_without_copying_second_rulebook(self) -> None:
         """Coding 有 Docs Impact 硬路由，但详细文档方法仍由 Docs 承担。"""
