@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260926-085300-doc-ownership-governance
 title: 防止技术文档 Owner 交叉与长期膨胀
 level: L2
-status: ready_for_review
+status: done
 owner: yuwen.ding
 branch: tech/315-doc-ownership-governance
 created: 2026-09-26T08:53:00+08:00
