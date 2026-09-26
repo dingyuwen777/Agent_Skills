@@ -86,12 +86,12 @@ class DocsSkillIntegrationTest(unittest.TestCase):
         for marker in (
             "Single Explanation Owner",
             "New Document Admission Gate",
-            "已有 Owner 可以合法承载时更新已有 Owner",
+            "已有 Owner 能合法承载就更新它",
             "独立读者任务",
             "Document Growth Gate",
             "Temporary Document Lifecycle / Exit Gate",
             "targeted-first",
-            "没有项目阈值时，通用 Agent_Skills 不发明统一的 500/800/1000 行硬上限",
+            "项目没有阈值时不发明统一 500/800/1000 行硬上限",
         ):
             self.assertIn(marker, skill)
 
@@ -99,10 +99,10 @@ class DocsSkillIntegrationTest(unittest.TestCase):
             "new_document_admitted",
             "新文档 not_admitted",
             "targeted owner search",
-            "Document Growth Gate：已有文档也要有增长边界",
+            "Document Growth Gate",
             "规模只作为风险信号",
-            "按长度机械切块",
-            "临时文档的知识迁移与退出",
+            "不按长度机械切块",
+            "阶段性文档必须写清",
             "无法证明知识迁移完成时",
         ):
             self.assertIn(marker, workflow)

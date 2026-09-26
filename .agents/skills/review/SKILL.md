@@ -240,25 +240,9 @@ Review 不设置固定测试数量配额，也不要求所有状态复制成昂�
 
 ## 5.1 Reverse Documentation Audit（文档变化时）
 
-Reverse Documentation Audit 解决的不是“文本像不像”，而是“维护责任是否重复”。
+docs diff 新增/删除/实质修改技术文档时，Review 必须 targeted 反查：已有完整 Owner、机器事实镜像、changed doc 的 Growth（读者任务/Owner/Lifecycle/targeted 可维护性）、旧文档 Reverse impact 与退出条件。
 
-触发：Review Target 新增、删除或实质修改技术文档；仅代码变化但 Docs Impact 为 not_applicable 时不机械执行。
-
-最小反查：
-
-```text
-changed doc / new doc
-→ 它声称承担的读者任务与完整解释 Owner
-→ 项目本地文档规则 + 最直接相关已有 Owner
-→ 是否复制机器事实形成第二 Owner
-→ changed doc 是否正在吸收独立读者任务/生命周期而无限膨胀
-→ 当前变更是否让旧文档失去完整解释 Owner 身份
-→ 旧文档是否应收缩、合并、迁移或按既有生命周期退出
-```
-
-正常交叉引用不是 Finding：两个文档可以讨论同一主题，只要职责不同，且非 Owner 位置只保留完成自身读者任务所需的最小上下文与导航。单文件较长也不自动形成 Finding；只有增长已经带来职责/读者任务/生命周期混合、机器/历史内容堆积或 targeted 可维护性明显下降时才需要收敛。**不能用词汇/主题相似度或任意统一行数代替 Owner 判断。**
-
-Review-only 只报告 Finding，不自动改、删或合并文档；超出当前 Scope 的治理问题按既有 Finding Classification / Follow-up Lifecycle 收口，不因为“顺手整理 docs”扩大当前修复范围。
+判定看**维护责任是否重复**，不能用词汇/主题相似度或任意统一行数代替 Owner 判断；单文件长但职责单一、生命周期一致、可定位且未违反项目 budget，不自动形成 Finding。review-only 只报告 Finding；详细步骤和 Scope/Handoff 边界见 [01_审查执行流程.md](references/01_审查执行流程.md)。
 
 ## 6. Findings 必须可执行、可验证
 
