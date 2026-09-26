@@ -68,7 +68,7 @@ jobs:
           if [[ -z "${BASE_SHA}" || "${BASE_SHA}" =~ ^0+$ ]] || ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
             printf '' | python .github/scripts/runtime_package_scope.py --json > "${selection}"
           else
-            git diff --name-only --no-renames "${BASE_SHA}" "${HEAD_SHA}" \
+            git -c core.quotePath=false diff --name-only --no-renames "${BASE_SHA}" "${HEAD_SHA}" \
               | python .github/scripts/runtime_package_scope.py --json > "${selection}"
           fi
           cat "${selection}"

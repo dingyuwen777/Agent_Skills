@@ -30,7 +30,7 @@ Review 的职责不是再写一遍“怎样开发/怎样测试”，而是作为
 → 同仓有 Coding 时读取 Coding 作为唯一研发规范源
 → 同仓有 Testing 时把它作为测试工程方法 Owner
 → 独立重建需求、风险和应有证据
-→ 审查实现 / diff / 测试 / 文档
+→ 审查实现 / diff / 测试 / 文档（docs diff 时做 Reverse Documentation Audit）
 → 判断测试充分性与 Evidence boundary
 → Test Gap 需要专业测试时 Handoff Testing
 → 输出 Findings 与证据边界
@@ -106,7 +106,8 @@ Review 发现技术文档缺陷时：
 
 - 只读 Review：作为 Finding 报告；
 - 已授权修文档且存在 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)：按 Docs 的工作流处理，不由 Review 复制 Docs 写作规则；
-- Docs 发现实现问题后仍返回 Coding，不由 Review 越权直接改生产实现。
+- Docs 发现实现问题后仍返回 Coding，不由 Review 越权直接改生产实现；
+- docs diff：targeted 反查已有 Owner/机器镜像/单文件 Growth/退出；相似或长度不判重；review-only 只报告。
 
 ## 2. 三种工作模式
 

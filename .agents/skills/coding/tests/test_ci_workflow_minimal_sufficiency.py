@@ -212,6 +212,15 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertIn("Enforce current Coding Change readiness", core)
         self.assertIn("steps.change-gate.outputs.ready != 'true'", core)
 
+    def test_changed_scope_preserves_utf8_git_paths_for_selector(self) -> None:
+        """中文/非 ASCII Reference 路径不得被 Git quotePath 转义成 unknown/package。"""
+        workflow = self._read(WORKFLOW_DIR / "skill-tests.yml")
+        core = _job_text(workflow, "agent-skills-core")
+        self.assertIn(
+            'git -c core.quotePath=false diff --name-only --no-renames',
+            core,
+        )
+
     def test_change_only_and_human_docs_do_not_force_runtime_semantic_setup(self) -> None:
         workflow = self._read(WORKFLOW_DIR / "skill-tests.yml")
         self.assertIn("runtime_dependencies_required", workflow)

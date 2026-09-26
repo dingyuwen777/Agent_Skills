@@ -25,6 +25,18 @@ class ReviewSkillIntegrationTest(unittest.TestCase):
         self.assertIn(".agents/skills/review/SKILL.md", coding)
         self.assertIn("re-review", coding)
 
+    def test_reverse_documentation_audit_is_review_owner_behavior(self) -> None:
+        """docs diff 必须反查 Owner/Growth，但不因主题或长度机械报错。"""
+        skill = self._read(".agents/skills/review/SKILL.md")
+        workflow = self._read(".agents/skills/review/references/01_审查执行流程.md")
+
+        for marker in ("Reverse Documentation Audit", "已有 Owner", "单文件 Growth", "review-only 只报告"):
+            self.assertIn(marker, skill)
+        for marker in ("Existing/Machine Owner", "Growth", "Reverse impact/exit", "Handoff Docs"):
+            self.assertIn(marker, workflow)
+        self.assertNotIn("AIMA", skill)
+        self.assertNotIn("AIMA", workflow)
+
     def test_review_owns_adequacy_and_testing_owns_test_methods(self) -> None:
         """Review 只审测试充分性，具体分层测试和项目映射由 Testing 专业 Owner 承担。"""
         review = self._read(".agents/skills/review/references/03_测试专家审查方法.md")

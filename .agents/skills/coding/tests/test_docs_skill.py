@@ -78,6 +78,24 @@ class DocsSkillIntegrationTest(unittest.TestCase):
         self.assertIn("不机械链接化", skill)
         self.assertIn("不机械链接化", workflow)
 
+    def test_new_document_admission_and_lifecycle_gates_are_canonical(self) -> None:
+        """Docs 必须约束新建、增长和阶段性退出，同时保持项目无关。"""
+        skill = self._read(".agents/skills/docs/SKILL.md")
+        workflow = self._read(".agents/skills/docs/references/03_审查编写与修复流程.md")
+
+        for marker in ("单一解释 Owner", "targeted 查 Owner", "不按长度切", "阶段性文档"):
+            self.assertIn(marker, skill)
+        for marker in ("Admission=", "Growth=", "预算优先", "Exit="):
+            self.assertIn(marker, workflow)
+        self.assertNotIn("AIMA", skill)
+        self.assertNotIn("AIMA", workflow)
+
+    def test_owner_overlap_is_not_defined_by_topic_similarity(self) -> None:
+        """Docs 以完整解释责任而不是主题相似度判定交叉。"""
+        skill = self._read(".agents/skills/docs/SKILL.md")
+        self.assertIn("同一长期事实只保留一个完整解释 Owner", skill)
+        self.assertIn("其他文档只保留自身任务需要的最小上下文和导航", skill)
+
     def test_coding_routes_docs_without_copying_second_rulebook(self) -> None:
         """Coding 有 Docs Impact 硬路由，但详细文档方法仍由 Docs 承担。"""
         coding = self._read(".agents/skills/coding/SKILL.md")

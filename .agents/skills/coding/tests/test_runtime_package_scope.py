@@ -82,6 +82,18 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
                 self.assertFalse(selected.compile_required)
                 self.assertFalse(selected.cli_smoke_required)
 
+    def test_unicode_professional_reference_paths_remain_targeted_content(self) -> None:
+        """中文 Reference 原始 UTF-8 路径应命中专业 Skill，而不是 unknown/package。"""
+        selection = _selection(
+            ".agents/skills/docs/references/03_审查编写与修复流程.md",
+            ".agents/skills/review/references/01_审查执行流程.md",
+        )
+
+        self.assertEqual(selection.runtime_scope, "content")
+        self.assertEqual(selection.semantic_profile, "content_targeted")
+        self.assertEqual(set(selection.semantic_groups), {"docs_skill", "review_skill", "router"})
+        self.assertFalse(selection.full_required)
+
     def test_professional_skills_select_owner_and_router_closure(self) -> None:
         cases = {
             ".agents/skills/docs/SKILL.md": "docs_skill",
