@@ -78,7 +78,6 @@ class DocsSkillIntegrationTest(unittest.TestCase):
         self.assertIn("不机械链接化", skill)
         self.assertIn("不机械链接化", workflow)
 
-
     def test_new_document_admission_and_lifecycle_gates_are_canonical(self) -> None:
         """Docs 必须先找 Owner 再准入新文档，并为阶段性文档保留退出与知识迁移。"""
         skill = self._read(".agents/skills/docs/SKILL.md")
@@ -98,7 +97,7 @@ class DocsSkillIntegrationTest(unittest.TestCase):
 
         for marker in (
             "new_document_admitted",
-            "new_document not_admitted",
+            "新文档 not_admitted",
             "targeted owner search",
             "Document Growth Gate：已有文档也要有增长边界",
             "规模只作为风险信号",
