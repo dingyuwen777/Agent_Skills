@@ -14,6 +14,7 @@ affected_areas:
   - docs
   - review
   - governance
+  - ci
 affected_paths:
   - .agents/skills/docs/SKILL.md
   - .agents/skills/docs/references/03_审查编写与修复流程.md
@@ -21,6 +22,9 @@ affected_paths:
   - .agents/skills/review/references/01_审查执行流程.md
   - .agents/skills/coding/tests/test_docs_skill.py
   - .agents/skills/coding/tests/test_review_skill.py
+  - .github/workflows/skill-tests.yml
+  - .agents/skills/coding/tests/test_ci_workflow_minimal_sufficiency.py
+  - .agents/skills/coding/tests/test_runtime_package_scope.py
 contracts: []
 data_changes: []
 ---
@@ -81,11 +85,12 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 | E2 | Docs Write/Update 当前先问读者/事实源，但未要求证明现有 Owner 无法承载 | docs.reference.03 main | 需要 New Document Admission Gate |
 | E3 | Review 当前从上游/风险/测试审查，但未明确反向文档审计 | Review SKILL/reference.01 main | Reverse Documentation Audit 应归 Review Owner |
 | E4 | Maintenance 要求 Skill Mutation 保持内容守恒、项目事实不得泛化 | .agents/MAINTENANCE.md + coding.reference.15 | 不能把 AIMA 的具体 docs 目录升级为通用默认 |
-| E5 | changed professional Docs/Review Skill 会分别触发 docs_skill/review_skill targeted semantic tests | .github/scripts/runtime_package_scope.py main | 可使用现有 CI 选择器，不需要修改 Runtime/Workflow |
+| E5 | raw UTF-8 的 Docs/Review professional paths 会命中 content_targeted；但 Git 默认 quotePath 会把中文文件名转义，实际 PR 曾被误判为 unknown/package | runtime_package_scope.py + PR #316 Skill Tests 日志 | selector 本身无需改，必须修 Workflow 向 selector 提供原始 UTF-8 路径 |
+| E6 | `git -c core.quotePath=false diff --name-only` 可让当前 line-based selector 接收真实 Unicode repo path | Git 行为 + 当前 workflow 数据流 | 最小修复在 changed-scope 输入边界，不改变 Runtime/routing protocol |
 
 ## 推断与待确认
 
-无。当前实现边界和验证入口都可以从 main 恢复。
+- 修复 Workflow 后本 PR 因修改 CI control-plane 本身会按现有 fail-closed 规则运行一次 full semantic + 三平台 package；这是本次 CI 修改的验证成本，不代表未来普通中文 Docs/Review Reference 仍应触发 package。
 
 # 目标、成功标准与非目标
 
@@ -102,11 +107,11 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 
 ## 范围
 
-仅修改 Docs/Review canonical 规则与相关测试，以及本 Change/PR/Issue 治理载体。
+修改 Docs/Review canonical 规则与相关语义测试；同时修复 Skill Tests changed-scope 的 Unicode Git path 输入边界并增加机器回归，以及本 Change/PR/Issue 治理载体。
 
 ## 非目标
 
-- 不修改 Runtime、License、Release、路由协议；
+- 不修改 Runtime、License、Release、路由协议；允许修复 Skill Tests changed-scope Workflow 的 Git path 输入。
 - 不新增项目特定 docs taxonomy；
 - 不实现语义相似度/向量重复检测；
 - 不自动删除目标项目文档。
@@ -124,7 +129,7 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 | 决策维度 | 当前决定 | 依据 | 影响 |
 | --- | --- | --- | --- |
 | 范围与 Owner | Docs owns admission/lifecycle；Review owns independent reverse audit | E1-E4 | 不把两套规则复制到 Coding |
-| 接口与契约 | 不改 Runtime/路由协议 | E5 | 无 package protocol 迁移 |
+| 接口与契约 | 不改 Runtime/路由协议；修 CI path input | E5/E6 | 无 package protocol 迁移；Workflow 自身变化按现有 fail-closed package gate 验证 |
 | 数据与迁移 | 不适用 | 无数据/Schema | 无迁移 |
 | 错误与失败语义 | Gate 无法证明时默认不新建/不删除，保留现有 Owner | 内容守恒 | fail closed |
 | 兼容性 | 保持现有 Docs/Review 触发和 targeted-first | E1-E5 | 现有项目行为只增强不降级 |
@@ -139,6 +144,7 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 3. Review SKILL：把文档变化加入 Reverse Documentation Audit 触发。
 4. review.reference.01：定义反向审计清单、Scope/授权/正常交叉引用边界。
 5. test_docs_skill / test_review_skill：增加项目无关的语义回归，防止规则以后被精简掉。
+6. skill-tests.yml：关闭 Git `core.quotePath` 转义，使 Unicode Reference path 以原始 UTF-8 进入 selector；补 Workflow + selector 回归。
 
 ## 证据到决策
 
@@ -147,7 +153,7 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 | D1 不新增独立 ownership Skill | E1/E3 | Docs/Review 已是专业 Owner，新增 Skill 会制造治理交叉 |
 | D2 不把目录 taxonomy 写死 | E4 | 项目结构属于目标项目 Overlay |
 | D3 不做全文相似度门禁 | #315 非目标 | 词汇相似不等于 Owner 重复，容易误伤正常引用 |
-| D4 使用 targeted semantic tests | E5 | 足以证明 canonical 规则可达，不需要 package/runtime 改造 |
+| D4 普通专业 Skill 继续使用 targeted semantic tests | E5/E6 | Unicode 路径应先被正确分类；本 PR 仅因修改 Workflow control-plane 本身按现有规则升级一次 package evidence |
 
 # 需求追溯
 
@@ -165,6 +171,7 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 | R10 | changed-scope CI + independent Review | #315 / AC10 | explicitly_deferred | Ready 后由 PR current-head Skill Tests 与独立 Review 执行；本状态不冒充已通过 |
 | R11 | merge/main-fresh/archive/closure | #315 / AC11 | explicitly_deferred | 属于 Ready 后 Delivery Gate；用户已授权端到端交付，实际完成后再 Closure |
 | R12 | Document Growth Gate：单文件增长受读者任务/Owner/生命周期/导航约束，不用任意统一行数机械切块 | #315 / AC12 | satisfied | Docs Growth Gate + Review Growth 反查已实现，并保留项目 quantitative budget 优先 |
+| R13 | Unicode professional Reference path 不因 Git quotePath 被误判 unknown/package | #315 / AC13 | satisfied | Skill Tests 使用 `git -c core.quotePath=false diff`；Workflow/selector 双回归已增加 |
 
 # 计划改动
 
@@ -176,6 +183,8 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 | review.reference.01 | 反向审计步骤和边界 | 避免误报/越权 | R6-R8 |
 | test_docs_skill.py | Docs 语义回归 | 防退化 | R1-R5/R9 |
 | test_review_skill.py | Review 语义回归 | 防退化 | R6-R9 |
+| skill-tests.yml | changed-scope 使用 raw UTF-8 path | 修复中文 Reference 误判 package | R13 |
+| test_ci_workflow_minimal_sufficiency.py / test_runtime_package_scope.py | 固化 Workflow + selector Unicode contract | 防 quotePath 回归 | R13 |
 
 # 验证矩阵
 
@@ -187,13 +196,13 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 | 用户 / 工作流验收 | not_applicable | 无产品 UI/CLI |
 | 跨组件关键路径 | required | Source canonical → Runtime targeted semantic routing 由现有 selector/router tests 覆盖 |
 | 外部依赖 / 供应方探测 | not_applicable | 无外部依赖 |
-| 构建 / 打包 / 运行 | not_applicable | 不改 Runtime package surface |
+| 构建 / 打包 / 运行 | required | 不改 Runtime product surface，但修改 CI Workflow control-plane；按既有 fail-closed 规则执行 full semantic + Linux/Windows/macOS package evidence |
 | 文档 / 治理 / 其他 | required | Change Ready、PR Requirement Source、Skill ownership/content preservation、Review |
 
 ## 验证计划
 
 - 目标测试：test_docs_skill.py、test_review_skill.py；
-- 相关回归：changed-scope router tests 及 CI selector 自动选择的 semantic groups；
+- 相关回归：changed-scope router tests、Unicode Workflow/selector contract；因 Workflow 自身变化执行 full semantic + 三平台 package；
 - 静态检查：现有 Skill Tests workflow；
 - 就绪检查：coding ready_check / Agent Skills Gate；
 - 独立 Review：按 #315 AC1–AC11 重新重建需求并审 final diff。
@@ -218,9 +227,9 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 
 # 完成审计
 
-- [x] upstream_re_read：已重新读取 #315（含新增 AC12）与最终 Docs/Review canonical rules。
-- [x] change_coverage：已按 AC1–AC12 重建；AC1–AC9/AC12 有实现证据，AC10/AC11 明确留给 Ready 后 CI/Review/Delivery。
-- [x] reverse_audit：最终 diff 只修改 Docs/Review canonical Owner、直接语义测试和本 Change；未新增治理 Skill/Reference、项目 taxonomy 或 Runtime 协议副本。
+- [x] upstream_re_read：已重新读取 #315（含 AC12/AC13）与最终 Docs/Review canonical rules、Skill Tests selector/workflow。
+- [x] change_coverage：已按 AC1–AC13 重建；AC1–AC9/AC12/AC13 有实现证据，AC10/AC11 明确留给 Ready 后 CI/Review/Delivery。
+- [x] reverse_audit：最终规则仍只由 Docs/Review canonical Owner 承担；额外 CI diff 只修 Unicode path 输入与回归，未新增治理 Skill/Reference、项目 taxonomy 或 Runtime 协议副本。
 - [x] unresolved_cleared：Requirement Traceability 无 not_satisfied；PR current-head CI/独立 Review/Delivery 作为明确的后置门禁保留。
 
 # 完成证据与状态
@@ -236,7 +245,7 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 
 ## 未验证内容与剩余风险
 
-- current-head Skill Tests 与独立 Review 尚未执行，已在 R10 明确为 Ready 后 Delivery Gate；merge/main-fresh/archive/closure 同理由 R11 约束。
+- final current-head Skill Tests（含 Workflow control-plane full/package）与独立 Review尚待当前新 Head 完成；merge/main-fresh/archive/closure 仍由 R11 约束。
 
 ## 交付状态
 
