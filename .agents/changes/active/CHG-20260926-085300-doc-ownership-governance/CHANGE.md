@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260926-085300-doc-ownership-governance
 title: 防止技术文档 Owner 交叉与长期膨胀
 level: L2
-status: in_progress
+status: ready_for_review
 owner: yuwen.ding
 branch: tech/315-doc-ownership-governance
 created: 2026-09-26T08:53:00+08:00
@@ -153,18 +153,18 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 单一解释 Owner | #315 / AC1 | not_satisfied | 待实现 |
-| R2 | New Document Admission Gate | #315 / AC2 | not_satisfied | 待实现 |
-| R3 | 已有 Owner 可承载则不建平行文档 | #315 / AC3 | not_satisfied | 待实现 |
-| R4 | 临时文档 Lifecycle/Exit Gate | #315 / AC4 | not_satisfied | 待实现 |
-| R5 | Docs 流程实际执行 Owner/知识迁移/Lifecycle 且 targeted-first | #315 / AC5 | not_satisfied | 待实现 |
-| R6 | Review Reverse Documentation Audit | #315 / AC6 | not_satisfied | 待实现 |
-| R7 | 不把正常交叉引用当重复 | #315 / AC7 | not_satisfied | 待实现 |
-| R8 | Review Scope/授权/Handoff 边界不降低 | #315 / AC8 | not_satisfied | 待实现 |
-| R9 | 语义回归且项目无关 | #315 / AC9 | not_satisfied | 待实现 |
-| R10 | changed-scope CI + independent Review | #315 / AC10 | not_satisfied | 待验证 |
-| R11 | merge/main-fresh/archive/closure | #315 / AC11 | not_satisfied | 待交付 |
-| R12 | Document Growth Gate：单文件增长受读者任务/Owner/生命周期/导航约束，不用任意统一行数机械切块 | #315 / AC12 | not_satisfied | 待实现 |
+| R1 | 单一解释 Owner | #315 / AC1 | satisfied | Docs SKILL `Single Explanation Owner` 已定义唯一完整解释 Owner 与最小上下文导航 |
+| R2 | New Document Admission Gate | #315 / AC2 | satisfied | Docs SKILL + docs.reference.03 已定义 targeted Owner 搜索与准入决策树 |
+| R3 | 已有 Owner 可承载则不建平行文档 | #315 / AC3 | satisfied | `已有 Owner 可以合法承载时更新已有 Owner` 已进入 Write/Update 核心规则 |
+| R4 | 临时文档 Lifecycle/Exit Gate | #315 / AC4 | satisfied | Docs SKILL + docs.reference.03 已定义退出条件、知识迁移与历史 Owner 边界 |
+| R5 | Docs 流程实际执行 Owner/知识迁移/Lifecycle 且 targeted-first | #315 / AC5 | satisfied | Write/Update、targeted owner search、Growth/Lifecycle Gate 已串入实际流程 |
+| R6 | Review Reverse Documentation Audit | #315 / AC6 | satisfied | Review SKILL + review.reference.01 已加入 changed docs 的反向审计 |
+| R7 | 不把正常交叉引用当重复 | #315 / AC7 | satisfied | Review/Docs 均明确按维护责任判断，不使用词汇/主题相似度判重 |
+| R8 | Review Scope/授权/Handoff 边界不降低 | #315 / AC8 | satisfied | Reverse Audit 保持 targeted、review-only 只报告、已授权修文档 Handoff Docs |
+| R9 | 语义回归且项目无关 | #315 / AC9 | satisfied | test_docs_skill/test_review_skill 新增 canonical marker 与 `AIMA` 非泛化断言 |
+| R10 | changed-scope CI + independent Review | #315 / AC10 | explicitly_deferred | Ready 后由 PR current-head Skill Tests 与独立 Review 执行；本状态不冒充已通过 |
+| R11 | merge/main-fresh/archive/closure | #315 / AC11 | explicitly_deferred | 属于 Ready 后 Delivery Gate；用户已授权端到端交付，实际完成后再 Closure |
+| R12 | Document Growth Gate：单文件增长受读者任务/Owner/生命周期/导航约束，不用任意统一行数机械切块 | #315 / AC12 | satisfied | Docs Growth Gate + Review Growth 反查已实现，并保留项目 quantitative budget 优先 |
 
 # 计划改动
 
@@ -218,10 +218,10 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 
 # 完成审计
 
-- [ ] upstream_re_read：完成前重新读取 #315 与最终 canonical rules。
-- [ ] change_coverage：完成前按 AC1–AC12 重建覆盖。
-- [ ] reverse_audit：完成前审查本次自身是否制造新的治理重复或项目专属默认。
-- [ ] unresolved_cleared：Ready 前清零 not_satisfied，或有正式延期依据。
+- [x] upstream_re_read：已重新读取 #315（含新增 AC12）与最终 Docs/Review canonical rules。
+- [x] change_coverage：已按 AC1–AC12 重建；AC1–AC9/AC12 有实现证据，AC10/AC11 明确留给 Ready 后 CI/Review/Delivery。
+- [x] reverse_audit：最终 diff 只修改 Docs/Review canonical Owner、直接语义测试和本 Change；未新增治理 Skill/Reference、项目 taxonomy 或 Runtime 协议副本。
+- [x] unresolved_cleared：Requirement Traceability 无 not_satisfied；PR current-head CI/独立 Review/Delivery 作为明确的后置门禁保留。
 
 # 完成证据与状态
 
@@ -230,18 +230,21 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main 15198b9 | canonical read | confirmed | 当前基线与 Owner |
+| V2 | branch 358cc12 | base→head diff audit | confirmed | 仅 Docs/Review rules、两项 semantic tests 与 Change 发生变化；无 Runtime/License/Release/路由协议修改 |
+| V3 | branch 358cc12 | canonical marker audit | confirmed | Admission/Growth/Lifecycle/Reverse Audit 均可达，且四份通用规则未包含 AIMA 项目事实 |
+| V4 | branch 358cc12 | test assertion preflight | confirmed | 新增 test_docs_skill/test_review_skill 断言目标字符串均在当前 canonical 文件中可定位 |
 
 ## 未验证内容与剩余风险
 
-- 实现后 semantic tests、current-head CI、Review、merge/main-fresh/archive/closure 尚待执行。
+- current-head Skill Tests 与独立 Review 尚未执行，已在 R10 明确为 Ready 后 Delivery Gate；merge/main-fresh/archive/closure 同理由 R11 约束。
 
 ## 交付状态
 
-- 提交：待实现
-- 拉取请求：待建立
-- CI：待执行
-- 合并：待执行
-- Change 归档：待执行
+- 提交：canonical rules 与 semantic tests 已提交到任务分支
+- 拉取请求：Ready 后立即建立/更新
+- CI：由 PR current-head required checks 执行
+- 合并：仅在 Review/CI Green 后 guarded merge
+- Change 归档：merge 后由 repository-native Change Archive 执行
 - 发布 / 部署：不适用
 
 ## 备注
