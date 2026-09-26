@@ -107,7 +107,7 @@ Review 发现技术文档缺陷时：
 - 只读 Review：作为 Finding 报告；
 - 已授权修文档且存在 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)：按 Docs 的工作流处理，不由 Review 复制 Docs 写作规则；
 - Docs 发现实现问题后仍返回 Coding，不由 Review 越权直接改生产实现；
-- docs diff：targeted 反查已有 Owner/机器镜像/单文件 Growth/退出；主题相似或文件长不算 Finding；review-only 只报告。
+- docs diff：targeted 反查已有 Owner/机器镜像/单文件 Growth/退出；相似或长度不判重；review-only 只报告。
 
 ## 2. 三种工作模式
 

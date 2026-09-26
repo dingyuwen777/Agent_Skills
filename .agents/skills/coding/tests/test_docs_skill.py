@@ -83,7 +83,7 @@ class DocsSkillIntegrationTest(unittest.TestCase):
         skill = self._read(".agents/skills/docs/SKILL.md")
         workflow = self._read(".agents/skills/docs/references/03_审查编写与修复流程.md")
 
-        for marker in ("单一解释 Owner", "targeted 查已有 Owner", "不按长度切", "阶段性文档"):
+        for marker in ("单一解释 Owner", "targeted 查 Owner", "不按长度切", "阶段性文档"):
             self.assertIn(marker, skill)
         for marker in ("Admission=", "Growth=", "预算优先", "Exit="):
             self.assertIn(marker, workflow)
