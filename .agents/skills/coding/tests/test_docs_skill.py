@@ -85,7 +85,7 @@ class DocsSkillIntegrationTest(unittest.TestCase):
 
         for marker in ("单一解释 Owner", "targeted 查已有 Owner", "不按长度切", "阶段性文档"):
             self.assertIn(marker, skill)
-        for marker in ("Owner Admission", "Growth", "项目预算优先", "Exit"):
+        for marker in ("Admission=", "Growth=", "预算优先", "Exit="):
             self.assertIn(marker, workflow)
         self.assertNotIn("AIMA", skill)
         self.assertNotIn("AIMA", workflow)
