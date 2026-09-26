@@ -28,7 +28,7 @@ data_changes: []
 # 变更摘要
 
 - **要解决的问题**：当前 Docs 已有“避免第二套事实”和“不为完整制造文档”的原则，但没有把“新文档准入”和“反向审计旧文档”固化成显式硬门禁，长期使用仍可能出现多个 Markdown 同时承担完整解释 Owner。
-- **拟议修改**：在 Docs canonical Owner 增加单一解释 Owner、New Document Admission Gate、临时文档 Lifecycle/Exit Gate；在 Review canonical Owner 增加 Reverse Documentation Audit；用当前 semantic tests 固化可达性与项目无关性。
+- **拟议修改**：在 Docs canonical Owner 增加单一解释 Owner、New Document Admission Gate、Document Growth Gate、临时文档 Lifecycle/Exit Gate；在 Review canonical Owner 增加 Reverse Documentation Audit；用当前 semantic tests 固化可达性与项目无关性。
 - **预期结果**：Agent 默认先找已有 Owner 再决定是否新建文档；Review 不只检查新增内容正确性，还主动识别因当前变更而应收缩、合并或退出的旧文档。
 
 # 背景、现状与问题
@@ -55,7 +55,8 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 但现有规则仍缺少两个明确动作：
 
 1. 新建文档前没有强制执行“已有 Owner 搜索 → 准入判断”；
-2. docs diff Review 没有强制执行“当前新增后，旧文档是否因此应收缩/退出”的反向审计。
+2. 已有文档没有显式 Growth Gate，单一文件可能持续吸收独立职责而无限膨胀；
+3. docs diff Review 没有强制执行“当前新增后，旧文档是否因此应收缩/退出”的反向审计。
 
 ## 问题、根因或约束
 
@@ -69,6 +70,7 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 - 机器事实被多篇 Markdown 重复镜像；
 - Migration/Roadmap/Runbook 完成后继续滞留 live docs；
 - Review 只修新文档自身，不主动降低旧文档冗余；
+- 单个 Owner 文档即使没有跨文档重复，也可能逐步变成多读者任务、多生命周期的巨型容器；
 - 不同模型对“是否应该新建文档”的行为不一致。
 
 # 事实与证据
@@ -89,11 +91,11 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 
 ## 目标
 
-把“先找 Owner、再决定新建；文档修改后反向检查旧 Owner”变成跨模型可执行的 canonical Docs/Review 规则，同时保持项目无关和 targeted-first。
+把“先找 Owner、再决定新建；已有文档有增长边界；文档修改后反向检查旧 Owner”变成跨模型可执行的 canonical Docs/Review 规则，同时保持项目无关和 targeted-first。
 
 ## 成功标准
 
-- [ ] Issue #315 AC1–AC11 全部满足。
+- [ ] Issue #315 AC1–AC12 全部满足。
 - [ ] Docs/Review semantic tests 对新规则提供直接回归。
 - [ ] 当前 PR required CI 与独立 Review 通过。
 - [ ] merge 后 main-fresh、Change Archive、Issue Closure 完成。
@@ -132,7 +134,7 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 
 ## 最小充分方案
 
-1. Docs SKILL：增加 Single Explanation Owner + New Document Admission Gate + Temporary Document Exit Gate。
+1. Docs SKILL：增加 Single Explanation Owner + New Document Admission Gate + Document Growth Gate + Temporary Document Exit Gate。
 2. docs.reference.03：把 Gate 落成 Review/Write 的实际执行步骤和知识迁移决策树。
 3. Review SKILL：把文档变化加入 Reverse Documentation Audit 触发。
 4. review.reference.01：定义反向审计清单、Scope/授权/正常交叉引用边界。
@@ -162,12 +164,13 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 | R9 | 语义回归且项目无关 | #315 / AC9 | not_satisfied | 待实现 |
 | R10 | changed-scope CI + independent Review | #315 / AC10 | not_satisfied | 待验证 |
 | R11 | merge/main-fresh/archive/closure | #315 / AC11 | not_satisfied | 待交付 |
+| R12 | Document Growth Gate：单文件增长受读者任务/Owner/生命周期/导航约束，不用任意统一行数机械切块 | #315 / AC12 | not_satisfied | 待实现 |
 
 # 计划改动
 
 | 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
 | --- | --- | --- | --- |
-| Docs SKILL | Admission / Owner / Lifecycle Gate | 核心专业 Owner | R1-R4 |
+| Docs SKILL | Admission / Owner / Growth / Lifecycle Gate | 核心专业 Owner | R1-R5/R12 |
 | docs.reference.03 | 执行流程与知识迁移 | 让规则可操作 | R2-R5 |
 | Review SKILL | Reverse audit 入口 | independent review 可达 | R6-R8 |
 | review.reference.01 | 反向审计步骤和边界 | 避免误报/越权 | R6-R8 |
@@ -216,7 +219,7 @@ Issue #315 要求把“防止文档内容交叉”的治理方案落入 Agent_Sk
 # 完成审计
 
 - [ ] upstream_re_read：完成前重新读取 #315 与最终 canonical rules。
-- [ ] change_coverage：完成前按 AC1–AC11 重建覆盖。
+- [ ] change_coverage：完成前按 AC1–AC12 重建覆盖。
 - [ ] reverse_audit：完成前审查本次自身是否制造新的治理重复或项目专属默认。
 - [ ] unresolved_cleared：Ready 前清零 not_satisfied，或有正式延期依据。
 

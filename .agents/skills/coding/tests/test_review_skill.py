@@ -36,15 +36,19 @@ class ReviewSkillIntegrationTest(unittest.TestCase):
             "维护责任是否重复",
             "不能用词汇/主题相似度代替 Owner 判断",
             "review-only 只报告 Finding",
+            "任意统一行数",
         ):
             self.assertIn(marker, skill)
 
         for marker in (
             "Existing Owner",
             "Machine Owner",
+            "Growth",
             "Reverse impact",
             "不是相似度检查",
             "同一事实变化时，多个位置都必须独立同步同一完整解释/精确清单",
+            "targeted 可维护性下降",
+            "不得自行发明统一行数硬上限",
             "review-only 不修改/删除文档",
             "Handoff Docs",
         ):
