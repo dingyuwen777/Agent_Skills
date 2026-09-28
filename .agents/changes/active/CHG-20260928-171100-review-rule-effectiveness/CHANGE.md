@@ -119,7 +119,7 @@ Requirement Source：GitHub Issue #323。原规则已有 Root-Mechanism Projecti
 | R8 | Runtime/Stable IDs/roles/Quick path compatibility | #323 / AC8 | satisfied | 742/742 selected tests PASS on pre-ready head; routing/runtime conformance included |
 | R9 | end-to-end delivery lifecycle | #323 / AC9 | explicitly_deferred | current-head CI + independent Review 仍需在 ready revision 完成；merge/main-fresh/archive/closure/cleanup 属 post-merge lifecycle |
 
-# 计划改动 / 实际改动
+# 计划改动
 
 | 资产 | 实际变化 | 目的 |
 | --- | --- | --- |
