@@ -93,7 +93,7 @@ Requirement Source 为 GitHub Issue #319。当前 Review risk-first、Analysis T
 6. re-review 新 blocker 若与原 Finding 同一 invariant 且首轮当时事实足以推导，标记 First-pass Coverage Miss；真正由新代码/新 Requirement/新外部事实引入则不误标。
 7. USAGE 提供无需用户记住内部术语的短指令；普通“审核 PR”即可触发 Review 自主判断。
 
-# 备选方案与取舍
+## 备选方案与取舍
 
 - 所有 Review 无条件加载 Analysis/Systemic RCA：上下文成本高且简单 Review 过度治理，不采用。
 - 只在 re-review 增加更多检查：仍无法解决首轮漏检，不采用。
