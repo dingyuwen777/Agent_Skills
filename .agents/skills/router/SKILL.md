@@ -139,6 +139,7 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 | Docs full | — | Coding + Docs | `执行模式=实现；意图=Docs full；风险=L2/L3` |
 | 文档 Review | — | Docs | `执行模式=审查；意图=文档审查` |
 | Code Review / Audit | — | Coding + Review | `执行模式=审查；意图=代码审查` |
+| 协作者 PR Review / 返修 | 多人交接 | Coding + Review | `执行模式=审查/实现；意图=代码审查/Review-and-fix；治理=多人协作` |
 | Dependency / Runtime Upgrade | — | Coding | `执行模式=实现；意图=依赖升级/Runtime 升级` |
 | Git / PR / Release | — | Coding | `执行模式=Git,验证；阶段=交付；意图=Git 交付` |
 | Runtime / Project Payload | — | Coding | `执行模式=实现；风险=L3；范围=Runtime,MCP` |
