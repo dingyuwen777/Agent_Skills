@@ -75,7 +75,6 @@ Runtime/Project Payload/Release 也动态发现。
 1. 恢复最少充分事实；
 2. 按任务对象/专业意图选 Owner；其余维度只细化已命中 Owner；
 3. 第一性原理/因果/方案 → Analysis；外部最新/核验 → Research；研发/Git/CI/Release → Coding；黑盒/Journey/Regression → Testing；代码/PR 审查 → Coding + Review；Figma → Figma；文档 → Docs。Research 可组合 Analysis/Coding/Figma；共享字样/能力不制造 Owner；
-   - Code Review 仍先进入 Coding + Review；Reviewer 从真实实现确认并发/异步、批处理、Lease/锁/Fencing、Retry/Timeout、幂等、partial failure、外部副作用、事务/状态机/恢复等复合机制后，才追加 `意图=机制完整性审查` 做条件 refinement。该信号由 Reviewer 自行产生，不要求用户知道内部术语，也不让普通 Review 无条件进入重型诊断。
 4. 仅在已命中 Owner 内匹配 Reference；显式 dependency 可跨 Skill；
 5. 命中 Reference 必须在执行前取得**完整原文**；
 6. 不机械读全部 Skills/References。
@@ -139,7 +138,7 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 | Docs targeted | — | Coding + Docs | `执行模式=实现；意图=Docs targeted` |
 | Docs full | — | Coding + Docs | `执行模式=实现；意图=Docs full；风险=L2/L3` |
 | 文档 Review | — | Docs | `执行模式=审查；意图=文档审查` |
-| Code Review / Audit | 默认轻量；确认复合机制后条件升级 | Coding + Review；必要时复用 Systemic RCA | `执行模式=审查；意图=代码审查`；事实命中后追加 `意图=机制完整性审查` |
+| Code Review / Audit | 复合机制按事实升级 | Coding + Review | `执行模式=审查；意图=代码审查`；必要时追加 `意图=机制完整性审查` |
 | Dependency / Runtime Upgrade | — | Coding | `执行模式=实现；意图=依赖升级/Runtime 升级` |
 | Git / PR / Release | — | Coding | `执行模式=Git,验证；阶段=交付；意图=Git 交付` |
 | Runtime / Project Payload | — | Coding | `执行模式=实现；风险=L3；范围=Runtime,MCP` |
@@ -180,8 +179,8 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 - 触发：Code Review/Audit、独立 Review 或项目门禁；Figma/Docs“审查”不自动成为 Code Review。
 - 必须动作：读 [`.agents/skills/review/SKILL.md`](../review/SKILL.md)，独立重建要求并审 Findings/Evidence。
 - 不适用：无源码/PR/diff Review 或独立门禁。
-- 交接：Review Target/base/head/上游事实 → Review；Test Gap → Testing。Reviewer 确认复合高风险机制且局部 Finding 不能代表完整机制边界时，追加 `意图=机制完整性审查`，由现有 Coding Systemic RCA 提供机制/因果覆盖方法；Review 继续拥有 Finding 分类与收敛边界。
-- 返回：Finding → Coding；Regression → Testing；再 re-review。简单、局部、单因果 Review 不提交机制完整性信号。
+- 交接：Review Target/base/head/上游事实 → Review；Test Gap → Testing；确认复合机制且需 Systemic RCA 时追加 `意图=机制完整性审查`。
+- 返回：Finding → Coding；Regression → Testing；再 re-review；简单 Review 不升级。
 - 失败关闭：缺目标/关键事实→不宣称 Review 完成/可合并。
 
 ## 10. Docs 路由
