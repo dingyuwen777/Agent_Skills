@@ -49,7 +49,7 @@ Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；
 
 ## First Review Assembly Gate（首次发布门禁）
 
-发布 Findings 前冻结 Target/Requirement/base-head，建立 **Review Coverage Map**，按 [04_审查深度选择.md](references/04_审查深度选择.md) 使用固定非递归 Assembly；blind 视角同一 Head 独立审，Parent **一次 synthesis** 后才发布，**不得向作者发布部分 Findings或递归开启 Full Review**。Systemic signal 先 route refresh，并按 **Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission / Coverage Audit** 闭环；旧基线本可推导却漏出首轮 batch 的 blocker 记 **First-pass Coverage Miss**。简单 Review 不机械升级。
+冻结 Target/Requirement/base-head，建立 **Review Coverage Map**；Assembly 深度见 [04_审查深度选择.md](references/04_审查深度选择.md)。blind 视角同一 Head 独立审，Parent **一次 synthesis** 后发布，**不得向作者发布部分 Findings或递归开启 Full Review**。Systemic signal 先 route refresh，按 **Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission / Coverage Audit** 闭环；旧基线本可推导却漏出首轮 batch 的 blocker 记 **First-pass Coverage Miss**。简单 Review 不机械升级。
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
