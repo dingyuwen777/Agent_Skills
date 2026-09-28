@@ -8,7 +8,10 @@
     "first-pass-coverage",
     "first-review-publication-closure",
     "second-pass-delta-only",
-    "consolidated-correction-if-escape"
+    "consolidated-correction-if-escape",
+    "finding-admission-valid",
+    "repair-batch-single-rerequest",
+    "delta-rereview"
   ],
   "必需证据": [
     "invariant-projection-evidence",
@@ -20,7 +23,10 @@
     "old-baseline-finding-as-normal-second-pass",
     "piecemeal-review-correction",
     "unbounded-rereview",
-    "simple-review-overrouting"
+    "simple-review-overrouting",
+    "speculative-blocker-repair",
+    "per-finding-rerequest-churn",
+    "duplicate-pr-for-review-repair"
   ],
   "上限": {
     "用户干预": 1
