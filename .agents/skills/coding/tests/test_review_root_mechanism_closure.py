@@ -32,11 +32,11 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             },
         )
 
-    def test_review_core_has_root_mechanism_projection_closure_gate(self) -> None:
+    def test_review_core_has_first_review_assembly_gate(self) -> None:
         """复杂 Review 必须在局部 Finding 前完成根机制投影闭环。"""
         text = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
         for marker in (
-            "Root-Mechanism Projection Closure Gate",
+            "First Review Assembly Gate",
             "Invariant",
             "Lifecycle",
             "Failure Boundary",
@@ -48,15 +48,15 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, text)
 
-    def test_first_review_publication_gate_closes_before_author_handoff(self) -> None:
-        """第一次向作者发布 Findings 前必须在同一 Head 上内部收敛。"""
+    def test_first_review_assembly_finishes_before_author_handoff(self) -> None:
+        """第一次向作者发布 Findings 前必须完成固定 Review Assembly。"""
         core = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
         for marker in (
-            "First Review Publication Gate",
+            "First Review Assembly Gate",
             "Review Coverage Map",
-            "blind omission pass",
+            "blind independent review",
+            "一次 synthesis",
             "不得向作者发布部分 Findings",
-            "首轮完整 blocking Finding set",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, core)
@@ -78,17 +78,16 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
 
-    def test_first_review_escape_is_consolidated_before_author_handoff(self) -> None:
-        """第二轮发现旧漏审时先由 Reviewer 内部纠错，不能逐条把探索过程退给作者。"""
+    def test_first_review_escape_uses_one_fresh_assembly(self) -> None:
+        """第二轮旧漏审只允许一次 fresh blind assembly 后合并纠错。"""
         flow = (
             SKILLS / "review" / "references" / "01_审查执行流程.md"
         ).read_text(encoding="utf-8")
         for marker in (
-            "Review Correction Publication Gate",
-            "重新执行 First Review Publication Gate",
+            "fresh blind Review Assembly",
             "consolidated review-correction batch",
-            "不得逐条退给作者",
-            "Review incomplete",
+            "不得递归",
+            "FIRST_REVIEW_ESCAPE",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
@@ -100,7 +99,7 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
         )
         reviewer = next(item for item in payload["roles"] if item["id"] == "reviewer")
         instructions = reviewer["instructions"]
-        for marker in ("First Review Publication Gate", "partial findings", "repair diff"):
+        for marker in ("First Review Assembly Gate", "partial findings", "repair diff", "single synthesis"):
             with self.subTest(marker=marker):
                 self.assertIn(marker, instructions)
 
