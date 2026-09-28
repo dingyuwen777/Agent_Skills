@@ -47,6 +47,24 @@ Review **不复制** Coding 的编码、TDD、Git、兼容、安全、Contract�
 
 Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；仅 Evidence 成立且 `Scope=IN_SCOPE`、`Delivery Effect=BLOCKING`、`Action=AUTO_REPAIR` 的 Finding 自动返修。`OUT_OF_SCOPE + BLOCKING` 可以阻塞当前交付，但不会因此自动扩大当前修复范围。Finding 形成后映射 Router 的 **统一终态 / Handoff Contract**。
 
+## Root-Mechanism Projection Closure Gate（首轮机制闭环）
+
+Review 不承诺一次找出任何 PR 的所有潜在 Bug；但一旦当前事实已暴露复合高风险机制，首轮应在形成局部 Finding 前尽量闭合同一根机制、当前 Scope 内且当时事实可推导的主要失效投影，避免兄弟问题多轮出现。触发信号包括并发/异步、队列/批处理、Lease/锁/Fencing、Retry/Timeout、幂等、partial failure、外部副作用、事务、状态机、恢复/接管、资源生命周期、数据遗漏/重复/状态不同步或同一机制反复返修。
+
+```text
+Invariant
+→ Lifecycle / state / ownership window
+→ Failure Boundary
+→ Projection
+→ Evidence
+→ Omission / Coverage Audit
+→ Findings
+```
+
+Review 只拥有上述审查 Gate；复杂因果诊断仍由 Coding Systemic RCA Owner 承担。若 lifecycle/ownership/因果关系仍有实质未知或达到 Systemic 条件，Reviewer 追加 `意图=机制完整性审查` 并加载现有 Coding 根因调试 Reference，**不得复制第二套 RCA**。简单、稳定、局部、单因果 Review 不提交该信号。停止边界是**机制内完整、任务外有界**。
+
+re-review 若出现与原 Finding 同一 Invariant 的新 BLOCKING，且首轮当时已有事实足以推导该 Projection，标记 **First-pass Coverage Miss** 并只补该机制剩余主要投影；若由新代码、新 Requirement 或新外部事实才产生，则不得误标。
+
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
