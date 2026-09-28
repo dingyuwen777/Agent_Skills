@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-090006-development-preflight-governance
 title: 开发开工门禁与治理写前校验闭环
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/317-development-preflight-governance
 created: 2026-09-28
