@@ -227,7 +227,7 @@ python <skill>/scripts/coding.py new-change --root <repo> \
 任何**实质 Implementation**在正式修改生产代码前先做一次轻量开工校准，不增加独立流程 Owner：
 
 1. **Requirement**：确认当前 Requirement Source / 已确认任务事实、范围与 Acceptance；能从仓库恢复就自行恢复。
-2. **Governance write**：需要创建或实质更新 Issue/PR 时，必须先读取 [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md) 与 [29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)，按 canonical Profile 生成 candidate，并在任何 `platform write` 前取得 create-mode validation PASS；FAIL 时 writer 不得执行；写后 live reread 并用同一 Contract 再验。
+2. **Governance write**：需要创建或实质更新 Issue/PR 时，必须先读取 [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md) 与 [29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)。**新建**实例按 canonical Profile 生成 candidate，并在任何 `platform write` 前取得 create-mode validation PASS；**已有**实例按其当前 lifecycle 使用适用的 create/live Contract 做 pre-write validation。任一 FAIL 时 writer 不得执行；写后 live reread 并用同一 Contract 再验。
 3. **CI Cost/Evidence**：只问三个问题：**Broad Job**（本次是否会把局部变化放大成宽泛昂贵 Job）、**Duplicate Evidence**（PR/main/多个 Job 是否重复证明同一 revision+boundary）、**Duplicate Setup/Install/Build**（是否重复支付相同环境准备/构建）。没有真实风险就直接继续；命中任一项才读取 ref27 深入，不能为形式扫描全 CI。
 4. **Delivery**：确认当前授权终点、分支/Change/PR 需要性和真实平台门禁。
 
