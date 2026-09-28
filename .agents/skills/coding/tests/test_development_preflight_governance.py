@@ -72,20 +72,18 @@ class DevelopmentPreflightGovernanceContractTest(unittest.TestCase):
             self.assertIn(marker, detail)
 
     def test_requirement_drift_updates_owner_first_and_only_invalidates_affected_evidence(self) -> None:
-        """实质需求变化先更新唯一 Requirement Owner，再局部失效旧计划/Evidence。"""
-        trace = (
-            CODING / "references" / "17_需求来源与PR追溯治理.md"
-        ).read_text(encoding="utf-8")
+        """实质需求变化的 hard gate 位于 Coding Core，并只失效受影响结果。"""
+        core = (CODING / "SKILL.md").read_text(encoding="utf-8")
 
         for marker in (
             "Requirement Change Gate",
-            "先更新 Requirement Source",
             "语义变化",
+            "Requirement Source",
             "受影响",
             "STALE_RESULT",
             "非语义",
         ):
-            self.assertIn(marker, trace)
+            self.assertIn(marker, core)
 
     def test_reviewer_role_supports_preflight_and_completion_without_new_role(self) -> None:
         """Reviewer 复用两个场景；角色集合仍严格保持五个。"""
