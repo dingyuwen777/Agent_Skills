@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-212500-route-outcome-effectiveness
 title: 路由完整性与真实行为评测闭环
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/327-route-outcome-effectiveness
 created: 2026-09-28
@@ -124,14 +124,14 @@ Router/Coding routing metadata、Runtime Task Route validator/evaluator、Outcom
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | mixed Analysis/Research route 不误入 Coding，工程组合仍可达 | #327 / AC1 | not_satisfied | Red tests 待取得 |
-| R2 | Task Route 显式区分 known/known-empty/unknown | #327 / AC2 | not_satisfied | Red tests 待取得 |
-| R3 | actual grader 不信任自报标签 | #327 / AC3 | not_satisfied | Red tests 待取得 |
-| R4 | reasoning-source qualification profile 复用同一 grader | #327 / AC4 | not_satisfied | Red tests 待取得 |
-| R5 | Context Effectiveness 联合结果指标 | #327 / AC5 | not_satisfied | Red tests 待取得 |
-| R6 | Mutation Impact / parity / budget 不回归 | #327 / AC6 | not_satisfied | 实现后验证 |
-| R7 | current-head CI/package/review | #327 / AC7 | not_satisfied | Ready 后验证 |
-| R8 | merge/main-fresh/archive/closure/cleanup | #327 / AC8 | not_satisfied | post-merge 验证 |
+| R1 | mixed Analysis/Research route 不误入 Coding，工程组合仍可达 | #327 / AC1 | satisfied | mixed-route 正负例与既有 Testing/Figma/Docs Handoff 回归在 run 36434077058 全部 Green |
+| R2 | Task Route 显式区分 known/known-empty/unknown | #327 / AC2 | satisfied | Task Route 升级 v2；漏维度/UNKNOWN+值负例、Source/Runtime conformance、真实 MCP smoke 在 run 36434077058 Green |
+| R3 | actual grader 不信任自报标签 | #327 / AC3 | satisfied | actual Evidence Receipt + forbidden clear receipt Contract；self-report bypass/qualification 回归在 run 36434077058 Green |
+| R4 | reasoning-source qualification profile 复用同一 grader | #327 / AC4 | satisfied | reasoning-source profile 复用 grade_run；Analysis/Research registry/profile 回归 Green |
+| R5 | Context Effectiveness 联合结果指标 | #327 / AC5 | satisfied | effectiveness report 联合 context bytes/首轮遗漏/返修/重试/用户干预/grader；无 size-only PASS |
+| R6 | Mutation Impact / parity / budget 不回归 | #327 / AC6 | satisfied | compile/CLI smoke + 753 tests OK；routing/source-runtime/runtime/qualification/context budget 全部 Green，未提高预算 |
+| R7 | current-head CI/package/review | #327 / AC7 | explicitly_deferred | 进入 ready_for_review 后取得 current-head required CI、三平台 package 与 final Review；235c920 实现语义已 Green |
+| R8 | merge/main-fresh/archive/closure/cleanup | #327 / AC8 | explicitly_deferred | 仅能在 merge 后由 main-fresh、repository-native archive、Closure Audit 与 cleanup 完成 |
 
 # 计划改动
 
@@ -147,10 +147,10 @@ Router/Coding routing metadata、Runtime Task Route validator/evaluator、Outcom
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
 - [x] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步受影响的长期文档或明确不适用依据
+- [x] 取得仍覆盖当前版本的验证证据
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -178,14 +178,14 @@ Router/Coding routing metadata、Runtime Task Route validator/evaluator、Outcom
 | 项目 | 结论 | 依据 / 处理方式 |
 | --- | --- | --- |
 | 主要风险 | route 欠披露、Eval 过度复杂、Context 指标误导 | 正负回归 + 单一 grader + no-size-only PASS |
-| 兼容性 | 当前 Task Route machine semantics 会收紧 | #327 明确允许；不保留未要求历史双 reader |
+| 兼容性 | Task Route 升级为 v2 并收紧 truth-state | #327 明确允许；当前版本同源升级，不保留未要求历史双 reader |
 | 数据 / Migration | 不适用 | 无数据库/业务数据 |
 | 部署 / 运行 | 后续 Runtime Release 才分发到目标项目 | 本 PR 不发布 |
 | 回滚 / 恢复 | 回退 PR | 无不可逆数据副作用 |
 
 # 文档、依赖、部署与发布影响
 
-- **长期文档**：同步 README/USAGE 与 canonical Outcome Eval Reference 的新事实；不复制内部实现细节到普通用户说明。
+- **长期文档**：README 与 canonical Runtime/Eval References 已同步；USAGE 无新增用户操作或调用方式，因此不复制内部 machine-contract 细节。
 - **依赖 / Runtime**：无新依赖；Runtime routing 行为受影响。
 - **配置 / Secret**：不新增 Secret/Provider 凭据。
 - **部署 / Release**：本任务不创建 Release；未来正式 Release 使用现有三平台流程。
@@ -193,10 +193,10 @@ Router/Coding routing metadata、Runtime Task Route validator/evaluator、Outcom
 
 # 完成审计
 
-- [ ] upstream_re_read：完成前重新读取 #327 与受影响 canonical Owner。
-- [ ] change_coverage：AC1–AC8 全部有状态和 Evidence。
-- [ ] reverse_audit：从自然语言 → route → Context → execution receipt → grader → qualification → delivery 反查。
-- [ ] unresolved_cleared：Ready 前 R1–R7 无 not_satisfied；R8 仅按 post-merge 生命周期处理。
+- [x] upstream_re_read：已重读 #327、Router/Coding/Runtime/Outcome Eval/qualification 与当前 CI 事实。
+- [x] change_coverage：AC1–AC6 已满足；AC7 Ready 后门禁、AC8 post-merge 门禁均显式 deferred，无遗漏要求。
+- [x] reverse_audit：已从自然语言 → owner route → truth-state → Context → Evidence Receipt → grader → qualification → delivery 反查，并验证 Testing/Figma/Docs/Review 既有组合未回归。
+- [x] unresolved_cleared：当前无 not_satisfied；仅 R7/R8 按正式生命周期 explicitly_deferred。
 
 # 完成证据与状态
 
@@ -206,18 +206,19 @@ Router/Coding routing metadata、Runtime Task Route validator/evaluator、Outcom
 | --- | --- | --- | --- | --- |
 | V1 | main 0bda190c | canonical read + Issue #327 | confirmed | 起始事实与 Requirement Source |
 | V2 | head 3e8e96980bfe435a74e35e70326c13df4fa8a2c7 / GitHub Actions run 36429308261 | selected self-contained tests | FAILED：48 tests 中 8 failures + 1 error；mixed-route、Task Route completeness、actual receipt、reasoning profile/effectiveness 均按预期 Red | 新回归在旧实现上真实暴露 #327 AC1–AC5 缺口 |
+| V3 | head 235c9205e0b7c34769652c16d28a9f432a357a82 / GitHub Actions run 36434077058 | compile + CLI smoke + full selected semantic suite | compile/smoke PASS；Ran 753 tests → OK；既有 absolute/context migration budgets 均 Green | AC1–AC6 当前实现与内容守恒已闭合；唯一 CI failure 是 Change 尚为 in_progress 的预期 Ready Gate |
 
 ## 未验证内容与剩余风险
 
-- 尚未取得 Red CI、Green current-head CI、独立 Review、merge/main-fresh/archive/closure。
-- 真实跨宿主 actual runs 不属于本次普通源码交付 required gate；本次只建立可信生产/验证 Contract。
+- Ready 后仍需 current-head required CI、适用三平台 Runtime Package 与 final Review；merge 后仍需 main-fresh/archive/closure/cleanup。
+- 真实跨宿主 actual runs 不属于本次普通源码交付 required gate；本次建立可信 Evidence Receipt/qualification Contract，但不冒充已完成真实跨宿主 qualification。
 
 ## 交付状态
 
-- 提交：待 Red commit。
-- 拉取请求：待创建。
-- CI：待 Red / Green。
-- 合并：待 required gate。
+- 提交：Red + Green + compatibility/context closure 已提交，当前实现 head `235c9205e0b7c34769652c16d28a9f432a357a82`。
+- 拉取请求：PR #328 Draft；本提交将 Change 切换为 ready_for_review，随后转 Ready。
+- CI：run 36434077058 compile/smoke/753 semantic tests Green；整体 job 仅因 Change 当时 in_progress 按预期 fail-closed。
+- 合并：待 Ready-head required CI/package + final Review。
 - Change 归档：待 merge 后 repository-native automation。
 - 发布 / 部署：不适用，本任务不创建 Release。
 
