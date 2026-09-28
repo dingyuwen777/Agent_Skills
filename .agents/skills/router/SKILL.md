@@ -15,36 +15,6 @@ description: Agent_Skills 的唯一跨 Skill 控制面。每个任务先进入�
 
 Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或调度开发任务**，不维护任务队列/Worker，**不接管专业 Skill**，也不执行代码/设计/文档/测试/Git/CI/发布/部署；多 Skill 只声明并集、顺序与交接。
 
-<!-- runtime-project-contract:start -->
-## 项目工程核心约束
-
-先读当前项目规则和真实事实，再按授权、风险、验证与完成范围行动；能力存在不等于扩大任务。
-
-### 决策权与用户提问
-
-**Decision Authority Contract / Human Input Admission Gate**：按 `RULE_RESOLVED → FACT_RESOLVABLE → CONVENTION_RESOLVED → DEFAULT_RESOLVED → SELF_DECIDE` 依次自行解决；只有 `OWNER_DECISION / AUTHORIZATION_REQUIRED / REQUIRED_USER_INPUT / CAPABILITY_BLOCKER` 才请求用户或 Owner。**No Choice-Prompt**：规则、事实、项目惯例、安全默认或低风险可逆实现细节已经足够时，不重新包装成用户选择题。
-
-### 权限与交付
-
-只执行用户已授权且当前宿主真实可完成的动作；低等级授权不自动升级，不绕过 CI、Branch Protection、Ruleset 或项目门禁。提 PR 到 PR Ready 为止；合并主分支或审查后交付只有在对应授权和 required gate 都满足时继续。
-
-### 风险与验证
-
-- **L1**：行为不变机械修改或影响隔离的小修复；
-- **L2**：行为变化、重要缺陷、多文件/多人或需要追踪的工作；
-- **L3**：public API/ABI、Schema/Migration、跨模块 Contract、架构、安全、部署恢复、重大依赖或破坏性兼容变化。
-- **Fresh Evidence Contract**：完成结论绑定当前相关 revision、环境、Contract、Scope 与实际成功标准；不受影响的新鲜证据可复用，只有证据失效、覆盖不足或 current-head gate 明确要求时才重跑。
-
-### 完成与失败
-
-**Requested Outcome = Completion Scope**。PR、merge、Release、Deploy 只在用户明确要求且 required gate 满足时继续；CI 绿色不替代需求完整性、文档、独立复核或其他项目门禁。缺少 required 事实、约束、权限或验证时，不得声称 complete、mergeable、releasable 或 deployable。
-
-### 超范围后续事项
-
-跨域或超出当前 Scope 的发现默认只报告；只有 Evidence 足够、有独立长期价值且不是重复事项时最多形成 `FOLLOW_UP_CANDIDATE`。Candidate 不自动创建 Issue/Change/Branch/PR/Agent，也不自动执行；持久化需要独立授权并先去重，形成 `BACKLOG_ITEM` 后当前任务停止。仅 **新的 Requirement / Task** 才能重新恢复事实、Scope、权限、风险与 Evidence 后处理。
-
-<!-- runtime-project-contract:end -->
-
 ## 1. 项目事实与确定性执行边界
 
 先读目标项目及上级适用的 `AGENTS.md`、`CONTRIBUTING` 等规则，再按需读真实代码、Manifest/lock、Contract、Schema/Migration、配置、测试、CI、正式文档和设计事实。**项目自己的**事实优先；语言、Runtime、框架、数据库、Owner、API/ABI/CLI、Schema、Provider、部署、Design Token/业务字段不得猜，**不能单凭文件名推出 React、FastAPI、PostgreSQL**。
