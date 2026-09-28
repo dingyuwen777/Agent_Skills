@@ -445,6 +445,8 @@ Agent_Skills 默认不承诺不同版本之间的原地升级兼容。切换版�
 
 ## 跨模型一致性与 Outcome Eval
 
+当前 actual run 额外要求 **Evidence Receipt**：完成结果、Evidence 和 violation 必须由真实宿主/工具/仓库/用户可观察事实生成的 receipt 支撑；模型在 artifact 中自报同名字符串不能单独制造 PASS。Context effectiveness 只联合报告 Context bytes、首轮遗漏、返修轮次、retry、用户干预与 grader 结果，不把 Context 变小本身定义为成功。
+
 Agent_Skills 不为 GPT、DeepSeek、GLM 或其他模型维护不同的工程规则分支。模型能力、上下文长度和内部推理策略可以不同，但同一任务事实必须进入同一 canonical Owner / required Context，并满足同一风险、授权、Evidence、Review、CI 和 Completion Contract。
 
 仓库中的 `evals/` 提供 model-neutral Outcome Eval 机器契约：
@@ -573,7 +575,13 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 → Behavior Qualification 保存只读 workflow artifact
 ```
 
-维护者只有在已经取得真实宿主 run、需要声明当前 `main` revision 的跨模型/宿主行为资格或做回归比较时，才需要组成 `qualification-bundle.json` 并运行：
+维护者只有在已经取得真实宿主 run、需要声明当前 `main` revision 的跨模型/宿主行为资格或做回归比较时，才需要组成 `qualification-bundle.json` 并运行。默认 profile 是 Engineering；通用 Analysis / Research 使用独立的 `reasoning-source` profile，两者复用同一个 grader：
+
+```bash
+python evals/release_qualification.py validate --root . --bundle qualification-bundle.json --revision <当前main的40位SHA> --profile reasoning-source --json
+```
+
+Engineering qualification 继续使用：
 
 ```bash
 python evals/agent_outcome_eval.py validate-registry --case-dir evals/cases

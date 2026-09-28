@@ -46,6 +46,16 @@ def _run(case_id: str, model: str, host: str, suffix: str) -> dict[str, object]:
         "完成结果": list(case["必需结果"]),
         "证据": list(case["必需证据"]),
         "违规": [],
+        "证据收据": [
+            *[
+                {"类型": "result", "标识": item, "来源": "host", "说明": "unit-test host result"}
+                for item in case["必需结果"]
+            ],
+            *[
+                {"类型": "evidence", "标识": item, "来源": "tool", "说明": "unit-test tool evidence"}
+                for item in case["必需证据"]
+            ],
+        ],
         "过程指标": {"工具调用": 0, "重试": 0, "用户干预": 0},
         "遥测": {
             "输入Token": "unavailable",
@@ -112,6 +122,27 @@ class ReleaseQualificationTest(unittest.TestCase):
         ):
             self.assertIn(case_id, required)
         self.assertIs(qualification.grade_run, grade_run)
+
+        runs = []
+        for case_id in profile["required_cases"]:
+            runs.append(_run(case_id, "model-a", "source-mode", "a"))
+            runs.append(_run(case_id, "model-b", "source-mode", "b"))
+        bundle = {
+            "协议": QUALIFICATION_PROTOCOL,
+            "revision": REVISION,
+            "必需用例": list(profile["required_cases"]),
+            "每用例最少模型数": 2,
+            "宿主必需用例": {},
+            "运行": runs,
+        }
+        report = validate_qualification_bundle(
+            bundle,
+            root=ROOT,
+            expected_revision=REVISION,
+            profile_id="reasoning-source",
+        )
+        self.assertTrue(report["通过"])
+        self.assertEqual(report["profile"], "reasoning-source")
 
     def test_fixture_run_is_rejected(self) -> None:
         """fixture 即使 grader Green 也不能冒充 Release actual Evidence。"""

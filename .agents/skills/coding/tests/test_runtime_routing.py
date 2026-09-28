@@ -86,10 +86,12 @@ def _reference(
 
 
 def _task_route(**signals: list[str]) -> dict[str, object]:
-    """构造中文 Task Route。"""
+    """构造 facts-complete 中文 Task Route；未指定维度显式记为 KNOWN_EMPTY。"""
+    complete = {dimension: [] for dimension in ROUTE_DIMENSIONS}
+    complete.update(signals)
     return {
         "协议": TASK_ROUTE_PROTOCOL,
-        "信号": signals,
+        "信号": complete,
         "未知项": [],
         "依据": ["测试事实"],
     }
@@ -425,7 +427,12 @@ class RoutingEvaluatorTest(unittest.TestCase):
     def test_task_route_requires_explicit_truth_state_for_every_dimension(self) -> None:
         """每个维度必须显式表达 KNOWN(values)、KNOWN_EMPTY 或 UNKNOWN，不能漏填即 false。"""
         contract = public_route_contract(self.manifest)
-        sparse = _task_route(执行模式=["实现"])
+        sparse = {
+            "协议": TASK_ROUTE_PROTOCOL,
+            "信号": {"执行模式": ["实现"]},
+            "未知项": [],
+            "依据": ["故意漏维度的负例"],
+        }
         with self.assertRaisesRegex(ValueError, "未覆盖维度"):
             validate_task_route(sparse, contract)
 

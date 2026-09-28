@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-212500-route-outcome-effectiveness
 title: 路由完整性与真实行为评测闭环
 level: L3
-status: proposed
+status: in_progress
 owner: dingyuwen777
 branch: tech/327-route-outcome-effectiveness
 created: 2026-09-28
@@ -146,7 +146,7 @@ Router/Coding routing metadata、Runtime Task Route validator/evaluator、Outcom
 
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据或说明测试例外
+- [x] 行为变化建立失败证据或说明测试例外
 - [ ] 完成最小实现，不静默扩大范围
 - [ ] 同步受影响的长期文档或明确不适用依据
 - [ ] 取得仍覆盖当前版本的验证证据
@@ -205,7 +205,7 @@ Router/Coding routing metadata、Runtime Task Route validator/evaluator、Outcom
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main 0bda190c | canonical read + Issue #327 | confirmed | 起始事实与 Requirement Source |
-| V2 | Red branch head | Skill Tests | 待执行 | 新测试应在旧实现上失败 |
+| V2 | head 3e8e96980bfe435a74e35e70326c13df4fa8a2c7 / GitHub Actions run 36429308261 | selected self-contained tests | FAILED：48 tests 中 8 failures + 1 error；mixed-route、Task Route completeness、actual receipt、reasoning profile/effectiveness 均按预期 Red | 新回归在旧实现上真实暴露 #327 AC1–AC5 缺口 |
 
 ## 未验证内容与剩余风险
 

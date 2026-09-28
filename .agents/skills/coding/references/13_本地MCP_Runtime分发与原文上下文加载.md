@@ -562,6 +562,10 @@ Agent_Skills 源仓库维护默认不承担跨版本升级兼容；除非 Requir
 
 安装失败按第 15 节快照回滚。手工回退使用目标版本完整同平台资产及其安装流程；目标版本不理解当前 Contract 时停止并按对应迁移说明处理，不手工删除归属不明 `.agents` 内容。
 
+## 19.1 Task Route Truth-State
+
+Runtime 正式 `submit_route` 只接受事实状态完整的 Task Route：每个公开维度必须显式落入三种状态之一——`KNOWN(values)`（signals 非空）、`KNOWN_EMPTY`（signals 显式空列表）或 `UNKNOWN`（列入 未知项，且同维度不得同时携带已知值）。维度既不在 signals、也不在 未知项时必须 fail closed，不能把调用方漏报事实解释为 false。canonical evaluator 仍允许内部 fixture/Source conformance 使用部分事实做候选推演，但进入 Runtime capability 前必须经过完整提交校验。
+
 ## 20. 正常任务生命周期
 
 ### Source Mode

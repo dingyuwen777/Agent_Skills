@@ -33,6 +33,16 @@ HIGH_VALUE_CONVERGENCE_CASES = (
     "review-root-mechanism-projection",
 )
 
+REASONING_QUALIFICATION_CASES = (
+    "analysis-first-principles",
+    "analysis-root-cause-before-minimization",
+    "analysis-mitigation-vs-resolution",
+    "research-latest-primary",
+    "research-insufficient-evidence",
+    "research-historical-scope",
+    "unnecessary-clarification",
+)
+
 _CASE_FIELDS = {
     "协议",
     "用例标识",
@@ -59,12 +69,16 @@ _RUN_REQUIRED_FIELDS = {
     "过程指标",
     "遥测",
 }
-_RUN_OPTIONAL_FIELDS = {"轨迹", "备注"}
+_RUN_OPTIONAL_FIELDS = {"轨迹", "备注", "证据收据", "效果指标"}
 _MODEL_FIELDS = {"名称", "版本", "宿主"}
 _PROCESS_FIELDS = {"工具调用", "重试", "用户干预"}
 _TELEMETRY_FIELDS = {"输入Token", "输出Token", "耗时毫秒", "上下文字节"}
 _LIMIT_FIELDS = _PROCESS_FIELDS | {"上下文字节"}
 _TRACE_EVENT_FIELDS = {"类型", "名称", "状态", "说明"}
+_RECEIPT_FIELDS = {"类型", "标识", "来源", "说明"}
+_RECEIPT_TYPES = {"result", "evidence", "violation"}
+_RECEIPT_SOURCES = {"host", "tool", "repository", "user"}
+_EFFECT_FIELDS = {"首轮遗漏", "返修轮次"}
 _ROUTE_RESULT_FIELDS = {"状态", "命中Skill", "最低风险", "存在未知项"}
 _CONTEXT_RESULT_FIELDS = {"状态", "字节数"}
 _RUN_TYPES = {"actual", "fixture"}
@@ -188,8 +202,61 @@ def _validate_trace(value: Any) -> list[dict[str, str]]:
     return normalized
 
 
+def _validate_receipts(value: Any) -> list[dict[str, str]]:
+    """校验由宿主/工具/仓库/用户事实产生的最小 Evidence Receipt；模型自报不是可信来源。"""
+    if value is None:
+        return []
+    if not isinstance(value, list) or len(value) > 512:
+        raise ValueError("证据收据必须是最多 512 项的列表")
+    normalized: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for index, receipt in enumerate(value):
+        if not isinstance(receipt, Mapping) or set(receipt) != _RECEIPT_FIELDS:
+            raise ValueError(f"证据收据[{index}] 字段不合法")
+        receipt_type = _nonempty_string(receipt.get("类型"), label=f"证据收据[{index}].类型", max_length=32)
+        if receipt_type not in _RECEIPT_TYPES:
+            raise ValueError(f"证据收据[{index}] 类型不受支持：{receipt_type}")
+        source = _nonempty_string(receipt.get("来源"), label=f"证据收据[{index}].来源", max_length=32)
+        if source not in _RECEIPT_SOURCES:
+            raise ValueError(f"证据收据[{index}] 来源必须是 host/tool/repository/user，不能由模型自报")
+        identifier = _nonempty_string(receipt.get("标识"), label=f"证据收据[{index}].标识", max_length=512)
+        key = (receipt_type, identifier)
+        if key in seen:
+            raise ValueError(f"证据收据不能重复：{receipt_type}:{identifier}")
+        seen.add(key)
+        normalized.append(
+            {
+                "类型": receipt_type,
+                "标识": identifier,
+                "来源": source,
+                "说明": _nonempty_string(receipt.get("说明"), label=f"证据收据[{index}].说明", max_length=1024),
+            }
+        )
+    return normalized
+
+
+def _effect_metrics(value: Any) -> dict[str, int | str]:
+    """校验 Context effectiveness 的可选结果指标；取不到时显式 unavailable。"""
+    if value is None or value == UNAVAILABLE:
+        return {key: UNAVAILABLE for key in sorted(_EFFECT_FIELDS)}
+    if not isinstance(value, Mapping) or set(value) != _EFFECT_FIELDS:
+        raise ValueError("效果指标必须是 unavailable 或固定字段 object")
+    return {
+        key: _telemetry_value(value.get(key), label=f"效果指标.{key}")
+        for key in sorted(_EFFECT_FIELDS)
+    }
+
+
+def _receipt_claims(receipts: Sequence[Mapping[str, str]]) -> tuple[set[str], set[str], set[str]]:
+    """从可信 Evidence Receipt 派生 actual run 的结果、证据和违规集合。"""
+    results = {str(item["标识"]) for item in receipts if item["类型"] == "result"}
+    evidence = {str(item["标识"]) for item in receipts if item["类型"] == "evidence"}
+    violations = {str(item["标识"]) for item in receipts if item["类型"] == "violation"}
+    return results, evidence, violations
+
+
 def validate_run(run: Mapping[str, Any]) -> dict[str, Any]:
-    """验证真实 Agent/宿主产生的 run artifact，不推断缺失遥测。"""
+    """验证真实 Agent/宿主产生的 run artifact；actual 结果只能由非模型 Evidence Receipt 支撑。"""
     if not isinstance(run, Mapping):
         raise ValueError("Outcome Eval run 必须是 object")
     fields = set(run)
@@ -197,7 +264,6 @@ def validate_run(run: Mapping[str, Any]) -> dict[str, Any]:
         raise ValueError("Outcome Eval run 字段不合法")
     if run.get("协议") != RUN_PROTOCOL:
         raise ValueError("Outcome Eval run 协议不受支持")
-
     model = run.get("模型")
     if not isinstance(model, Mapping) or set(model) != _MODEL_FIELDS:
         raise ValueError("模型字段必须包含名称、版本、宿主")
@@ -208,26 +274,33 @@ def validate_run(run: Mapping[str, Any]) -> dict[str, Any]:
     run_type = _nonempty_string(run.get("运行类型"), label="运行类型", max_length=32)
     if run_type not in _RUN_TYPES:
         raise ValueError("运行类型只允许 actual/fixture")
-
     revision = _nonempty_string(run.get("revision"), label="revision", max_length=64)
     if revision != UNAVAILABLE and _REVISION_PATTERN.fullmatch(revision) is None:
         raise ValueError("revision 必须是 40 位 Git SHA 或 unavailable")
-
     process = run.get("过程指标")
     if not isinstance(process, Mapping) or set(process) != _PROCESS_FIELDS:
         raise ValueError("过程指标必须且只能包含工具调用、重试、用户干预")
-    normalized_process = {
-        key: _nonnegative_int(process.get(key), label=f"过程指标.{key}")
-        for key in ("工具调用", "重试", "用户干预")
-    }
-
+    normalized_process = {key: _nonnegative_int(process.get(key), label=f"过程指标.{key}") for key in ("工具调用", "重试", "用户干预")}
     telemetry = run.get("遥测")
     if not isinstance(telemetry, Mapping) or set(telemetry) != _TELEMETRY_FIELDS:
         raise ValueError("遥测字段不合法")
-    normalized_telemetry = {
-        key: _telemetry_value(telemetry.get(key), label=f"遥测.{key}")
-        for key in ("输入Token", "输出Token", "耗时毫秒", "上下文字节")
-    }
+    normalized_telemetry = {key: _telemetry_value(telemetry.get(key), label=f"遥测.{key}") for key in ("输入Token", "输出Token", "耗时毫秒", "上下文字节")}
+
+    completion = _string_list(run.get("完成结果"), label="完成结果")
+    evidence = _string_list(run.get("证据"), label="证据")
+    violations = _string_list(run.get("违规"), label="违规")
+    receipts = _validate_receipts(run.get("证据收据"))
+    effects = _effect_metrics(run.get("效果指标"))
+    if run_type == "actual":
+        if (completion or evidence or violations) and not receipts:
+            raise ValueError("actual run 的完成结果/证据/违规必须有证据收据，不能仅靠模型自报")
+        receipt_results, receipt_evidence, receipt_violations = _receipt_claims(receipts)
+        if set(completion) != receipt_results:
+            raise ValueError("actual run 完成结果必须与证据收据派生结果精确一致")
+        if set(evidence) != receipt_evidence:
+            raise ValueError("actual run 证据必须与证据收据派生证据精确一致")
+        if set(violations) != receipt_violations:
+            raise ValueError("actual run 违规必须与证据收据派生违规精确一致")
 
     return {
         "协议": RUN_PROTOCOL,
@@ -239,19 +312,16 @@ def validate_run(run: Mapping[str, Any]) -> dict[str, Any]:
         "revision": revision,
         "路由结果": _route_result(run.get("路由结果")),
         "上下文": _context_result(run.get("上下文")),
-        "完成结果": _string_list(run.get("完成结果"), label="完成结果"),
-        "证据": _string_list(run.get("证据"), label="证据"),
-        "违规": _string_list(run.get("违规"), label="违规"),
+        "完成结果": completion,
+        "证据": evidence,
+        "违规": violations,
+        "证据收据": receipts,
+        "效果指标": effects,
         "过程指标": normalized_process,
         "遥测": normalized_telemetry,
         "轨迹": _validate_trace(run.get("轨迹")),
-        "备注": (
-            UNAVAILABLE
-            if run.get("备注") is None
-            else _nonempty_string(run.get("备注"), label="备注", max_length=4096)
-        ),
+        "备注": UNAVAILABLE if run.get("备注") is None else _nonempty_string(run.get("备注"), label="备注", max_length=4096),
     }
-
 
 def grade_run(case: Mapping[str, Any], run: Mapping[str, Any]) -> dict[str, Any]:
     """使用同一确定性标准评分，不根据模型品牌改变权重或通过条件。"""
@@ -260,9 +330,12 @@ def grade_run(case: Mapping[str, Any], run: Mapping[str, Any]) -> dict[str, Any]
     if normalized_case["用例标识"] != normalized_run["用例标识"]:
         raise ValueError("run 用例标识与 case 不一致")
 
-    result_set = set(normalized_run["完成结果"])
-    evidence_set = set(normalized_run["证据"])
-    violations = set(normalized_run["违规"])
+    if normalized_run["运行类型"] == "actual":
+        result_set, evidence_set, violations = _receipt_claims(normalized_run["证据收据"])
+    else:
+        result_set = set(normalized_run["完成结果"])
+        evidence_set = set(normalized_run["证据"])
+        violations = set(normalized_run["违规"])
     missing_results = [item for item in normalized_case["必需结果"] if item not in result_set]
     missing_evidence = [item for item in normalized_case["必需证据"] if item not in evidence_set]
     forbidden = [item for item in normalized_case["禁止违规"] if item in violations]
@@ -334,6 +407,37 @@ def compare_runs(
     }
 
 
+def context_effectiveness_report(case: Mapping[str, Any], runs: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """联合呈现 Context 成本与结果质量；Context 更小本身永远不是 PASS 条件。"""
+    normalized_case = validate_case(case)
+    rows: list[dict[str, Any]] = []
+    for raw_run in runs:
+        run = validate_run(raw_run)
+        if run["用例标识"] != normalized_case["用例标识"]:
+            raise ValueError("effectiveness run 用例标识与 case 不一致")
+        grade = grade_run(normalized_case, run)
+        rows.append(
+            {
+                "运行标识": run["运行标识"],
+                "模型": run["模型"],
+                "通过": grade["通过"],
+                "上下文字节": run["遥测"]["上下文字节"],
+                "首轮遗漏": run["效果指标"]["首轮遗漏"],
+                "返修轮次": run["效果指标"]["返修轮次"],
+                "重试": run["过程指标"]["重试"],
+                "用户干预": run["过程指标"]["用户干预"],
+            }
+        )
+    return {
+        "协议": REPORT_PROTOCOL,
+        "用例标识": normalized_case["用例标识"],
+        "判定原则": "observability_only_context_size_is_not_success",
+        "运行数": len(rows),
+        "通过运行数": sum(1 for item in rows if item["通过"]),
+        "运行": rows,
+    }
+
+
 def load_json(path: str) -> dict[str, Any]:
     """读取单个 UTF-8 JSON artifact，供简单 runner/CI 复用。"""
     with open(path, "r", encoding="utf-8") as handle:
@@ -362,12 +466,13 @@ def validate_high_value_case_registry(
     if duplicates:
         raise ValueError("Outcome Eval case 标识重复：" + ", ".join(sorted(set(duplicates))))
 
-    missing = [case_id for case_id in HIGH_VALUE_CONVERGENCE_CASES if case_id not in seen]
+    required_registry = tuple(dict.fromkeys((*HIGH_VALUE_CONVERGENCE_CASES, *REASONING_QUALIFICATION_CASES)))
+    missing = [case_id for case_id in required_registry if case_id not in seen]
     if missing:
         raise ValueError("高价值 Outcome Eval case 缺失：" + ", ".join(missing))
 
     mismatched: list[str] = []
-    for case_id in HIGH_VALUE_CONVERGENCE_CASES:
+    for case_id in required_registry:
         expected = root / f"{case_id}.json"
         if not expected.is_file():
             mismatched.append(f"{case_id}: 缺少同名 case 文件")
@@ -383,6 +488,7 @@ def validate_high_value_case_registry(
     return {
         "协议": REPORT_PROTOCOL,
         "高价值用例": list(HIGH_VALUE_CONVERGENCE_CASES),
+        "推理用例": list(REASONING_QUALIFICATION_CASES),
         "用例总数": len(seen),
         "状态": "valid",
     }
@@ -412,6 +518,13 @@ def _build_parser() -> argparse.ArgumentParser:
     compare_parser.add_argument("--case", required=True)
     compare_parser.add_argument("--run", action="append", required=True)
     compare_parser.add_argument("--expected-model", action="append", default=[])
+
+    effectiveness_parser = subparsers.add_parser(
+        "effectiveness",
+        help="联合报告 Context 成本与实际结果指标，不把 Context 大小当作单独通过条件",
+    )
+    effectiveness_parser.add_argument("--case", required=True)
+    effectiveness_parser.add_argument("--run", action="append", required=True)
 
     registry_parser = subparsers.add_parser(
         "validate-registry",
@@ -445,6 +558,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 expected_models=expected or None,
             )
         )
+        return 0
+    if args.command == "effectiveness":
+        _print_json(context_effectiveness_report(load_json(args.case), [load_json(path) for path in args.run]))
         return 0
     if args.command == "validate-registry":
         _print_json(validate_high_value_case_registry(args.case_dir))
