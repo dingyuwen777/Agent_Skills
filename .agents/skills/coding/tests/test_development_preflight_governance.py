@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 from unittest.mock import Mock
 import unittest
 
@@ -159,6 +161,123 @@ class DevelopmentPreflightGovernanceContractTest(unittest.TestCase):
         }
         body = CONTRACT.prepare_pr_candidate(sections)
         self.assertEqual(CONTRACT.validate_pr_instance(body, mode="create"), [])
+
+    def test_prepare_issue_cli_writes_only_a_validated_candidate(self) -> None:
+        """prepare-issue CLI 应先通过同一 create Contract，再产生可供 writer 使用的文件。"""
+        sections = {
+            "重复检查": "- [x] 已完成重复事项搜索",
+            "动机 / 根因": "已确认动机",
+            "当前状态": "当前事实",
+            "目标状态": "目标事实",
+            "范围": "- 包含当前治理改动",
+            "非目标": "- 不修改业务数据",
+            "兼容与迁移": "兼容影响：无。\\n数据 / Schema：无。\\n配置 / 部署：无。\\n迁移步骤：无。",
+            "风险与回滚": "主要风险：规则漂移。\\n监测方式：回归。\\n回滚触发：失败。\\n回滚步骤：revert。",
+            "验收标准": "- [ ] AC1：candidate 可验证",
+            "验证要求": "- 单元 / 集成：candidate validation",
+            "上游事实源 / 相关资料": "- 当前测试 fixture",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            section_file = root / "sections.json"
+            output = root / "issue.md"
+            section_file.write_text(
+                json.dumps(sections, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            exit_code = CONTRACT.main(
+                [
+                    "prepare-issue",
+                    "--title",
+                    "[技术变更] CLI fixture",
+                    "--profile",
+                    "technical-change",
+                    "--sections-file",
+                    str(section_file),
+                    "--output",
+                    str(output),
+                ]
+            )
+
+            self.assertEqual(exit_code, 0)
+            body = output.read_text(encoding="utf-8")
+            self.assertEqual(
+                CONTRACT.validate_issue_instance(
+                    "[技术变更] CLI fixture",
+                    body,
+                    profile="technical-change",
+                    mode="create",
+                ),
+                [],
+            )
+
+    def test_invalid_prepare_issue_cli_does_not_create_output(self) -> None:
+        """prepare-issue FAIL 时不能留下可被误用为 platform writer 输入的输出文件。"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            section_file = root / "sections.json"
+            output = root / "issue.md"
+            section_file.write_text(
+                json.dumps({"重复检查": "- [x] 已搜索"}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            exit_code = CONTRACT.main(
+                [
+                    "prepare-issue",
+                    "--title",
+                    "[技术变更] invalid CLI fixture",
+                    "--profile",
+                    "technical-change",
+                    "--sections-file",
+                    str(section_file),
+                    "--output",
+                    str(output),
+                ]
+            )
+
+            self.assertEqual(exit_code, 1)
+            self.assertFalse(output.exists())
+
+    def test_prepare_pr_cli_uses_current_canonical_heading_order(self) -> None:
+        """prepare-pr CLI 必须动态跟随当前 canonical PR Profile。"""
+        profile = CONTRACT.load_pr_profile()
+        sections = {
+            heading: (
+                "Requirement-Source: #317"
+                if heading == "Requirement Source"
+                else f"{heading} 当前事实"
+            )
+            for heading in profile.required_headings
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            section_file = root / "sections.json"
+            output = root / "pr.md"
+            section_file.write_text(
+                json.dumps(sections, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            exit_code = CONTRACT.main(
+                [
+                    "prepare-pr",
+                    "--sections-file",
+                    str(section_file),
+                    "--output",
+                    str(output),
+                ]
+            )
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(
+                CONTRACT.validate_pr_instance(
+                    output.read_text(encoding="utf-8"),
+                    mode="create",
+                ),
+                [],
+            )
 
     def test_project_facing_rules_keep_parent_gates_even_without_subagent(self) -> None:
         """Runtime 安装后的项目入口仍必须表达 Parent hard gate，而不是依赖 subagent 存在。"""
