@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-142125-review-root-mechanism-closure
 title: Review 根机制投影闭环与首轮覆盖门禁
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/319-review-root-mechanism-closure
 created: 2026-09-28
