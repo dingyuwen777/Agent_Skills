@@ -48,51 +48,47 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, text)
 
-    def test_first_review_requires_route_refresh_before_blocking_finding_set(self) -> None:
-        """复杂 Review 必须先升级 Systemic Context，再形成首轮 blocking Finding set。"""
+    def test_first_review_publication_gate_closes_before_author_handoff(self) -> None:
+        """第一次向作者发布 Findings 前必须在同一 Head 上内部收敛。"""
         core = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
         for marker in (
-            "Systemic signal",
-            "route refresh",
-            "required RCA context",
+            "First Review Publication Gate",
+            "Review Coverage Map",
+            "blind omission pass",
+            "不得向作者发布部分 Findings",
             "首轮完整 blocking Finding set",
-            "Findings 前",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, core)
 
-    def test_second_pass_review_does_not_rediscover_old_derivable_blockers(self) -> None:
-        """返修后的第二轮只能审既定边界，旧事实可推导漏项必须记首轮覆盖失败。"""
+    def test_second_pass_is_repair_verification_not_second_full_review(self) -> None:
+        """作者返修后的第二次 Review 必须以 repair delta 为边界。"""
         flow = (
             SKILLS / "review" / "references" / "01_审查执行流程.md"
         ).read_text(encoding="utf-8")
         for marker in (
-            "Second-pass Review Contract",
+            "Second-pass Repair Verification",
             "原 blocking findings",
-            "本轮新 diff",
+            "repair diff",
             "直接相邻",
             "Acceptance Criteria",
-            "未改变的旧代码/旧事实",
-            "First-pass Coverage Miss",
-            "不得当作正常新增 Finding",
+            "未改变的旧基线",
+            "FIRST_REVIEW_ESCAPE",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
 
-    def test_first_pass_miss_triggers_single_coverage_recovery_batch(self) -> None:
-        """第二轮发现旧基线漏审时必须先一次性恢复覆盖，不能逐条返修。"""
+    def test_first_review_escape_is_consolidated_before_author_handoff(self) -> None:
+        """第二轮发现旧漏审时先由 Reviewer 内部纠错，不能逐条把探索过程退给作者。"""
         flow = (
             SKILLS / "review" / "references" / "01_审查执行流程.md"
         ).read_text(encoding="utf-8")
         for marker in (
-            "Coverage Recovery Gate",
-            "未改变的旧基线",
-            "consolidated recovery finding set",
-            "恢复完成前不返修",
-            "一个合并返修批次",
-            "再次从未改变旧基线",
-            "STOP_REPAIR_LOOP",
-            "Review 质量门禁失败",
+            "Review Correction Publication Gate",
+            "重新执行 First Review Publication Gate",
+            "consolidated review-correction batch",
+            "不得逐条退给作者",
+            "Review incomplete",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
@@ -172,12 +168,13 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
         for marker in (
             "root-mechanism-projection-closure",
             "first-pass-coverage",
-            "second-pass-bounded-rereview",
+            "first-review-publication-closure",
+            "second-pass-delta-only",
+            "consolidated-correction-if-escape",
             "sibling-projection-churn",
-            "old-derivable-blocker-as-new-finding",
-            "coverage-recovery-batch",
-            "piecemeal-old-baseline-churn",
-            "post-recovery-old-baseline-churn",
+            "partial-finding-publication",
+            "old-baseline-finding-as-normal-second-pass",
+            "piecemeal-review-correction",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, joined)
