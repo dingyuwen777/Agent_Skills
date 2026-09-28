@@ -49,7 +49,7 @@ Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；
 
 ## Root-Mechanism Projection Closure Gate（首轮机制闭环）
 
-复合机制首轮：`Invariant / Lifecycle / Failure Boundary / Projection / Evidence / Omission / Coverage Audit`。一旦出现 **Systemic signal**，先执行 **route refresh**：把 `执行模式=诊断` 作为当前新事实提交并取得新增 **required RCA context**；只有在 **Findings 前**完成同一机制主要 Projection 的 Omission / Coverage Audit 后，才形成**首轮完整 blocking Finding set**。简单 Review 不升级。**机制内完整、任务外有界**。首轮可推导的同根 blocker 若直到返修后才出现，记 **First-pass Coverage Miss**，不能当作正常第二轮增量发现。
+复合机制首轮：`Invariant / Lifecycle / Failure Boundary / Projection / Evidence / Omission / Coverage Audit`。一旦出现 **Systemic signal**，先执行 **route refresh**：把 `执行模式=诊断` 作为当前新事实提交并取得新增 **required RCA context**；只有在 **Findings 前**完成同一机制主要 Projection 的 Omission / Coverage Audit 后，才形成**首轮完整 blocking Finding set**。简单 Review 不升级。**机制内完整、任务外有界**。首轮可推导的同根 blocker 若直到返修后才出现，记 **First-pass Coverage Miss**，不能当作正常第二轮增量发现；首次发生时必须先执行一次 **Coverage Recovery Gate**，把未改变旧基线下仍可推导的 blocker 收敛为一个合并返修批次，恢复后再次出现旧基线漏审则停止自动返修并阻塞 Review 质量门禁。
 
 ## 1. 规则事实源与集成边界
 
