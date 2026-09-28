@@ -18,6 +18,11 @@ affected_areas:
 affected_paths:
   - .agents/skills/review/SKILL.md
   - .agents/skills/review/references/01_审查执行流程.md
+  - .agents/skills/review/references/02_Findings与严重度.md
+  - .agents/skills/review/references/04_审查深度选择.md
+  - .agents/skills/coding/references/09_多人和多智能体并行协作.md
+  - .agents/skills/coding/assets/multi-agent-roles.json
+  - .agents/skills/router/SKILL.md
   - .agents/skills/coding/references/23_端到端交付与合并后收尾.md
   - .agents/skills/coding/tests/test_review_root_mechanism_closure.py
   - .agents/skills/coding/tests/test_hard_rule_reachability.py
@@ -25,7 +30,8 @@ affected_paths:
   - .agents/skills/coding/tests/test_cross_model_outcome_eval.py
   - .agents/skills/coding/tests/test_release_qualification.py
 contracts:
-  - Review first-pass closure
+  - Review Assembly and Finding Admission
+  - Repair Batch and delta re-review convergence
   - hard-rule route reachability
   - high-value Outcome Eval registry
 data_changes: []
@@ -33,11 +39,11 @@ data_changes: []
 
 # 变更摘要
 
-按 Issue #323 的最小充分方案加强 Review 首轮同根闭环、关键 hard rule 路由可达性和高价值 Outcome Eval；不新增 Runtime 协议或 Agent 角色。
+按 Issue #323 建立 Review Assembly → Finding Admission → Repair Batch → Delta Re-review 的端到端收敛链，同时保护关键 hard rule 路由可达性和高价值 Outcome Eval；不新增 Runtime 协议或 Agent 角色。
 
 # 背景、现状与问题
 
-当前 Review 已有 Root-Mechanism Projection Closure 和 First-pass Coverage Miss，但缺少“第一轮形成当前事实可推导的完整 blocking Finding set，返修后第二轮只审原 Finding、新 diff、直接相邻回归和当前 Acceptance”的明确两轮契约与永久回归。另有 develop-and-deliver 路径未显式依赖治理机器 Contract，以及 review-root-mechanism-projection case 未进入高价值 registry。
+当前 Review 已有 Root-Mechanism Projection Closure 和 First-pass Coverage Miss，但缺少固定非递归的首轮 Review Assembly、有效 Finding 发布门禁、作者侧 Repair Batch、reviewed_head→repair_head delta re-review，以及这些行为的永久回归。另有 Issue/PR platform write 治理规则需要在真实写动作前条件式可达，review-root-mechanism-projection 也尚未进入高价值 registry。
 
 # 事实与证据
 
@@ -45,7 +51,7 @@ data_changes: []
 | --- | --- | --- | --- |
 | E1 | Review 已有 Root-Mechanism Projection Closure / First-pass Coverage Miss | current main Review Core/Reference | 复用现有 Review Owner |
 | E2 | Systemic RCA 需 Task Route 含诊断才加载 | routing metadata + review root mechanism tests | 明确 Systemic route refresh 顺序 |
-| E3 | coding.reference.24 未依赖 coding.reference.30 | current metadata | 修复 delivery hard-rule 可达性 |
+| E3 | delivery 流程需要 Issue/PR pre-write Governance Contract，但常驻 dependency 会抬高轻量路由风险/Context | current metadata + Red CI | 改为 platform write 前条件式 route refresh |
 | E4 | review-root-mechanism-projection case 未进入 HIGH_VALUE_CONVERGENCE_CASES | evals/agent_outcome_eval.py | 纳入现有 qualification registry |
 | E5 | Runtime fixed-point/exact-context/Stable ID 已存在 | current runtime/routing tests | 不新增 Runtime 协议 |
 
@@ -57,17 +63,19 @@ data_changes: []
 
 ## 目标
 
-Reviewer 的探索过程不得直接暴露给作者。第一次发布 Findings 前，在同一冻结 Head 上执行固定、非递归的 Review Assembly：Coverage Map → 按风险深度选择主审/独立 blind reviewer/必要 specialist → Parent 单次 synthesis → 一次性发布。作者返修后的 re-review 只审原 Findings、repair diff、直接相邻回归和 Acceptance；若发现 first-review escape，只允许一次 fresh blind assembly 后输出 consolidated correction batch，不逐条、多轮让作者参与 Reviewer 的探索循环。
+Reviewer 的探索过程不得直接暴露给作者，作者的修复过程也不得变成 per-Finding push/re-request 循环。固定链路为：冻结 Review Head → 风险匹配 Review Assembly → Finding Admission/去重/冲突裁决 → 一次性发布 blocking Finding batch → 作者统一 Repair Batch + 映射验证 + repair-diff 自审 → 复用原 PR/MR 一次 re-request → reviewed_head→repair_head delta re-review。first-review escape 只允许一次 fresh blind assembly 合并纠错；同一 Finding 或同类 repair regression 重复失败先重做 root cause / repair plan。
 
 ## 成功标准
 
-- [ ] AC1：First Review Assembly Gate：Quick=主审+Coverage Map；Standard=主审+1 个 blind independent review；Deep/Systemic/跨域=主审+blind reviewer+必要 specialist，仍服从 active child budget=3/no nested delegation。各视角互不读取彼此 Finding，Parent 只允许一次 synthesis；synthesis 后不得递归开启新的 Full Review。
-- [ ] AC2：Second-pass Repair Verification：re-review 只覆盖原 Findings、repair diff、直接相邻回归与 Acceptance；若发现 first-review escape，先内部重新执行 Publication Gate 并最多输出一个 consolidated review-correction batch，不逐条、多轮把旧问题退给作者。
-- [ ] AC3：关键 hard rule 有真实 Task Route positive witness 与必要 negative over-routing 回归。
-- [ ] AC4：review-root-mechanism-projection 进入 HIGH_VALUE_CONVERGENCE_CASES。
-- [ ] AC5：Runtime 协议、Stable IDs、五角色集合不变。
-- [ ] AC6：current-head CI、独立 Review、guarded merge、main-fresh、Change Archive、Issue Closure 与 cleanup 完成。
-
+- [ ] AC1：First Review Assembly Gate 固定 fan-out + single synthesis；synthesis 后不递归开启 Full Review。
+- [ ] AC2：Second-pass Repair Verification 只审原 Findings、repair delta、adjacent regression 与 Acceptance；first-review escape 只允许一次 fresh blind assembly。
+- [ ] AC3：Finding Admission Gate 只允许有稳定 ID、直接 Evidence、触发/影响、classification、收口和验证方式的 blocker 进入 Repair。
+- [ ] AC4：Repair Batch Gate 一次性处理 blocking Finding batch，复用原 PR/MR，并一次 re-request review；禁止 per-finding push/request-review/new-PR 循环。
+- [ ] AC5：同一 Finding 连续两次修复仍失败或同类 repair regression 再现时，先 root-cause reanalysis / repair-plan reset；实质 Requirement/Scope 变化才重建 review baseline。
+- [ ] AC6：Issue/PR platform write 前治理 Contract 条件式可达，普通交付不常驻加载重 Context。
+- [ ] AC7：review-root-mechanism-projection 进入 HIGH_VALUE_CONVERGENCE_CASES，并覆盖 Assembly/Finding/Repair/delta 行为。
+- [ ] AC8：Runtime 协议、Stable IDs、五角色集合不变；Quick Review 不被机械升级。
+- [ ] AC9：current-head CI、独立 Review、guarded merge、main-fresh、Change Archive、Issue Closure 与 cleanup 完成。
 ## 范围
 
 - Review Core/执行 Reference 的首轮与 re-review 契约。
@@ -97,17 +105,17 @@ Reviewer 的探索过程不得直接暴露给作者。第一次发布 Findings �
 
 ## 最小充分方案
 
-1. 明确 First Review Assembly Gate 与 Second-pass Repair Verification：固定 fan-out + 单次 synthesis，不允许 Reviewer 内部递归 Full Review。
-2. 给 delivery hard rule 增加治理机器 Contract 显式 dependency。
-3. 增加最小 hard-rule positive/negative reachability tests。
-4. 把 review-root-mechanism-projection 加入高价值 Outcome Eval registry。
-
+1. First Review Assembly：按 Quick/Standard/Deep 固定 fan-out，blind perspectives 基于同一 Head，Parent 单次 synthesis 后一次发布。
+2. Finding Admission：blocking Finding 发布前做证据、可执行性、去重和冲突裁决。
+3. Repair Batch：作者/Worker 一次性修当前 blocking batch，完成 Finding→修改→Evidence 映射与 repair-diff 自审，复用原 PR/MR 一次 re-request。
+4. Delta Re-review：以 reviewed_head→repair_head 为主，只允许 repair diff/new Requirement/new external fact/first-review escape 产生新 blocker；重复同类失败先重诊断。
+5. Platform write hard rule 使用条件式 route refresh，不常驻抬高普通交付上下文；Outcome Eval 纳入高价值 registry。
 ## 证据到决策
 
 | 决策 | 依据证据 | 为什么采用这个方案 |
 | --- | --- | --- |
 | D1 | E1-E2 | 现有 Review 方法足够，只需把首轮与 re-review 收敛规则做实 |
-| D2 | E3 | 一条显式 dependency 即可修复确认的 hard-rule reachability 缺口 |
+| D2 | E3 | 条件式 route refresh 同时保证写前规则可达和普通交付轻量 |
 | D3 | E4 | 复用已有 case，避免新建 Eval 框架 |
 | D4 | E5 | Runtime 已能正确加载 required Context，本次不扩大 Runtime |
 
@@ -115,22 +123,23 @@ Reviewer 的探索过程不得直接暴露给作者。第一次发布 Findings �
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | First Review Assembly Gate、固定 fan-out / 单次 synthesis 与首轮完整 blocking Finding set | #323 / AC1 | not_satisfied | 待实现与验证 |
-| R2 | Second-pass Repair Verification 与 first-review escape 内部纠错 | #323 / AC2 | not_satisfied | 待实现与验证 |
-| R3 | hard rule reachability 正反回归 | #323 / AC3 | not_satisfied | 待实现与验证 |
-| R4 | 高价值 registry 纳入 Review projection case | #323 / AC4 | not_satisfied | 待实现与验证 |
-| R5 | Runtime/Stable IDs/角色不变 | #323 / AC5 | not_satisfied | 待 diff/回归证明 |
-| R6 | 端到端交付 | #323 / AC6 | not_satisfied | 待 PR/CI/merge/post-merge |
-
+| R1 | 固定非递归 Review Assembly | #323 / AC1 | not_satisfied | 待实现与验证 |
+| R2 | delta-scoped second-pass + one-shot escape correction | #323 / AC2 | not_satisfied | 待实现与验证 |
+| R3 | Finding Admission Gate | #323 / AC3 | not_satisfied | 待实现与验证 |
+| R4 | Repair Batch + single re-request / existing PR | #323 / AC4 | not_satisfied | 待实现与验证 |
+| R5 | repeated repair root-cause / repair-plan reset | #323 / AC5 | not_satisfied | 待实现与验证 |
+| R6 | platform-write hard-rule conditional reachability | #323 / AC6 | not_satisfied | 待实现与验证 |
+| R7 | high-value Outcome Eval registry | #323 / AC7 | not_satisfied | 待实现与验证 |
+| R8 | Runtime/Stable IDs/roles/light Quick path unchanged | #323 / AC8 | not_satisfied | 待 diff/回归证明 |
+| R9 | 端到端交付 | #323 / AC9 | not_satisfied | 待 PR/CI/merge/post-merge |
 # 计划改动
 
 | 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
 | --- | --- | --- | --- |
-| Review Core/Reference | Assembly Gate、independent blind review、single synthesis、delta-scoped re-review | 防止作者/Reviewer 双重循环 | R1-R2 / E1-E2 |
-| Delivery Reference metadata | 增加治理 Contract dependency | hard rule 可达 | R3 / E3 |
-| Review/routing tests | positive/negative route 与 re-review 回归 | 机器保护 | R1-R3 |
-| Outcome Eval registry/tests | 纳入 review-root-mechanism-projection | 行为回归入口 | R4 / E4 |
-
+| Review Core / refs 01/02/04 / reviewer role | Assembly、Finding validity、depth、delta re-review | 提高首轮正确性且内部不循环 | R1-R3 |
+| Coding ref09 + Router | Repair Batch、协作者 PR 路由 | 收敛作者返修和重复 PR/re-request | R4-R5 |
+| Delivery ref23 + reachability tests | platform write 条件式治理 route refresh | hard rule 可达但不常驻膨胀 | R6 |
+| Outcome Eval + tests | high-value case 覆盖完整 Review/Repair 链 | 防行为回归 | R7-R8 |
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
 - [ ] 行为变化建立失败证据或说明测试例外
