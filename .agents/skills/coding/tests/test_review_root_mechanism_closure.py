@@ -79,6 +79,25 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
 
+    def test_first_pass_miss_triggers_single_coverage_recovery_batch(self) -> None:
+        """第二轮发现旧基线漏审时必须先一次性恢复覆盖，不能逐条返修。"""
+        flow = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "Coverage Recovery Gate",
+            "未改变的旧基线",
+            "consolidated recovery finding set",
+            "恢复扫描完成前",
+            "不得把零散旧问题逐个退回作者返修",
+            "一个合并返修批次",
+            "再次从未改变旧基线",
+            "STOP_REPAIR_LOOP",
+            "Review 质量门禁失败",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
     def test_review_execution_reference_defines_projection_states_and_bounded_scope(self) -> None:
         """执行 Reference 必须定义主要投影状态，并保持机制内完整、任务外有界。"""
         text = (
