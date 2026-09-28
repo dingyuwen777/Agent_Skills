@@ -125,8 +125,8 @@ CMakeLists.txt ≠ Linux-only
 | 新/当前 Change 使用 Completion Gate、正式仓库初始化、L3 或交付单元 | [10_完成定义追溯门禁.md](references/10_完成定义追溯门禁.md) |
 | L2/L3 的 Requirement/Feature/Bug/Refactor，或任意系统性诊断、Incident、Performance | [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md) |
 | Frontend / Web UI / Design-to-Code / Figma-to-code / 设计稿转代码；新增页面、跨页面 UI 或需要选择前端技术方案 | [16_前端与Design-to-Code实施规则.md](references/16_前端与Design-to-Code实施规则.md) |
-| 任何实质 Implementation | 先执行本 Core 的 Development Preflight 轻量 CI Cost/Evidence Check；发现真实 CI/Actions 成本或冗余风险时读取 [27_CI_Workflow健康检查与Actions清理.md](references/27_CI_Workflow健康检查与Actions清理.md) |
-| 创建或实质更新 Issue/工单/PR | [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md) + [29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)；platform write 前必须完成 canonical candidate + create-mode pre-write validation |
+| 实质 Implementation | Development Preflight 先做轻量 CI Cost Check；命中成本/冗余风险再读 [27_CI_Workflow健康检查与Actions清理.md](references/27_CI_Workflow健康检查与Actions清理.md) |
+| Issue/PR governance write | [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md) + [29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)；写前校验、写后同检 |
 | L2/L3 需要规划或审计 Validation Matrix | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md)；L1 targeted validation 由 [20_L1轻量实现与验证路径.md](references/20_L1轻量实现与验证路径.md) 负责 |
 | 新增/修改永久 CI/Workflow 或测试/发布门禁 | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md) + [19_CI审查升级门禁.md](references/19_CI审查升级门禁.md) + [27_CI_Workflow健康检查与Actions清理.md](references/27_CI_Workflow健康检查与Actions清理.md) |
 | Web/API/PostgreSQL/Provider 等专项边界真实存在 | [08_分层测试与验收策略.md](references/08_分层测试与验收策略.md) |
@@ -224,22 +224,15 @@ python <skill>/scripts/coding.py new-change --root <repo> \
 
 ### Development Preflight Gate
 
-任何**实质 Implementation**在正式修改生产代码前先做一次轻量开工校准，不增加独立流程 Owner：
-
-1. **Requirement**：确认当前 Requirement Source / 已确认任务事实、范围与 Acceptance；能从仓库恢复就自行恢复。
-2. **Governance write**：需要创建或实质更新 Issue/PR 时，必须先读取 [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md) 与 [29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)。**新建**实例按 canonical Profile 生成 candidate，并在任何 `platform write` 前取得 create-mode validation PASS；**已有**实例按其当前 lifecycle 使用适用的 create/live Contract 做 pre-write validation。任一 FAIL 时 writer 不得执行；写后 live reread 并用同一 Contract 再验。
-3. **CI Cost/Evidence**：只问三个问题：**Broad Job**（本次是否会把局部变化放大成宽泛昂贵 Job）、**Duplicate Evidence**（PR/main/多个 Job 是否重复证明同一 revision+boundary）、**Duplicate Setup/Install/Build**（是否重复支付相同环境准备/构建）。没有真实风险就直接继续；命中任一项才读取 ref27 深入，不能为形式扫描全 CI。
-4. **Delivery**：确认当前授权终点、分支/Change/PR 需要性和真实平台门禁。
-
-L1 隔离小修可由 Parent inline 完成这四项，不要求启动 Reviewer、Issue、Change 或 PR；L2/L3、治理写入、CI/Workflow 变化或端到端交付在有独立价值且宿主支持时可让现有 Reviewer 做 Development Preflight，但**Parent hard gate 始终存在**，没有 subagent 也不能跳过。
+实质 Implementation 开始前，Parent 先校准 **Requirement、Governance write、CI Cost/Evidence、Delivery**。新建 Issue/PR：读取 [需求追溯](references/17_需求来源与PR追溯治理.md)+[治理机器 Contract](references/29_治理资产机器Contract.md)，candidate 经 create-mode PASS 后才 `platform write`，写后 reread 同检；已有实例按 lifecycle 用 create/live，FAIL 不调用 writer。CI 只问 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**；命中才深入 [CI 健康检查](references/27_CI_Workflow健康检查与Actions清理.md)。L1 可 inline，不强制 Issue/Change/Reviewer；Reviewer 只是增强，**Parent hard gate** 始终有效。
 
 ### Requirement Change Gate
 
-开发中只有 Requirement、Acceptance、Scope、public Contract/Schema、权限/安全或其他会改变完成定义的**语义变化**才触发：先更新唯一正式 Requirement Source，再递增当前 task/session 的 `decision_epoch`，把**受影响**的计划、Handoff 与 Evidence 标为 `STALE_RESULT` 并局部重算；未受影响且仍满足 Fresh Evidence Contract 的结果继续复用。错别字、背景补充和不改变行为/验收的**非语义**编辑不触发全流程重跑。PR/Change 只同步新的范围与追溯，不成为第二 Requirement Owner。
+只有 Requirement/Acceptance/Scope 等**语义变化**才先更新唯一 Requirement Source，再让受影响计划/Handoff/Evidence 进入 `STALE_RESULT`；未受影响的新鲜 Evidence 复用，**非语义**编辑不全量重跑。Change/PR 只同步追溯，不成为 Requirement Owner。
 
 ### Completion Gate
 
-给出 PR Ready、可合并、完成或端到端完成等强结论前，必须**重新读取最新 Requirement Source**，按当前 Acceptance 逐条映射当前 revision/environment 的直接 Evidence。任何仍适用的 unresolved / not_satisfied Acceptance 都阻止对应 Ready/完成结论；CI Green、测试数量、PR merge、Review 无 Finding 或旧 Preflight 计划不能替代最新 Requirement 的 Completion Audit。持久 gated Change 使用 ref10 的完整审计；轻量 L2 使用等价的最小完成核对。
+PR Ready/完成强结论前重读**最新 Requirement Source**，逐 Acceptance 映射当前 revision/environment 直接 Evidence；applicable unresolved/not_satisfied 即阻止 Ready。CI Green、旧 Preflight 或 Review 无 Finding不能替代 Completion Audit；持久 gated Change 按 [完成定义追溯门禁](references/10_完成定义追溯门禁.md) 执行。
 
 ### 4.8 制定可验证计划
 
