@@ -154,7 +154,9 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
         for marker in (
             "root-mechanism-projection-closure",
             "first-pass-coverage",
+            "second-pass-bounded-rereview",
             "sibling-projection-churn",
+            "old-derivable-blocker-as-new-finding",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, joined)
