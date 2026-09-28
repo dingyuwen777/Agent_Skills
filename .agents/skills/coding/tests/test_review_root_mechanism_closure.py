@@ -93,6 +93,17 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
 
+    def test_reviewer_role_carries_publication_gate_to_host_subagent(self) -> None:
+        """现有 Reviewer 角色必须继承首轮发布门禁，不新增专用 Agent。"""
+        payload = json.loads(
+            (SKILLS / "coding" / "assets" / "multi-agent-roles.json").read_text(encoding="utf-8")
+        )
+        reviewer = next(item for item in payload["roles"] if item["id"] == "reviewer")
+        instructions = reviewer["instructions"]
+        for marker in ("First Review Publication Gate", "partial findings", "repair diff"):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, instructions)
+
     def test_review_execution_reference_defines_projection_states_and_bounded_scope(self) -> None:
         """执行 Reference 必须定义主要投影状态，并保持机制内完整、任务外有界。"""
         text = (
