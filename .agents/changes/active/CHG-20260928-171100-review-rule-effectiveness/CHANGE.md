@@ -61,7 +61,7 @@ Reviewer 的探索过程不得直接暴露给作者：第一次发布 Findings �
 
 ## 成功标准
 
-- [ ] AC1：First Review Publication Gate：同一 Head 上完成主审 + coverage map + 必要 Systemic/Projection Closure + blind omission pass；内部未收敛前不得向作者发布部分 Findings，发布时一次性给出当前可推导的完整 blocking Finding set。
+- [ ] AC1：First Review Publication Gate 固定内部三遍上限：Pass 1 主审；Pass 2 blind omission；仅当 Pass 2 新增旧 blocker 时允许 Pass 3 targeted closure/final verification。Pass 3 后仍新增旧 blocker → REVIEW_NOT_CONVERGED 并停止，不进入第 4+ 遍；收敛前不得向作者发布部分 Findings。
 - [ ] AC2：Second-pass Repair Verification：re-review 只覆盖原 Findings、repair diff、直接相邻回归与 Acceptance；若发现 first-review escape，先内部重新执行 Publication Gate 并最多输出一个 consolidated review-correction batch，不逐条、多轮把旧问题退给作者。
 - [ ] AC3：关键 hard rule 有真实 Task Route positive witness 与必要 negative over-routing 回归。
 - [ ] AC4：review-root-mechanism-projection 进入 HIGH_VALUE_CONVERGENCE_CASES。
@@ -97,7 +97,7 @@ Reviewer 的探索过程不得直接暴露给作者：第一次发布 Findings �
 
 ## 最小充分方案
 
-1. 明确 First Review Publication Gate 与 Second-pass Repair Verification：Reviewer 内部先收敛，再对作者一次性发布。
+1. 明确 First Review Publication Gate 与 Second-pass Repair Verification，并给 Reviewer 内部收敛设置固定三遍上限；不允许无限内部循环。
 2. 给 delivery hard rule 增加治理机器 Contract 显式 dependency。
 3. 增加最小 hard-rule positive/negative reachability tests。
 4. 把 review-root-mechanism-projection 加入高价值 Outcome Eval registry。
@@ -115,7 +115,7 @@ Reviewer 的探索过程不得直接暴露给作者：第一次发布 Findings �
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | First Review Publication Gate 与首轮完整 blocking Finding set | #323 / AC1 | not_satisfied | 待实现与验证 |
+| R1 | First Review Publication Gate、三遍内部预算与首轮完整 blocking Finding set | #323 / AC1 | not_satisfied | 待实现与验证 |
 | R2 | Second-pass Repair Verification 与 first-review escape 内部纠错 | #323 / AC2 | not_satisfied | 待实现与验证 |
 | R3 | hard rule reachability 正反回归 | #323 / AC3 | not_satisfied | 待实现与验证 |
 | R4 | 高价值 registry 纳入 Review projection case | #323 / AC4 | not_satisfied | 待实现与验证 |
