@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-212500-route-outcome-effectiveness
 title: 路由完整性与真实行为评测闭环
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/327-route-outcome-effectiveness
 created: 2026-09-28
