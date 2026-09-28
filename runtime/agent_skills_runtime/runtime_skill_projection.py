@@ -370,6 +370,7 @@ def _project_runtime_router_contract(
         "REQUIRED_USER_INPUT",
         "CAPABILITY_BLOCKER",
     )
+    decision_heading = _first_line_containing("#### Decision Authority Contract / Human Input Admission Gate")
     decision_lines = [_first_line_containing(f"- `{state}`") for state in decision_states]
     decision_gate = _first_line_containing("**Human Input Admission Gate**")
     authorization = _first_line_containing("**Authorization Continuity**")
@@ -409,7 +410,7 @@ def _project_runtime_router_contract(
             "# Project Engineering Guardrails",
             "## 当前项目事实\n\n" + "\n".join(fact_lines),
             "## 决策权与用户提问\n\n"
-            + "\n".join(decision_lines + [decision_gate, authorization]),
+            + "\n".join([decision_heading, *decision_lines, decision_gate, authorization]),
             "## 权限、验证与完成\n\n"
             + "\n".join((fresh_evidence, blocker, requested_outcome)),
             "## 风险等级\n\n" + "\n".join(risk_rows),
