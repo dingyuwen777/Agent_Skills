@@ -230,8 +230,8 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             self.assertIn("Findings", text)
             self.assertIn("repair diff", text)
             self.assertIn("Acceptance", text)
-        self.assertIn("第一次代码审查", managed)
-        self.assertIn("一次性发布稳定 Findings", managed)
+        self.assertIn("代码 Review 首轮", managed)
+        self.assertIn("整批发布 Findings", managed)
         self.assertIn("do not publish partial findings", prompt)
         self.assertIn("reviewed_head-to-repair_head diff", prompt)
 
