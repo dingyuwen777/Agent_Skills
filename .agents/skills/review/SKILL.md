@@ -49,7 +49,7 @@ Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；
 
 ## First Review Publication Gate（首次发布门禁）
 
-第一次把 Findings 交给作者前，先冻结 Review Target / Requirement / base-head，建立 **Review Coverage Map**。Quick Review 做一次有界 coverage audit；Standard/Deep/复合机制还要做不以当前 Findings 为起点的 **blind omission pass**。Systemic signal 先 route refresh 到诊断并加载 RCA context；同根 Projection Closure 在 Findings 前完成。内部 pass 新发现的旧基线 blocker 先合并、关闭对应风险域，**不得向作者发布部分 Findings**；只有一次完整有界 coverage pass 不再新增旧基线 blocker，才发布**首轮完整 blocking Finding set**。简单 Review 不被无条件升级。
+Findings 发给作者前先冻结 Review Target / Requirement / base-head 并建立 **Review Coverage Map**。内部预算固定：**Pass 1 主审 → Pass 2 blind omission**；若 Pass 2 无新增旧基线 blocker，直接发布；若有，只允许 **Pass 3 targeted closure / final verification**。Pass 3 后仍新增旧基线 blocker → `REVIEW_NOT_CONVERGED`，立即停止内部 Review，**不得进入第 4+ 遍，也不得向作者发布部分 Findings**。Systemic signal 先 route refresh 加载 RCA context；同根 Projection Closure 在发布前完成。简单 Review 不被无条件升级。
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
