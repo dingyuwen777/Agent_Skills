@@ -11,6 +11,7 @@ from runtime.agent_skills_runtime.encrypted_bundle import EncryptedBundleStore, 
 from runtime.agent_skills_runtime.routing import (
     REFERENCE_ROUTE_PROTOCOL,
     SKILL_ROUTE_PROTOCOL,
+    ROUTE_DIMENSIONS,
     TASK_ROUTE_PROTOCOL,
     public_route_contract,
 )
@@ -23,8 +24,10 @@ def _routing_block(payload: dict[str, object]) -> str:
 
 
 def _task_route(**signals: list[str]) -> dict[str, object]:
-    """构造只含测试事实的中文 Task Route。"""
-    return {"协议": TASK_ROUTE_PROTOCOL, "信号": signals, "未知项": [], "依据": ["测试事实"]}
+    """构造 facts-complete 测试 Task Route；未指定维度显式为 KNOWN_EMPTY。"""
+    complete = {dimension: [] for dimension in ROUTE_DIMENSIONS}
+    complete.update(signals)
+    return {"协议": TASK_ROUTE_PROTOCOL, "信号": complete, "未知项": [], "依据": ["测试事实"]}
 
 
 class RuntimeBundleTest(unittest.TestCase):

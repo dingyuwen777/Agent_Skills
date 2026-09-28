@@ -40,6 +40,7 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - **Non-material Ambiguity Default**：`SELF_DECIDE` 按“**项目既有模式 → 最小范围 → 最小副作用 → 最可逆 → 最少新机制**”处理。
 - **Authorization Continuity**：既有授权只在**同目标、同范围、同副作用等级**延续；**不得继承升级**；升级须 Requested Action + Effective Authorization。
 - **Cross-model Behavior Contract**：Ask/No-Ask 跨模型/宿主一致。
+- **Task Fact Truth-State**：每维 `KNOWN/EMPTY/UNKNOWN`；漏报/矛盾 fail closed。
 
 - **Fresh Evidence Contract**：Evidence 绑定当前 **environment / Contract / Scope 与被验证的相关实现 revision**，未发生影响结论的变化即可复用；**不是由当前 Agent 启动**本身**不构成重新执行理由**。只有相关实现/Contract/输入/依赖/配置/环境/外部事实变化、现有证据不覆盖结论，或 **required gate** 明确要求 current-head/current-revision 时才重跑对应层；Change/Issue/PR 描述、Evidence 记录、排版等**不影响已验证边界的载体变化**不使开发侧 Evidence 失效。
 - `完整验证证据 / 完整命令 / 完整输出` 只表示完整执行并检查**已选择的风险匹配 Evidence**，**不表示运行全仓测试、全部测试层或所有平台验证**；仍按 targeted-first 单调升级。

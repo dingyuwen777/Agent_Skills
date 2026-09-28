@@ -2,7 +2,7 @@
 
 文件名与 `Agent Skills Release Qualification/v1` 协议标识作为现有机器 Contract
 保持稳定，但其生命周期不再是普通 Release 的硬前置。该模块不调用模型 Provider，
-也不生成 actual run；真实支持宿主负责产生 Agent Skills Outcome Eval Run/v1，
+也不生成 actual run；真实支持宿主负责产生 Agent Skills Outcome Eval Run/v2，
 本模块只对指定 revision 的真实 run bundle 做确定性校验。fixture 永远不能把
 未真实运行的模型或宿主标记为 verified。
 """
@@ -21,6 +21,7 @@ from typing import Any
 try:
     from evals.agent_outcome_eval import (
         HIGH_VALUE_CONVERGENCE_CASES,
+        REASONING_QUALIFICATION_CASES,
         grade_run,
         load_json,
         validate_case,
@@ -30,6 +31,7 @@ try:
 except ModuleNotFoundError:
     from agent_outcome_eval import (  # type: ignore[no-redef]
         HIGH_VALUE_CONVERGENCE_CASES,
+        REASONING_QUALIFICATION_CASES,
         grade_run,
         load_json,
         validate_case,
@@ -44,6 +46,19 @@ SUPPORTED_HOSTS = ("codex", "claude-code", "cursor", "deepseek-harness")
 DEFAULT_HOST_CASES = {
     host: ("simple-fp", "must-split-fallback", "unnecessary-clarification")
     for host in SUPPORTED_HOSTS
+}
+
+QUALIFICATION_PROFILES = {
+    "engineering": {
+        "required_cases": HIGH_VALUE_CONVERGENCE_CASES,
+        "supported_hosts": SUPPORTED_HOSTS,
+        "default_host_cases": DEFAULT_HOST_CASES,
+    },
+    "reasoning-source": {
+        "required_cases": REASONING_QUALIFICATION_CASES,
+        "supported_hosts": (),
+        "default_host_cases": {},
+    },
 }
 _BUNDLE_FIELDS = {
     "协议",
@@ -91,42 +106,53 @@ def _load_case_index(case_dir: Path) -> dict[str, dict[str, Any]]:
     return index
 
 
-def _normalize_host_requirements(value: Any) -> dict[str, list[str]]:
-    """校验正式支持宿主的最小行为覆盖，不允许通过空列表绕过。"""
+def _normalize_host_requirements(
+    value: Any,
+    *,
+    profile_id: str,
+) -> dict[str, list[str]]:
+    """按 qualification profile 校验宿主覆盖；Reasoning profile 不强制固定宿主集合。"""
     if not isinstance(value, Mapping):
         raise ValueError("宿主必需用例必须是 object")
+    profile = QUALIFICATION_PROFILES.get(profile_id)
+    if profile is None:
+        raise ValueError(f"未知 qualification profile：{profile_id}")
+    supported_hosts = tuple(str(item) for item in profile["supported_hosts"])
     actual_hosts = {str(key) for key in value}
-    if actual_hosts != set(SUPPORTED_HOSTS):
-        raise ValueError(
-            "宿主必需用例必须且只能覆盖正式支持宿主："
-            + ", ".join(SUPPORTED_HOSTS)
-        )
+    if actual_hosts != set(supported_hosts):
+        expected = ", ".join(supported_hosts) if supported_hosts else "<empty>"
+        raise ValueError(f"{profile_id} 宿主必需用例必须且只能覆盖：{expected}")
+    if not supported_hosts:
+        return {}
     normalized: dict[str, list[str]] = {}
-    high_value = set(HIGH_VALUE_CONVERGENCE_CASES)
-    for host in SUPPORTED_HOSTS:
+    allowed_cases = set(str(item) for item in profile["required_cases"])
+    for host in supported_hosts:
         cases = _unique_strings(value.get(host), label=f"宿主必需用例.{host}")
         if "simple-fp" not in cases:
             raise ValueError(f"{host} 必须覆盖 simple-fp")
-        if not any(case_id != "simple-fp" and case_id in high_value for case_id in cases):
+        if not any(case_id != "simple-fp" and case_id in allowed_cases for case_id in cases):
             raise ValueError(f"{host} 必须覆盖至少一个 delegation/convergence 高价值用例")
-        unknown = set(cases) - high_value
+        unknown = set(cases) - allowed_cases
         if unknown:
-            raise ValueError(f"{host} 包含未知高价值用例：{sorted(unknown)}")
+            raise ValueError(f"{host} 包含 profile 外用例：{sorted(unknown)}")
         normalized[host] = cases
     return normalized
-
 
 def validate_qualification_bundle(
     bundle: Mapping[str, Any],
     *,
     root: Path,
     expected_revision: str | None = None,
+    profile_id: str = "engineering",
 ) -> dict[str, Any]:
-    """验证 Release qualification bundle，缺少 actual/revision/coverage 时 fail closed。"""
+    """验证指定 profile 的 actual run bundle；Engineering 保持现有入口，Reasoning 复用同一 grader。"""
     if not isinstance(bundle, Mapping) or set(bundle) != _BUNDLE_FIELDS:
         raise ValueError("Release qualification bundle 字段不合法")
     if bundle.get("协议") != QUALIFICATION_PROTOCOL:
         raise ValueError("Release qualification 协议不受支持")
+    profile = QUALIFICATION_PROFILES.get(profile_id)
+    if profile is None:
+        raise ValueError(f"未知 qualification profile：{profile_id}")
 
     revision = _nonempty_string(bundle.get("revision"), label="revision", max_length=40)
     if _REVISION_PATTERN.fullmatch(revision) is None:
@@ -137,14 +163,15 @@ def validate_qualification_bundle(
         )
 
     required_cases = _unique_strings(bundle.get("必需用例"), label="必需用例")
-    if set(required_cases) != set(HIGH_VALUE_CONVERGENCE_CASES):
-        raise ValueError("Release qualification 必需用例必须精确覆盖当前高价值 registry")
+    profile_cases = tuple(str(item) for item in profile["required_cases"])
+    if set(required_cases) != set(profile_cases):
+        raise ValueError(f"{profile_id} qualification 必需用例必须精确覆盖当前 profile registry")
 
     min_models = bundle.get("每用例最少模型数")
     if isinstance(min_models, bool) or not isinstance(min_models, int) or min_models < 2:
         raise ValueError("每用例最少模型数必须是 >= 2 的整数")
 
-    host_requirements = _normalize_host_requirements(bundle.get("宿主必需用例"))
+    host_requirements = _normalize_host_requirements(bundle.get("宿主必需用例"), profile_id=profile_id)
     runs = bundle.get("运行")
     if not isinstance(runs, list) or not runs:
         raise ValueError("Release qualification 必须包含真实 actual run")
@@ -167,7 +194,7 @@ def validate_qualification_bundle(
             raise ValueError(f"run {run_id} revision 与 qualification revision 不一致")
         case_id = str(run["用例标识"])
         if case_id not in required_cases:
-            raise ValueError(f"run {run_id} 不属于 required high-value case：{case_id}")
+            raise ValueError(f"run {run_id} 不属于 required profile case：{case_id}")
         case = case_index.get(case_id)
         if case is None:
             raise ValueError(f"run {run_id} 找不到 canonical case：{case_id}")
@@ -178,13 +205,12 @@ def validate_qualification_bundle(
                 f"missing_results={grade['缺失结果']} "
                 f"missing_evidence={grade['缺失证据']} "
                 f"forbidden={grade['命中禁止违规']} "
+                f"missing_clear={grade['缺失违规清除证据']} "
                 f"limits={grade['超出上限']}"
             )
         grades.append(grade)
-        model_name = str(run["模型"]["名称"])
-        host = str(run["模型"]["宿主"])
-        models_by_case[case_id].add(model_name)
-        cases_by_host[host].add(case_id)
+        models_by_case[case_id].add(str(run["模型"]["名称"]))
+        cases_by_host[str(run["模型"]["宿主"])].add(case_id)
 
     insufficient_models = {
         case_id: sorted(models_by_case.get(case_id, set()))
@@ -204,6 +230,7 @@ def validate_qualification_bundle(
 
     return {
         "协议": QUALIFICATION_REPORT_PROTOCOL,
+        "profile": profile_id,
         "revision": revision,
         "通过": True,
         "actual运行数": len(grades),
@@ -212,10 +239,9 @@ def validate_qualification_bundle(
         "模型": sorted({str(grade["模型"]["名称"]) for grade in grades}),
         "宿主覆盖": {
             host: sorted(cases_by_host.get(host, set()))
-            for host in SUPPORTED_HOSTS
+            for host in tuple(str(item) for item in profile["supported_hosts"])
         },
     }
-
 
 def load_bundle(path: Path) -> dict[str, Any]:
     """读取 UTF-8 qualification bundle。"""
@@ -246,6 +272,12 @@ def _build_parser() -> argparse.ArgumentParser:
     validate_parser.add_argument("--root", type=Path, default=Path.cwd())
     validate_parser.add_argument("--bundle", type=Path, required=True)
     validate_parser.add_argument("--revision", required=True)
+    validate_parser.add_argument(
+        "--profile",
+        choices=sorted(QUALIFICATION_PROFILES),
+        default="engineering",
+        help="选择 Engineering 或 Reasoning/Source actual qualification profile",
+    )
     validate_parser.add_argument("--json", action="store_true")
 
     encode_parser = subparsers.add_parser("encode", help="把 qualification bundle 编码为 base64")
@@ -264,6 +296,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             load_bundle(args.bundle),
             root=args.root.resolve(),
             expected_revision=str(args.revision).strip(),
+            profile_id=str(args.profile),
         )
         if args.json:
             print(json.dumps(report, ensure_ascii=False, sort_keys=True))

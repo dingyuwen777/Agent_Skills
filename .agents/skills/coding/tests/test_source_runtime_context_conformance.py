@@ -7,7 +7,7 @@ from pathlib import Path
 
 from runtime.agent_skills_runtime.catalog import build_bundle
 from runtime.agent_skills_runtime.project_payload import build_project_payload, decode_payload_file
-from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
+from runtime.agent_skills_runtime.routing import ROUTE_DIMENSIONS, TASK_ROUTE_PROTOCOL, compile_routing, evaluate_route
 from runtime.agent_skills_runtime.runtime import RuntimeStore
 from scripts.runtime_mcp_smoke import _assert_exact_contexts
 
@@ -29,10 +29,12 @@ class SourceRuntimeContextConformanceTest(unittest.TestCase):
         }
 
     def _route(self, signals: dict[str, list[str]]) -> dict[str, object]:
-        """构造 Runtime 与 Source 共用的中文 Task Route。"""
+        """构造 Runtime 与 Source 共用的 facts-complete 中文 Task Route。"""
+        complete = {dimension: [] for dimension in ROUTE_DIMENSIONS}
+        complete.update(signals)
         return {
             "协议": TASK_ROUTE_PROTOCOL,
-            "信号": signals,
+            "信号": complete,
             "未知项": [],
             "依据": ["source/runtime exact context conformance"],
         }

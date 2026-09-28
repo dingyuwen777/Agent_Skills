@@ -3,9 +3,12 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+
+import evals.release_qualification as qualification
 from pathlib import Path
 
 from evals.agent_outcome_eval import (
+    grade_run,
     HIGH_VALUE_CONVERGENCE_CASES,
     load_json,
     validate_high_value_case_registry,
@@ -31,7 +34,7 @@ def _run(case_id: str, model: str, host: str, suffix: str) -> dict[str, object]:
     """构造只存在于单元测试内存中的 synthetic actual-shaped run；不作为 Release Evidence。"""
     case = _case(case_id)
     return {
-        "协议": "Agent Skills Outcome Eval Run/v1",
+        "协议": "Agent Skills Outcome Eval Run/v2",
         "运行标识": f"{case_id}-{model}-{host}-{suffix}",
         "用例标识": case_id,
         "运行类型": "actual",
@@ -43,6 +46,20 @@ def _run(case_id: str, model: str, host: str, suffix: str) -> dict[str, object]:
         "完成结果": list(case["必需结果"]),
         "证据": list(case["必需证据"]),
         "违规": [],
+        "证据收据": [
+            *[
+                {"类型": "result", "标识": item, "来源": "host", "说明": "unit-test host result"}
+                for item in case["必需结果"]
+            ],
+            *[
+                {"类型": "evidence", "标识": item, "来源": "tool", "说明": "unit-test tool evidence"}
+                for item in case["必需证据"]
+            ],
+            *[
+                {"类型": "clear", "标识": item, "来源": "host", "说明": "unit-test host violation clear"}
+                for item in case["禁止违规"]
+            ],
+        ],
         "过程指标": {"工具调用": 0, "重试": 0, "用户干预": 0},
         "遥测": {
             "输入Token": "unavailable",
@@ -94,6 +111,42 @@ class ReleaseQualificationTest(unittest.TestCase):
         )
         self.assertTrue(report["通过"])
         self.assertEqual(set(report["宿主覆盖"]), set(SUPPORTED_HOSTS))
+
+    def test_reasoning_source_profile_reuses_same_grader(self) -> None:
+        """Reasoning/Source qualification 必须作为独立 profile 存在且复用同一 Outcome Eval grader。"""
+        self.assertIn("reasoning-source", qualification.QUALIFICATION_PROFILES)
+        profile = qualification.QUALIFICATION_PROFILES["reasoning-source"]
+        required = set(profile["required_cases"])
+        for case_id in (
+            "analysis-first-principles",
+            "analysis-root-cause-before-minimization",
+            "research-latest-primary",
+            "research-insufficient-evidence",
+            "unnecessary-clarification",
+        ):
+            self.assertIn(case_id, required)
+        self.assertIs(qualification.grade_run, grade_run)
+
+        runs = []
+        for case_id in profile["required_cases"]:
+            runs.append(_run(case_id, "model-a", "source-mode", "a"))
+            runs.append(_run(case_id, "model-b", "source-mode", "b"))
+        bundle = {
+            "协议": QUALIFICATION_PROTOCOL,
+            "revision": REVISION,
+            "必需用例": list(profile["required_cases"]),
+            "每用例最少模型数": 2,
+            "宿主必需用例": {},
+            "运行": runs,
+        }
+        report = validate_qualification_bundle(
+            bundle,
+            root=ROOT,
+            expected_revision=REVISION,
+            profile_id="reasoning-source",
+        )
+        self.assertTrue(report["通过"])
+        self.assertEqual(report["profile"], "reasoning-source")
 
     def test_fixture_run_is_rejected(self) -> None:
         """fixture 即使 grader Green 也不能冒充 Release actual Evidence。"""

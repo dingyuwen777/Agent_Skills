@@ -13,7 +13,7 @@ from .skill_catalog import discover_skills, iter_reference_files
 
 SKILL_ROUTE_PROTOCOL = "Agent Skills Skill路由/v1"
 REFERENCE_ROUTE_PROTOCOL = "Agent Skills Reference路由/v1"
-TASK_ROUTE_PROTOCOL = "Agent Skills 任务路由/v1"
+TASK_ROUTE_PROTOCOL = "Agent Skills 任务路由/v2"
 ROUTING_MANIFEST_PROTOCOL = "Agent Skills 路由清单/v1"
 PUBLIC_ROUTE_CONTRACT_PROTOCOL = "Agent Skills 公共路由契约/v1"
 CONTROL_PLANE_SKILL = "router"
@@ -361,7 +361,7 @@ def public_route_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
         "任务路由协议": TASK_ROUTE_PROTOCOL,
         "维度": dimensions,
         "维度说明": {
-            dimension: f"记录任务事实中的“{dimension}”信号；取值只用于确定需要加载的规则。"
+            dimension: f"记录任务事实中的“{dimension}”信号；非空列表=KNOWN(values)，空列表=KNOWN_EMPTY，列入未知项=UNKNOWN；正式提交不得漏掉该维度。"
             for dimension in ROUTE_DIMENSIONS
         },
         "取值说明": {
@@ -372,8 +372,13 @@ def public_route_contract(manifest: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def validate_task_route(route: Mapping[str, Any], contract: Mapping[str, Any]) -> dict[str, Any]:
-    """依据当前公共契约校验并规范化宿主模型提交的中文 Task Route。"""
+def validate_task_route(
+    route: Mapping[str, Any],
+    contract: Mapping[str, Any],
+    *,
+    require_complete: bool = True,
+) -> dict[str, Any]:
+    """依据当前公共契约校验并规范化 Task Route；正式提交必须显式覆盖每个事实维度。"""
     required = {"协议", "信号", "未知项", "依据"}
     if set(route) != required:
         raise ValueError("Task Route 必须且只能包含协议、信号、未知项、依据")
@@ -385,9 +390,35 @@ def validate_task_route(route: Mapping[str, Any], contract: Mapping[str, Any]) -
     signals = route.get("信号")
     if not isinstance(signals, Mapping):
         raise ValueError("Task Route 信号必须是 object")
-    unknown_dimensions = sorted(set(str(item) for item in signals) - set(ROUTE_DIMENSIONS))
-    if unknown_dimensions:
-        raise ValueError(f"Task Route 使用未知维度：{', '.join(unknown_dimensions)}")
+    signal_dimensions = {str(item) for item in signals}
+    invalid_signal_dimensions = sorted(signal_dimensions - set(ROUTE_DIMENSIONS))
+    if invalid_signal_dimensions:
+        raise ValueError(f"Task Route 使用未知维度：{', '.join(invalid_signal_dimensions)}")
+
+    unknown = route.get("未知项")
+    if not isinstance(unknown, list):
+        raise ValueError("Task Route 未知项必须是列表")
+    normalized_unknown = [str(item).strip() for item in unknown]
+    if (
+        any(item not in ROUTE_DIMENSIONS for item in normalized_unknown)
+        or len(normalized_unknown) != len(set(normalized_unknown))
+    ):
+        raise ValueError("Task Route 未知项只能使用唯一的公开维度名")
+    unknown_set = set(normalized_unknown)
+
+    if require_complete:
+        missing = [
+            dimension
+            for dimension in ROUTE_DIMENSIONS
+            if dimension not in signal_dimensions and dimension not in unknown_set
+        ]
+        if missing:
+            raise ValueError(
+                "Task Route 未覆盖维度："
+                + ", ".join(missing)
+                + "；每个维度必须明确为 KNOWN(values)、KNOWN_EMPTY 或 UNKNOWN"
+            )
+
     normalized_signals: dict[str, list[str]] = {}
     for dimension in ROUTE_DIMENSIONS:
         raw_values = signals.get(dimension, [])
@@ -400,16 +431,10 @@ def validate_task_route(route: Mapping[str, Any], contract: Mapping[str, Any]) -
         invalid = sorted(set(values) - allowed)
         if invalid:
             raise ValueError(f"Task Route {dimension} 包含未公开取值：{', '.join(invalid)}")
+        if dimension in unknown_set and values:
+            raise ValueError(f"Task Route UNKNOWN 维度不能同时包含已知取值：{dimension}")
         normalized_signals[dimension] = sorted(values)
-    unknown = route.get("未知项")
-    if not isinstance(unknown, list):
-        raise ValueError("Task Route 未知项必须是列表")
-    normalized_unknown = [str(item).strip() for item in unknown]
-    if (
-        any(item not in ROUTE_DIMENSIONS for item in normalized_unknown)
-        or len(normalized_unknown) != len(set(normalized_unknown))
-    ):
-        raise ValueError("Task Route 未知项只能使用唯一的公开维度名")
+
     evidence = route.get("依据")
     if not isinstance(evidence, list):
         raise ValueError("Task Route 依据必须是列表")
@@ -422,7 +447,6 @@ def validate_task_route(route: Mapping[str, Any], contract: Mapping[str, Any]) -
         "未知项": sorted(normalized_unknown),
         "依据": normalized_evidence,
     }
-
 
 def _matches(expression: Mapping[str, Any], signals: Mapping[str, set[str]]) -> bool:
     """使用原有二值求值语义判断事实充分的规范化触发表达式。"""
@@ -586,7 +610,11 @@ def _evaluate_fixed_point(
 def evaluate_route(manifest: Mapping[str, Any], route: Mapping[str, Any]) -> dict[str, Any]:
     """求值 required Context；refinement facts 不直接选专业 Owner，显式 dependency 仍可跨 Skill。"""
     validate_routing_manifest(manifest)
-    normalized = validate_task_route(route, public_route_contract(manifest))
+    normalized = validate_task_route(
+        route,
+        public_route_contract(manifest),
+        require_complete=False,
+    )
     base_signals = {
         dimension: set(normalized["信号"][dimension])
         for dimension in ROUTE_DIMENSIONS

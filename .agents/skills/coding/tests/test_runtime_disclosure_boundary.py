@@ -14,6 +14,7 @@ from runtime.agent_skills_runtime.project_payload import build_project_payload
 from runtime.agent_skills_runtime.routing import (
     REFERENCE_ROUTE_PROTOCOL,
     SKILL_ROUTE_PROTOCOL,
+    ROUTE_DIMENSIONS,
     TASK_ROUTE_PROTOCOL,
 )
 from runtime.agent_skills_runtime.runtime import RuntimeStore
@@ -82,10 +83,12 @@ def _fixture_bundle() -> dict[str, object]:
 
 
 def _task_route() -> dict[str, object]:
-    """构造能命中 fixture 规则的最小任务事实。"""
+    """构造能命中 fixture 规则的 facts-complete 任务事实。"""
+    signals = {dimension: [] for dimension in ROUTE_DIMENSIONS}
+    signals.update({"执行模式": ["实现"], "阶段": ["功能开发"]})
     return {
         "协议": TASK_ROUTE_PROTOCOL,
-        "信号": {"执行模式": ["实现"], "阶段": ["功能开发"]},
+        "信号": signals,
         "未知项": [],
         "依据": ["测试事实"],
     }

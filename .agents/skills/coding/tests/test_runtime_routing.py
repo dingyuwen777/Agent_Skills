@@ -10,6 +10,7 @@ import unittest
 
 from runtime.agent_skills_runtime.routing import (
     REFERENCE_ROUTE_PROTOCOL,
+    ROUTE_DIMENSIONS,
     ROUTING_MANIFEST_PROTOCOL,
     SKILL_ROUTE_PROTOCOL,
     TASK_ROUTE_PROTOCOL,
@@ -85,10 +86,12 @@ def _reference(
 
 
 def _task_route(**signals: list[str]) -> dict[str, object]:
-    """构造中文 Task Route。"""
+    """构造 facts-complete 中文 Task Route；未指定维度显式记为 KNOWN_EMPTY。"""
+    complete = {dimension: [] for dimension in ROUTE_DIMENSIONS}
+    complete.update(signals)
     return {
         "协议": TASK_ROUTE_PROTOCOL,
-        "信号": signals,
+        "信号": complete,
         "未知项": [],
         "依据": ["测试事实"],
     }
@@ -420,6 +423,37 @@ class RoutingEvaluatorTest(unittest.TestCase):
         self.assertIn("功能开发", contract["维度"]["阶段"])
         for forbidden in ("coding.reference", "文件名", "source_path", "依赖图", "引用数量"):
             self.assertNotIn(forbidden, serialized)
+
+    def test_task_route_requires_explicit_truth_state_for_every_dimension(self) -> None:
+        """每个维度必须显式表达 KNOWN(values)、KNOWN_EMPTY 或 UNKNOWN，不能漏填即 false。"""
+        self.assertEqual(TASK_ROUTE_PROTOCOL, "Agent Skills 任务路由/v2")
+        contract = public_route_contract(self.manifest)
+        sparse = {
+            "协议": TASK_ROUTE_PROTOCOL,
+            "信号": {"执行模式": ["实现"]},
+            "未知项": [],
+            "依据": ["故意漏维度的负例"],
+        }
+        with self.assertRaisesRegex(ValueError, "未覆盖维度"):
+            validate_task_route(sparse, contract)
+
+        complete_signals = {dimension: [] for dimension in ROUTE_DIMENSIONS}
+        complete_signals["执行模式"] = ["实现"]
+        complete = _task_route(**complete_signals)
+        normalized = validate_task_route(complete, contract)
+        self.assertEqual(normalized["信号"]["执行模式"], ["实现"])
+        self.assertEqual(normalized["信号"]["阶段"], [])
+
+    def test_unknown_dimension_requires_empty_signal_value(self) -> None:
+        """UNKNOWN 与 KNOWN(values) 必须互斥，避免同一维度同时声称已知和未知。"""
+        contract = public_route_contract(self.manifest)
+        complete_signals = {dimension: [] for dimension in ROUTE_DIMENSIONS}
+        complete_signals["执行模式"] = ["实现"]
+        complete_signals["阶段"] = ["功能开发"]
+        route = _task_route(**complete_signals)
+        route["未知项"] = ["阶段"]
+        with self.assertRaisesRegex(ValueError, "UNKNOWN"):
+            validate_task_route(route, contract)
 
     def test_task_route_rejects_unknown_values_and_authorization_is_data_only(self) -> None:
         """未知取值必须明确失败，授权信号只能参与路由而不能成为权限授予。"""
