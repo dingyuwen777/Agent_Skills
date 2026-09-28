@@ -127,7 +127,7 @@ python .agents/skills/coding/scripts/governance_contract.py prepare-pr \
 
 `prepare-issue / prepare-pr` 只负责按 canonical Profile 的当前 heading 顺序组装 Core，并在输出前调用同一 create validator；调用方仍负责提供真实 section 内容、完成重复搜索/事实恢复和远程 Requirement Source 真实性。它们不得维护第二份 heading/field 表。
 
-**Platform Write Hard Gate**：create/update Issue/PR 的 GitHub UI、CLI、MCP、API、Host Tool 或其他 writer 在 canonical candidate 与 create-mode validation PASS 之前都不得调用。pre-write FAIL 时 writer 必须保持未调用；writer 成功也不代表 Contract 已满足，必须 live reread 后用同一 create Contract 再验。后期补模板只能作为异常恢复路径，不能成为标准创建流程。
+**Platform Write Hard Gate**：GitHub UI、CLI、MCP、API、Host Tool 或其他 writer 都必须先通过与当前 lifecycle 匹配的 pre-write Contract。**新建** Issue/PR 必须 canonical candidate + create-mode PASS；**已有**实例实质更新时，当前格式继续用 create Contract，creation-time Contract 生效前的历史 open Issue 按 ref17 使用 live Contract。任一 pre-write FAIL 时 writer 必须保持未调用；writer 成功也不代表 Contract 已满足，必须 live reread 后用同一 Contract 再验。后期补模板只能作为异常恢复路径，不能成为标准创建流程。
 
 Change 创建/更新继续使用 canonical Change Template + candidate validation + changed-scope/Ready/Completion/Review。无本地 shell时使用宿主等价 API 生成/校验与 readback，但仍必须保持“candidate → PASS → writer → reread → same validation”的顺序，不得靠模型自证格式。
 
