@@ -104,10 +104,9 @@ class ReviewConvergenceContractTest(unittest.TestCase):
         for marker in (
             "First Review Assembly Gate",
             "Review Coverage Map",
-            "blind independent review",
-            "active child budget=3",
             "一次 synthesis",
-            "不得递归开启新的 Full Review",
+            "不得向作者发布部分 Findings",
+            "递归开启 Full Review",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, core)
@@ -115,6 +114,8 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             "Quick Review Assembly",
             "Standard Review Assembly",
             "Deep Review Assembly",
+            "blind independent review",
+            "active child budget=3",
             "single synthesis",
             "no nested delegation",
         ):
