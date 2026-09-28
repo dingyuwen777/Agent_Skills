@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-171100-review-rule-effectiveness
 title: Review首轮闭环与关键规则可达性
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/323-review-rule-effectiveness
 created: 2026-09-28
@@ -21,14 +21,15 @@ affected_paths:
   - .agents/skills/review/references/02_Findings与严重度.md
   - .agents/skills/review/references/04_审查深度选择.md
   - .agents/skills/coding/references/09_多人和多智能体并行协作.md
-  - .agents/skills/coding/assets/multi-agent-roles.json
-  - .agents/skills/router/SKILL.md
   - .agents/skills/coding/references/23_端到端交付与合并后收尾.md
-  - .agents/skills/coding/tests/test_review_root_mechanism_closure.py
-  - .agents/skills/coding/tests/test_hard_rule_reachability.py
-  - evals/agent_outcome_eval.py
+  - .agents/skills/coding/references/31_跨模型效果评测与规则有效性.md
+  - .agents/skills/coding/assets/multi-agent-roles.json
   - .agents/skills/coding/tests/test_cross_model_outcome_eval.py
-  - .agents/skills/coding/tests/test_release_qualification.py
+  - .agents/skills/coding/tests/test_hard_rule_reachability.py
+  - .agents/skills/coding/tests/test_review_convergence_contract.py
+  - .agents/skills/coding/tests/test_review_root_mechanism_closure.py
+  - evals/agent_outcome_eval.py
+  - evals/cases/review-root-mechanism-projection.json
 contracts:
   - Review Assembly and Finding Admission
   - Repair Batch and delta re-review convergence
@@ -39,182 +40,159 @@ data_changes: []
 
 # 变更摘要
 
-按 Issue #323 建立 Review Assembly → Finding Admission → Repair Batch → Delta Re-review 的端到端收敛链，同时保护关键 hard rule 路由可达性和高价值 Outcome Eval；不新增 Runtime 协议或 Agent 角色。
+按 Issue #323 建立 `Review Assembly → Finding Admission → Repair Batch → Delta Re-review` 的端到端收敛链：Reviewer 首轮先在冻结 Head 上以固定、非递归 Assembly 独立收敛，再一次发布有效 blocking Findings；作者按稳定 Finding batch 一次性修复、复用原 PR/MR 并一次 re-request；返修后只做 reviewed_head→repair_head delta re-review。同步补关键 hard rule 条件式可达性和高价值 Outcome Eval，不新增 Runtime 协议或 Agent 角色。
 
 # 背景、现状与问题
 
-当前 Review 已有 Root-Mechanism Projection Closure 和 First-pass Coverage Miss，但缺少固定非递归的首轮 Review Assembly、有效 Finding 发布门禁、作者侧 Repair Batch、reviewed_head→repair_head delta re-review，以及这些行为的永久回归。另有 Issue/PR platform write 治理规则需要在真实写动作前条件式可达，review-root-mechanism-projection 也尚未进入高价值 registry。
+Requirement Source：GitHub Issue #323。原规则已有 Root-Mechanism Projection Closure、First-pass Coverage Miss 和 repair convergence，但仍可能把 Reviewer 探索过程暴露给作者，形成“首轮报一批→作者修→再从旧基线报一批”的循环；同时作者侧缺少稳定 Repair Batch，容易 per-Finding push / re-request / 新 PR。另有 Issue/PR platform write 治理 Contract 需要在写动作前可靠可达，但不能常驻加载抬高普通交付上下文。
 
 # 事实与证据
 
-| 证据编号 | 已确认事实 | 来源 / 定位 / 命令 | 支撑的约束或决策 |
+| 证据编号 | 已确认事实 | 来源 / 定位 | 影响 |
 | --- | --- | --- | --- |
-| E1 | Review 已有 Root-Mechanism Projection Closure / First-pass Coverage Miss | current main Review Core/Reference | 复用现有 Review Owner |
-| E2 | Systemic RCA 需 Task Route 含诊断才加载 | routing metadata + review root mechanism tests | 明确 Systemic route refresh 顺序 |
-| E3 | delivery 流程需要 Issue/PR pre-write Governance Contract，但常驻 dependency 会抬高轻量路由风险/Context | current metadata + Red CI | 改为 platform write 前条件式 route refresh |
-| E4 | review-root-mechanism-projection case 未进入 HIGH_VALUE_CONVERGENCE_CASES | evals/agent_outcome_eval.py | 纳入现有 qualification registry |
-| E5 | Runtime fixed-point/exact-context/Stable ID 已存在 | current runtime/routing tests | 不新增 Runtime 协议 |
-
-## 推断与待确认
-
-- 无。Issue #323 与当前 canonical Source 足以决定本次修改。
+| E1 | current main 已有 Root-Mechanism Projection Closure / First-pass Coverage Miss / Net Delivery Convergence | Review Core/References | 复用既有 Owner，不另建 Review 框架 |
+| E2 | 初始 Red regression 能稳定暴露首轮闭环、high-value registry、hard-rule reachability 缺口 | PR #324 early CI | 先测试后实现 |
+| E3 | delivery→governance 常驻 dependency 会把轻量 route 风险抬高到 L2 并放大 Context | PR #324 Red CI | 改为 platform write 前条件式 route refresh |
+| E4 | `review-root-mechanism-projection` case 原本存在但未进入 HIGH_VALUE_CONVERGENCE_CASES | eval registry | 纳入高价值 qualification registry |
+| E5 | pre-ready head `e3d50267bef5cfab04ffbdadeaa4685376593dd5` 的 selected self-contained suite 742/742 PASS；CI 唯一失败是 Change 仍为 `in_progress` | Skill Tests run 36406508582 | 实现/语义回归已 Green，可进入 Ready |
 
 # 目标、成功标准与非目标
 
-## 目标
+## 目标 / 成功标准
 
-Reviewer 的探索过程不得直接暴露给作者，作者的修复过程也不得变成 per-Finding push/re-request 循环。固定链路为：冻结 Review Head → 风险匹配 Review Assembly → Finding Admission/去重/冲突裁决 → 一次性发布 blocking Finding batch → 作者统一 Repair Batch + 映射验证 + repair-diff 自审 → 复用原 PR/MR 一次 re-request → reviewed_head→repair_head delta re-review。first-review escape 只允许一次 fresh blind assembly 合并纠错；同一 Finding 或同类 repair regression 重复失败先重做 root cause / repair plan。
-
-## 成功标准
-
-- [ ] AC1：First Review Assembly Gate 固定 fan-out + single synthesis；synthesis 后不递归开启 Full Review。
-- [ ] AC2：Second-pass Repair Verification 只审原 Findings、repair delta、adjacent regression 与 Acceptance；first-review escape 只允许一次 fresh blind assembly。
-- [ ] AC3：Finding Admission Gate 只允许有稳定 ID、直接 Evidence、触发/影响、classification、收口和验证方式的 blocker 进入 Repair。
-- [ ] AC4：Repair Batch Gate 一次性处理 blocking Finding batch，复用原 PR/MR，并一次 re-request review；禁止 per-finding push/request-review/new-PR 循环。
-- [ ] AC5：同一 Finding 连续两次修复仍失败或同类 repair regression 再现时，先 root-cause reanalysis / repair-plan reset；实质 Requirement/Scope 变化才重建 review baseline。
-- [ ] AC6：Issue/PR platform write 前治理 Contract 条件式可达，普通交付不常驻加载重 Context。
-- [ ] AC7：review-root-mechanism-projection 进入 HIGH_VALUE_CONVERGENCE_CASES，并覆盖 Assembly/Finding/Repair/delta 行为。
-- [ ] AC8：Runtime 协议、Stable IDs、五角色集合不变；Quick Review 不被机械升级。
-- [ ] AC9：current-head CI、独立 Review、guarded merge、main-fresh、Change Archive、Issue Closure 与 cleanup 完成。
-## 范围
-
-- Review Core/执行 Reference 的首轮与 re-review 契约。
-- Delivery → governance 现有 Reference dependency。
-- Targeted reachability / Outcome Eval tests 与高价值 registry。
+- [x] AC1：First Review Assembly Gate 使用固定 fan-out + single synthesis；synthesis 后不递归开启 Full Review，也不向作者发布部分 Findings。
+- [x] AC2：Second-pass Repair Verification 只审原 Findings、reviewed_head→repair_head delta、直接相邻回归与 Acceptance；first-review escape 只允许一次 fresh blind assembly。
+- [x] AC3：Finding Admission Gate 只允许有稳定 Finding ID、直接 Evidence、触发/影响、classification、收口方向和验证方式的 blocker 进入 Repair；同根/重复/冲突先合并或裁决。
+- [x] AC4：Repair Batch Gate 一次性处理 blocking Finding batch，复用原 PR/MR 并一次 re-request review；禁止 per-Finding push/request-review/新 PR 循环。
+- [x] AC5：同一 Finding 连续两次修复仍失败或同类 repair regression 再现时，先 root-cause reanalysis / repair-plan reset；实质 Requirement/Scope 变化才重建 Review baseline。
+- [x] AC6：Issue/PR platform write 前 Governance Contract 条件式可达；普通交付不常驻加载重治理 Context。
+- [x] AC7：`review-root-mechanism-projection` 已进入 HIGH_VALUE_CONVERGENCE_CASES，并覆盖 Assembly/Finding/Repair/delta 失败模式。
+- [x] AC8：Runtime MCP/Task Route 协议、Stable IDs、五角色集合未改变；Quick Review 不机械多 Agent 化。
+- [ ] AC9：current-head required CI、独立 Review、guarded merge、main-fresh、Change Archive、Issue Closure 与 cleanup；其中 merge 后步骤正式 deferred 到 post-merge lifecycle。
 
 ## 非目标
 
-- 不新增 Runtime MCP/action gate/状态机；不新增 Agent 角色；不创建 Release/Deploy；不修改依赖、数据或 Schema/Migration。
+- 不新增 Runtime action-state-machine / MCP 方法 / Pre-Action 通用协议。
+- 不新增 Reviewer/Compliance/Preflight 角色；继续复用现有 Reviewer/Tester/Explorer/Researcher。
+- 不创建 Release/Deploy，不修改依赖、数据、Schema/Migration。
+- 不追求“理论上永远发现所有问题”；目标是当前事实/范围下高价值问题首轮充分覆盖，并让 review/repair 链有界收敛。
 
 ## 必须保持不变
 
-- Source/Runtime Task Route 协议、Stable Reference IDs、exact-context 语义和简单 Review 的轻量路径。
+- Source/Runtime Task Route 协议与 Stable Reference IDs。
+- 简单/低风险 Review 保持最小充分，不因存在 Assembly 规则自动拆 Agent。
+- fixture/静态测试不能冒充真实跨模型 actual qualification。
+- Branch Protection、required CI、独立 Review、Change Archive 与 Closure 门禁不降低。
 
 # 约束与意图决策
 
-| 决策维度 | 当前决定 | 依据 | 影响 |
-| --- | --- | --- | --- |
-| 范围与负责人边界 | 复用 Review/Coding/Eval 现有 Owner | E1-E5 | 不新增平行规则系统 |
-| 接口与契约 | 只增强现有 Reference dependency | E3/E5 | Runtime public contract 不变 |
-| 数据与迁移 | 不适用 | 无数据变化 | 无 Migration |
-| 错误与失败语义 | 首轮漏掉本可推导 blocker = First-pass Coverage Miss | #323 | 阻止挤牙膏 Review |
-| 兼容性 | 保持 Stable IDs / MCP / 五角色 | E5 | 无调用方迁移 |
-| 部署与回滚 | revert 本 PR | 无外部状态 | 无部署动作 |
+| 决策 | 结论 | 依据 |
+| --- | --- | --- |
+| Review 内部收敛 | 固定 Review Assembly + blind perspectives + Parent 单次 synthesis，不循环 full review | #323 + Red/Green evidence |
+| Finding 有效性 | blocking Finding 先过 Finding Admission Gate | 避免 speculative blocker 进入作者返修 |
+| 作者返修 | 一个 blocking Finding batch → 一个 Repair Batch → 原 PR/MR 一次 re-request | 避免 per-Finding 往返 |
+| 二次 Review | reviewed_head→repair_head delta-first | 避免机械重审未改旧代码 |
+| 重复失败 | root-cause reanalysis / repair-plan reset | 避免叠加同类补丁 |
+| PR/Issue governance | platform write 前 route refresh 到 PR治理/Issue治理 | 保证可达且不常驻放大 Context |
+| Runtime | 不改 protocol / stable IDs / 角色集合 | 当前 fixed-point/context loader 已足够 |
 
 # 修改方案与决策依据
 
-## 最小充分方案
-
-1. First Review Assembly：按 Quick/Standard/Deep 固定 fan-out，blind perspectives 基于同一 Head，Parent 单次 synthesis 后一次发布。
-2. Finding Admission：blocking Finding 发布前做证据、可执行性、去重和冲突裁决。
-3. Repair Batch：作者/Worker 一次性修当前 blocking batch，完成 Finding→修改→Evidence 映射与 repair-diff 自审，复用原 PR/MR 一次 re-request。
-4. Delta Re-review：以 reviewed_head→repair_head 为主，只允许 repair diff/new Requirement/new external fact/first-review escape 产生新 blocker；重复同类失败先重诊断。
-5. Platform write hard rule 使用条件式 route refresh，不常驻抬高普通交付上下文；Outcome Eval 纳入高价值 registry。
-## 证据到决策
-
-| 决策 | 依据证据 | 为什么采用这个方案 |
-| --- | --- | --- |
-| D1 | E1-E2 | 现有 Review 方法足够，只需把首轮与 re-review 收敛规则做实 |
-| D2 | E3 | 条件式 route refresh 同时保证写前规则可达和普通交付轻量 |
-| D3 | E4 | 复用已有 case，避免新建 Eval 框架 |
-| D4 | E5 | Runtime 已能正确加载 required Context，本次不扩大 Runtime |
+1. Review Core/执行流程：First Review Assembly Gate、Coverage Map、Systemic Projection closure、single synthesis、delta re-review、one-shot first-review escape correction。
+2. Findings：Finding Admission Gate，稳定 ID、直接 Evidence、触发/影响、classification、修复/验证边界，先去重/裁决再发布。
+3. 审查深度：Quick/Standard/Deep 分别映射不同固定 Assembly；Deep 仍受 active child budget=3/no nested delegation。
+4. 多 Agent/协作：Repair Batch Gate，统一修当前 blocker、Finding→修改→Evidence 映射、复用原 PR/MR、一次 re-request；重复失败先重诊断。
+5. Delivery：Issue/PR platform write 前条件式 route refresh 到治理 Contract，不用常驻 dependency。
+6. Eval：把 review-root-mechanism-projection 加入 HIGH_VALUE_CONVERGENCE_CASES，并覆盖 partial Finding publication、speculative blocker repair、per-Finding re-request、duplicate PR、recursive assembly 等负例。
 
 # 需求追溯
 
-| 编号 | 要求 | 来源 | 状态 | 证据 |
+| ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | 固定非递归 Review Assembly | #323 / AC1 | not_satisfied | 待实现与验证 |
-| R2 | delta-scoped second-pass + one-shot escape correction | #323 / AC2 | not_satisfied | 待实现与验证 |
-| R3 | Finding Admission Gate | #323 / AC3 | not_satisfied | 待实现与验证 |
-| R4 | Repair Batch + single re-request / existing PR | #323 / AC4 | not_satisfied | 待实现与验证 |
-| R5 | repeated repair root-cause / repair-plan reset | #323 / AC5 | not_satisfied | 待实现与验证 |
-| R6 | platform-write hard-rule conditional reachability | #323 / AC6 | not_satisfied | 待实现与验证 |
-| R7 | high-value Outcome Eval registry | #323 / AC7 | not_satisfied | 待实现与验证 |
-| R8 | Runtime/Stable IDs/roles/light Quick path unchanged | #323 / AC8 | not_satisfied | 待 diff/回归证明 |
-| R9 | 端到端交付 | #323 / AC9 | not_satisfied | 待 PR/CI/merge/post-merge |
-# 计划改动
+| R1 | 固定非递归 Review Assembly + single synthesis | #323 / AC1 | satisfied | Review Core/ref04 + `test_review_assembly_is_fixed_and_non_recursive` |
+| R2 | delta-scoped second pass + one-shot escape correction | #323 / AC2 | satisfied | review ref01 + root-mechanism/convergence tests |
+| R3 | Finding Admission Gate | #323 / AC3 | satisfied | review ref02 + `test_finding_admission_requires_actionable_evidence_before_repair` |
+| R4 | Repair Batch + existing PR + single re-request | #323 / AC4 | satisfied | coding ref09 + `test_repair_batch_updates_existing_pr_once_before_rereview` |
+| R5 | repeated repair root-cause / repair-plan reset | #323 / AC5 | satisfied | coding ref09/ref01 + convergence tests |
+| R6 | platform-write Governance Contract 条件式可达 | #323 / AC6 | satisfied | coding ref23 + `test_hard_rule_reachability.py` positive/negative routes |
+| R7 | high-value Outcome Eval registry | #323 / AC7 | satisfied | eval registry/case + cross-model/root-mechanism tests |
+| R8 | Runtime/Stable IDs/roles/Quick path compatibility | #323 / AC8 | satisfied | 742/742 selected tests PASS on pre-ready head; routing/runtime conformance included |
+| R9 | end-to-end delivery lifecycle | #323 / AC9 | explicitly_deferred | current-head CI + independent Review 仍需在 ready revision 完成；merge/main-fresh/archive/closure/cleanup 属 post-merge lifecycle |
 
-| 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
-| --- | --- | --- | --- |
-| Review Core / refs 01/02/04 / reviewer role | Assembly、Finding validity、depth、delta re-review | 提高首轮正确性且内部不循环 | R1-R3 |
-| Coding ref09 + Router | Repair Batch、协作者 PR 路由 | 收敛作者返修和重复 PR/re-request | R4-R5 |
-| Delivery ref23 + reachability tests | platform write 条件式治理 route refresh | hard rule 可达但不常驻膨胀 | R6 |
-| Outcome Eval + tests | high-value case 覆盖完整 Review/Repair 链 | 防行为回归 | R7-R8 |
-- [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
-- [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
-- [x] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+# 计划改动 / 实际改动
+
+| 资产 | 实际变化 | 目的 |
+| --- | --- | --- |
+| Review Core + refs 01/02/04 | Assembly、Finding Admission、depth、delta re-review | 首轮问题集更完整/有效，并避免 Reviewer 内部递归 |
+| multi-agent reviewer role | blind draft Findings + Parent synthesis + repair delta | 保证宿主子 Agent 继承新语义 |
+| Coding ref09 | Repair Batch、single re-request、repeat-failure reanalysis | 收敛作者/Reviewer 往返 |
+| Coding ref23 | platform write route refresh | hard rule 可达但保持普通交付轻量 |
+| Coding ref31 + eval registry/case | high-value review convergence case | 防行为回归 |
+| targeted tests | Review Assembly/Finding/Repair/reachability/registry | 永久 Red/Green 保护 |
+
+- [x] 调查当前实现和事实源。
+- [x] 建立与风险相称的任务路由和验证矩阵。
+- [x] 行为变化先建立 Red evidence，再实现 Green。
+- [x] 完成最小实现，没有新增 Runtime 协议或 Agent 角色。
+- [x] 同步受影响 canonical Owner；README/USAGE 不变，因为用户调用方式未改变。
+- [x] 取得覆盖当前实现的 pre-ready Green Evidence。
+- [x] 完成需求追溯、完成审计和适用复核；post-merge lifecycle 正式 deferred。
 
 # 验证矩阵
 
-| 验证层 | 是否要求 | 范围 / 证据 |
+| 验证层 | 是否要求 | Evidence |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | Review Assembly、blind independence、single synthesis、repair-delta re-review、Outcome Eval targeted tests |
-| 接口 / 契约 | required | routing dependency、Source/Runtime conformance、Stable IDs |
-| 集成 / 持久化 / 运行依赖 | not_applicable | 无持久化或外部 Runtime 行为变化 |
-| 用户 / 工作流验收 | required | 真实 Task Route witness：Systemic Review 与 develop-and-deliver |
-| 跨组件关键路径 | not_applicable | 不新增组件接线 |
-| 外部依赖 / 供应方探测 | not_applicable | 无第三方事实依赖 |
-| 构建 / 打包 / 运行 | not_applicable | 不修改 Runtime/package 边界 |
-| 文档 / 治理 / 其他 | required | Change、Issue、独立 Review、CI、Archive/Closure |
+| 行为 / Unit / Component | required | Review Assembly、Finding Admission、Repair Batch、delta re-review、Outcome Eval tests |
+| 接口 / Contract | required | routing metadata/conditional route、Source/Runtime conformance、Stable IDs |
+| 用户 / Workflow | required | 真实 Task Route witness：Systemic Review、PR治理 write refresh、多人协作 Repair Batch |
+| Integration / Persistence | not_applicable | 无数据/外部 runtime 行为变化 |
+| Build / Package / Runtime | not_applicable | Runtime package/protocol 未修改 |
+| Docs / Governance | required | #323、Change、PR current-head CI、独立 Review、post-merge archive/closure |
 
-## 验证计划
+## 新鲜验证
 
-- 目标测试：review-root-mechanism、hard-rule reachability、cross-model outcome eval、release qualification。
-- 相关回归：routing conformance、owner-gated routing、Source/Runtime context conformance。
-- 静态检查或构建：仓库 Skill Tests required suite。
-- 专项真实边界：不适用；无外部运行边界变化。
-- 就绪检查：ready_check.py --require-active-ready。
+- Red：PR #324 early CI 明确失败于首轮 Review 时序、high-value registry、hard-rule reachability，以及后续的循环/上下文副作用；测试先于最终实现。
+- Green：Skill Tests run `36406508582`，head `e3d50267bef5cfab04ffbdadeaa4685376593dd5`，selected self-contained suite `Ran 742 tests ... OK`。
+- 同一 run 的唯一失败：Ready Check 要求 Active Change 为 `ready_for_review`，当前当时仍为 `in_progress`；没有测试失败。
+- Context budget：未提高现有预算；经过语义守恒压缩后由现有 routing migration/context budget tests 继续约束。
 
 # 风险、兼容性、迁移与回滚
 
-| 项目 | 结论 | 依据 / 处理方式 |
-| --- | --- | --- |
-| 主要风险 | 普通 Review 过度升级 / context 过载 | 保留 simple negative；只增加必要 dependency |
-| 兼容性 | 保持 | 不改协议/Stable IDs/角色 |
-| 数据 / Migration | 不适用 | 无数据变化 |
-| 部署 / 运行 | 不适用 | 本任务不发布 |
-| 回滚 / 恢复 | revert PR | 无外部状态 |
+- 主要风险：Review 过度多 Agent 化、Finding 数量导向、作者返修被机械 batching、context 膨胀。
+- 缓解：Quick 单 Reviewer；Standard/Deep 才按风险增加 blind/specialist；Finding Admission 不以数量为目标；existing budget tests 不放宽。
+- 兼容：Runtime protocol、Stable IDs、角色集合、公共 Task Route vocabulary 均未迁移。
+- 数据 / Schema / Migration / 依赖 / Deploy：不适用。
+- 回滚：revert PR #324；无外部数据状态需要恢复。
 
 # 文档、依赖、部署与发布影响
 
-- 长期文档：Review canonical Rule 本身是正式事实；README/USAGE 不需要同步，用户调用方式未变化。
-- 依赖 / Runtime：无新增、删除或升级；Runtime 协议不变。
-- 配置 / Secret：不适用。
-- 部署 / Release：不适用。
-- 兼容 / 消费方通知：Stable IDs、MCP、角色与 Task Route vocabulary 不变。
+- Canonical Review/Coding References 是本次长期事实源；不另在 README/USAGE 复制第二套规则。
+- 无依赖升级、Runtime 协议、Schema/Migration、Release/Deploy 影响。
 
 # 完成审计
 
-- [ ] upstream_re_read：Ready 前重读 #323 与受影响 canonical Source。
-- [ ] change_coverage：确认 R1-R5 均有实现/测试证据；R6 按 delivery lifecycle 处理。
-- [ ] reverse_audit：从 Review/Delivery 用户路径反查 route → required Context → tests/Eval。
-- [ ] unresolved_cleared：Ready 前清零适用 not_satisfied；post-merge lifecycle 按正式状态处理。
+- [x] upstream_re_read：已重读 #323 和当前受影响 Review/Coding/Router/Eval canonical Source；用户补充目标已纳入。
+- [x] change_coverage：R1-R8 均由当前实现和测试覆盖；R9 按正式 post-merge lifecycle deferred。
+- [x] reverse_audit：已从“Reviewer 首轮 → Finding → 作者返修 → re-review → PR/Issue platform write”用户路径反查 route、Context、Evidence 与停止条件。
+- [x] unresolved_cleared：实现范围内无 `not_satisfied`；只剩 R9 的 current-head delivery/post-merge lifecycle。
 
 # 完成证据与状态
 
-## 新鲜证据
-
-| 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
-| --- | --- | --- | --- | --- |
-| V1 | branch pending | targeted tests / CI | pending | 待实现后补充 |
-
 ## 未验证内容与剩余风险
 
-- 实现、targeted tests、current-head CI、独立 Review、merge/main-fresh/Archive/Closure 尚未完成。
+- 当前 ready revision 尚需重新跑 required CI；pre-ready head 已证明实现测试 Green。
+- 独立 final Review、guarded merge、main-fresh、repository-native Change Archive、Issue #323 Closure 与 branch cleanup 尚未完成。
+- 本任务未运行真实跨宿主 actual Outcome Eval；因此不能声称新的行为已经跨所有模型/宿主实际 qualification，仍按 current rule 记 unverified，不阻塞普通源码交付。
 
 ## 交付状态
 
-- 提交：pending
-- 拉取请求：pending
-- CI：pending
-- 合并：pending
-- Change 归档：pending
-- 发布 / 部署：不适用
-
-## 备注
-
-- 本任务不增加 Runtime 大框架；若实现中出现必须改变 Runtime protocol 的新事实，停止扩大范围并回到 #323。
+- implementation: complete
+- validation: pre-ready semantic suite green; current-head required CI pending
+- PR: #324 draft/ready transition pending
+- independent_review: pending
+- merge: pending
+- main_fresh: pending
+- change_archive: pending
+- requirement_closure: #323 open
+- cleanup: pending
+- release/deploy: not_applicable
