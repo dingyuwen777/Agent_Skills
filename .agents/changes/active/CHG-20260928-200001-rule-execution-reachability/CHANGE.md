@@ -225,8 +225,9 @@ Requirement Source：Issue #325。闭合现有规则从 canonical Owner 到 Runt
 
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
-| V1 | PR #326 head 09418b6f64c2dad1d739edda767d1a862fbfd0c8 / GitHub Actions | Skill Tests run 36422089342 | 746/746 semantic PASS；compile/CLI PASS | R1-R4 |
-| V2 | current ready head | Linux/Windows/macOS Runtime Package + fresh final Review | 待执行 | R5 |
+| V1 | PR #326 head 09418b6f64c2dad1d739edda767d1a862fbfd0c8 / GitHub Actions | Skill Tests run 36422089342 | 746/746 semantic PASS；compile/CLI PASS | 上一版 R1-R4 |
+| V2 | PR #326 head aaff04bc1f8d6c298948273be8f0957a6535556b / GitHub Actions | Skill Tests run 36423168609 | 746/746 semantic PASS；compile/CLI/context budget PASS；Ready Check 仅因验证时 status=in_progress 按预期失败 | 最终 projector 当前实现 R1-R4 |
+| V3 | current ready head | Linux/Windows/macOS Runtime Package + fresh final Review | 待执行 | R5 |
 | V4 | merged main | main-fresh + Change Archive + Issue Closure | 待执行 | R6 |
 
 ## 未验证内容与剩余风险
@@ -256,6 +257,6 @@ Requirement Source：Issue #325。闭合现有规则从 canonical Owner 到 Runt
 
 - Fresh Review 发现：逐条从 canonical Router 挑选 project-facing 规则仍存在未来漏投影风险。
 - 修正：Runtime 直接整体投影 canonical Router 第 1 节，仅做标题/术语 project-facing 转换，并继续从既有示例派生 L1/L2/L3；不新增 Router 第二份摘要或 marker。
-- 该修正改变 Runtime projector，因此旧 pre-ready Green 只作历史 Evidence，当前 head 必须重新验证。
+- 该修正改变 Runtime projector，因此旧 pre-ready Green 只作历史 Evidence；最终 projector 已在 head `aaff04bc1f8d6c298948273be8f0957a6535556b` 完成 fresh semantic revalidation。
 
-- Final projector semantic revalidation：head `aaff04bc1f8d6c298948273be8f0957a6535556b`，Skill Tests run `36423168609`，`Ran 746 tests ... OK`；context budget 未提高。\n
+- Final projector semantic revalidation：head `aaff04bc1f8d6c298948273be8f0957a6535556b`，Skill Tests run `36423168609`，`Ran 746 tests ... OK`；context budget 未提高。
