@@ -125,10 +125,8 @@ CMakeLists.txt ≠ Linux-only
 | 新/当前 Change 使用 Completion Gate、正式仓库初始化、L3 或交付单元 | [10_完成定义追溯门禁.md](references/10_完成定义追溯门禁.md) |
 | L2/L3 的 Requirement/Feature/Bug/Refactor，或任意系统性诊断、Incident、Performance | [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md) |
 | Frontend / Web UI / Design-to-Code / Figma-to-code / 设计稿转代码；新增页面、跨页面 UI 或需要选择前端技术方案 | [16_前端与Design-to-Code实施规则.md](references/16_前端与Design-to-Code实施规则.md) |
-| 实质 Implementation | Development Preflight 先做轻量 CI Cost Check；命中成本/冗余风险再读 [27_CI_Workflow健康检查与Actions清理.md](references/27_CI_Workflow健康检查与Actions清理.md) |
-| Issue/PR governance write | [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md) + [29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)；写前校验、写后同检 |
+| 实质 Implementation / Issue·PR governance write / CI·Workflow 变更 | Core 先做 Development Preflight；治理写入读 [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md)+[29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)；CI 风险读 [27_CI_Workflow健康检查与Actions清理.md](references/27_CI_Workflow健康检查与Actions清理.md)，CI 门禁变更再加 [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md)+[19_CI审查升级门禁.md](references/19_CI审查升级门禁.md) |
 | L2/L3 需要规划或审计 Validation Matrix | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md)；L1 targeted validation 由 [20_L1轻量实现与验证路径.md](references/20_L1轻量实现与验证路径.md) 负责 |
-| 新增/修改永久 CI/Workflow 或测试/发布门禁 | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md) + [19_CI审查升级门禁.md](references/19_CI审查升级门禁.md) + [27_CI_Workflow健康检查与Actions清理.md](references/27_CI_Workflow健康检查与Actions清理.md) |
 | Web/API/PostgreSQL/Provider 等专项边界真实存在 | [08_分层测试与验收策略.md](references/08_分层测试与验收策略.md) |
 | 跨模块、跨消费者、Contract/Schema/Migration/Owner/数据边界 | [06_仓库边界数据交换与条件式约束.md](references/06_仓库边界数据交换与条件式约束.md) |
 | 多人、多 Agent、多个分支或 Active Change 并行 | [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md) |
@@ -224,15 +222,15 @@ python <skill>/scripts/coding.py new-change --root <repo> \
 
 ### Development Preflight Gate
 
-实质 Implementation 开始前，Parent 先校准 **Requirement、Governance write、CI Cost/Evidence、Delivery**。新建 Issue/PR：读取 [需求追溯](references/17_需求来源与PR追溯治理.md)+[治理机器 Contract](references/29_治理资产机器Contract.md)，candidate 经 create-mode PASS 后才 `platform write`，写后 reread 同检；已有实例按 lifecycle 用 create/live，FAIL 不调用 writer。CI 只问 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**；命中才深入 [CI 健康检查](references/27_CI_Workflow健康检查与Actions清理.md)。L1 可 inline，不强制 Issue/Change/Reviewer；Reviewer 只是增强，**Parent hard gate** 始终有效。
+实质 Implementation 前校准 Requirement / Governance / CI / Delivery。新建 Issue/PR 必须 candidate create PASS 后才 `platform write`，已有实例按 lifecycle 用 create/live；CI 只查 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**，有风险才深入对应 Reference。L1 可 inline；Reviewer 可增强但 **Parent hard gate** 不可省。
 
 ### Requirement Change Gate
 
-只有 Requirement/Acceptance/Scope 等**语义变化**才先更新唯一 Requirement Source，再让受影响计划/Handoff/Evidence 进入 `STALE_RESULT`；未受影响的新鲜 Evidence 复用，**非语义**编辑不全量重跑。Change/PR 只同步追溯，不成为 Requirement Owner。
+只有**语义变化**才先更新 Requirement Source，并仅让**受影响**计划/Handoff/Evidence 成为 `STALE_RESULT`；**非语义**编辑不全量重跑，Change/PR 不成为需求 Owner。
 
 ### Completion Gate
 
-PR Ready/完成强结论前重读**最新 Requirement Source**，逐 Acceptance 映射当前 revision/environment 直接 Evidence；applicable unresolved/not_satisfied 即阻止 Ready。CI Green、旧 Preflight 或 Review 无 Finding不能替代 Completion Audit；持久 gated Change 按 [完成定义追溯门禁](references/10_完成定义追溯门禁.md) 执行。
+PR Ready/完成前重读**最新 Requirement Source**并逐 AC 映射当前直接 Evidence；applicable unresolved 即阻止 Ready，CI Green/旧 Preflight 不替代完成审计。
 
 ### 4.8 制定可验证计划
 
