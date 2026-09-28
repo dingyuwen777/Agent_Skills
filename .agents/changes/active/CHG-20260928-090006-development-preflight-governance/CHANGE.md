@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-090006-development-preflight-governance
 title: 开发开工门禁与治理写前校验闭环
 level: L3
-status: ready_for_review
+status: proposed
 owner: dingyuwen777
 branch: tech/317-development-preflight-governance
 created: 2026-09-28
@@ -158,14 +158,14 @@ Requirement Source：GitHub Issue #317。用户要求按已讨论的“1 个 Req
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 实质 Implementation 开工必做轻量 CI Cost/Evidence Check | #317 / AC1 | satisfied | Coding Core Development Preflight + ref27 Start/Ready Cost Check；run #2119 的 routing/context/CI governance 回归全部通过，未提高 context budget |
+| R1 | 实质 Implementation 开工必做轻量 CI Cost/Evidence Check | #317 / AC1 | not_satisfied | Review 发现 Runtime route 仍对所有 Implementation 自动加载完整 ref27；已改为 Core 三问 + CI 变更条件加载，待 current-head 回归 |
 | R2 | 新建 Issue/PR 使用 create-mode 写前校验；已有实例按 lifecycle 使用 create/live，失败禁止 writer，写后同检 | #317 / AC2 | satisfied | Core + ref17/ref29 Platform Write Hard Gate；本轮 #317/#318 均完成写前 validation、platform write、live reread；正反例回归 Green |
 | R3 | governance_contract 提供 canonical candidate preparation | #317 / AC3 | satisfied | governance_contract.py 新增 prepare_issue_candidate / prepare_pr_candidate 与 prepare-issue / prepare-pr；candidate→create validator 正反例 Green |
 | R4 | Reviewer 支持 preflight/completion，不新增第六角色 | #317 / AC4 | satisfied | multi-agent-roles 仍严格五角色；Reviewer 支持 Development Preflight / Completion，ref09 与 Host role projection 回归 Green |
 | R5 | Requirement 实质变化先更新 Owner，仅影响项 stale | #317 / AC5 | satisfied | Core Requirement Change Gate + decision_epoch/Freshness 既有 Contract；本轮 AC2/AC7 需求变化先更新 #317 后同步 Change，局部 stale 回归 Green |
 | R6 | Completion reread 最新 Requirement 并按 AC→Evidence 阻止 unresolved Ready | #317 / AC6 | satisfied | Core Completion Gate + ref10/ref17；Ready 前已重读 #317 并独立映射 AC1–AC8，unresolved 仅剩 post-merge AC9 |
-| R7 | Source Mode reachability 与 Runtime parity 闭合 | #317 / AC7 | satisfied | routing conformance / source-runtime exact-text / project-facing projection 全部 Green；普通 Git 路由保持轻量，治理写入才命中治理 Contract |
-| R8 | 永久回归覆盖关键正反例且不降低门禁 | #317 / AC8 | satisfied | Red run #2091 在旧实现上 8 tests expected fail；Green run #2119 719 tests OK；context budget 原阈值未提高、历史断言未删除 |
+| R7 | Source Mode reachability 与 Runtime parity 闭合 | #317 / AC7 | not_satisfied | 已修 ref27 Runtime metadata：普通 Implementation 不再自动加载详细 CI Reference；待 current-head routing/source-runtime 回归 |
+| R8 | 永久回归覆盖关键正反例且不降低门禁 | #317 / AC8 | not_satisfied | 新增“普通实现不加载 ref27 / CI 变更才加载”回归并更新旧 Contract 测试；待 current-head full semantic Green |
 | R9 | Review/CI/merge/main-fresh/archive/closure 全交付 | #317 / AC9 | explicitly_deferred | AC9 依赖 PR Ready 后 package CI、独立 Review、guarded merge、main-fresh、repository-native archive 与 Closure；按真实生命周期 post-merge 完成 |
 
 # 计划改动
@@ -242,7 +242,8 @@ Requirement Source：GitHub Issue #317。用户要求按已讨论的“1 个 Req
 | V1 | main 2dc9d83f | canonical read + Issue #317 create/live validation | confirmed | 起始规则缺口与合法 Requirement Source |
 | V2 | test-only Red HEAD `9d772af3ff32cc34f53761c9eb4f6856eac90a0b` | Skill Tests run #2091 / `36365122468` | expected failure：8 个新增 Preflight/Governance 回归全部因旧实现缺能力失败，Requirement Source gate 已通过 | 新测试在旧实现上确实为 Red，不是实现后自证 |
 | V3 | current implementation branch | Core/ref09/ref17/ref27/ref29 context delta audit | Core+关键 References 合计不高于原基线；未提高任何 context budget | 新门禁通过压缩/Owner 复用而非扩大上下文阈值 |
-| V4 | HEAD `e5be15193986ee7d301880b0fe05e5eb760f6c15` | Skill Tests run #2121 / `36367369902` | selected self-contained tests：`Ran 719 tests` → `OK`；唯一失败为 Active Change 仍是 proposed | 当前实现、routing、Source/Runtime parity、context budget 与历史 Contract 已 Green |
+| V4 | HEAD `e5be15193986ee7d301880b0fe05e5eb760f6c15` | Skill Tests run #2121 / `36367369902` | `Ran 719 tests` → `OK` | 证明 pre-review 实现；随后 Review 发现 ref27 Runtime route 过宽，因此该 Evidence 不再覆盖最新 routing 修复 |
+| V5 | independent Review on PR #318 | Requirement-first A1/A2 + routing cost reverse audit | BLOCKING：ref27 metadata 仍以 `执行模式=实现` 触发，违反 AC1/AC7 的“Core轻检查、风险时再深入” | 已修为 `治理=CI 变更` 条件加载，并更新 conformance/CI tests；待新鲜 Green |
 
 ## 未验证内容与剩余风险
 
