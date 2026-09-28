@@ -254,6 +254,32 @@ class RuntimePackageScopePolicyTest(unittest.TestCase):
                 for name in names:
                     self.assertTrue((test_dir / name).is_file(), f"{group} 引用了不存在的测试：{name}")
 
+    def test_review_skill_group_carries_convergence_and_reachability_regressions(self) -> None:
+        """Review 规则变化必须直接运行收敛、根机制、可达性和 Outcome Eval 回归。"""
+        selected = _selection(".agents/skills/review/references/01_审查执行流程.md")
+        for name in (
+            "test_review_convergence_contract.py",
+            "test_review_root_mechanism_closure.py",
+            "test_hard_rule_reachability.py",
+            "test_cross_model_outcome_eval.py",
+        ):
+            with self.subTest(name=name):
+                self.assertIn(name, selected.test_files)
+
+    def test_every_permanent_test_has_declared_ci_responsibility(self) -> None:
+        """永久 test_*.py 必须属于 targeted group、CI-self 或显式 full_only，禁止 orphan test。"""
+        module = _load_selector()
+        test_dir = ROOT / ".agents/skills/coding/tests"
+        actual = {path.name for path in test_dir.glob("test_*.py") if path.is_file()}
+        assigned = set(module._CI_SELF_TESTS)
+        for names in module._GROUP_TEST_FILES.values():
+            assigned.update(names)
+
+        missing = sorted(actual - assigned)
+        stale = sorted(assigned - actual)
+        self.assertEqual(missing, [], f"存在未声明 CI 责任的永久测试：{missing}")
+        self.assertEqual(stale, [], f"CI selector 注册了不存在的永久测试：{stale}")
+
     def test_default_classify_paths_remains_backward_compatible(self) -> None:
         classify_paths = _load_selector().classify_paths
         self.assertEqual(classify_paths(["README.md"]), "governance")
