@@ -65,11 +65,11 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
                 self.assertIn(marker, text)
 
     def test_complex_review_can_conditionally_load_systemic_rca(self) -> None:
-        """审查中确认复合机制后，新增内部信号必须加载现有 Systemic RCA Owner。"""
+        """审查中确认复合机制后，复用既有诊断路由加载 Systemic RCA Owner。"""
         result = self._route(
             {
-                "执行模式": ["审查"],
-                "意图": ["代码审查", "机制完整性审查"],
+                "执行模式": ["审查", "诊断"],
+                "意图": ["代码审查"],
                 "风险": ["L3"],
             }
         )
