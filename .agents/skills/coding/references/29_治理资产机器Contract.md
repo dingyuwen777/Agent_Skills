@@ -1,5 +1,5 @@
 <!-- agent-routing:v1
-{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.30","触发":{"任一":[{"包含":{"维度":"意图","取值":["Issue/工单治理"]}},{"包含":{"维度":"治理","取值":["存在活动变更","多个活动变更","要求变更记录","要求完成门禁"]}}]},"依赖":["coding.reference.18","coding.reference.25"],"最低风险":"L2"}
+{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.30","触发":{"任一":[{"包含":{"维度":"意图","取值":["Issue/工单治理","PR治理"]}},{"包含":{"维度":"治理","取值":["存在活动变更","多个活动变更","要求变更记录","要求完成门禁"]}}]},"依赖":["coding.reference.18","coding.reference.25"],"最低风险":"L2"}
 -->
 
 # 治理资产机器 Contract
@@ -90,31 +90,15 @@ Requirement Source 说明 PR 为什么存在；`Closes/Fixes/Resolves` 只表达
 
 ## 4. Mutation：写前写后同检
 
-Issue 创建固定为：
+新建 Issue/PR 固定为：
 
 ```text
-canonical Issue Profile
-→ candidate
-→ validate-issue --mode create
-→ PASS
-→ create/update through platform
-→ live reread
-→ validate-issue --mode create
+canonical Profile → prepare-issue / prepare-pr candidate
+→ validate create → PASS → platform writer
+→ live reread → same create validation
 ```
 
-PR 创建固定为：
-
-```text
-canonical PR Profile
-→ candidate
-→ validate-pr --mode create
-→ PASS
-→ create/update through platform
-→ live reread
-→ validate-pr --mode create
-```
-
-任何 pre-write FAIL 都禁止平台 write。后期补模板只能作为异常恢复路径，不能成为标准创建流程。Change 创建/更新继续使用 canonical Change Template + candidate validation + changed-scope/Ready/Completion/Review。无本地 shell 时使用宿主等价 API 写入与 readback，不得靠模型自证格式。
+`prepare-issue / prepare-pr` 只按当前 canonical heading 顺序组装 Core并调用同一 validator，不维护第二份字段表。**Platform Write Hard Gate**：新建必须 create PASS；已有实例实质更新按 lifecycle 使用 create/live。任一 pre-write FAIL 都禁止 writer；写成功后仍须 reread 同检。无本地 shell 时用宿主等价生成/校验能力，顺序不变。Change 继续使用既有 template/validation/Ready/Completion。
 
 ## 5. Canonical Governance Assets、Project Payload 与 Runtime projection
 

@@ -50,19 +50,23 @@ class LocalCacheAndDocsGovernanceTest(unittest.TestCase):
         ):
             self.assertIn(marker, maintenance)
 
-    def test_every_implementation_loads_thin_ci_cost_health_rule(self) -> None:
-        """薄 Reference 必须把成本检查变成实现阶段默认动作，而非临时项目约定。"""
+    def test_every_implementation_runs_core_cost_check_and_detailed_ci_rule_is_conditional(self) -> None:
+        """普通实现只携带 Core 三问；详细 CI Reference 仅在 CI 变更/风险升级后加载。"""
+        core = (ROOT / ".agents/skills/coding/SKILL.md").read_text(encoding="utf-8")
         reference = (
             ROOT / ".agents/skills/coding/references/27_CI_Workflow健康检查与Actions清理.md"
         ).read_text(encoding="utf-8")
+        for marker in ("Broad Job", "Duplicate Evidence", "Duplicate Setup/Install/Build"):
+            self.assertIn(marker, core)
         for marker in (
-            '"执行模式","取值":["实现"]',
+            '"治理","取值":["CI 变更"]',
             "每次实现默认执行的 Cost / Evidence Check",
             "只测试与修改相关的边界",
             "仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化",
             "CI/selector 自身变化使用 full current-head Evidence",
         ):
             self.assertIn(marker, reference)
+        self.assertNotIn('"执行模式","取值":["实现"]', reference)
 
     def test_validation_asset_redundancy_gate_requires_cleanup_not_just_less_execution(self) -> None:
         """验证资产门禁必须清理当前范围内的永久冗余，而不是只让它少跑。"""

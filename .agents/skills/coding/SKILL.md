@@ -134,6 +134,7 @@ CMakeLists.txt ≠ Linux-only
 | Runtime Bundle/Routing Manifest/Task Route/MCP/Project Payload/安装升级或 Release identity | [13_本地MCP_Runtime分发与原文上下文加载.md](references/13_本地MCP_Runtime分发与原文上下文加载.md) |
 | Agent Outcome Eval / 跨模型规则效果 / Skill heuristic 生命周期 | [31_跨模型效果评测与规则有效性.md](references/31_跨模型效果评测与规则有效性.md) |
 | Git/PR/Release/Delivery、依赖变化、安全边界、最终交付报告或宿主能力降级 | [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md) |
+| develop-and-submit / develop-and-deliver / review-and-deliver 等完整交付终点 | [23_端到端交付与合并后收尾.md](references/23_端到端交付与合并后收尾.md) |
 | Skill/reference/模板/项目 Overlay 的精简、重组、拆分、合并、改名、迁移或通用化 | [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md) |
 
 不要要求用户重复提供能够从仓库、缓存或工具确认的信息。只读取当前任务真正需要的事实和 reference，不用“全仓全部读一遍”替代理解调用链。
@@ -201,7 +202,7 @@ python <skill>/scripts/coding.py status --root <repo> --json
 
 ### 4.6 分类 L1/L2/L3 并固化任务契约
 
-编码前建立最小任务契约：当前事实、目标 / 非目标、可观察成功标准、不变项、受影响能力 / Owner、最小方案、直接 Evidence 和真实未知项。输入输出、复用点、预计文件、公共接口、数据 / Schema / Migration、依赖、文档、部署 / 回滚与 Git 授权只在本次触及对应边界时展开；不适用项不逐项提问。详细字段按 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)，项目 Overlay 的额外要求仍保留。
+编码前建立最小任务契约：事实、目标/非目标、Acceptance、不变项、Owner、方案、Evidence、未知项；其他边界按需，见 [设计实施](references/05_设计实施与根因调试.md)。**Development Preflight Gate** 校准需求/治理/CI/交付：CI 只问 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**，命中读 [CI](references/27_CI_Workflow健康检查与Actions清理.md)，CI/Workflow 变更加 [CI Review](references/19_CI审查升级门禁.md)；Issue/PR **platform write** 前读 [Requirement](references/17_需求来源与PR追溯治理.md)+[Governance](references/29_治理资产机器Contract.md)并写前校验。
 
 L1 可在工作说明内维护。L2 必须有**最小充分任务契约**，但可由本轮用户要求、PR body、Issue/工单、Spec/OpenSpec/RFC 或项目既有载体承载；只有跨 Owner/PR/会话、复杂依赖/阶段、正式审计、项目规则或 Completion Gate 等**持久治理价值**出现时才升级为独立持久施工契约。L3 必须有稳定持久契约并补方案比较、公共兼容、Migration/部署/回滚和安全/运维风险。项目 Overlay 可以更严格。
 
@@ -286,9 +287,7 @@ Bug 修复必须有回归证据。测试验证真实行为，不只验证 Mock �
 
 ### 4.13 Completion Audit、两阶段 Review 与新鲜验证
 
-对 `completion_gate: required` 的 Coding Change 或项目等价 gated L2/L3 单元，Ready 前执行完整 Completion Audit：重新读取上游正式事实源，独立重建完成定义，比较“上游要求 → Change”和“Change → 实现/测试/文档”，执行适用反向能力审计，复核 Validation Matrix，清零 `not_satisfied`。
-
-普通轻量 L2 不创建形式化 Audit，但强完成结论前至少重新读取当前 Requirement Source/任务事实，核对目标、范围/非目标、不变项、required 新鲜验证和未验证/延期/未知项。
+gated Change/等价 L2/L3 的 Ready 按 [Completion](references/10_完成定义追溯门禁.md) 审计，轻量 L2 做最小核对。**Requirement Change Gate**：**语义变化**先更新 Requirement Source，仅使**受影响**结果成为 `STALE_RESULT`；**非语义**不全量重跑。**Completion Gate**：强完成前重读**最新 Requirement Source**逐 AC→当前 Evidence，applicable unresolved 阻止 Ready。
 
 使用 `coding-change/v1` 时可运行：
 
