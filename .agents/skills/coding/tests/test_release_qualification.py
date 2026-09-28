@@ -55,6 +55,10 @@ def _run(case_id: str, model: str, host: str, suffix: str) -> dict[str, object]:
                 {"类型": "evidence", "标识": item, "来源": "tool", "说明": "unit-test tool evidence"}
                 for item in case["必需证据"]
             ],
+            *[
+                {"类型": "clear", "标识": item, "来源": "host", "说明": "unit-test host violation clear"}
+                for item in case["禁止违规"]
+            ],
         ],
         "过程指标": {"工具调用": 0, "重试": 0, "用户干预": 0},
         "遥测": {

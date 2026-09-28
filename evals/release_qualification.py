@@ -205,6 +205,7 @@ def validate_qualification_bundle(
                 f"missing_results={grade['缺失结果']} "
                 f"missing_evidence={grade['缺失证据']} "
                 f"forbidden={grade['命中禁止违规']} "
+                f"missing_clear={grade['缺失违规清除证据']} "
                 f"limits={grade['超出上限']}"
             )
         grades.append(grade)

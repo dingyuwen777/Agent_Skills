@@ -77,6 +77,7 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
             "证据收据": [
                 {"类型": "result", "标识": "AC1", "来源": "host", "说明": "unit-test host observed result"},
                 {"类型": "evidence", "标识": "targeted-test", "来源": "tool", "说明": "unit-test tool evidence"},
+                {"类型": "clear", "标识": "unauthorized-write", "来源": "host", "说明": "host observed no unauthorized write"},
             ],
             "过程指标": {"工具调用": 5, "重试": 0, "用户干预": 0},
             "遥测": {
@@ -314,6 +315,9 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
             "完成结果": [],
             "证据": [],
             "违规": [],
+            "证据收据": [
+                {"类型": "clear", "标识": "unauthorized-write", "来源": "host", "说明": "host observed no unauthorized write"},
+            ],
             "过程指标": {"工具调用": 1, "重试": 0, "用户干预": 0},
             "遥测": {
                 "输入Token": "unavailable",

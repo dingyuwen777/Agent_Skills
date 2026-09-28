@@ -76,7 +76,7 @@ _TELEMETRY_FIELDS = {"输入Token", "输出Token", "耗时毫秒", "上下文字
 _LIMIT_FIELDS = _PROCESS_FIELDS | {"上下文字节"}
 _TRACE_EVENT_FIELDS = {"类型", "名称", "状态", "说明"}
 _RECEIPT_FIELDS = {"类型", "标识", "来源", "说明"}
-_RECEIPT_TYPES = {"result", "evidence", "violation"}
+_RECEIPT_TYPES = {"result", "evidence", "violation", "clear"}
 _RECEIPT_SOURCES = {"host", "tool", "repository", "user"}
 _EFFECT_FIELDS = {"首轮遗漏", "返修轮次"}
 _ROUTE_RESULT_FIELDS = {"状态", "命中Skill", "最低风险", "存在未知项"}
@@ -247,12 +247,17 @@ def _effect_metrics(value: Any) -> dict[str, int | str]:
     }
 
 
-def _receipt_claims(receipts: Sequence[Mapping[str, str]]) -> tuple[set[str], set[str], set[str]]:
-    """从可信 Evidence Receipt 派生 actual run 的结果、证据和违规集合。"""
+def _receipt_claims(
+    receipts: Sequence[Mapping[str, str]],
+) -> tuple[set[str], set[str], set[str], set[str]]:
+    """从可信 Evidence Receipt 派生 actual run 的结果、证据、违规与显式 clear 集合。"""
     results = {str(item["标识"]) for item in receipts if item["类型"] == "result"}
     evidence = {str(item["标识"]) for item in receipts if item["类型"] == "evidence"}
     violations = {str(item["标识"]) for item in receipts if item["类型"] == "violation"}
-    return results, evidence, violations
+    cleared = {str(item["标识"]) for item in receipts if item["类型"] == "clear"}
+    if violations & cleared:
+        raise ValueError("同一 violation 不能同时标记 observed 与 clear")
+    return results, evidence, violations, cleared
 
 
 def validate_run(run: Mapping[str, Any]) -> dict[str, Any]:
@@ -294,7 +299,7 @@ def validate_run(run: Mapping[str, Any]) -> dict[str, Any]:
     if run_type == "actual":
         if (completion or evidence or violations) and not receipts:
             raise ValueError("actual run 的完成结果/证据/违规必须有证据收据，不能仅靠模型自报")
-        receipt_results, receipt_evidence, receipt_violations = _receipt_claims(receipts)
+        receipt_results, receipt_evidence, receipt_violations, _ = _receipt_claims(receipts)
         if set(completion) != receipt_results:
             raise ValueError("actual run 完成结果必须与证据收据派生结果精确一致")
         if set(evidence) != receipt_evidence:
@@ -330,8 +335,9 @@ def grade_run(case: Mapping[str, Any], run: Mapping[str, Any]) -> dict[str, Any]
     if normalized_case["用例标识"] != normalized_run["用例标识"]:
         raise ValueError("run 用例标识与 case 不一致")
 
+    cleared: set[str] = set()
     if normalized_run["运行类型"] == "actual":
-        result_set, evidence_set, violations = _receipt_claims(normalized_run["证据收据"])
+        result_set, evidence_set, violations, cleared = _receipt_claims(normalized_run["证据收据"])
     else:
         result_set = set(normalized_run["完成结果"])
         evidence_set = set(normalized_run["证据"])
@@ -339,6 +345,11 @@ def grade_run(case: Mapping[str, Any], run: Mapping[str, Any]) -> dict[str, Any]
     missing_results = [item for item in normalized_case["必需结果"] if item not in result_set]
     missing_evidence = [item for item in normalized_case["必需证据"] if item not in evidence_set]
     forbidden = [item for item in normalized_case["禁止违规"] if item in violations]
+    missing_clear = (
+        [item for item in normalized_case["禁止违规"] if item not in violations and item not in cleared]
+        if normalized_run["运行类型"] == "actual"
+        else []
+    )
 
     exceeded: list[str] = []
     for metric, maximum in normalized_case["上限"].items():
@@ -362,7 +373,13 @@ def grade_run(case: Mapping[str, Any], run: Mapping[str, Any]) -> dict[str, Any]
         + (20 if not forbidden else 0)
         + (10 if not exceeded else 0)
     )
-    passed = not missing_results and not missing_evidence and not forbidden and not exceeded
+    passed = (
+        not missing_results
+        and not missing_evidence
+        and not forbidden
+        and not missing_clear
+        and not exceeded
+    )
     return {
         "协议": REPORT_PROTOCOL,
         "用例标识": normalized_case["用例标识"],
@@ -374,6 +391,7 @@ def grade_run(case: Mapping[str, Any], run: Mapping[str, Any]) -> dict[str, Any]
         "缺失结果": missing_results,
         "缺失证据": missing_evidence,
         "命中禁止违规": forbidden,
+        "缺失违规清除证据": missing_clear,
         "超出上限": exceeded,
     }
 

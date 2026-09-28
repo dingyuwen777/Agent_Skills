@@ -20,7 +20,7 @@ if str(SOURCE_ROOT) not in sys.path:
 
 from licensing.license_tool import issue_license
 from runtime.agent_skills_runtime.catalog import build_bundle
-from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL, evaluate_route
+from runtime.agent_skills_runtime.routing import ROUTE_DIMENSIONS, TASK_ROUTE_PROTOCOL, evaluate_route
 from runtime.agent_skills_runtime.runtime import TASK_STATE_PROTOCOL
 
 
@@ -291,6 +291,7 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
         task_route = {
             "协议": TASK_ROUTE_PROTOCOL,
             "信号": {
+                **{dimension: [] for dimension in ROUTE_DIMENSIONS},
                 "执行模式": ["实现"],
                 "阶段": ["功能开发"],
                 "风险": ["L2"],
@@ -467,7 +468,10 @@ async def _run_smoke(artifact: Path, source_root: Path) -> dict[str, Any]:
             task_id = f"git-delivery-{case['场景']}"
             route = {
                 "协议": TASK_ROUTE_PROTOCOL,
-                "信号": case["信号"],
+                "信号": {
+                    **{dimension: [] for dimension in ROUTE_DIMENSIONS},
+                    **case["信号"],
+                },
                 "未知项": [],
                 "依据": ["已归一化任务事实的真实 MCP conformance"],
             }

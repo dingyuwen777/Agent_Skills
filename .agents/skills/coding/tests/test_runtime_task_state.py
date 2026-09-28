@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from runtime.agent_skills_runtime.catalog import build_bundle
-from runtime.agent_skills_runtime.routing import TASK_ROUTE_PROTOCOL
+from runtime.agent_skills_runtime.routing import ROUTE_DIMENSIONS, TASK_ROUTE_PROTOCOL
 from runtime.agent_skills_runtime.runtime import RuntimeStore, TASK_STATE_PROTOCOL
 
 
@@ -45,7 +45,11 @@ class RuntimeTaskStateTest(unittest.TestCase):
             "state-task",
             {
                 "协议": TASK_ROUTE_PROTOCOL,
-                "信号": {"执行模式": ["实现"], "风险": ["L1"]},
+                "信号": {
+                    **{dimension: [] for dimension in ROUTE_DIMENSIONS},
+                    "执行模式": ["实现"],
+                    "风险": ["L1"],
+                },
                 "未知项": [],
                 "依据": ["runtime task state regression"],
             },
