@@ -57,12 +57,12 @@ data_changes: []
 
 ## 目标
 
-第一轮 Review 对当时可见事实能推导的同根主要 blocker 一次性收敛；第二轮只验证返修和新变化，不把第一轮漏审伪装成正常新增问题。
+第一轮 Review 对当时可见事实能推导的同根主要 blocker 一次性收敛；若第二轮发现旧基线漏审，必须先执行一次 Coverage Recovery，把未改变旧基线下仍可推导的 blocker 一次性收齐成一个合并返修批次；恢复完成后不得继续以旧基线问题形成第三轮、第四轮挤牙膏返修。
 
 ## 成功标准
 
 - [ ] AC1：Systemic signal → route refresh/load RCA → projection closure → 首轮完整 blocking Finding set。
-- [ ] AC2：re-review 仅覆盖原 blocking Findings、新 diff、直接相邻回归与当前 Acceptance；旧事实本可首轮推导的新 blocker 记 First-pass Coverage Miss。
+- [ ] AC2：re-review 发现旧基线 First-pass Coverage Miss 时，必须先完成一次 Coverage Recovery Gate，形成 consolidated recovery finding set 并作为一个合并返修批次；恢复后再次出现旧基线可推导 blocker 时停止自动返修并判定 Review 质量门禁失败。
 - [ ] AC3：关键 hard rule 有真实 Task Route positive witness 与必要 negative over-routing 回归。
 - [ ] AC4：review-root-mechanism-projection 进入 HIGH_VALUE_CONVERGENCE_CASES。
 - [ ] AC5：Runtime 协议、Stable IDs、五角色集合不变。
@@ -97,7 +97,7 @@ data_changes: []
 
 ## 最小充分方案
 
-1. 明确 Review 两轮契约与 Systemic route refresh 时序。
+1. 明确 Review 首轮契约、Systemic route refresh 时序和第二轮 Coverage Recovery Gate；旧基线漏审必须先一次性收齐再返修。
 2. 给 delivery hard rule 增加治理机器 Contract 显式 dependency。
 3. 增加最小 hard-rule positive/negative reachability tests。
 4. 把 review-root-mechanism-projection 加入高价值 Outcome Eval registry。
@@ -116,7 +116,7 @@ data_changes: []
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
 | R1 | 首轮完整 blocking Finding set | #323 / AC1 | not_satisfied | 待实现与验证 |
-| R2 | 两轮 re-review scope 与 First-pass Coverage Miss | #323 / AC2 | not_satisfied | 待实现与验证 |
+| R2 | 两轮 re-review scope、First-pass Coverage Miss 与 Coverage Recovery Gate | #323 / AC2 | not_satisfied | 待实现与验证 |
 | R3 | hard rule reachability 正反回归 | #323 / AC3 | not_satisfied | 待实现与验证 |
 | R4 | 高价值 registry 纳入 Review projection case | #323 / AC4 | not_satisfied | 待实现与验证 |
 | R5 | Runtime/Stable IDs/角色不变 | #323 / AC5 | not_satisfied | 待 diff/回归证明 |
@@ -126,7 +126,7 @@ data_changes: []
 
 | 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
 | --- | --- | --- | --- |
-| Review Core/Reference | 两轮 Review 与 route refresh 契约 | 防止首轮漏同根投影 | R1-R2 / E1-E2 |
+| Review Core/Reference | 首轮 Review、route refresh 与 Coverage Recovery 契约 | 防止旧基线问题分轮挤牙膏 | R1-R2 / E1-E2 |
 | Delivery Reference metadata | 增加治理 Contract dependency | hard rule 可达 | R3 / E3 |
 | Review/routing tests | positive/negative route 与 re-review 回归 | 机器保护 | R1-R3 |
 | Outcome Eval registry/tests | 纳入 review-root-mechanism-projection | 行为回归入口 | R4 / E4 |
