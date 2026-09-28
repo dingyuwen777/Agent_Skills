@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-200001-rule-execution-reachability
 title: 规则执行可达性与Review入口闭环
 level: L3
-status: ready_for_review
+status: in_progress
 owner: dingyuwen777
 branch: tech/rule-execution-reachability
 created: 2026-09-28
@@ -62,7 +62,7 @@ Requirement Source：Issue #325。闭合现有规则从 canonical Owner 到 Runt
 | E2 | 原 `review_skill` group 未覆盖新增 Review 收敛测试 | main 的 runtime_package_scope.py | 修 selector/reachability |
 | E3 | 原 Runtime Router 使用手工 `_RUNTIME_ROUTER_BODY` | main 的 runtime_skill_projection.py | 改为 canonical deterministic extraction |
 | E4 | managed block 与 Review host prompt 是最早 project-facing 入口 | AGENTS.managed.md + review/agents/openai.yaml | 只补最薄 invariant |
-| E5 | PR #326 Draft head `09418b6f64c2dad1d739edda767d1a862fbfd0c8` 的 self-contained semantic suite 746/746 PASS | Skill Tests run 36422089342 | R1-R4 已获得 pre-ready Green |
+| E5 | PR #326 Draft head `09418b6f64c2dad1d739edda767d1a862fbfd0c8` 的 self-contained semantic suite 746/746 PASS | Skill Tests run 36422089342 | 证明上一版实现链 Green；后续 Router projector 整体投影改动使 R2/R3 需要 fresh revalidation |
 | E6 | 同一 run 的实现验证唯一流程失败是 Change status 仍为 `in_progress` | run 36422089342 Ready Check | 可进入 ready_for_review；不是代码/语义失败 |
 
 ## 推断与待确认
@@ -79,7 +79,7 @@ Requirement Source：Issue #325。闭合现有规则从 canonical Owner 到 Runt
 ## 成功标准
 
 - [x] AC1：永久 Review/规则可达性回归在对应 targeted CI 中可达，并有机器检查防止同类 orphan。
-- [x] AC2：Runtime Router 从 canonical Router 既有规则确定性派生，不再存在 `_RUNTIME_ROUTER_BODY` 第二人工 Owner。
+- [ ] AC2：Runtime Router 从 canonical Router 第 1 节整体确定性派生，不再存在 `_RUNTIME_ROUTER_BODY` 或逐条规则白名单第二人工 Owner。
 - [x] AC3：managed block 与 Review host prompt 提供最薄 first-review batch / repair-delta invariant，不复制完整 Review 方法。
 - [x] AC4：Code Review/Systemic/多人返修/platform-write 的既有 route refresh 正负回归保持 Green。
 - [ ] AC5：ready head required CI、三平台 package 与独立 Review 通过，无 blocking Finding。
@@ -148,7 +148,7 @@ Requirement Source：Issue #325。闭合现有规则从 canonical Owner 到 Runt
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
 | R1 | permanent test reachability | #325 / AC1 | satisfied | selector ownership + run 36422089342 746/746 Green |
-| R2 | Runtime Router single Owner projection | #325 / AC2 | satisfied | deterministic extraction + source/runtime projection regressions Green |
+| R2 | Runtime Router single Owner projection | #325 / AC2 | not_satisfied | 已改为 canonical 第 1 节整体投影，待 current-head fresh CI |
 | R3 | Review early invariant + thin host prompt | #325 / AC3 | satisfied | managed/prompt regression Green；详细 Review 术语未复制 |
 | R4 | route refresh/review reachability regression | #325 / AC4 | satisfied | hard-rule/routing/review suites Green |
 | R5 | ready-head CI/package + independent Review | #325 / AC5 | explicitly_deferred | 正式流程要求 PR Ready 后运行三平台 package 与 final Review |
@@ -169,7 +169,7 @@ Requirement Source：Issue #325。闭合现有规则从 canonical Owner 到 Runt
 - [x] 早期 CI 暴露 fixture/project-facing/context 膨胀问题后按根因修正，没有放宽预算或删除失败断言。
 - [x] 完成最小实现，不新增 Skill/Agent/服务/协议。
 - [x] 长期事实由现有 canonical Owner 承载；USAGE 无新增用户步骤。
-- [x] 取得覆盖当前实现的 pre-ready Green Evidence。
+- [ ] 取得覆盖当前实现的 fresh Green Evidence；09418b6 仅覆盖上一版 projector。
 - [x] 完成需求追溯、反向审计；ready-head/package/review 与 post-merge lifecycle 正式 deferred。
 
 # 验证矩阵
@@ -217,7 +217,7 @@ Requirement Source：Issue #325。闭合现有规则从 canonical Owner 到 Runt
 - [x] upstream_re_read：已重新读取 #325、当前 Review/Coding/Runtime/CI Owner，并将 AC2 同步为最终 deterministic extraction 方案。
 - [x] change_coverage：R1-R4 有直接 Green Evidence；R5/R6 按正式 ready/post-merge lifecycle deferred。
 - [x] reverse_audit：已从“用户自然语言 → managed/host → Router projection → Review → Repair → re-review → CI selector”反查单一 Owner、可达性与停止条件。
-- [x] unresolved_cleared：实现范围无 `not_satisfied`；只剩正式 lifecycle 的 `explicitly_deferred`。
+- [ ] unresolved_cleared：R2 因 projector 改动暂时回到 `not_satisfied`，current-head fresh CI 后再清零。
 
 # 完成证据与状态
 
@@ -237,7 +237,7 @@ Requirement Source：Issue #325。闭合现有规则从 canonical Owner 到 Runt
 
 ## 交付状态
 
-- implementation: complete
+- implementation: projector finalization in progress
 - validation: pre-ready semantic Green
 - PR: #326 Ready for review；current-head required CI/package pending
 - final_review: pending
@@ -250,3 +250,10 @@ Requirement Source：Issue #325。闭合现有规则从 canonical Owner 到 Runt
 ## 备注
 
 - 当前用户授权终点为 merge main；Release/Deploy 不在范围。
+
+
+## 本轮 Review 修正
+
+- Fresh Review 发现：逐条从 canonical Router 挑选 project-facing 规则仍存在未来漏投影风险。
+- 修正：Runtime 直接整体投影 canonical Router 第 1 节，仅做标题/术语 project-facing 转换，并继续从既有示例派生 L1/L2/L3；不新增 Router 第二份摘要或 marker。
+- 该修正改变 Runtime projector，因此旧 pre-ready Green 只作历史 Evidence，当前 head 必须重新验证。
