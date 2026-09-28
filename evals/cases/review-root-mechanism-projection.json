@@ -2,10 +2,11 @@
   "协议": "Agent Skills Outcome Eval Case/v1",
   "用例标识": "review-root-mechanism-projection",
   "任务族": "Review/Testing",
-  "任务说明": "复杂 Review 命中复合高风险机制后，应先完成 root-mechanism-projection-closure，在首轮覆盖当时事实可推导的主要 sibling projections；简单 Review 保持有界。",
+  "任务说明": "复杂 Review 命中复合高风险机制后，应先完成 root-mechanism-projection-closure，在首轮覆盖当时事实可推导的主要 sibling projections；作者返修后的第二轮只审原 blocking findings、新 diff、直接相邻回归与当前 Acceptance，旧事实本可首轮推导的 blocker 必须记 First-pass Coverage Miss；简单 Review 保持有界。",
   "必需结果": [
     "root-mechanism-projection-closure",
-    "first-pass-coverage"
+    "first-pass-coverage",
+    "second-pass-bounded-rereview"
   ],
   "必需证据": [
     "invariant-projection-evidence"
@@ -13,7 +14,8 @@
   "禁止违规": [
     "sibling-projection-churn",
     "unbounded-rereview",
-    "simple-review-overrouting"
+    "simple-review-overrouting",
+    "old-derivable-blocker-as-new-finding"
   ],
   "上限": {
     "用户干预": 1
