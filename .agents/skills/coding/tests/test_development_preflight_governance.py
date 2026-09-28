@@ -293,6 +293,18 @@ class DevelopmentPreflightGovernanceContractTest(unittest.TestCase):
         for marker in ("Development Preflight", "Completion", "latest Requirement"):
             self.assertIn(marker, prompt)
 
+    def test_complete_delivery_reaches_end_to_end_rule_without_heavy_ordinary_git(self) -> None:
+        """完整交付终点显式可达 ref23，普通 Git 不因本变更无条件加载治理重上下文。"""
+        core = (CODING / "SKILL.md").read_text(encoding="utf-8")
+        delivery = (
+            CODING / "references" / "23_端到端交付与合并后收尾.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("develop-and-submit / develop-and-deliver / review-and-deliver", core)
+        self.assertIn("23_端到端交付与合并后收尾.md", core)
+        for marker in ("允许开发并提交PR", "允许端到端交付", "允许审查后交付"):
+            self.assertIn(marker, delivery)
+
     def test_project_facing_rules_keep_parent_gates_even_without_subagent(self) -> None:
         """Runtime 安装后的项目入口仍必须表达 Parent hard gate，而不是依赖 subagent 存在。"""
         managed = (CODING / "assets" / "AGENTS.managed.md").read_text(encoding="utf-8")
