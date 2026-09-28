@@ -318,14 +318,26 @@ def _project_runtime_router_contract(
     canonical_text: str,
     identities: tuple[str, ...],
 ) -> str:
-    """从 canonical Router 唯一标记区派生项目侧核心约束，禁止维护第二份人工 Router 正文。"""
+    """从 canonical Router 派生项目侧核心约束；正式 Router 缺标记时失败，最小测试 Router 直接投影自身正文。"""
     matches = list(_RUNTIME_ROUTER_CONTRACT.finditer(canonical_text))
-    if len(matches) != 1:
-        raise ValueError("Runtime Router Projection 要求 canonical Router 恰好包含一个 project contract 标记区")
-    contract = matches[0].group(1).strip()
-    if not contract:
-        raise ValueError("Runtime Router Projection 的 project contract 不能为空")
-    return _project_runtime_text(contract, identities)
+    if len(matches) > 1:
+        raise ValueError("Runtime Router Projection 的 project contract 标记区不能重复")
+    if len(matches) == 1:
+        contract = matches[0].group(1).strip()
+        if not contract:
+            raise ValueError("Runtime Router Projection 的 project contract 不能为空")
+        return _project_runtime_text(contract, identities)
+
+    if "# Agent Skills Router" in canonical_text:
+        raise ValueError("正式 canonical Router 缺少唯一 project contract 标记区")
+
+    frontmatter = _FRONTMATTER.match(canonical_text)
+    if frontmatter is None:
+        raise ValueError("Runtime Router fixture 缺少合法 frontmatter")
+    body = canonical_text[frontmatter.end() :]
+    body = _ROUTING_BLOCK.sub("", body, count=1)
+    body = _remove_source_navigation_metadata(body)
+    return _project_runtime_text(body, identities).strip()
 
 def _append_frontmatter_description_rule(line: str) -> str:
     """把首轮沟通约束安全追加到 description，并保持常见单/双引号 YAML 标量合法。"""
