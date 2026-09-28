@@ -119,7 +119,7 @@ _RUNTIME_ENTRY = f"""# Project Engineering Entry
 """
 
 _RUNTIME_ROUTER_CONTRACT = re.compile(
-    r"<!--\\s*runtime-project-contract:start\\s*-->\\s*(.*?)\\s*<!--\\s*runtime-project-contract:end\\s*-->",
+    r"<!--\s*runtime-project-contract:start\s*-->\s*(.*?)\s*<!--\s*runtime-project-contract:end\s*-->",
     re.DOTALL,
 )
 
