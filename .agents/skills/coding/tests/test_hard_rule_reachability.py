@@ -64,6 +64,18 @@ class HardRuleReachabilityTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, text)
 
+    def test_collaborator_pr_review_routes_multi_person_repair_contract(self) -> None:
+        """协作者 PR Review/返修必须能命中多人协作 Repair Batch 规则。"""
+        result = self._route(
+            {
+                "执行模式": ["审查"],
+                "风险": ["L2"],
+                "意图": ["代码审查"],
+                "治理": ["多人协作"],
+            }
+        )
+        self.assertIn("coding.reference.09", result["必需Reference"])
+
     def test_review_only_does_not_overroute_governance_machine_contract(self) -> None:
         """普通只读 Review 不因存在治理能力而加载 Issue/PR 创建 Contract。"""
         result = self._route(
