@@ -1,5 +1,5 @@
 <!-- agent-routing:v1
-{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.28","触发":{"包含":{"维度":"执行模式","取值":["实现"]}},"依赖":[]}
+{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.28","触发":{"包含":{"维度":"治理","取值":["CI 变更"]}},"依赖":[]}
 -->
 # CI / Actions 健康检查
 ## 每次实现默认执行的 Cost / Evidence Check — Start Cost / Evidence Check
