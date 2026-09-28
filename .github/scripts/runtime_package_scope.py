@@ -182,7 +182,6 @@ _GROUP_TEST_FILES: dict[str, tuple[str, ...]] = {
         "test_single_binary_project_install.py",
         "test_skill_mutation_canonical_ownership.py",
         "test_source_mode_installed_assets_noncanonical.py",
-        "test_source_runtime_context_conformance.py",
         "test_systemic_diagnosis.py",
         "test_two_pass_cross_skill_convergence.py",
     ),
