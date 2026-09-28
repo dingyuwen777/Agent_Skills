@@ -54,9 +54,9 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
         for marker in (
             "First Review Assembly Gate",
             "Review Coverage Map",
-            "blind independent review",
             "一次 synthesis",
             "不得向作者发布部分 Findings",
+            "递归开启 Full Review",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, core)
