@@ -15,6 +15,7 @@ description: Agent_Skills 的唯一跨 Skill 控制面。每个任务先进入�
 
 Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或调度开发任务**，不维护任务队列/Worker，**不接管专业 Skill**，也不执行代码/设计/文档/测试/Git/CI/发布/部署；多 Skill 只声明并集、顺序与交接。
 
+<!-- runtime-project-contract:start -->
 ## 1. 项目事实与确定性执行边界
 
 先读目标项目及上级适用的 `AGENTS.md`、`CONTRIBUTING` 等规则，再按需读真实代码、Manifest/lock、Contract、Schema/Migration、配置、测试、CI、正式文档和设计事实。**项目自己的**事实优先；语言、Runtime、框架、数据库、Owner、API/ABI/CLI、Schema、Provider、部署、Design Token/业务字段不得猜，**不能单凭文件名推出 React、FastAPI、PostgreSQL**。
@@ -47,11 +48,13 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 - **Requested Outcome = Completion Scope**：**能力存在不等于继续追求更远阶段**。只读审查/测试/Mutation Audit 止于结论；提 PR→`允许开发并提交PR`（PR Ready）；合并主分支→`允许端到端交付`；审查后合并→`允许审查后交付`。先按真实命令归一化再路由，commit/push、引述或否定不升级授权；完整范围与收尾归[交付规则](../coding/references/23_端到端交付与合并后收尾.md)。
 - **Task-owned Cleanup**：Completion Scope 结束前删除本任务创建且无后续用途的临时/scratch/debug 产物；保留预存在/用户所有/仍作证据、交付物或输入的内容。未改变交付状态/运行输入时，不使既有 Green Evidence 失效。
 
-**Cross-Skill Terminal / Handoff Contract**：`HANDOFF_CURRENT_SCOPE REPORT_ONLY BLOCK_CURRENT_DELIVERY REQUIREMENT_DECISION FOLLOW_UP_CANDIDATE STALE_RESULT CAPABILITY_BLOCKER`。
+**跨域 Terminal / Handoff Contract**：`HANDOFF_CURRENT_SCOPE REPORT_ONLY BLOCK_CURRENT_DELIVERY REQUIREMENT_DECISION FOLLOW_UP_CANDIDATE STALE_RESULT CAPABILITY_BLOCKER`。
 
-### Cross-Skill Follow-up Lifecycle
+### 跨域 Follow-up Lifecycle
 
 `(Evidence+价值+去重) FOLLOW_UP_CANDIDATE → Persistence Authorization Gate → backlog+dedup → BACKLOG_ITEM → STOP`。不自动创建/执行/递归；无持久化授权即 STOP。`BACKLOG_ITEM` 当前任务不得继续执行；仅 `新 Requirement / 新 Task` 重建 facts/Scope/Auth/Risk/Evidence 后处理。
+
+<!-- runtime-project-contract:end -->
 
 ## 2. 正式 Skill Catalog
 
