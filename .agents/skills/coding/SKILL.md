@@ -133,7 +133,7 @@ CMakeLists.txt ≠ Linux-only
 | 首次安装/升级 Agent_Skills、创建/补充目标项目 AGENTS、首次 Project Governance Bootstrap、治理事实漂移校准或修复 managed block | [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) + [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md) |
 | Runtime Bundle/Routing Manifest/Task Route/MCP/Project Payload/安装升级或 Release identity | [13_本地MCP_Runtime分发与原文上下文加载.md](references/13_本地MCP_Runtime分发与原文上下文加载.md) |
 | Agent Outcome Eval / 跨模型规则效果 / Skill heuristic 生命周期 | [31_跨模型效果评测与规则有效性.md](references/31_跨模型效果评测与规则有效性.md) |
-| Git/PR/Release/Delivery、Issue/PR治理 | [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md)+[17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md)；治理写入加 [29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)，完整交付加 [23_端到端交付与合并后收尾.md](references/23_端到端交付与合并后收尾.md) |
+| Git/PR/Release/Delivery、依赖变化、安全边界、最终交付报告或宿主能力降级 | [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md) |
 | Skill/reference/模板/项目 Overlay 的精简、重组、拆分、合并、改名、迁移或通用化 | [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md) |
 
 不要要求用户重复提供能够从仓库、缓存或工具确认的信息。只读取当前任务真正需要的事实和 reference，不用“全仓全部读一遍”替代理解调用链。
@@ -220,13 +220,13 @@ python <skill>/scripts/coding.py new-change --root <repo> \
 只有有界调查后仍无法确认、且会实质改变业务语义/验收、public API/ABI/CLI/格式/Contract、Schema/Migration/数据、权限/隐私/安全、外部 Provider 费用、SLO/RPO/RTO、破坏性兼容、不可逆操作或重大技术路线时才**提请用户 / Owner 决策**。给推荐、依据、必要备选与影响；有依赖的决策优先解决最上游问题，彼此独立且都必须在实施前决定的重大事项一次形成有界 Decision Package，不人为拆成多轮。已固化决定**不重复确认**；普通可逆细节和可核验事实不形成审批点；确认的决定同步正式事实源及适用 Change。
 
 ### Development Preflight Gate
-实现前校准 Requirement/Governance/CI/Delivery；Issue/PR 先 validate 再 `platform write`。CI 查 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**；**Parent hard gate** 不依赖 Reviewer。
+实现前校准 Requirement/Governance/CI/Delivery：治理写入读 [17](references/17_需求来源与PR追溯治理.md)+[29](references/29_治理资产机器Contract.md)，完整交付读 [23](references/23_端到端交付与合并后收尾.md)；CI 查 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**。Issue/PR 先 validate 再 `platform write`；**Parent hard gate** 不依赖 Reviewer。
 
 ### Requirement Change Gate
 **语义变化**先更新 Requirement Source，仅**受影响**结果 `STALE_RESULT`；**非语义**编辑不全量重跑。
 
 ### Completion Gate
-Ready 前重读**最新 Requirement Source**逐 AC 验 Evidence；unresolved 即阻止 Ready。
+Ready 前重读**最新 Requirement Source**逐 AC 验 Evidence；unresolved 阻止 Ready。
 
 ### 4.8 制定可验证计划
 
