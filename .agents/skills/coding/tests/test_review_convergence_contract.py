@@ -95,6 +95,90 @@ class ReviewConvergenceContractTest(unittest.TestCase):
         self.assertIn("不得", flow)
         self.assertIn("无限范围", flow)
 
+    def test_review_assembly_is_fixed_and_non_recursive(self) -> None:
+        """首轮 Review 使用固定 Assembly + 单次 synthesis，而不是内部无限循环。"""
+        core = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
+        depth = (
+            SKILLS / "review" / "references" / "04_审查深度选择.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "First Review Assembly Gate",
+            "Review Coverage Map",
+            "blind independent review",
+            "active child budget=3",
+            "一次 synthesis",
+            "不得递归开启新的 Full Review",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, core)
+        for marker in (
+            "Quick Review Assembly",
+            "Standard Review Assembly",
+            "Deep Review Assembly",
+            "single synthesis",
+            "no nested delegation",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, depth)
+
+    def test_finding_admission_requires_actionable_evidence_before_repair(self) -> None:
+        """只有有效、可执行的 blocker 才能进入作者 Repair Batch。"""
+        findings = (
+            SKILLS / "review" / "references" / "02_Findings与严重度.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "Finding Admission Gate",
+            "Finding ID",
+            "直接 Evidence",
+            "触发条件",
+            "实际影响",
+            "收口方向",
+            "验证方式",
+            "证据不足",
+            "AUTO_REPAIR",
+            "同根",
+            "冲突",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, findings)
+
+    def test_repair_batch_updates_existing_pr_once_before_rereview(self) -> None:
+        """作者侧必须批量修复并一次 re-request review，不能 per-finding 循环。"""
+        collaboration = (
+            SKILLS / "coding" / "references" / "09_多人和多智能体并行协作.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "Repair Batch Gate",
+            "blocking Finding batch",
+            "Finding ID",
+            "reviewed_head",
+            "repair_head",
+            "复用原 PR/MR",
+            "一次 re-request review",
+            "per-finding",
+            "root-cause reanalysis",
+            "repair-plan reset",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, collaboration)
+
+    def test_second_pass_uses_reviewed_to_repair_delta_and_new_finding_admission(self) -> None:
+        """第二轮以 repair delta 为主，只允许有来源的新 blocker。"""
+        flow = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "reviewed_head",
+            "repair_head",
+            "repair diff",
+            "FIRST_REVIEW_ESCAPE",
+            "新 Requirement",
+            "新外部事实",
+            "正常第二轮新 Finding",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
     def test_reviewer_owns_classification_parent_owns_repair_scheduling(self) -> None:
         """Reviewer 独立裁决 Finding；Parent 只调度返修并重建最少充分委派。"""
         collaboration = (
