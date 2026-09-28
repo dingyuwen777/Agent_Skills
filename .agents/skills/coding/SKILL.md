@@ -201,7 +201,7 @@ python <skill>/scripts/coding.py status --root <repo> --json
 
 ### 4.6 分类 L1/L2/L3 并固化任务契约
 
-编码前建立最小任务契约：事实、目标/非目标、Acceptance、不变项、Owner、最小方案、直接 Evidence、未知项；接口/数据/依赖/文档/部署/Git 等只在触及对应边界时展开，详细字段按 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)。**Development Preflight Gate** 同时校准 Requirement/Governance/CI/Delivery：CI 只问 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**，命中再读 [27_CI_Workflow健康检查与Actions清理.md](references/27_CI_Workflow健康检查与Actions清理.md)，CI/Workflow 变更再读 [19_CI审查升级门禁.md](references/19_CI审查升级门禁.md)；Issue/PR **platform write** 前读 [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md)+[29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)并完成写前校验。
+编码前建立最小任务契约：事实、目标/非目标、Acceptance、不变项、Owner、最小方案、直接 Evidence、未知项；其他边界按需展开，详见 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)。同时执行 **Development Preflight Gate**：校准 Requirement/Governance/CI/Delivery；CI 只问 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**，命中再读 [27_CI_Workflow健康检查与Actions清理.md](references/27_CI_Workflow健康检查与Actions清理.md)，CI/Workflow 变更再读 [19_CI审查升级门禁.md](references/19_CI审查升级门禁.md)；Issue/PR **platform write** 前读 [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md)+[29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)并写前校验。
 
 L1 可在工作说明内维护。L2 必须有**最小充分任务契约**，但可由本轮用户要求、PR body、Issue/工单、Spec/OpenSpec/RFC 或项目既有载体承载；只有跨 Owner/PR/会话、复杂依赖/阶段、正式审计、项目规则或 Completion Gate 等**持久治理价值**出现时才升级为独立持久施工契约。L3 必须有稳定持久契约并补方案比较、公共兼容、Migration/部署/回滚和安全/运维风险。项目 Overlay 可以更严格。
 
@@ -286,7 +286,7 @@ Bug 修复必须有回归证据。测试验证真实行为，不只验证 Mock �
 
 ### 4.13 Completion Audit、两阶段 Review 与新鲜验证
 
-对 `completion_gate: required` 的 Change/等价 gated L2/L3，Ready 前按 [10_完成定义追溯门禁.md](references/10_完成定义追溯门禁.md) 重读上游、核对覆盖/反向边界/Validation Matrix 并清零 `not_satisfied`；轻量 L2 做等价最小核对。**Requirement Change Gate**：只有**语义变化**才先更新 Requirement Source，并仅使**受影响**计划/Handoff/Evidence 成为 `STALE_RESULT`，**非语义**编辑不全量重跑。**Completion Gate**：强完成结论前重读**最新 Requirement Source**，逐 AC 映射当前直接 Evidence；applicable unresolved 即阻止 Ready。
+对 gated Change/等价 L2/L3，Ready 前按 [10_完成定义追溯门禁.md](references/10_完成定义追溯门禁.md) 完成上游重读、覆盖/反向审计、Validation Matrix 与 unresolved 清理；轻量 L2 做等价最小核对。**Requirement Change Gate**：只有**语义变化**才先更新 Requirement Source，仅使**受影响**计划/Handoff/Evidence 成为 `STALE_RESULT`，**非语义**编辑不全量重跑。**Completion Gate**：强完成前重读**最新 Requirement Source**逐 AC 映射当前直接 Evidence；applicable unresolved 阻止 Ready。
 
 使用 `coding-change/v1` 时可运行：
 
