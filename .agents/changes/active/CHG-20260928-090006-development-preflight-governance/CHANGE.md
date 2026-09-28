@@ -240,17 +240,19 @@ Requirement Source：GitHub Issue #317。用户要求按已讨论的“1 个 Req
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main 2dc9d83f | canonical read + Issue #317 create/live validation | confirmed | 起始规则缺口与合法 Requirement Source |
+| V2 | test-only Red HEAD `9d772af3ff32cc34f53761c9eb4f6856eac90a0b` | Skill Tests run #2091 / `36365122468` | expected failure：8 个新增 Preflight/Governance 回归全部因旧实现缺能力失败，Requirement Source gate 已通过 | 新测试在旧实现上确实为 Red，不是实现后自证 |
+| V3 | current implementation branch | Core/ref09/ref17/ref27/ref29 context delta audit | Core+关键 References 合计不高于原基线；未提高任何 context budget | 新门禁通过压缩/Owner 复用而非扩大上下文阈值 |
 
 ## 未验证内容与剩余风险
 
-- 当前尚未实现，不得声称 #317 任一实施 AC 已满足。
-- 当前聊天宿主无可调用真实 subagent 接口；本任务实现 Reviewer 场景与投影 Contract，但不会冒充本轮实际启动 child session。
+- 实现已完成到候选状态，但当前 HEAD fresh CI 尚未取得，R1-R8 暂不提前标为 satisfied。
+- 当前聊天宿主无可调用真实 subagent 接口；本任务只验证 Reviewer role/projection Contract，不冒充本轮实际启动 child session。
 
 ## 交付状态
 
-- 提交：待建立分支上的 Change/Red/实现提交。
-- 拉取请求：待首个可审查提交后创建 Early PR。
-- CI：待 current-head Actions。
+- 提交：已建立 Red、Core/Reference、candidate renderer、Reviewer/project-facing projection 与永久回归提交。
+- 拉取请求：Draft PR #318。
+- CI：待本次 Evidence 更新后的 current-head Actions。
 - 合并：待独立 Review + required CI + guarded merge。
 - Change 归档：待 repository-native post-merge automation。
 - 发布 / 部署：不适用，本任务明确不创建 Release/Deploy。
