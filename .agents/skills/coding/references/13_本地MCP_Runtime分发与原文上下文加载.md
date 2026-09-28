@@ -241,7 +241,7 @@ Bundle 加密、Projection 或 anti-export 不得改变真实 facts-complete Tas
 
 ### 9.2 未知事实
 
-存在未知维度时使用 TRUE / FALSE / UNKNOWN 三值保守语义：
+正式 submit 先要求每维显式 KNOWN/EMPTY/UNKNOWN；漏报或矛盾 fail closed；内部候选推演可稀疏。存在未知维度时使用 TRUE / FALSE / UNKNOWN 三值保守语义：
 
 - `包含`：已知 signal 命中为 TRUE；未命中但维度未知为 UNKNOWN；否则 FALSE；
 - `全部`：任一 FALSE → FALSE；全 TRUE → TRUE；否则 UNKNOWN；
@@ -563,8 +563,6 @@ Agent_Skills 源仓库维护默认不承担跨版本升级兼容；除非 Requir
 安装失败按第 15 节快照回滚。手工回退使用目标版本完整同平台资产及其安装流程；目标版本不理解当前 Contract 时停止并按对应迁移说明处理，不手工删除归属不明 `.agents` 内容。
 
 ## 19.1 Task Route Truth-State
-
-正式 `submit_route` 要求每个公开维度显式为 `KNOWN(values)`、`KNOWN_EMPTY` 或 `UNKNOWN`；漏维度、UNKNOWN 同时带值均 fail closed。Source/evaluator 可用部分事实做内部候选推演，但发行 Runtime capability 前必须完成该 truth-state 校验。
 
 ## 20. 正常任务生命周期
 

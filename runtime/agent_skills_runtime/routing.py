@@ -13,7 +13,7 @@ from .skill_catalog import discover_skills, iter_reference_files
 
 SKILL_ROUTE_PROTOCOL = "Agent Skills Skill路由/v1"
 REFERENCE_ROUTE_PROTOCOL = "Agent Skills Reference路由/v1"
-TASK_ROUTE_PROTOCOL = "Agent Skills 任务路由/v1"
+TASK_ROUTE_PROTOCOL = "Agent Skills 任务路由/v2"
 ROUTING_MANIFEST_PROTOCOL = "Agent Skills 路由清单/v1"
 PUBLIC_ROUTE_CONTRACT_PROTOCOL = "Agent Skills 公共路由契约/v1"
 CONTROL_PLANE_SKILL = "router"

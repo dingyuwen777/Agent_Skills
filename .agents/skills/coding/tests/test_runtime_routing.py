@@ -426,6 +426,7 @@ class RoutingEvaluatorTest(unittest.TestCase):
 
     def test_task_route_requires_explicit_truth_state_for_every_dimension(self) -> None:
         """每个维度必须显式表达 KNOWN(values)、KNOWN_EMPTY 或 UNKNOWN，不能漏填即 false。"""
+        self.assertEqual(TASK_ROUTE_PROTOCOL, "Agent Skills 任务路由/v2")
         contract = public_route_contract(self.manifest)
         sparse = {
             "协议": TASK_ROUTE_PROTOCOL,
