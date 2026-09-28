@@ -49,7 +49,7 @@ Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；
 
 ## Root-Mechanism Projection Closure Gate（首轮机制闭环）
 
-复合机制首轮：`Invariant / Lifecycle / Failure Boundary / Projection / Omission / Coverage Audit`。Systemic unknown → `执行模式=诊断`；简单 Review 不升级。**机制内完整、任务外有界**。首轮可推导的同根 blocker 记 **First-pass Coverage Miss**；新事实不记。
+复合机制首轮：`Invariant / Lifecycle / Failure Boundary / Projection / Evidence / Omission / Coverage Audit`。达到 Systemic 条件 → `执行模式=诊断`；简单 Review 不升级。**机制内完整、任务外有界**。首轮可推导的同根 blocker 记 **First-pass Coverage Miss**；新事实不记。
 
 ## 1. 规则事实源与集成边界
 

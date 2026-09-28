@@ -41,6 +41,7 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             "Lifecycle",
             "Failure Boundary",
             "Projection",
+            "Evidence",
             "Omission / Coverage Audit",
             "First-pass Coverage Miss",
         ):
@@ -58,6 +59,8 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             "covered_by_evidence",
             "not_applicable",
             "unknown",
+            "达到 Systemic 条件",
+            "新代码/Requirement/外部事实引入的不记",
             "机制内完整",
             "任务外有界",
         ):

@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-142125-review-root-mechanism-closure
 title: Review 根机制投影闭环与首轮覆盖门禁
 level: L3
-status: ready_for_review
+status: in_progress
 owner: dingyuwen777
 branch: tech/319-review-root-mechanism-closure
 created: 2026-09-28
@@ -104,13 +104,13 @@ Requirement Source：GitHub Issue #319。原有 Review risk-first、Systemic RCA
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | Root-Mechanism Projection Closure Gate | #319 / AC1 | satisfied | Review Core + run #2144 new regression Green |
+| R1 | Root-Mechanism Projection Closure Gate | #319 / AC1 | not_satisfied | independent Review #5334950366：Core 缺显式 Evidence，修复中 |
 | R2 | 简单 Review lightweight | #319 / AC2 | satisfied | `test_simple_review_does_not_load_systemic_rca` Green；Router 无 diff |
-| R3 | 条件式 Systemic RCA reachability / single Owner | #319 / AC3 | satisfied | `审查+诊断` routing regression Green；ref01 指向 ref22；ref22 无 diff |
+| R3 | 条件式 Systemic RCA reachability / single Owner | #319 / AC3 | not_satisfied | independent Review #5334950366：Systemic 触发写窄，修复中 |
 | R4 | Invariant Projection Regression Matrix | #319 / AC4 | satisfied | review ref03 + targeted regression Green |
 | R5 | First-pass Coverage Miss | #319 / AC5 | satisfied | Review Core/ref01 + Outcome Eval case |
 | R6 | bounded convergence | #319 / AC6 | satisfied | “机制内完整、任务外有界” + 既有 Convergence Guard 保持 |
-| R7 | permanent regression / Outcome Eval / budget | #319 / AC7 | satisfied | Red #2134；Green #2144 109 tests OK；旧 context budget 未提高 |
+| R7 | permanent regression / Outcome Eval / budget | #319 / AC7 | not_satisfied | 补 AC1/AC3 永久断言后重新取 current-head Green |
 | R8 | full delivery | #319 / AC8 | explicitly_deferred | 依赖 Ready 后 independent Review/required CI/merge/main-fresh/archive/closure |
 
 # 计划改动
@@ -166,9 +166,9 @@ Requirement Source：GitHub Issue #319。原有 Review risk-first、Systemic RCA
 # 完成审计
 
 - [x] upstream_re_read：Ready 前已重读 live #319 与最终 Review Core/ref01/ref03、RCA Owner、PR diff。
-- [x] change_coverage：R1-R7 均有当前 revision 的直接规则/回归 Evidence；R8 按 Requirement 生命周期正式 deferred。
+- [ ] change_coverage：independent Review 已重开 R1/R3/R7，待修复后重新闭环。
 - [x] reverse_audit：复杂 Review、简单 Review、Systemic route、Testing adequacy、re-review、Source/Runtime parity、context budget 均反查。
-- [x] unresolved_cleared：merge 前实现范围无 unresolved blocking Requirement；仅 R8 的 post-merge delivery lifecycle 未完成。
+- [ ] unresolved_cleared：Review #5334950366 的两个 blocker 待修复与 re-review。
 
 # 完成证据与状态
 
@@ -184,13 +184,13 @@ Requirement Source：GitHub Issue #319。原有 Review risk-first、Systemic RCA
 ## 未验证内容与剩余风险
 
 - current-head ready revision 仍需 required CI；如果 classifier 要求 Runtime package，则三平台 package evidence 仍待本提交后的 CI。
-- independent Requirement-first Review 尚未在 ready revision 上完成。
+- independent Requirement-first Review #5334950366 已发现两个 blocker，当前正在返修。
 - main-fresh、Change Archive、Issue Closure 属于 merge 后 Evidence，当前不能提前宣称。
 
 ## 交付状态
 
 - implementation: complete
-- delivery: PR #320 ready candidate，尚未 merge
+- delivery: PR #320 review rework，尚未 merge
 - validation: semantic Green；ready-head CI 待本提交
 - main_fresh: not yet applicable before merge
 - change_archive: not yet applicable before merge
