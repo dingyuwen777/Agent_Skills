@@ -9,11 +9,29 @@ branch: tech/327-route-outcome-effectiveness
 created: 2026-09-28
 updated: 2026-09-28
 completion_gate: required
-depends_on: none
-affected_areas: routing,runtime,outcome-eval,qualification,context-effectiveness
-affected_paths: router,coding,runtime,evals,tests,docs
-contracts: task-route,outcome-eval,behavior-qualification
-data_changes: none
+depends_on: []
+affected_areas:
+  - routing
+  - runtime
+  - outcome-eval
+  - qualification
+  - context-effectiveness
+affected_paths:
+  - .agents/skills/coding/SKILL.md
+  - .agents/skills/router/SKILL.md
+  - .agents/skills/coding/references/13_本地MCP_Runtime分发与原文上下文加载.md
+  - .agents/skills/coding/references/31_跨模型效果评测与规则有效性.md
+  - runtime/agent_skills_runtime/routing.py
+  - evals/agent_outcome_eval.py
+  - evals/release_qualification.py
+  - scripts/runtime_mcp_smoke.py
+  - .agents/skills/coding/tests/
+  - README.md
+contracts:
+  - Task Route v2 truth-state
+  - Outcome Eval Evidence Receipt
+  - Engineering / reasoning-source qualification profiles
+data_changes: []
 ---
 
 # 变更摘要
