@@ -2,7 +2,7 @@
   "协议": "Agent Skills Outcome Eval Case/v1",
   "用例标识": "review-root-mechanism-projection",
   "任务族": "Review/Testing",
-  "任务说明": "复杂 Review 第一次向作者发布 Findings 前，必须在同一 Review Target 上完成 coverage map、必要的 root-mechanism projection closure 与 blind omission pass，内部收敛后一次性发布；作者返修后的第二次 Review 只审原 Findings、repair diff、直接相邻回归与 Acceptance。若发现旧基线 escape，先内部合并校正，不逐条退给作者。简单 Review 保持有界。",
+  "任务说明": "复杂 Review 在第一次向作者发布 Findings 前，对同一冻结 Review Target 执行固定、非递归 Review Assembly：Coverage Map + 风险匹配的 blind reviewer/specialist + Parent 单次 synthesis；blocking Finding 必须通过 Finding Admission Gate。作者收到一个稳定 Finding batch，统一修复后更新原 PR/MR 并一次 re-request review；第二次 Review 只审原 Findings、reviewed_head→repair_head delta、直接相邻回归与 Acceptance。first-review escape 只允许一次 fresh blind assembly 后合并纠错。",
   "必需结果": [
     "root-mechanism-projection-closure",
     "first-pass-coverage",
@@ -26,7 +26,8 @@
     "simple-review-overrouting",
     "speculative-blocker-repair",
     "per-finding-rerequest-churn",
-    "duplicate-pr-for-review-repair"
+    "duplicate-pr-for-review-repair",
+    "recursive-review-assembly"
   ],
   "上限": {
     "用户干预": 1
