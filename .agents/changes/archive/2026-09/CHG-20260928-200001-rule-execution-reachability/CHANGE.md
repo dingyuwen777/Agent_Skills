@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-200001-rule-execution-reachability
 title: 规则执行可达性与Review入口闭环
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/rule-execution-reachability
 created: 2026-09-28
