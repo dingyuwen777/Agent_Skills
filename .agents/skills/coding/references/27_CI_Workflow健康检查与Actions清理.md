@@ -2,15 +2,7 @@
 {"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.28","触发":{"包含":{"维度":"执行模式","取值":["实现"]}},"依赖":[]}
 -->
 # CI / Actions 健康检查
-## 每次实现默认执行的 Cost / Evidence Check
-
-### Start Cost / Evidence Check
-**只测试与修改相关的边界**：human docs / 专业 Skill/Reference / Change/metadata/archive。先问 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**；都无风险即 clean/N/A。命中才查真实 selector、required check、时长与失败边界，优先 target→suite→global→低频 full。**selector / path filter / scoped skip** = 永久回归和 fail-safe；CI selector 自身变化跑 full current-head Evidence，独立 required context 保留。
-
-### Ready Redundancy Check — Validation Asset Redundancy Gate
-只处理本次新增/扩大/触及/暴露的冗余；按 **Owner / Contract / failure boundary / Evidence level** 判断 test/group/Job/Workflow/build-smoke-install。少跑 ≠ 允许永久冗余；重复 setup/install/build 可合并就清；不同 OS/runtime/persistence/full-stack 等独立证据保留。
-
+## 每次实现默认执行的 Cost / Evidence Check — Start Cost / Evidence Check
+先问 Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build；只测试与修改相关的边界：human docs / 专业 Skill/Reference / Change/metadata/archive；删无关 test group、重复 setup/install/build。selector / path filter / scoped skip=永久回归和 fail-safe；fail-closed；CI/selector 自身变化使用 full current-head Evidence。required check identity / Change Ready：N/A→job-level condition / 0 Runner。仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化。Ready Redundancy Check / Validation Asset Redundancy Gate：少跑 ≠ 允许永久冗余;test/group/CI/Job/Workflow/build-smoke-install 按 Owner / Contract / failure boundary / Evidence level 判定；本次新引入、扩大、直接触及或实际暴露的冗余等价清理时，Ready/merge前清；不能只通过 selector、skip 或条件判断把永久冗余隐藏起来；平台/权限/check证据独立留；无直接因果关系的历史冗余记 Finding;clean / not_applicable / blocked。
 ## Actions Control-Plane Cleanup
-Source Workflow：**disabled / deleted / orphaned / no-owner Workflow** 可清；Requirement/Change/PR/Release/事故/安全审计引用的历史 Run 保留；capability-limited / cleanup gap 明确记录。
-
-仅减少 YAML 行数但 Runner 时间不变，不算 CI 性能优化。
+Source Workflow：disabled / deleted / orphaned / no-owner Workflow 可清；Requirement / Change / PR / Release / 事故 / 安全审计引用的历史 Run 留；capability-limited / cleanup gap。
