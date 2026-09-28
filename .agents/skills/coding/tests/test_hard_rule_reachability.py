@@ -29,8 +29,8 @@ class HardRuleReachabilityTest(unittest.TestCase):
             },
         )
 
-    def test_develop_and_deliver_reaches_governance_machine_contract(self) -> None:
-        """端到端交付包含 Issue/PR 写入时必须加载治理机器 Contract。"""
+    def test_delivery_stays_light_until_platform_write(self) -> None:
+        """普通端到端交付先保持轻量，不常驻加载治理机器 Contract。"""
         result = self._route(
             {
                 "执行模式": ["实现", "Git"],
@@ -41,7 +41,28 @@ class HardRuleReachabilityTest(unittest.TestCase):
             }
         )
         self.assertIn("coding.reference.24", result["必需Reference"])
+        self.assertNotIn("coding.reference.30", result["必需Reference"])
+
+    def test_pr_platform_write_route_refresh_reaches_governance_contract(self) -> None:
+        """真正创建/更新 PR 前追加 PR治理意图，必须加载治理机器 Contract。"""
+        result = self._route(
+            {
+                "执行模式": ["Git"],
+                "风险": ["L2"],
+                "意图": ["PR治理"],
+                "能力": ["Git"],
+            }
+        )
         self.assertIn("coding.reference.30", result["必需Reference"])
+
+    def test_delivery_rule_requires_platform_write_route_refresh(self) -> None:
+        """交付规则本身必须显式要求平台写前 route refresh，避免靠模型临场记忆。"""
+        text = (
+            ROOT / ".agents" / "skills" / "coding" / "references" / "23_端到端交付与合并后收尾.md"
+        ).read_text(encoding="utf-8")
+        for marker in ("Platform Write Route Refresh", "Issue/工单治理", "PR治理", "pre-write validation", "live reread"):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, text)
 
     def test_review_only_does_not_overroute_governance_machine_contract(self) -> None:
         """普通只读 Review 不因存在治理能力而加载 Issue/PR 创建 Contract。"""
