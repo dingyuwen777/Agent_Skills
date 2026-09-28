@@ -331,7 +331,13 @@ def _project_runtime_router_contract(
         body = canonical_text[frontmatter.end() :]
         body = _ROUTING_BLOCK.sub("", body, count=1)
         body = _remove_source_navigation_metadata(body)
-        return _project_runtime_text(body, identities).strip()
+        fixture_contract = (
+            "# Project Engineering Guardrails\n\n"
+            "当前项目规则和真实事实优先；只执行当前授权范围内的动作。\n\n"
+            "**Fresh Evidence Contract**：完成结论必须由当前相关实现、环境和实际验证证据支持。\n\n"
+            + body.strip()
+        )
+        return _project_runtime_text(fixture_contract, identities).strip()
 
     section = section_match.group(1)
     lines = section.splitlines()
@@ -364,7 +370,7 @@ def _project_runtime_router_contract(
         "REQUIRED_USER_INPUT",
         "CAPABILITY_BLOCKER",
     )
-    decision_lines = [_first_line_containing(f"- \`{state}\`") for state in decision_states]
+    decision_lines = [_first_line_containing(f"- `{state}`") for state in decision_states]
     decision_gate = _first_line_containing("**Human Input Admission Gate**")
     authorization = _first_line_containing("**Authorization Continuity**")
     fresh_evidence = _first_line_containing("**Fresh Evidence Contract**")
@@ -382,7 +388,7 @@ def _project_runtime_router_contract(
     if not followup_lines:
         raise ValueError("Runtime Router Projection 缺少 Follow-up Lifecycle 正文")
     followup = "\n".join(followup_lines)
-    followup = followup.replace("仅 \`新 Requirement / 新 Task\`", "未来只有新的 Requirement / Task")
+    followup = followup.replace("仅 `新 Requirement / 新 Task`", "未来只有新的 Requirement / Task")
 
     examples_match = _RUNTIME_ROUTER_EXAMPLES.search(canonical_text)
     if examples_match is None:
