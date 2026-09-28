@@ -3,9 +3,12 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+
+import evals.release_qualification as qualification
 from pathlib import Path
 
 from evals.agent_outcome_eval import (
+    grade_run,
     HIGH_VALUE_CONVERGENCE_CASES,
     load_json,
     validate_high_value_case_registry,
@@ -94,6 +97,21 @@ class ReleaseQualificationTest(unittest.TestCase):
         )
         self.assertTrue(report["通过"])
         self.assertEqual(set(report["宿主覆盖"]), set(SUPPORTED_HOSTS))
+
+    def test_reasoning_source_profile_reuses_same_grader(self) -> None:
+        """Reasoning/Source qualification 必须作为独立 profile 存在且复用同一 Outcome Eval grader。"""
+        self.assertIn("reasoning-source", qualification.QUALIFICATION_PROFILES)
+        profile = qualification.QUALIFICATION_PROFILES["reasoning-source"]
+        required = set(profile["required_cases"])
+        for case_id in (
+            "analysis-first-principles",
+            "analysis-root-cause-before-minimization",
+            "research-latest-primary",
+            "research-insufficient-evidence",
+            "unnecessary-clarification",
+        ):
+            self.assertIn(case_id, required)
+        self.assertIs(qualification.grade_run, grade_run)
 
     def test_fixture_run_is_rejected(self) -> None:
         """fixture 即使 grader Green 也不能冒充 Release actual Evidence。"""

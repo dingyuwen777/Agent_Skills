@@ -251,6 +251,30 @@ class AnalysisResearchSkillsTest(unittest.TestCase):
         self.assertNotIn("analysis", result["命中Skill"])
         self.assertNotIn("research", result["命中Skill"])
 
+    def test_mixed_analysis_and_research_modes_do_not_activate_coding(self) -> None:
+        """非工程 Analysis/Research 即使带方案/只读分析/验证模式也不得误入 Coding。"""
+        cases = (
+            {"执行模式": ["方案"], "风险": ["L1"], "意图": ["方案分析"]},
+            {"执行模式": ["只读分析"], "风险": ["L1"], "意图": ["通用分析"]},
+            {"执行模式": ["验证"], "风险": ["L1"], "意图": ["事实核验"]},
+            {"执行模式": ["只读分析"], "风险": ["L1"], "意图": ["外部研究"]},
+        )
+        for signals in cases:
+            with self.subTest(signals=signals):
+                result = self._route(signals)
+                self.assertNotIn("coding", result["命中Skill"])
+
+    def test_engineering_research_mode_still_composes_with_coding(self) -> None:
+        """真实工程实现/诊断叠加 Research 时仍必须同时命中 Coding。"""
+        cases = (
+            {"执行模式": ["实现"], "风险": ["L2"], "意图": ["最新资料"]},
+            {"执行模式": ["诊断"], "风险": ["L2"], "意图": ["事实核验"]},
+        )
+        for signals in cases:
+            with self.subTest(signals=signals):
+                result = self._route(signals)
+                self.assertTrue({"coding", "research", "router"}.issubset(result["命中Skill"]))
+
     def test_runtime_project_payload_discovers_both_skills_dynamically(self) -> None:
         """新增 Skill 必须由现有动态 Catalog 自动进入 Runtime Project Payload。"""
         bundle = build_bundle(ROOT)

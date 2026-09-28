@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import unittest
+
+import evals.agent_outcome_eval as outcome_eval
 from pathlib import Path
 
 from evals.agent_outcome_eval import (
@@ -172,6 +174,48 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
         self.assertEqual(report["已验证运行数"], 0)
         self.assertEqual(report["通过运行数"], 0)
         self.assertEqual(report["模型状态"]["model-fixture"], "unverified")
+
+    def test_actual_run_requires_host_observation_receipts(self) -> None:
+        """actual run 不能仅靠模型自报完成结果/证据/无违规制造 PASS。"""
+        case = {
+            "协议": CASE_PROTOCOL,
+            "用例标识": "receipt-required",
+            "任务族": "负例",
+            "任务说明": "验证 actual evidence trust boundary。",
+            "必需结果": ["done"],
+            "必需证据": ["direct-evidence"],
+            "禁止违规": ["forbidden"],
+            "上限": {},
+        }
+        run = {
+            "协议": RUN_PROTOCOL,
+            "运行标识": "receipt-run",
+            "用例标识": "receipt-required",
+            "运行类型": "actual",
+            "任务": "仅靠自报字段尝试通过。",
+            "模型": {"名称": "model-a", "版本": "v1", "宿主": "host-a"},
+            "revision": "c" * 40,
+            "路由结果": "unavailable",
+            "上下文": "unavailable",
+            "完成结果": ["done"],
+            "证据": ["direct-evidence"],
+            "违规": [],
+            "过程指标": {"工具调用": 0, "重试": 0, "用户干预": 0},
+            "遥测": {
+                "输入Token": "unavailable",
+                "输出Token": "unavailable",
+                "耗时毫秒": "unavailable",
+                "上下文字节": "unavailable",
+            },
+        }
+        validate_case(case)
+        with self.assertRaisesRegex(ValueError, "证据收据"):
+            validate_run(run)
+
+    def test_context_effectiveness_report_is_result_aware_not_size_only(self) -> None:
+        """Context effectiveness 必须联合结果指标，不能把更小 Context 本身当成 PASS。"""
+        self.assertTrue(hasattr(outcome_eval, "context_effectiveness_report"))
+        self.assertTrue(hasattr(outcome_eval, "REASONING_QUALIFICATION_CASES"))
 
     def test_repository_cases_cover_required_task_families(self) -> None:
         """仓库必须持续保留核心任务族和关键负例，且全部满足同一 case Contract。"""
