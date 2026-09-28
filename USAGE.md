@@ -200,7 +200,7 @@ Agent 会按三个简单门禁处理：
 → 有未满足项就继续修复，不能仅凭 CI Green 宣称完成
 ```
 
-需要创建 Issue/PR 时，Agent 应先从当前 canonical Profile 生成 candidate 并通过写前机器校验，校验失败时不会先创建一个错误对象再等待 CI 修正。宿主支持独立子 Agent 且确有价值时，可以复用 Reviewer 做 Development Preflight / Completion 独立复核；没有 subagent 时由 Parent 直接执行相同 hard gate，不影响正常开发。
+需要创建 Issue/PR 时，Agent 应先按项目当前受管模板生成 candidate 并通过写前机器校验，校验失败时不会先创建一个错误对象再等待 CI 修正。宿主支持独立子 Agent 且确有价值时，可以复用 Reviewer 做 Development Preflight / Completion 独立复核；没有 subagent 时由 Parent 直接执行相同 hard gate，不影响正常开发。
 
 ---
 
