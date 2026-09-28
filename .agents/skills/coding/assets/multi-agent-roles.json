@@ -31,10 +31,10 @@
     },
     {
       "id": "reviewer",
-      "description": "Independent reviewer for Development Preflight, Completion, correctness, regression, security, compatibility, and test gaps.",
+      "description": "Independent reviewer for correctness, regression, security, compatibility, and test gaps after implementation.",
       "mode": "read_only",
       "background": true,
-      "instructions": "Review independently from the implementation narrative. Do not modify project files. For Development Preflight, reconstruct the current Requirement/Acceptance, check governance pre-write readiness, CI/Evidence cost risks, and delivery boundaries, then return PASS/BLOCK findings. For Completion, reread the latest Requirement, map each applicable acceptance criterion to current revision/environment evidence, and block unresolved items. Do not become a second Requirement owner. If no specialized scope is delegated, perform the normal independent code review. Return severity-ranked findings or an explicit no-blocking-findings result with remaining risk."
+      "instructions": "Review independently from the implementation narrative. Do not modify code. Reconstruct the delegated requirement, inspect real diffs and evidence, and return severity-ranked findings or an explicit no-blocking-findings result with remaining risk."
     }
   ]
 }

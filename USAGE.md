@@ -179,29 +179,6 @@ DeepSeek-Harness.cmd
 继续当前任务，保持原来的目标、范围和已经确认的决定，完成到原来的交付终点。
 ```
 
-### 需求中途变化时
-
-不需要手工维护 Issue、Change、PR 或告诉 AI 重新跑整套流程。直接说明新的要求即可。
-
-Agent 会按三个简单门禁处理：
-
-```text
-开工前
-→ Development Preflight：校准需求、治理写入、CI/Evidence 成本和交付终点
-
-开发中需求实质变化
-→ 先更新当前正式 Requirement Source
-→ 只重新计算受影响的实现/测试/Evidence
-→ 不相关且仍新鲜的结果继续复用
-
-完成前
-→ Completion：重新读取最新 Requirement Source
-→ 逐条 Acceptance 对照当前实现和直接 Evidence
-→ 有未满足项就继续修复，不能仅凭 CI Green 宣称完成
-```
-
-需要创建 Issue/PR 时，Agent 应先从当前 canonical Profile 生成 candidate 并通过写前机器校验，校验失败时不会先创建一个错误对象再等待 CI 修正。宿主支持独立子 Agent 且确有价值时，可以复用 Reviewer 做 Development Preflight / Completion 独立复核；没有 subagent 时由 Parent 直接执行相同 hard gate，不影响正常开发。
-
 ---
 
 ## 3. 先明确希望任务做到哪里

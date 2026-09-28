@@ -1,5 +1,5 @@
 <!-- agent-routing:v1
-{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.30","触发":{"任一":[{"包含":{"维度":"意图","取值":["Issue/工单治理","Git 交付","PR Ready"]}},{"包含":{"维度":"治理","取值":["存在活动变更","多个活动变更","要求变更记录","要求完成门禁"]}}]},"依赖":["coding.reference.18","coding.reference.25"],"最低风险":"L2"}
+{"协议":"Agent Skills Reference路由/v1","标识":"coding.reference.30","触发":{"任一":[{"包含":{"维度":"意图","取值":["Issue/工单治理"]}},{"包含":{"维度":"治理","取值":["存在活动变更","多个活动变更","要求变更记录","要求完成门禁"]}}]},"依赖":["coding.reference.18","coding.reference.25"],"最低风险":"L2"}
 -->
 
 # 治理资产机器 Contract
@@ -94,10 +94,10 @@ Issue 创建固定为：
 
 ```text
 canonical Issue Profile
-→ prepare-issue / 等价 candidate generation
+→ candidate
 → validate-issue --mode create
 → PASS
-→ platform writer
+→ create/update through platform
 → live reread
 → validate-issue --mode create
 ```
@@ -106,30 +106,15 @@ PR 创建固定为：
 
 ```text
 canonical PR Profile
-→ prepare-pr / 等价 candidate generation
+→ candidate
 → validate-pr --mode create
 → PASS
-→ platform writer
+→ create/update through platform
 → live reread
 → validate-pr --mode create
 ```
 
-canonical CLI：
-
-```bash
-python .agents/skills/coding/scripts/governance_contract.py prepare-issue \
-  --title "[技术变更] ..." --profile technical-change \
-  --sections-file issue-sections.json --output issue-body.md
-
-python .agents/skills/coding/scripts/governance_contract.py prepare-pr \
-  --sections-file pr-sections.json --output pr-body.md
-```
-
-`prepare-issue / prepare-pr` 只负责按 canonical Profile 的当前 heading 顺序组装 Core，并在输出前调用同一 create validator；调用方仍负责提供真实 section 内容、完成重复搜索/事实恢复和远程 Requirement Source 真实性。它们不得维护第二份 heading/field 表。
-
-**Platform Write Hard Gate**：create/update Issue/PR 的 GitHub UI、CLI、MCP、API、Host Tool 或其他 writer 在 canonical candidate 与 create-mode validation PASS 之前都不得调用。pre-write FAIL 时 writer 必须保持未调用；writer 成功也不代表 Contract 已满足，必须 live reread 后用同一 create Contract 再验。后期补模板只能作为异常恢复路径，不能成为标准创建流程。
-
-Change 创建/更新继续使用 canonical Change Template + candidate validation + changed-scope/Ready/Completion/Review。无本地 shell时使用宿主等价 API 生成/校验与 readback，但仍必须保持“candidate → PASS → writer → reread → same validation”的顺序，不得靠模型自证格式。
+任何 pre-write FAIL 都禁止平台 write。后期补模板只能作为异常恢复路径，不能成为标准创建流程。Change 创建/更新继续使用 canonical Change Template + candidate validation + changed-scope/Ready/Completion/Review。无本地 shell 时使用宿主等价 API 写入与 readback，不得靠模型自证格式。
 
 ## 5. Canonical Governance Assets、Project Payload 与 Runtime projection
 
