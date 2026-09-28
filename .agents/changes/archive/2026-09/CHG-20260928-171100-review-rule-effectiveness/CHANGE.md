@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-171100-review-rule-effectiveness
 title: Review首轮闭环与关键规则可达性
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/323-review-rule-effectiveness
 created: 2026-09-28
