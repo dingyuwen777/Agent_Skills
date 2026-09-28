@@ -118,9 +118,11 @@ _RUNTIME_ENTRY = f"""# Project Engineering Entry
 6. {PROJECT_FACING_USER_COMMUNICATION_RULE}
 """
 
-_RUNTIME_ROUTER_CONTRACT = re.compile(
-    r"<!--\s*runtime-project-contract:start\s*-->\s*(.*?)\s*<!--\s*runtime-project-contract:end\s*-->",
-    re.DOTALL,
+_RUNTIME_ROUTER_SECTION_ONE = re.compile(
+    r"(?ms)^## 1\. 项目事实与确定性执行边界\s*\n(.*?)(?=^## 2\. 正式 Skill Catalog)",
+)
+_RUNTIME_ROUTER_EXAMPLES = re.compile(
+    r"(?ms)^## 5\. 低歧义组合示例\s*\n(.*?)(?=^## 6\. Bootstrap / Runtime 专项路由)",
 )
 
 _RUNTIME_USER_COMMUNICATION_SECTION = f"""
@@ -318,26 +320,97 @@ def _project_runtime_router_contract(
     canonical_text: str,
     identities: tuple[str, ...],
 ) -> str:
-    """从 canonical Router 派生项目侧核心约束；正式 Router 缺标记时失败，最小测试 Router 直接投影自身正文。"""
-    matches = list(_RUNTIME_ROUTER_CONTRACT.finditer(canonical_text))
-    if len(matches) > 1:
-        raise ValueError("Runtime Router Projection 的 project contract 标记区不能重复")
-    if len(matches) == 1:
-        contract = matches[0].group(1).strip()
-        if not contract:
-            raise ValueError("Runtime Router Projection 的 project contract 不能为空")
-        return _project_runtime_text(contract, identities)
+    """从 canonical Router 现有规则抽取项目侧核心语义，不维护第二份人工 Router 正文。"""
+    section_match = _RUNTIME_ROUTER_SECTION_ONE.search(canonical_text)
+    if section_match is None:
+        if "# Agent Skills Router" in canonical_text:
+            raise ValueError("正式 canonical Router 缺少项目事实与确定性执行边界")
+        frontmatter = _FRONTMATTER.match(canonical_text)
+        if frontmatter is None:
+            raise ValueError("Runtime Router fixture 缺少合法 frontmatter")
+        body = canonical_text[frontmatter.end() :]
+        body = _ROUTING_BLOCK.sub("", body, count=1)
+        body = _remove_source_navigation_metadata(body)
+        return _project_runtime_text(body, identities).strip()
 
-    if "# Agent Skills Router" in canonical_text:
-        raise ValueError("正式 canonical Router 缺少唯一 project contract 标记区")
+    section = section_match.group(1)
+    lines = section.splitlines()
 
-    frontmatter = _FRONTMATTER.match(canonical_text)
-    if frontmatter is None:
-        raise ValueError("Runtime Router fixture 缺少合法 frontmatter")
-    body = canonical_text[frontmatter.end() :]
-    body = _ROUTING_BLOCK.sub("", body, count=1)
-    body = _remove_source_navigation_metadata(body)
-    return _project_runtime_text(body, identities).strip()
+    def _first_line_containing(marker: str) -> str:
+        """从 canonical Router 当前段落提取唯一高价值规则行。"""
+        matches = [line.strip() for line in lines if marker in line]
+        if len(matches) != 1:
+            raise ValueError(f"Runtime Router Projection 要求 canonical 规则唯一可定位：{marker}")
+        return matches[0]
+
+    fact_lines: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("### 1.1 "):
+            break
+        if stripped:
+            fact_lines.append(stripped)
+    if not fact_lines:
+        raise ValueError("Runtime Router Projection 缺少当前项目事实规则")
+
+    decision_states = (
+        "RULE_RESOLVED",
+        "FACT_RESOLVABLE",
+        "CONVENTION_RESOLVED",
+        "DEFAULT_RESOLVED",
+        "SELF_DECIDE",
+        "OWNER_DECISION",
+        "AUTHORIZATION_REQUIRED",
+        "REQUIRED_USER_INPUT",
+        "CAPABILITY_BLOCKER",
+    )
+    decision_lines = [_first_line_containing(f"- \`{state}\`") for state in decision_states]
+    decision_gate = _first_line_containing("**Human Input Admission Gate**")
+    authorization = _first_line_containing("**Authorization Continuity**")
+    fresh_evidence = _first_line_containing("**Fresh Evidence Contract**")
+    blocker = _first_line_containing("**阻塞按依赖边界传播**")
+    requested_outcome = _first_line_containing("**Requested Outcome = Completion Scope**")
+
+    followup_heading = "### Cross-Skill Follow-up Lifecycle"
+    followup_index = next(
+        (index for index, line in enumerate(lines) if line.strip() == followup_heading),
+        None,
+    )
+    if followup_index is None:
+        raise ValueError("Runtime Router Projection 缺少 Follow-up Lifecycle")
+    followup_lines = [line.strip() for line in lines[followup_index + 1 :] if line.strip()]
+    if not followup_lines:
+        raise ValueError("Runtime Router Projection 缺少 Follow-up Lifecycle 正文")
+    followup = "\n".join(followup_lines)
+    followup = followup.replace("仅 \`新 Requirement / 新 Task\`", "未来只有新的 Requirement / Task")
+
+    examples_match = _RUNTIME_ROUTER_EXAMPLES.search(canonical_text)
+    if examples_match is None:
+        raise ValueError("Runtime Router Projection 缺少低歧义风险示例")
+    example_lines = examples_match.group(1).splitlines()
+    risk_rows = [
+        line.strip()
+        for line in example_lines
+        if line.strip().startswith("| L1 机械修改 |")
+        or line.strip().startswith("| L2 Feature |")
+        or line.strip().startswith("| L3 public API |")
+    ]
+    if len(risk_rows) != 3:
+        raise ValueError("Runtime Router Projection 缺少 L1/L2/L3 风险示例")
+
+    contract = "\n\n".join(
+        (
+            "# Project Engineering Guardrails",
+            "## 当前项目事实\n\n" + "\n".join(fact_lines),
+            "## 决策权与用户提问\n\n"
+            + "\n".join(decision_lines + [decision_gate, authorization]),
+            "## 权限、验证与完成\n\n"
+            + "\n".join((fresh_evidence, blocker, requested_outcome)),
+            "## 风险等级\n\n" + "\n".join(risk_rows),
+            "## 超范围后续事项\n\n" + followup,
+        )
+    )
+    return _project_runtime_text(contract, identities)
 
 def _append_frontmatter_description_rule(line: str) -> str:
     """把首轮沟通约束安全追加到 description，并保持常见单/双引号 YAML 标量合法。"""
