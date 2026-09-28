@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-142125-review-root-mechanism-closure
 title: Review 根机制投影闭环与首轮覆盖门禁
 level: L3
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/319-review-root-mechanism-closure
 created: 2026-09-28
@@ -11,179 +11,189 @@ updated: 2026-09-28
 completion_gate: required
 depends_on: []
 affected_areas:
-  - router
   - review
-  - coding
   - testing
   - outcome-eval
   - docs
+  - governance
 affected_paths:
-  - .agents/skills/router/SKILL.md
   - .agents/skills/review/SKILL.md
   - .agents/skills/review/references/01_审查执行流程.md
   - .agents/skills/review/references/03_测试专家审查方法.md
-  - .agents/skills/coding/references/11_两阶段复核与完成前验证.md
-  - .agents/skills/coding/references/22_根因调试.md
   - .agents/skills/coding/tests/test_review_root_mechanism_closure.py
   - evals/cases/review-root-mechanism-projection.json
   - USAGE.md
 contracts:
   - Root-Mechanism Projection Closure Gate
   - First-pass Coverage Miss
-  - Review Systemic RCA conditional escalation
+  - Invariant Projection Regression Matrix
 data_changes: []
 ---
 
 # 变更摘要
 
-把复杂 Code Review 从“发现一个 Finding 就局部返修”收敛为“先对已命中的高风险根机制做有界投影闭环，再统一形成 Findings”。简单 Review 继续走轻量路径；只有当前事实确认并发、批处理、Lease/Fencing、Retry/Timeout、幂等、partial failure、外部副作用、事务、状态机、恢复或资源生命周期等复合机制时，才条件升级并复用既有 Systemic RCA。
+复杂 Code Review 在确认复合高风险机制后，不再以首个局部 Finding 作为机制闭环；先在当前 Scope 内完成 Invariant、Lifecycle、Failure Boundary、Projection、Evidence 与 Omission/Coverage Audit，再统一形成 Findings。简单局部 Review 保持轻量。需要 Systemic 深度时复用现有 `执行模式=诊断 → coding.reference.23` 路由，不新增 Router vocabulary、不复制第二套 RCA。
 
 # 背景、现状与问题
 
-Requirement Source 为 GitHub Issue #319。当前 Review risk-first、Analysis Two-Pass、Coding Systemic RCA、主要复发路径和 Review Convergence Guard 分别存在，但高风险 Code Review 没有稳定形成“根机制 → 生命周期 → 主要失效投影 → 证据”的首轮闭环，因此同一 invariant 的兄弟问题可能在多轮 re-review 中逐个出现。
+Requirement Source：GitHub Issue #319。原有 Review risk-first、Systemic RCA、Testing Handoff 与 Review Convergence Guard 各自成立，但没有首轮根机制投影闭环，因此同一 invariant 的兄弟 failure projection 可能在后续 re-review 才逐个出现。
+
+最终实现没有修改 Router、Coding ref11 或 ref22；中间曾尝试新增“机制完整性审查” routing vocabulary，但上下文预算和 Owner 审计证明没有必要，最终改为复用既有 `执行模式=诊断`。这使方案更小，同时保留相同可达性和失败边界。
 
 # 事实与证据
 
-| 证据编号 | 已确认事实 | 来源 / 定位 | 支撑约束 |
+| 证据编号 | 已确认事实 | 来源 / 定位 / 运行 | 支撑约束或决策 |
 | --- | --- | --- | --- |
-| E1 | 普通 Code Review 默认路由 Coding + Review | canonical Router current main | 不能假设 Analysis/Systemic RCA 自动加载 |
-| E2 | Review 已有 risk-first 和 Convergence Guard | review/SKILL.md + ref01 | 应增强首轮覆盖，不重做整个 Review |
-| E3 | Systemic RCA 已覆盖并发/批处理/外部 I/O/retry/partial failure 等链路 | coding ref22 | 复用唯一 RCA Owner |
-| E4 | Review Testing 已审 Evidence 边界，但未按 invariant projections 形成回归矩阵 | review ref03 | 需要最小补强 |
-| E5 | Outcome Eval 已有 repair-churn/review-testing，但无首轮同根投影覆盖 case | evals/cases | 需要可度量回归 |
+| E1 | 普通 Code Review 既有 Owner 是 Coding + Review | canonical Router current main | 简单 Review 不应新增重型上下文 |
+| E2 | Systemic RCA 已由 `coding.reference.23` 通过 `执行模式=诊断` 可达 | canonical ref22 + routing evaluator | 复用现有路由，不增加 vocabulary |
+| E3 | 旧规则缺少 Root-Mechanism Gate、Projection states、Regression Matrix 和 First-pass Coverage Miss | Red run #2134 | 新 Contract 在旧规则上真实失败 |
+| E4 | 最终 branch 的新 Review 回归、既有路由/Source-Runtime parity/context budget 均通过 | run #2144 selected self-contained tests：109 tests / OK | R1-R7 当前实现 Green |
+| E5 | PR #320 最终 diff 只有 Change、Review Core/ref01/ref03、永久回归、Outcome Eval、USAGE | current PR patch reread | Router/ref11/ref22 无最终 diff，唯一 Owner 未复制 |
+| E6 | #319 仍 open，AC8 明确要求 post-merge finalization | live Requirement reread | merge 前 R8 必须 deferred |
 
 # 目标、成功标准与非目标
 
 ## 目标 / 成功标准
 
-- AC1：Review Core 建立 Root-Mechanism Projection Closure Gate。
-- AC2：简单局部 Review 保持 lightweight。
-- AC3：复杂机制 Review 条件式复用 Coding Systemic RCA，routing 可达。
-- AC4：Testing Handoff 从同一 invariant 的主要 blocking projections 建最小 Regression Matrix。
-- AC5：re-review 能区分 First-pass Coverage Miss 与真正的新事实/新需求。
-- AC6：Review Convergence Guard 保持“机制内完整、任务外有界”。
-- AC7：永久回归覆盖复杂正例、简单负例、Systemic route、Coverage Miss 和 Outcome Eval。
-- AC8：独立 Review、current-head CI、guarded merge、main-fresh、Change Archive 和 Issue Closure 后端到端完成。
+- AC1：复杂 Review 具有 Root-Mechanism Projection Closure Gate。
+- AC2：简单、局部、单因果 Review 保持 lightweight。
+- AC3：Systemic 复杂度条件式复用现有 Coding RCA，不复制第二套 Owner。
+- AC4：同一 invariant 的主要 blocking projections 进入最小 Regression Matrix。
+- AC5：re-review 能标记 First-pass Coverage Miss，且不误标新事实。
+- AC6：机制内完整、任务外有界，不把 Review 变成无限审计。
+- AC7：永久回归与 Outcome Eval 保护上述正反例且 context budget 不提高。
+- AC8：独立 Review、required CI、merge、main-fresh、Change Archive、Issue Closure 后才端到端完成。
 
 ## 非目标
 
-- 不承诺一次 Review 找出任何 PR 的所有潜在 Bug。
-- 不让所有 Review 无条件加载 Analysis/Systemic RCA。
-- 不新增 Agent、队列或第二套 RCA Owner。
-- 不改变 Runtime MCP public surface、依赖、License 或 Release ZIP surface。
-- 不 rollout 到业务仓库，不执行 Release/Deploy。
+- 不承诺一次 Review 找到任何 PR 的所有潜在 Bug。
+- 不让所有 Review 自动进入诊断/Systemic RCA。
+- 不新增 Skill、Agent、Router vocabulary、队列或第二套 RCA。
+- 不修改 Runtime MCP public surface、依赖、License、数据/Schema。
+- 不创建 Release/Deploy，不自动 rollout 到业务仓库。
 
 # 约束与意图决策
 
 | 决策维度 | 当前决定 | 依据 | 影响 |
 | --- | --- | --- | --- |
-| Review Owner | Review 拥有“何时需要机制闭环”的审查 Gate | E1/E2 | 不把完整 RCA 复制进 Review |
-| RCA Owner | 复杂未知达到 Systemic 时复用 coding ref22 | E3 | 保持单一 Owner |
-| Testing | 以 invariant blocking projections 形成最小矩阵 | E4 | 不按测试数量配额扩张 |
-| Scope | 机制内完整、任务外有界 | #319 / AC2/AC6 | 防止全仓无限审计 |
-| Eval | 增加首轮 coverage case | E5 | 可跨模型度量规则效果 |
+| Review Gate Owner | Review Core 保留不可延迟首轮闭环 Gate | E3/E4 | 复杂 Review 不能首个 Finding 即闭合 |
+| Projection 细节 Owner | review ref01 | E4 | Core 保持薄；状态/停止边界集中一处 |
+| RCA Owner | 继续由 coding ref22 唯一拥有 | E2/E5 | 不复制诊断链，不增加 routing metadata |
+| Testing | review ref03 只定义 adequacy matrix；专业测试仍交 Testing | E4/E5 | 不产生第二套 Testing 方法 |
+| Scope | 机制内完整、任务外有界 | #319 AC2/AC6 | 防止“全面”演变为无限扫描 |
+| Eval | 新增 review-root-mechanism-projection case | #319 AC7 | 可长期比较首轮覆盖与返修 churn |
 
 # 修改方案与决策依据
 
-1. Review Core 增加 Root-Mechanism Projection Closure Gate：确认复合机制后，局部 Finding 前先做 Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission/Coverage Audit。
-2. Router/Review 执行规则约定内部信号 `意图=机制完整性审查`；命中后由 routing metadata 条件加载 coding ref22。
-3. ref01 定义 projection 状态：confirmed / ruled_out / covered_by_evidence / not_applicable / unknown，并规定首轮覆盖停止条件。
-4. ref03 以同一 invariant 的 blocking projections 生成最小 Regression Matrix。
-5. ref11 明确正式 Review 的复杂机制回程，继续引用 ref22，不建立第二套 RCA。
-6. re-review 新 blocker 若与原 Finding 同一 invariant 且首轮当时事实足以推导，标记 First-pass Coverage Miss；真正由新代码/新 Requirement/新外部事实引入则不误标。
-7. USAGE 提供无需用户记住内部术语的短指令；普通“审核 PR”即可触发 Review 自主判断。
+1. Review Core 增加薄 Root-Mechanism Projection Closure Gate，保留 Invariant/Lifecycle/Failure Boundary/Projection/Omission Audit 与 First-pass Coverage Miss 的不可延迟 Contract。
+2. review ref01 作为详细执行 Owner：定义五种 projection 状态、Systemic unknown 的诊断升级、Coverage Audit 与 bounded closure。
+3. review ref03 定义 Invariant Projection Regression Matrix；已有证据不要求重复执行，测试缺口继续 Handoff Testing。
+4. Systemic RCA 不新增路由词表；Reviewer 确认需要 Systemic 深度时，将任务事实追加为 `执行模式=诊断`，由既有 routing evaluator 自动加载 coding.reference.23。
+5. 新永久回归同时证明复杂正例与简单 Review 负例，并用 Outcome Eval case 保护 sibling-projection churn。
+6. USAGE 告诉使用者无需知道内部 Gate/RCA 名称，普通“审查 PR”即可由 Reviewer 按事实自主升级。
 
 ## 备选方案与取舍
 
-- 所有 Review 无条件加载 Analysis/Systemic RCA：上下文成本高且简单 Review 过度治理，不采用。
-- 只在 re-review 增加更多检查：仍无法解决首轮漏检，不采用。
-- 新建独立 Mechanism Review Skill/Agent：复制 Review/Coding Owner，增加路由复杂度，不采用。
-- 把 Systemic RCA 全文复制到 Review：产生双 Owner 和未来漂移，不采用。
+- 所有 Review 无条件加载 Analysis/Systemic RCA：上下文与认知成本过高，不采用。
+- 新增 `意图=机制完整性审查` routing vocabulary：可以工作，但会增加路由 Contract 与复杂路由上下文；既有 `执行模式=诊断` 已能表达该事实，最终撤销。
+- 在 Coding ref11/ref22 再写一套 Review Handoff：会形成跨 Owner 重复，最终撤销。
+- 新建 Mechanism Review Skill/Agent：职责与 Review/Coding 重叠，不采用。
+- 提高 context budget：会掩盖规则膨胀，不采用；通过去重使旧预算继续通过。
 
 # 需求追溯
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | Root-Mechanism Projection Closure Gate | #319 / AC1 | not_satisfied | Red regression first |
-| R2 | 简单 Review lightweight | #319 / AC2 | not_satisfied | negative route regression |
-| R3 | 条件式 Systemic RCA reachability | #319 / AC3 | not_satisfied | routing regression |
-| R4 | invariant projection Regression Matrix | #319 / AC4 | not_satisfied | review testing contract regression |
-| R5 | First-pass Coverage Miss | #319 / AC5 | not_satisfied | re-review contract regression |
-| R6 | bounded convergence | #319 / AC6 | not_satisfied | convergence preservation review |
-| R7 | permanent regression / Outcome Eval | #319 / AC7 | not_satisfied | new test + eval case |
-| R8 | full delivery | #319 / AC8 | explicitly_deferred | post-merge lifecycle |
+| R1 | Root-Mechanism Projection Closure Gate | #319 / AC1 | satisfied | Review Core + run #2144 new regression Green |
+| R2 | 简单 Review lightweight | #319 / AC2 | satisfied | `test_simple_review_does_not_load_systemic_rca` Green；Router 无 diff |
+| R3 | 条件式 Systemic RCA reachability / single Owner | #319 / AC3 | satisfied | `审查+诊断` routing regression Green；ref01 指向 ref22；ref22 无 diff |
+| R4 | Invariant Projection Regression Matrix | #319 / AC4 | satisfied | review ref03 + targeted regression Green |
+| R5 | First-pass Coverage Miss | #319 / AC5 | satisfied | Review Core/ref01 + Outcome Eval case |
+| R6 | bounded convergence | #319 / AC6 | satisfied | “机制内完整、任务外有界” + 既有 Convergence Guard 保持 |
+| R7 | permanent regression / Outcome Eval / budget | #319 / AC7 | satisfied | Red #2134；Green #2144 109 tests OK；旧 context budget 未提高 |
+| R8 | full delivery | #319 / AC8 | explicitly_deferred | 依赖 Ready 后 independent Review/required CI/merge/main-fresh/archive/closure |
 
 # 计划改动
 
-| 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 |
+| 文件 / 模块 / 资产 | 实际修改 | 原因 | 对应要求 |
 | --- | --- | --- | --- |
-| Router | Review 条件式 Systemic reachability | 复杂机制动态升级而非全量加载 | R2/R3 |
-| Review Core/ref01 | 根机制投影闭环、Coverage Miss | 防同根问题多轮打地鼠 | R1/R5/R6 |
-| Review ref03 | Invariant Projection Regression Matrix | 测试覆盖机制而非首个 Finding | R4 |
-| Coding ref11/ref22 metadata | 复用 Systemic RCA Owner | 保持 Owner 单一且 Runtime 可达 | R3 |
-| tests/evals | 正反例与 Outcome Eval | 永久保护行为 | R7 |
-| USAGE | 面向使用者的短 Review 指令 | 用户无需记内部术语 | R1-R6 |
+| review/SKILL.md | 薄 Root-Mechanism Gate + First-pass Coverage Miss | 首轮先闭合同根机制 | R1/R2/R5/R6 |
+| review/ref01 | projection 状态、Systemic diagnosis handoff、Coverage Audit | 唯一详细执行 Owner | R1/R3/R5/R6 |
+| review/ref03 | Invariant Projection Regression Matrix | 测试覆盖主要 blocking projections | R4 |
+| test_review_root_mechanism_closure.py | 复杂正例、简单负例、Owner 链与 Outcome Eval 回归 | 防止规则未来退化 | R1-R7 |
+| review-root-mechanism-projection.json | 跨模型 Outcome Eval case | 量化首轮覆盖与 sibling churn | R5/R7 |
+| USAGE.md | 普通代码审查使用说明 | 用户无需记内部实现术语 | R1-R6 |
 
 # 验证矩阵
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| Behavior / Rule Contract | required | Review/Router/Coding/Testing canonical markers and semantics |
-| Routing / Context | required | complex review loads coding.reference.23; simple review does not |
-| Outcome Eval | required | root-mechanism projection case validates |
-| Runtime / Source parity | required | existing metadata compiler/routing conformance/project payload tests |
-| Docs / Governance | required | Issue #319, Change, USAGE, ready gate |
-| External Provider | not_applicable | no external provider behavior |
+| 行为 / Rule Contract | required | Review Core/ref01/ref03 + 新永久回归 |
+| Routing / Context | required | complex=`审查+诊断` loads coding.reference.23；simple review 不加载 |
+| Outcome Eval | required | review-root-mechanism-projection case 通过 schema/eval contract |
+| Source / Runtime parity | required | 现有 routing/source-runtime conformance 回归 Green |
+| Context budget | required | 历史复杂路由预算保持；未提高阈值 |
+| Runtime package | conditional/current CI owner | Ready 后由 changed-scope classifier 决定并执行 required package gate |
+| Docs / Governance | required | #319、Active Change、USAGE、PR #320 |
+| External Provider / 数据 Migration | not_applicable | 无外部 Provider、Schema、数据变化 |
 
 # 验证计划
 
-- Red：新永久回归在旧 canonical 规则上因缺少 Gate/route/coverage markers 失败。
-- Green：最小修改 canonical Owner 后同一回归通过。
-- 相关回归：routing compiler/conformance、progressive disclosure、cross-model outcome eval、Review/Testing、context budget。
-- current-head PR required CI；merge 后 main-fresh。
-- 不提高 context budget，不删除既有断言。
+- 已完成 Red：run #2134 在旧规则上出现 18 failures + 1 routing error；简单 Review 负例仍通过。
+- 已完成 Green：run #2144 selected self-contained tests `Ran 109 tests` / `OK`，新 Review tests 全 Green，历史 context budget 通过；该 run 最终 fail-closed 的唯一原因是 Change 尚为 `in_progress`。
+- 本提交把 Change 切到 `ready_for_review`，随后要求 current-head required CI / package gate（如 classifier 要求）与 independent Requirement-first Review。
+- merge 后执行 main-fresh、repository-native Change Archive 与 #319 Closure Audit。
 
 # 风险、兼容性、迁移与回滚
 
-| 项目 | 结论 | 处理 |
+| 项目 | 结论 | 依据 / 处理 |
 | --- | --- | --- |
-| 主要风险 | 简单 Review 过度路由、Review/Coding 双 Owner、无边界审计 | 简单负例 + 单一 Systemic RCA Owner + bounded scope |
-| 兼容性 | Finding classification / Testing Handoff / Convergence 保持 | additive strengthening |
-| 数据 / Migration | 不适用 | 无 Schema/数据变化 |
-| Runtime | routing metadata 有条件扩展 | 走现有 compiler/parity 回归 |
-| 回滚 | revert implementation PR | 无不可逆状态 |
+| 主要风险 | 简单 Review 过度升级、RCA 双 Owner、无边界扩审 | simple negative regression + ref22 唯一 Owner + bounded closure |
+| 兼容性 | 现有 Review Finding classification、Testing Handoff、Convergence 保持 | additive Review contract；Router 无最终 diff |
+| 数据 / Schema / Migration | 不适用 | 无数据或 Schema 改动 |
+| Runtime/Public Contract | 不变 | 无 Router vocabulary/MCP/public protocol diff |
+| 依赖 | 不变 | 无 Manifest/lock 改动 |
+| 部署 / Release | 不适用 | 本任务不 Release/Deploy |
+| 回滚 | revert PR #320 | 无不可逆状态 |
 
 # 文档、依赖、部署与发布影响
 
-- USAGE 同步面向维护者的代码审查短指令。
-- 无新依赖，无配置/Schema/Migration。
-- 不 Release/Deploy；旧 Runtime 不热更新。
-- 业务项目后续需独立安装/升级才获得新规则。
+- USAGE 同步 Code Review 行为：用户不需要显式要求 Analysis/Systemic RCA。
+- README/runtime README 无长期事实变化，不更新。
+- 无依赖、配置、数据、Schema、Migration、部署或 Release 影响。
+- 业务项目需要后续安装/升级到包含本变更的 Source/Runtime 版本后才获得新规则；本任务不自动 rollout。
 
 # 完成审计
 
-- [ ] upstream_re_read：Ready 前重读 #319 与最终 canonical rules。
-- [ ] change_coverage：AC1-AC8 映射最终实现/Evidence。
-- [ ] reverse_audit：复杂 Review、简单 Review、Systemic route、Testing、re-review、Runtime parity 反向检查。
-- [ ] unresolved_cleared：Ready 前 R1-R7 satisfied；R8 仅按 post-merge 生命周期保留正式延期。
+- [x] upstream_re_read：Ready 前已重读 live #319 与最终 Review Core/ref01/ref03、RCA Owner、PR diff。
+- [x] change_coverage：R1-R7 均有当前 revision 的直接规则/回归 Evidence；R8 按 Requirement 生命周期正式 deferred。
+- [x] reverse_audit：复杂 Review、简单 Review、Systemic route、Testing adequacy、re-review、Source/Runtime parity、context budget 均反查。
+- [x] unresolved_cleared：merge 前实现范围无 unresolved blocking Requirement；仅 R8 的 post-merge delivery lifecycle 未完成。
 
 # 完成证据与状态
 
 ## 新鲜证据
 
-- Red PR #320 run #2131 首次失败仅证明 Change 机器 Contract 不完整，不能作为目标行为 Red。
-- 下一 revision 只修 Change 结构，必须继续取得真正的目标测试失败后才能进入 Green。
+| Evidence | Revision / Run | Result | 证明内容 |
+| --- | --- | --- | --- |
+| V1 Red | PR #320 run #2134 | 63 tests；新 Contract 18 failures + 1 routing error；simple review negative Green | 旧规则不能满足首轮机制闭环 |
+| V2 Green | HEAD 7f741e11 / run #2144 | selected `Ran 109 tests` / `OK`；Ready Check success；context budget through | 最终语义、正反例、routing/parity/budget Green |
+| V3 Diff audit | PR #320 current patch | 7 files；Router/ref11/ref22 无 final diff | 没有第二 Routing/RCA Owner |
+| V4 Requirement reread | #319 current live | open；AC8 post-merge | Ready 前需求未漂移 |
 
 ## 未验证内容与剩余风险
 
-- 尚未取得目标行为 Red。
-- canonical 规则尚未修改。
-- Runtime package/main-fresh/Archive/Closure 尚未执行。
+- current-head ready revision 仍需 required CI；如果 classifier 要求 Runtime package，则三平台 package evidence 仍待本提交后的 CI。
+- independent Requirement-first Review 尚未在 ready revision 上完成。
+- main-fresh、Change Archive、Issue Closure 属于 merge 后 Evidence，当前不能提前宣称。
 
 ## 交付状态
 
-- Requirement Source：#319 open。
-- 分支：tech/319-review-root-mechanism-closure。
-- PR：#320 Draft。
-- 当前阶段：修正 Change contract 后重新取得 Red。
-- merge/main-fresh/archive/Issue Closure：未执行。
+- implementation: complete
+- delivery: PR #320 ready candidate，尚未 merge
+- validation: semantic Green；ready-head CI 待本提交
+- main_fresh: not yet applicable before merge
+- change_archive: not yet applicable before merge
+- requirement_closure: #319 open
+- cleanup: pending post-merge
+- end_to_end: incomplete（按 #319 / AC8）
