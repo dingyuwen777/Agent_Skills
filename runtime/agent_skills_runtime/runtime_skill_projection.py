@@ -118,47 +118,10 @@ _RUNTIME_ENTRY = f"""# Project Engineering Entry
 6. {PROJECT_FACING_USER_COMMUNICATION_RULE}
 """
 
-_RUNTIME_ROUTER_BODY = """
-# Project Engineering Guardrails
-
-先读当前项目规则和真实事实，再按授权、风险、验证与完成范围行动；能力存在不等于扩大任务。
-
-## 1. 当前项目事实
-
-- 读取适用的 `AGENTS.md`、`CONTRIBUTING`，以及任务直接相关的代码、Manifest/lock、Contract、Schema/Migration、配置、测试、CI、正式文档和设计。
-- 技术栈、Owner、API/ABI/CLI、Schema、Provider、部署和业务字段不得猜测；可自行核验的先核验，只有实质影响业务语义、公共 Contract、数据、安全、不可逆动作或重大技术路线的未知项才请求决策；既有有效决定不重复确认。
-
-## 2. 决策权与用户提问
-
-按 `RULE_RESOLVED → FACT_RESOLVABLE → CONVENTION_RESOLVED → DEFAULT_RESOLVED → SELF_DECIDE` 依次解析；这五类必须自行继续，不能要求用户选择。只有 `OWNER_DECISION / AUTHORIZATION_REQUIRED / REQUIRED_USER_INPUT / CAPABILITY_BLOCKER` 可以请求用户/Owner 决定、授权、必要输入或解除 blocker。**No Choice-Prompt**：规则、事实、项目惯例、安全默认或低风险可逆实现细节已经足够时，不把多个方案重新包装成用户选择题。
-
-## 3. 权限与交付
-
-只执行用户已授权且当前宿主真实可完成的动作；低等级授权不自动升级，不强推、不重写共享历史、不绕过 CI、Branch Protection、Ruleset 或项目门禁。
-
-- 提 PR→`允许开发并提交PR`，到 PR Ready 为止，不自动合并；
-- 合并主分支→`允许端到端交付`，required gate 通过后再合并并收尾；
-- 审查后合并→`允许审查后交付`，先取得独立审查结论；
-- commit/push、引述或否定不升级授权。
-
-## 4. 风险与验证
-
-- **L1**：行为不变机械修改或影响隔离的小修复；
-- **L2**：行为变化、重要缺陷、多文件/多人或需要追踪的工作；
-- **L3**：public API/ABI、Schema/Migration、跨模块 Contract、架构、安全、部署恢复、重大依赖或破坏性兼容变化。
-
-验证 targeted-first；只有新失败、新边界、新独立风险或正式门禁才扩大。**Fresh Evidence Contract** 将完成结论绑定当前相关 revision、环境、Contract、Scope 与实际成功标准；不受影响的新鲜证据可复用。
-
-## 5. 完成与失败
-
-Requested Outcome 决定 Completion Scope；PR、合并、Release、Deploy 只在明确要求且 required gate 满足时继续，CI 绿色不替代需求、文档、独立复核或其他项目门禁。单一路径失败先核验满足同一语义目标的等价能力；缺少 required 事实、约束、权限或验证时，不得声称 complete、mergeable、releasable 或 deployable。
-
-## 6. 超范围后续事项
-
-跨域或超出当前 Scope 的发现默认只报告；只有 Evidence 足够、有独立长期价值且不是重复事项时，最多形成 `FOLLOW_UP_CANDIDATE`。Candidate 不自动创建 Issue/Change/Branch/PR/Agent，也不自动执行。
-
-把 Candidate 持久化到项目既有 backlog 需要独立授权，并先去重；形成 `BACKLOG_ITEM` 后当前任务立即停止处理该事项。未来只有新的 Requirement / Task 重新进入时，才重新恢复事实、Scope、权限、风险和 Evidence；当前任务的 revision、测试或 Git 权限不自动继承。
-"""
+_RUNTIME_ROUTER_CONTRACT = re.compile(
+    r"<!--\\s*runtime-project-contract:start\\s*-->\\s*(.*?)\\s*<!--\\s*runtime-project-contract:end\\s*-->",
+    re.DOTALL,
+)
 
 _RUNTIME_USER_COMMUNICATION_SECTION = f"""
 ## 面向用户的项目表达
@@ -350,6 +313,20 @@ def _project_runtime_text(text: str, identities: tuple[str, ...]) -> str:
     return text
 
 
+
+def _project_runtime_router_contract(
+    canonical_text: str,
+    identities: tuple[str, ...],
+) -> str:
+    """从 canonical Router 唯一标记区派生项目侧核心约束，禁止维护第二份人工 Router 正文。"""
+    matches = list(_RUNTIME_ROUTER_CONTRACT.finditer(canonical_text))
+    if len(matches) != 1:
+        raise ValueError("Runtime Router Projection 要求 canonical Router 恰好包含一个 project contract 标记区")
+    contract = matches[0].group(1).strip()
+    if not contract:
+        raise ValueError("Runtime Router Projection 的 project contract 不能为空")
+    return _project_runtime_text(contract, identities)
+
 def _append_frontmatter_description_rule(line: str) -> str:
     """把首轮沟通约束安全追加到 description，并保持常见单/双引号 YAML 标量合法。"""
     prefix, separator, raw_value = line.partition(":")
@@ -455,7 +432,7 @@ def project_runtime_skill_core(
     projected_frontmatter = "---\n" + "\n".join(projected_frontmatter_lines) + "\n---\n"
 
     if skill_name == "router":
-        projected_body = _RUNTIME_ROUTER_BODY
+        projected_body = _project_runtime_router_contract(text, identities)
     else:
         body = text[frontmatter_match.end() :]
         body = _ROUTING_BLOCK.sub("", body, count=1)
