@@ -7,6 +7,12 @@ import tempfile
 from unittest.mock import Mock
 import unittest
 
+from runtime.agent_skills_runtime.host_agent_projection import (
+    ROLE_MANIFEST_ASSET,
+    load_multi_agent_roles,
+    render_codex_agent,
+)
+
 
 ROOT = Path(__file__).resolve().parents[4]
 SKILLS = ROOT / ".agents" / "skills"
@@ -278,6 +284,16 @@ class DevelopmentPreflightGovernanceContractTest(unittest.TestCase):
                 ),
                 [],
             )
+
+    def test_runtime_reviewer_projection_preserves_preflight_and_completion_scenarios(self) -> None:
+        """Host role projection 必须从同一 Reviewer asset 保留两个场景，避免 Source/Runtime 漂移。"""
+        manifest = (CODING / "assets" / "multi-agent-roles.json").read_bytes()
+        roles = load_multi_agent_roles({ROLE_MANIFEST_ASSET: manifest})
+        reviewer = next(role for role in roles if role.id == "reviewer")
+        prompt = render_codex_agent(reviewer).decode("utf-8")
+
+        for marker in ("Development Preflight", "Completion", "latest Requirement"):
+            self.assertIn(marker, prompt)
 
     def test_project_facing_rules_keep_parent_gates_even_without_subagent(self) -> None:
         """Runtime 安装后的项目入口仍必须表达 Parent hard gate，而不是依赖 subagent 存在。"""
