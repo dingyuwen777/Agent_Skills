@@ -48,6 +48,37 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, text)
 
+    def test_first_review_requires_route_refresh_before_blocking_finding_set(self) -> None:
+        """复杂 Review 必须先升级 Systemic Context，再形成首轮 blocking Finding set。"""
+        core = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
+        for marker in (
+            "Systemic signal",
+            "route refresh",
+            "required RCA context",
+            "首轮完整 blocking Finding set",
+            "Findings 前",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, core)
+
+    def test_second_pass_review_does_not_rediscover_old_derivable_blockers(self) -> None:
+        """返修后的第二轮只能审既定边界，旧事实可推导漏项必须记首轮覆盖失败。"""
+        flow = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "Second-pass Review Contract",
+            "原 blocking findings",
+            "本轮新 diff",
+            "直接相邻",
+            "Acceptance Criteria",
+            "未改变的旧代码/旧事实",
+            "First-pass Coverage Miss",
+            "不得当作正常新增 Finding",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
     def test_review_execution_reference_defines_projection_states_and_bounded_scope(self) -> None:
         """执行 Reference 必须定义主要投影状态，并保持机制内完整、任务外有界。"""
         text = (
