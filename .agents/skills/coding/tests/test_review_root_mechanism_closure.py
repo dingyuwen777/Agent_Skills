@@ -32,11 +32,11 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             },
         )
 
-    def test_review_core_has_root_mechanism_projection_closure_gate(self) -> None:
+    def test_review_core_has_first_review_assembly_gate(self) -> None:
         """复杂 Review 必须在局部 Finding 前完成根机制投影闭环。"""
         text = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
         for marker in (
-            "Root-Mechanism Projection Closure Gate",
+            "First Review Assembly Gate",
             "Invariant",
             "Lifecycle",
             "Failure Boundary",
@@ -47,6 +47,61 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, text)
+
+    def test_first_review_assembly_finishes_before_author_handoff(self) -> None:
+        """第一次向作者发布 Findings 前必须完成固定 Review Assembly。"""
+        core = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
+        for marker in (
+            "First Review Assembly Gate",
+            "Review Coverage Map",
+            "一次 synthesis",
+            "不得向作者发布部分 Findings",
+            "递归开启 Full Review",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, core)
+
+    def test_second_pass_is_repair_verification_not_second_full_review(self) -> None:
+        """作者返修后的第二次 Review 必须以 repair delta 为边界。"""
+        flow = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "Second-pass Repair Verification",
+            "原 blocking findings",
+            "repair diff",
+            "直接相邻",
+            "Acceptance Criteria",
+            "未改变的旧基线",
+            "FIRST_REVIEW_ESCAPE",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
+    def test_first_review_escape_uses_one_fresh_assembly(self) -> None:
+        """第二轮旧漏审只允许一次 fresh blind assembly 后合并纠错。"""
+        flow = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "fresh blind Review Assembly",
+            "consolidated review-correction batch",
+            "不得递归",
+            "FIRST_REVIEW_ESCAPE",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
+    def test_reviewer_role_carries_publication_gate_to_host_subagent(self) -> None:
+        """现有 Reviewer 角色必须继承首轮发布门禁，不新增专用 Agent。"""
+        payload = json.loads(
+            (SKILLS / "coding" / "assets" / "multi-agent-roles.json").read_text(encoding="utf-8")
+        )
+        reviewer = next(item for item in payload["roles"] if item["id"] == "reviewer")
+        instructions = reviewer["instructions"]
+        for marker in ("First Review Assembly Gate", "partial findings", "repair diff", "single synthesis"):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, instructions)
 
     def test_review_execution_reference_defines_projection_states_and_bounded_scope(self) -> None:
         """执行 Reference 必须定义主要投影状态，并保持机制内完整、任务外有界。"""
@@ -123,7 +178,13 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
         for marker in (
             "root-mechanism-projection-closure",
             "first-pass-coverage",
+            "first-review-publication-closure",
+            "second-pass-delta-only",
+            "consolidated-correction-if-escape",
             "sibling-projection-churn",
+            "partial-finding-publication",
+            "old-baseline-finding-as-normal-second-pass",
+            "piecemeal-review-correction",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, joined)

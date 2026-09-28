@@ -47,10 +47,9 @@ Review **不复制** Coding 的编码、TDD、Git、兼容、安全、Contract�
 
 Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；仅 Evidence 成立且 `Scope=IN_SCOPE`、`Delivery Effect=BLOCKING`、`Action=AUTO_REPAIR` 的 Finding 自动返修。`OUT_OF_SCOPE + BLOCKING` 可以阻塞当前交付，但不会因此自动扩大当前修复范围。Finding 形成后映射 Router 的 **统一终态 / Handoff Contract**。
 
-## Root-Mechanism Projection Closure Gate（首轮机制闭环）
+## First Review Assembly Gate（首次发布门禁）
 
-复合机制首轮：`Invariant / Lifecycle / Failure Boundary / Projection / Evidence / Omission / Coverage Audit`。Systemic→`执行模式=诊断`；简单 Review 不升级。**机制内完整、任务外有界**。首轮可推导的同根 blocker 记 **First-pass Coverage Miss**。
-
+冻结 Target/Requirement/base-head，建立 **Review Coverage Map**；Assembly 深度见 [04_审查深度选择.md](references/04_审查深度选择.md)。blind 视角同一 Head 独立审，Parent **一次 synthesis** 后发布，**不得向作者发布部分 Findings或递归开启 Full Review**。Systemic signal 先 route refresh，按 **Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission / Coverage Audit** 闭环；首轮漏掉旧基线可推导 blocker = **First-pass Coverage Miss**。
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
