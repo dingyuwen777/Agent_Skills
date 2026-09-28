@@ -53,7 +53,6 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 `(Evidence+价值+去重) FOLLOW_UP_CANDIDATE → Persistence Authorization Gate → backlog+dedup → BACKLOG_ITEM → STOP`。不自动创建/执行/递归；无持久化授权即 STOP。`BACKLOG_ITEM` 当前任务不得继续执行；仅 `新 Requirement / 新 Task` 重建 facts/Scope/Auth/Risk/Evidence 后处理。
 
-
 ## 2. 正式 Skill Catalog
 
 正式 Skill 按 `.agents/skills/*/SKILL.md` 动态发现；下表仅导航，**不是分发白名单**。
