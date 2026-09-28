@@ -34,7 +34,7 @@ def _run(case_id: str, model: str, host: str, suffix: str) -> dict[str, object]:
     """构造只存在于单元测试内存中的 synthetic actual-shaped run；不作为 Release Evidence。"""
     case = _case(case_id)
     return {
-        "协议": "Agent Skills Outcome Eval Run/v1",
+        "协议": "Agent Skills Outcome Eval Run/v2",
         "运行标识": f"{case_id}-{model}-{host}-{suffix}",
         "用例标识": case_id,
         "运行类型": "actual",

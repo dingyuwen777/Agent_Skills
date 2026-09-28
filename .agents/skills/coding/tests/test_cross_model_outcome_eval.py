@@ -217,6 +217,83 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "证据收据"):
             validate_run(run)
 
+    def test_actual_run_protocol_v2_rejects_old_v1_artifact(self) -> None:
+        """Evidence Receipt 是破坏性 actual Contract，必须由 Run/v2 显式版本化。"""
+        self.assertEqual(RUN_PROTOCOL, "Agent Skills Outcome Eval Run/v2")
+        old = {
+            "协议": "Agent Skills Outcome Eval Run/v1",
+            "运行标识": "old-v1-run",
+            "用例标识": "old-v1",
+            "运行类型": "actual",
+            "任务": "验证旧 v1 actual artifact 被新 Contract 拒绝。",
+            "模型": {"名称": "model-a", "版本": "v1", "宿主": "host-a"},
+            "revision": "e" * 40,
+            "路由结果": "unavailable",
+            "上下文": "unavailable",
+            "完成结果": [],
+            "证据": [],
+            "违规": [],
+            "过程指标": {"工具调用": 0, "重试": 0, "用户干预": 0},
+            "遥测": {
+                "输入Token": "unavailable",
+                "输出Token": "unavailable",
+                "耗时毫秒": "unavailable",
+                "上下文字节": "unavailable",
+            },
+        }
+        with self.assertRaisesRegex(ValueError, "协议不受支持"):
+            validate_run(old)
+
+    def test_missing_forbidden_clear_is_failure_and_reduces_score(self) -> None:
+        """缺少 forbidden clear Evidence 时 PASS 与 score 必须保持一致。"""
+        case = {
+            "协议": CASE_PROTOCOL,
+            "用例标识": "clear-score",
+            "任务族": "负例",
+            "任务说明": "验证 forbidden clear 同时参与 PASS 与 score。",
+            "必需结果": ["done"],
+            "必需证据": ["direct"],
+            "禁止违规": ["forbidden"],
+            "上限": {},
+        }
+        run = {
+            "协议": RUN_PROTOCOL,
+            "运行标识": "clear-score-run",
+            "用例标识": "clear-score",
+            "运行类型": "actual",
+            "任务": "验证缺少 clear receipt 的评分。",
+            "模型": {"名称": "model-a", "版本": "v1", "宿主": "host-a"},
+            "revision": "f" * 40,
+            "路由结果": "unavailable",
+            "上下文": "unavailable",
+            "完成结果": ["done"],
+            "证据": ["direct"],
+            "违规": [],
+            "证据收据": [
+                {"类型": "result", "标识": "done", "来源": "host", "说明": "host observed result"},
+                {"类型": "evidence", "标识": "direct", "来源": "tool", "说明": "tool evidence"},
+            ],
+            "过程指标": {"工具调用": 1, "重试": 0, "用户干预": 0},
+            "遥测": {
+                "输入Token": "unavailable",
+                "输出Token": "unavailable",
+                "耗时毫秒": "unavailable",
+                "上下文字节": "unavailable",
+            },
+        }
+        failed = grade_run(case, run)
+        self.assertFalse(failed["通过"])
+        self.assertEqual(failed["缺失违规清除证据"], ["forbidden"])
+        self.assertEqual(failed["分数"], 80)
+
+        run["证据收据"].append(
+            {"类型": "clear", "标识": "forbidden", "来源": "host", "说明": "host observed no forbidden violation"}
+        )
+        passed = grade_run(case, run)
+        self.assertTrue(passed["通过"])
+        self.assertEqual(passed["缺失违规清除证据"], [])
+        self.assertEqual(passed["分数"], 100)
+
     def test_context_effectiveness_report_is_result_aware_not_size_only(self) -> None:
         """Context effectiveness 必须联合结果指标，不能把更小 Context 本身当成 PASS。"""
         self.assertTrue(hasattr(outcome_eval, "REASONING_QUALIFICATION_CASES"))

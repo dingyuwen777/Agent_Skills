@@ -29,7 +29,7 @@ affected_paths:
   - README.md
 contracts:
   - Task Route v2 truth-state
-  - Outcome Eval Evidence Receipt
+  - Outcome Eval Run v2 / Evidence Receipt
   - Engineering / reasoning-source qualification profiles
 data_changes: []
 ---
@@ -225,10 +225,11 @@ Router/Coding routing metadata、Runtime Task Route validator/evaluator、Outcom
 | V1 | main 0bda190c | canonical read + Issue #327 | confirmed | 起始事实与 Requirement Source |
 | V2 | head 3e8e96980bfe435a74e35e70326c13df4fa8a2c7 / GitHub Actions run 36429308261 | selected self-contained tests | FAILED：48 tests 中 8 failures + 1 error；mixed-route、Task Route completeness、actual receipt、reasoning profile/effectiveness 均按预期 Red | 新回归在旧实现上真实暴露 #327 AC1–AC5 缺口 |
 | V3 | head 235c9205e0b7c34769652c16d28a9f432a357a82 / GitHub Actions run 36434077058 | compile + CLI smoke + full selected semantic suite | compile/smoke PASS；Ran 753 tests → OK；既有 absolute/context migration budgets 均 Green | AC1–AC6 当前实现与内容守恒已闭合；唯一 CI failure 是 Change 尚为 in_progress 的预期 Ready Gate |
+| V4 | head f5bfb15e7899692cb2d4a8120603745159c62da9 / fresh final Review #5340293572 | A1/A2 + Contract reverse audit | Finding F-327-01：actual Evidence Receipt 已形成破坏性新语义但 Run protocol 仍为 v1；missing_clear 失败与 score 不一致 | 同根 Repair Batch：Run 升 v2 + score 同步 clear Evidence，修复后只做 delta re-review |
 
 ## 未验证内容与剩余风险
 
-- Ready 后仍需 current-head required CI、适用三平台 Runtime Package 与 final Review；merge 后仍需 main-fresh/archive/closure/cleanup。
+- current-head core semantic 已 Green；F-327-01 Repair Batch 后需重新取得三平台 Runtime Package 与 delta final Review；merge 后仍需 main-fresh/archive/closure/cleanup。
 - 真实跨宿主 actual runs 不属于本次普通源码交付 required gate；本次建立可信 Evidence Receipt/qualification Contract，但不冒充已完成真实跨宿主 qualification。
 
 ## 交付状态

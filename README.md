@@ -563,7 +563,7 @@ python .agents/skills/coding/scripts/ready_check.py --root . --require-active-re
 
 ### 独立跨宿主 Behavior Qualification
 
-[`.github/workflows/behavior-qualification.yml`](.github/workflows/behavior-qualification.yml) 保留为**独立的真实跨模型 / 跨宿主效果验证**，但不再作为普通 Release 的前置条件。它不调用模型 Provider，只校验真实支持宿主已经产生的脱敏 `Agent Skills Outcome Eval Run/v1`：
+[`.github/workflows/behavior-qualification.yml`](.github/workflows/behavior-qualification.yml) 保留为**独立的真实跨模型 / 跨宿主效果验证**，但不再作为普通 Release 的前置条件。它不调用模型 Provider，只校验真实支持宿主已经产生的脱敏 `Agent Skills Outcome Eval Run/v2`：
 
 ```text
 当前 HIGH_VALUE_CONVERGENCE_CASES

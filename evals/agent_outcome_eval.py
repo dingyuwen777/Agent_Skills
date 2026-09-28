@@ -15,7 +15,7 @@ from typing import Any
 
 
 CASE_PROTOCOL = "Agent Skills Outcome Eval Case/v1"
-RUN_PROTOCOL = "Agent Skills Outcome Eval Run/v1"
+RUN_PROTOCOL = "Agent Skills Outcome Eval Run/v2"
 REPORT_PROTOCOL = "Agent Skills Outcome Eval Report/v1"
 UNAVAILABLE = "unavailable"
 
@@ -370,7 +370,7 @@ def grade_run(case: Mapping[str, Any], run: Mapping[str, Any]) -> dict[str, Any]
     score = round(
         40 * coverage(normalized_case["必需结果"], result_set)
         + 30 * coverage(normalized_case["必需证据"], evidence_set)
-        + (20 if not forbidden else 0)
+        + (20 if not forbidden and not missing_clear else 0)
         + (10 if not exceeded else 0)
     )
     passed = (
