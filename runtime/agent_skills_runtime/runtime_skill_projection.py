@@ -320,7 +320,7 @@ def _project_runtime_router_contract(
     canonical_text: str,
     identities: tuple[str, ...],
 ) -> str:
-    """从 canonical Router 现有规则抽取项目侧核心语义，不维护第二份人工 Router 正文。"""
+    """把 canonical Router 的项目事实/决策核心整体投影到 Runtime，避免逐条规则白名单和第二份正文。"""
     section_match = _RUNTIME_ROUTER_SECTION_ONE.search(canonical_text)
     if section_match is None:
         if "# Agent Skills Router" in canonical_text:
@@ -339,65 +339,29 @@ def _project_runtime_router_contract(
         )
         return _project_runtime_text(fixture_contract, identities).strip()
 
-    section = section_match.group(1)
-    lines = section.splitlines()
-
-    def _first_line_containing(marker: str) -> str:
-        """从 canonical Router 当前段落提取唯一高价值规则行。"""
-        matches = [line.strip() for line in lines if marker in line]
-        if len(matches) != 1:
-            raise ValueError(f"Runtime Router Projection 要求 canonical 规则唯一可定位：{marker}")
-        return matches[0]
-
-    fact_lines: list[str] = []
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("### 1.1 "):
-            break
-        if stripped:
-            fact_lines.append(stripped)
-    if not fact_lines:
-        raise ValueError("Runtime Router Projection 缺少当前项目事实规则")
-
-    decision_states = (
-        "RULE_RESOLVED",
-        "FACT_RESOLVABLE",
-        "CONVENTION_RESOLVED",
-        "DEFAULT_RESOLVED",
-        "SELF_DECIDE",
-        "OWNER_DECISION",
-        "AUTHORIZATION_REQUIRED",
-        "REQUIRED_USER_INPUT",
-        "CAPABILITY_BLOCKER",
+    section = section_match.group(1).strip()
+    section = section.replace(
+        "### 1.1 核验、决策、授权、证据与完成",
+        "## 决策权与用户提问",
+        1,
     )
-    decision_heading = _first_line_containing("#### Decision Authority Contract / Human Input Admission Gate")
-    decision_lines = [_first_line_containing(f"- `{state}`") for state in decision_states]
-    decision_gate = _first_line_containing("**Human Input Admission Gate**")
-    authorization = _first_line_containing("**Authorization Continuity**")
-    fresh_evidence = _first_line_containing("**Fresh Evidence Contract**")
-    blocker = _first_line_containing("**阻塞按依赖边界传播**")
-    requested_outcome = _first_line_containing("**Requested Outcome = Completion Scope**")
-
-    followup_heading = "### Cross-Skill Follow-up Lifecycle"
-    followup_index = next(
-        (index for index, line in enumerate(lines) if line.strip() == followup_heading),
-        None,
+    section = section.replace(
+        "### Cross-Skill Follow-up Lifecycle",
+        "## 超范围后续事项",
+        1,
     )
-    if followup_index is None:
-        raise ValueError("Runtime Router Projection 缺少 Follow-up Lifecycle")
-    followup_lines = [line.strip() for line in lines[followup_index + 1 :] if line.strip()]
-    if not followup_lines:
-        raise ValueError("Runtime Router Projection 缺少 Follow-up Lifecycle 正文")
-    followup = "\n".join(followup_lines)
-    followup = followup.replace("仅 `新 Requirement / 新 Task`", "未来只有新的 Requirement / Task")
+    section = section.replace("Cross-Skill", "跨域")
+    section = section.replace(
+        "仅 `新 Requirement / 新 Task`",
+        "未来只有新的 Requirement / Task",
+    )
 
     examples_match = _RUNTIME_ROUTER_EXAMPLES.search(canonical_text)
     if examples_match is None:
         raise ValueError("Runtime Router Projection 缺少低歧义风险示例")
-    example_lines = examples_match.group(1).splitlines()
     risk_rows = [
         line.strip()
-        for line in example_lines
+        for line in examples_match.group(1).splitlines()
         if line.strip().startswith("| L1 机械修改 |")
         or line.strip().startswith("| L2 Feature |")
         or line.strip().startswith("| L3 public API |")
@@ -408,13 +372,8 @@ def _project_runtime_router_contract(
     contract = "\n\n".join(
         (
             "# Project Engineering Guardrails",
-            "## 当前项目事实\n\n" + "\n".join(fact_lines),
-            "## 决策权与用户提问\n\n"
-            + "\n".join([decision_heading, *decision_lines, decision_gate, authorization]),
-            "## 权限、验证与完成\n\n"
-            + "\n".join((fresh_evidence, blocker, requested_outcome)),
+            "## 当前项目事实与治理\n\n" + section,
             "## 风险等级\n\n" + "\n".join(risk_rows),
-            "## 超范围后续事项\n\n" + followup,
         )
     )
     return _project_runtime_text(contract, identities)
