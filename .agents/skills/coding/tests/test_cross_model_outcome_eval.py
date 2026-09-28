@@ -6,6 +6,7 @@ from pathlib import Path
 
 from evals.agent_outcome_eval import (
     CASE_PROTOCOL,
+    HIGH_VALUE_CONVERGENCE_CASES,
     RUN_PROTOCOL,
     compare_runs,
     grade_run,
@@ -195,6 +196,10 @@ class CrossModelOutcomeEvalTest(unittest.TestCase):
                 "负例",
             }.issubset(families)
         )
+
+    def test_high_value_registry_requires_first_pass_review_projection_case(self) -> None:
+        """首轮同根投影覆盖必须进入高价值跨模型 qualification registry。"""
+        self.assertIn("review-root-mechanism-projection", HIGH_VALUE_CONVERGENCE_CASES)
 
     def test_unrun_model_must_not_be_reported_as_verified(self) -> None:
         """比较报告只能声明实际存在 run artifact 的模型已验证。"""
