@@ -131,7 +131,7 @@ Requirement Source：GitHub Issue #317。用户要求按已讨论的“1 个 Req
 
 1. Coding Core：增加 Development Preflight / Requirement Change / Completion 三个薄 Gate，并修 Source Mode 必读闭包。
 2. ref27：明确 Start Cost Check 与 Ready Redundancy Check 两个时机；Start 只问 broad job / duplicate evidence / duplicate setup-install-build。
-3. ref17/ref29：把 platform write 前 canonical candidate + create validation 固化为不可绕过 Contract；Requirement 实质变化先更新 Acceptance Owner。
+3. ref17/ref29：把 platform write 前与当前 lifecycle 匹配的 pre-write validation 固化为不可绕过 Contract；新建使用 canonical candidate + create-mode，历史 open 实例按既有 live Contract；Requirement 实质变化先更新 Acceptance Owner。
 4. governance_contract：增加从 canonical Issue Form / PR Template 动态生成 candidate 的 prepare API/CLI，并由现有 create validator自校验；不硬编码第二份 heading 表。
 5. ref09 + multi-agent-roles：Reviewer 增加 preflight/completion scope；Parent hard gate 永远存在，宿主无 subagent 自动单 Agent执行。
 6. project-facing managed projection / USAGE 与永久回归同步；按 Mutation Impact Audit 证明 Source/Runtime parity，只有真实受影响 Runtime 代码才修改。
@@ -159,7 +159,7 @@ Requirement Source：GitHub Issue #317。用户要求按已讨论的“1 个 Req
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
 | R1 | 实质 Implementation 开工必做轻量 CI Cost/Evidence Check | #317 / AC1 | not_satisfied | 待 Coding Core/ref27/tests |
-| R2 | Issue/PR platform write 前 create validation，失败禁止 writer，写后同检 | #317 / AC2 | not_satisfied | 待 Core/ref17/ref29/tests |
+| R2 | 新建 Issue/PR 使用 create-mode 写前校验；已有实例按 lifecycle 使用 create/live，失败禁止 writer，写后同检 | #317 / AC2 | not_satisfied | 待 Core/ref17/ref29/tests |
 | R3 | governance_contract 提供 canonical candidate preparation | #317 / AC3 | not_satisfied | 待 script/tests |
 | R4 | Reviewer 支持 preflight/completion，不新增第六角色 | #317 / AC4 | not_satisfied | 待 ref09/role/tests |
 | R5 | Requirement 实质变化先更新 Owner，仅影响项 stale | #317 / AC5 | not_satisfied | 待 Core/ref17/ref09/tests |
