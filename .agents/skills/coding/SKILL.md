@@ -125,7 +125,7 @@ CMakeLists.txt ≠ Linux-only
 | 新/当前 Change 使用 Completion Gate、正式仓库初始化、L3 或交付单元 | [10_完成定义追溯门禁.md](references/10_完成定义追溯门禁.md) |
 | L2/L3 的 Requirement/Feature/Bug/Refactor，或任意系统性诊断、Incident、Performance | [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md) |
 | Frontend / Web UI / Design-to-Code / Figma-to-code / 设计稿转代码；新增页面、跨页面 UI 或需要选择前端技术方案 | [16_前端与Design-to-Code实施规则.md](references/16_前端与Design-to-Code实施规则.md) |
-| 实质 Implementation / Issue·PR governance write / CI·Workflow 变更 | Core 先做 Development Preflight；治理写入读 [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md)+[29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)；CI 风险读 [27_CI_Workflow健康检查与Actions清理.md](references/27_CI_Workflow健康检查与Actions清理.md)，CI 门禁变更再加 [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md)+[19_CI审查升级门禁.md](references/19_CI审查升级门禁.md) |
+| Implementation / Issue·PR治理 / CI变更 | Preflight；治理写入读 [17](references/17_需求来源与PR追溯治理.md)+[29](references/29_治理资产机器Contract.md)；CI成本读 [27](references/27_CI_Workflow健康检查与Actions清理.md)，CI门禁变更加 [07](references/07_通用验证与证据策略.md)+[19](references/19_CI审查升级门禁.md) |
 | L2/L3 需要规划或审计 Validation Matrix | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md)；L1 targeted validation 由 [20_L1轻量实现与验证路径.md](references/20_L1轻量实现与验证路径.md) 负责 |
 | Web/API/PostgreSQL/Provider 等专项边界真实存在 | [08_分层测试与验收策略.md](references/08_分层测试与验收策略.md) |
 | 跨模块、跨消费者、Contract/Schema/Migration/Owner/数据边界 | [06_仓库边界数据交换与条件式约束.md](references/06_仓库边界数据交换与条件式约束.md) |
@@ -134,7 +134,7 @@ CMakeLists.txt ≠ Linux-only
 | 首次安装/升级 Agent_Skills、创建/补充目标项目 AGENTS、首次 Project Governance Bootstrap、治理事实漂移校准或修复 managed block | [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) + [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md) |
 | Runtime Bundle/Routing Manifest/Task Route/MCP/Project Payload/安装升级或 Release identity | [13_本地MCP_Runtime分发与原文上下文加载.md](references/13_本地MCP_Runtime分发与原文上下文加载.md) |
 | Agent Outcome Eval / 跨模型规则效果 / Skill heuristic 生命周期 | [31_跨模型效果评测与规则有效性.md](references/31_跨模型效果评测与规则有效性.md) |
-| Git/PR/Release/Delivery、依赖变化、安全边界、最终交付报告或宿主能力降级 | [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md) + [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md)；请求终点为提交 PR / 合并交付时再读 [23_端到端交付与合并后收尾.md](references/23_端到端交付与合并后收尾.md) |
+| Git/PR/Release/Delivery、依赖/安全/宿主边界 | [14](references/14_Git交付依赖安全与宿主能力边界.md)+[17](references/17_需求来源与PR追溯治理.md)；提交PR/合并交付再读 [23](references/23_端到端交付与合并后收尾.md) |
 | Skill/reference/模板/项目 Overlay 的精简、重组、拆分、合并、改名、迁移或通用化 | [15_规则内容守恒与Skill维护.md](references/15_规则内容守恒与Skill维护.md) |
 
 不要要求用户重复提供能够从仓库、缓存或工具确认的信息。只读取当前任务真正需要的事实和 reference，不用“全仓全部读一遍”替代理解调用链。
@@ -221,16 +221,13 @@ python <skill>/scripts/coding.py new-change --root <repo> \
 只有有界调查后仍无法确认、且会实质改变业务语义/验收、public API/ABI/CLI/格式/Contract、Schema/Migration/数据、权限/隐私/安全、外部 Provider 费用、SLO/RPO/RTO、破坏性兼容、不可逆操作或重大技术路线时才**提请用户 / Owner 决策**。给推荐、依据、必要备选与影响；有依赖的决策优先解决最上游问题，彼此独立且都必须在实施前决定的重大事项一次形成有界 Decision Package，不人为拆成多轮。已固化决定**不重复确认**；普通可逆细节和可核验事实不形成审批点；确认的决定同步正式事实源及适用 Change。
 
 ### Development Preflight Gate
-
-实质 Implementation 前校准 Requirement / Governance / CI / Delivery。新建 Issue/PR 必须 candidate create PASS 后才 `platform write`，已有实例按 lifecycle 用 create/live；CI 只查 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**，有风险才深入对应 Reference。L1 可 inline；Reviewer 可增强但 **Parent hard gate** 不可省。
+实质 Implementation 前校准 Requirement/Governance/CI/Delivery；新建 Issue/PR 先 validate 再 `platform write`。CI 仅查 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**。L1 可 inline，**Parent hard gate** 始终有效。
 
 ### Requirement Change Gate
-
-只有**语义变化**才先更新 Requirement Source，并仅让**受影响**计划/Handoff/Evidence 成为 `STALE_RESULT`；**非语义**编辑不全量重跑，Change/PR 不成为需求 Owner。
+**语义变化**先更新 Requirement Source，仅让**受影响**结果 `STALE_RESULT`；**非语义**编辑不全量重跑。
 
 ### Completion Gate
-
-PR Ready/完成前重读**最新 Requirement Source**并逐 AC 映射当前直接 Evidence；applicable unresolved 即阻止 Ready，CI Green/旧 Preflight 不替代完成审计。
+PR Ready/完成前重读**最新 Requirement Source**逐 AC 验 Evidence；applicable unresolved 阻止 Ready。
 
 ### 4.8 制定可验证计划
 
