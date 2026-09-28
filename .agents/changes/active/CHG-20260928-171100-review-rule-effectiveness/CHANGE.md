@@ -57,12 +57,12 @@ data_changes: []
 
 ## 目标
 
-第一轮 Review 对当时可见事实能推导的同根主要 blocker 一次性收敛；若第二轮发现旧基线漏审，必须先执行一次 Coverage Recovery，把未改变旧基线下仍可推导的 blocker 一次性收齐成一个合并返修批次；恢复完成后不得继续以旧基线问题形成第三轮、第四轮挤牙膏返修。
+Reviewer 的探索过程不得直接暴露给作者：第一次发布 Findings 前，必须在同一 PR Head 上完成主审、风险/需求覆盖、同根投影闭环和一次独立遗漏扫描；只有内部 coverage pass 不再新增旧基线 blocker 后才一次性发布。作者返修后的 re-review 只审原 Findings、repair diff、直接相邻回归和 Acceptance；若发现 first-review escape，也必须先在 Reviewer 内部重新收敛，再最多发布一个 consolidated correction batch，不能逐条让作者参与 Reviewer 的探索循环。
 
 ## 成功标准
 
-- [ ] AC1：Systemic signal → route refresh/load RCA → projection closure → 首轮完整 blocking Finding set。
-- [ ] AC2：re-review 发现旧基线 First-pass Coverage Miss 时，必须先完成一次 Coverage Recovery Gate，形成 consolidated recovery finding set 并作为一个合并返修批次；恢复后再次出现旧基线可推导 blocker 时停止自动返修并判定 Review 质量门禁失败。
+- [ ] AC1：First Review Publication Gate：同一 Head 上完成主审 + coverage map + 必要 Systemic/Projection Closure + blind omission pass；内部未收敛前不得向作者发布部分 Findings，发布时一次性给出当前可推导的完整 blocking Finding set。
+- [ ] AC2：Second-pass Repair Verification：re-review 只覆盖原 Findings、repair diff、直接相邻回归与 Acceptance；若发现 first-review escape，先内部重新执行 Publication Gate 并最多输出一个 consolidated review-correction batch，不逐条、多轮把旧问题退给作者。
 - [ ] AC3：关键 hard rule 有真实 Task Route positive witness 与必要 negative over-routing 回归。
 - [ ] AC4：review-root-mechanism-projection 进入 HIGH_VALUE_CONVERGENCE_CASES。
 - [ ] AC5：Runtime 协议、Stable IDs、五角色集合不变。
@@ -97,7 +97,7 @@ data_changes: []
 
 ## 最小充分方案
 
-1. 明确 Review 首轮契约、Systemic route refresh 时序和第二轮 Coverage Recovery Gate；旧基线漏审必须先一次性收齐再返修。
+1. 明确 First Review Publication Gate 与 Second-pass Repair Verification：Reviewer 内部先收敛，再对作者一次性发布。
 2. 给 delivery hard rule 增加治理机器 Contract 显式 dependency。
 3. 增加最小 hard-rule positive/negative reachability tests。
 4. 把 review-root-mechanism-projection 加入高价值 Outcome Eval registry。
@@ -115,8 +115,8 @@ data_changes: []
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 首轮完整 blocking Finding set | #323 / AC1 | not_satisfied | 待实现与验证 |
-| R2 | 两轮 re-review scope、First-pass Coverage Miss 与 Coverage Recovery Gate | #323 / AC2 | not_satisfied | 待实现与验证 |
+| R1 | First Review Publication Gate 与首轮完整 blocking Finding set | #323 / AC1 | not_satisfied | 待实现与验证 |
+| R2 | Second-pass Repair Verification 与 first-review escape 内部纠错 | #323 / AC2 | not_satisfied | 待实现与验证 |
 | R3 | hard rule reachability 正反回归 | #323 / AC3 | not_satisfied | 待实现与验证 |
 | R4 | 高价值 registry 纳入 Review projection case | #323 / AC4 | not_satisfied | 待实现与验证 |
 | R5 | Runtime/Stable IDs/角色不变 | #323 / AC5 | not_satisfied | 待 diff/回归证明 |
@@ -126,7 +126,7 @@ data_changes: []
 
 | 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
 | --- | --- | --- | --- |
-| Review Core/Reference | 首轮 Review、route refresh 与 Coverage Recovery 契约 | 防止旧基线问题分轮挤牙膏 | R1-R2 / E1-E2 |
+| Review Core/Reference | Publication Gate、blind omission pass、delta-scoped re-review | 防止把 Reviewer 探索过程变成作者返修循环 | R1-R2 / E1-E2 |
 | Delivery Reference metadata | 增加治理 Contract dependency | hard rule 可达 | R3 / E3 |
 | Review/routing tests | positive/negative route 与 re-review 回归 | 机器保护 | R1-R3 |
 | Outcome Eval registry/tests | 纳入 review-root-mechanism-projection | 行为回归入口 | R4 / E4 |
@@ -143,7 +143,7 @@ data_changes: []
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | Review closure、re-review scope、Outcome Eval targeted tests |
+| 行为 / 单元 / 组件 | required | Publication Gate、blind omission pass、repair-delta re-review、Outcome Eval targeted tests |
 | 接口 / 契约 | required | routing dependency、Source/Runtime conformance、Stable IDs |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 无持久化或外部 Runtime 行为变化 |
 | 用户 / 工作流验收 | required | 真实 Task Route witness：Systemic Review 与 develop-and-deliver |
