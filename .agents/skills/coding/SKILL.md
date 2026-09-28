@@ -125,7 +125,7 @@ CMakeLists.txt ≠ Linux-only
 | 新/当前 Change 使用 Completion Gate、正式仓库初始化、L3 或交付单元 | [10_完成定义追溯门禁.md](references/10_完成定义追溯门禁.md) |
 | L2/L3 的 Requirement/Feature/Bug/Refactor，或任意系统性诊断、Incident、Performance | [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md) |
 | Frontend / Web UI / Design-to-Code / Figma-to-code / 设计稿转代码；新增页面、跨页面 UI 或需要选择前端技术方案 | [16_前端与Design-to-Code实施规则.md](references/16_前端与Design-to-Code实施规则.md) |
-| Implementation / Validation Matrix / CI | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md)；开工 CI Cost 读 [27_CI_Workflow健康检查与Actions清理.md](references/27_CI_Workflow健康检查与Actions清理.md)，CI门禁变更再加 [19_CI审查升级门禁.md](references/19_CI审查升级门禁.md)；L1 仍走 [20_L1轻量实现与验证路径.md](references/20_L1轻量实现与验证路径.md) |
+| L2/L3 需要规划或审计 Validation Matrix；新增/修改永久 CI/Workflow 或测试/发布门禁 | [07_通用验证与证据策略.md](references/07_通用验证与证据策略.md)；L1 targeted validation 由 [20_L1轻量实现与验证路径.md](references/20_L1轻量实现与验证路径.md) 负责 |
 | Web/API/PostgreSQL/Provider 等专项边界真实存在 | [08_分层测试与验收策略.md](references/08_分层测试与验收策略.md) |
 | 跨模块、跨消费者、Contract/Schema/Migration/Owner/数据边界 | [06_仓库边界数据交换与条件式约束.md](references/06_仓库边界数据交换与条件式约束.md) |
 | 多人、多 Agent、多个分支或 Active Change 并行 | [09_多人和多智能体并行协作.md](references/09_多人和多智能体并行协作.md) |
@@ -201,7 +201,7 @@ python <skill>/scripts/coding.py status --root <repo> --json
 
 ### 4.6 分类 L1/L2/L3 并固化任务契约
 
-编码前建立最小任务契约：当前事实、目标 / 非目标、可观察成功标准、不变项、受影响能力 / Owner、最小方案、直接 Evidence 和真实未知项。输入输出、复用点、预计文件、公共接口、数据 / Schema / Migration、依赖、文档、部署 / 回滚与 Git 授权只在本次触及对应边界时展开；不适用项不逐项提问。详细字段按 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)，项目 Overlay 的额外要求仍保留。
+编码前建立最小任务契约：事实、目标/非目标、Acceptance、不变项、Owner、最小方案、直接 Evidence、未知项；接口/数据/依赖/文档/部署/Git 等只在触及对应边界时展开，详细字段按 [05_设计实施与根因调试.md](references/05_设计实施与根因调试.md)。**Development Preflight Gate** 同时校准 Requirement/Governance/CI/Delivery：CI 只问 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**，命中再读 [27_CI_Workflow健康检查与Actions清理.md](references/27_CI_Workflow健康检查与Actions清理.md)，CI/Workflow 变更再读 [19_CI审查升级门禁.md](references/19_CI审查升级门禁.md)；Issue/PR **platform write** 前读 [17_需求来源与PR追溯治理.md](references/17_需求来源与PR追溯治理.md)+[29_治理资产机器Contract.md](references/29_治理资产机器Contract.md)并完成写前校验。
 
 L1 可在工作说明内维护。L2 必须有**最小充分任务契约**，但可由本轮用户要求、PR body、Issue/工单、Spec/OpenSpec/RFC 或项目既有载体承载；只有跨 Owner/PR/会话、复杂依赖/阶段、正式审计、项目规则或 Completion Gate 等**持久治理价值**出现时才升级为独立持久施工契约。L3 必须有稳定持久契约并补方案比较、公共兼容、Migration/部署/回滚和安全/运维风险。项目 Overlay 可以更严格。
 
@@ -218,15 +218,6 @@ python <skill>/scripts/coding.py new-change --root <repo> \
 ### 4.7 处理真正需要用户/Owner决策的事项
 
 只有有界调查后仍无法确认、且会实质改变业务语义/验收、public API/ABI/CLI/格式/Contract、Schema/Migration/数据、权限/隐私/安全、外部 Provider 费用、SLO/RPO/RTO、破坏性兼容、不可逆操作或重大技术路线时才**提请用户 / Owner 决策**。给推荐、依据、必要备选与影响；有依赖的决策优先解决最上游问题，彼此独立且都必须在实施前决定的重大事项一次形成有界 Decision Package，不人为拆成多轮。已固化决定**不重复确认**；普通可逆细节和可核验事实不形成审批点；确认的决定同步正式事实源及适用 Change。
-
-### Development Preflight Gate
-实现前校准 Requirement/Governance/CI/Delivery：治理写入读 [17](references/17_需求来源与PR追溯治理.md)+[29](references/29_治理资产机器Contract.md)，完整交付读 [23](references/23_端到端交付与合并后收尾.md)；CI 查 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**。Issue/PR 先 validate 再 `platform write`；**Parent hard gate** 不依赖 Reviewer。
-
-### Requirement Change Gate
-**语义变化**先更新 Requirement Source，仅**受影响**结果 `STALE_RESULT`；**非语义**编辑不全量重跑。
-
-### Completion Gate
-Ready 前重读**最新 Requirement Source**逐 AC 验 Evidence；unresolved 阻止 Ready。
 
 ### 4.8 制定可验证计划
 
@@ -295,9 +286,7 @@ Bug 修复必须有回归证据。测试验证真实行为，不只验证 Mock �
 
 ### 4.13 Completion Audit、两阶段 Review 与新鲜验证
 
-对 `completion_gate: required` 的 Coding Change 或项目等价 gated L2/L3 单元，Ready 前执行完整 Completion Audit：重新读取上游正式事实源，独立重建完成定义，比较“上游要求 → Change”和“Change → 实现/测试/文档”，执行适用反向能力审计，复核 Validation Matrix，清零 `not_satisfied`。
-
-普通轻量 L2 不创建形式化 Audit，但强完成结论前至少重新读取当前 Requirement Source/任务事实，核对目标、范围/非目标、不变项、required 新鲜验证和未验证/延期/未知项。
+对 `completion_gate: required` 的 Change/等价 gated L2/L3，Ready 前按 [10_完成定义追溯门禁.md](references/10_完成定义追溯门禁.md) 重读上游、核对覆盖/反向边界/Validation Matrix 并清零 `not_satisfied`；轻量 L2 做等价最小核对。**Requirement Change Gate**：只有**语义变化**才先更新 Requirement Source，并仅使**受影响**计划/Handoff/Evidence 成为 `STALE_RESULT`，**非语义**编辑不全量重跑。**Completion Gate**：强完成结论前重读**最新 Requirement Source**，逐 AC 映射当前直接 Evidence；applicable unresolved 即阻止 Ready。
 
 使用 `coding-change/v1` 时可运行：
 
