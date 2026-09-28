@@ -42,7 +42,7 @@ def _case(
     }
 
 
-L1_CORE = ["coding.reference.02", "coding.reference.21", "coding.reference.28"]
+L1_CORE = ["coding.reference.02", "coding.reference.21"]
 LIGHT_L2_CORE = ["coding.reference.02", "coding.reference.07"]
 GATED_L2_CORE = LIGHT_L2_CORE + ["coding.reference.04", "coding.reference.10", "coding.reference.19"]
 REVIEW_CORE = GATED_L2_CORE + ["coding.reference.11", "review.reference.01"]
@@ -74,7 +74,7 @@ CASES = [
     _case("L1 mechanical", {"执行模式": ["实现"], "风险": ["L1"]}, L1_CORE, ["coding"], "L1", forbidden_references=["coding.reference.04", "coding.reference.05", "coding.reference.07", "coding.reference.10", "coding.reference.11", "coding.reference.19"]),
     _case("L1 known-root Bug", {"执行模式": ["实现"], "阶段": ["缺陷修复"], "风险": ["L1"]}, L1_CORE, ["coding"], "L1", forbidden_references=["coding.reference.04", "coding.reference.05", "coding.reference.07", "coding.reference.10", "coding.reference.11", "coding.reference.19"]),
     _case("L1 unknown-root Bug", {"执行模式": ["诊断", "实现"], "阶段": ["缺陷修复"], "风险": ["L1"]}, L1_CORE + ["coding.reference.05"], ["coding"], "L1", forbidden_references=["coding.reference.04", "coding.reference.07", "coding.reference.10", "coding.reference.11", "coding.reference.19"]),
-    _case("L2 Feature", {"执行模式": ["实现"], "阶段": ["功能开发"], "风险": ["L2"], "能力": ["测试"]}, LIGHT_L2_CORE + ["coding.reference.05", "coding.reference.22", "coding.reference.28"], ["coding"], "L2", forbidden_references=["coding.reference.04", "coding.reference.10", "coding.reference.11", "coding.reference.19", "coding.reference.21"]),
+    _case("L2 Feature", {"执行模式": ["实现"], "阶段": ["功能开发"], "风险": ["L2"], "能力": ["测试"]}, LIGHT_L2_CORE + ["coding.reference.05", "coding.reference.22"], ["coding"], "L2", forbidden_references=["coding.reference.04", "coding.reference.10", "coding.reference.11", "coding.reference.19", "coding.reference.21"]),
     _case("Light L2 targeted validation", {"执行模式": ["验证"], "风险": ["L2"]}, LIGHT_L2_CORE, ["coding"], "L2", forbidden_references=["coding.reference.04", "coding.reference.10", "coding.reference.11", "coding.reference.19", "coding.reference.21"]),
     _case("Gated L2", {"执行模式": ["实现"], "风险": ["L2"], "治理": ["要求完成门禁"]}, GATED_L2_CORE, ["coding"], "L2", forbidden_references=["coding.reference.11", "coding.reference.21"]),
     _case("L3 public API", {"执行模式": ["方案", "实现"], "阶段": ["需求设计", "功能开发"], "风险": ["L3"], "范围": ["公共契约", "API"]}, GATED_L2_CORE + ["coding.reference.05", "coding.reference.06"], ["coding"], "L3"),
@@ -98,7 +98,7 @@ CASES = [
     _case("Multi-Agent", {"执行模式": ["实现"], "风险": ["L2"], "治理": ["多 Agent"], "能力": ["多 Agent"]}, LIGHT_L2_CORE + ["coding.reference.09", "coding.reference.19"], ["coding"], "L2"),
     _case("Multiple Active Changes", {"执行模式": ["实现"], "风险": ["L2"], "治理": ["多个活动变更"]}, LIGHT_L2_CORE + ["coding.reference.04", "coding.reference.09", "coding.reference.19"], ["coding"], "L2"),
     _case("Dependency Upgrade", {"执行模式": ["实现"], "风险": ["L2"], "工具链": ["已确认"], "意图": ["依赖升级"]}, LIGHT_L2_CORE + ["coding.reference.03", "coding.reference.11", "coding.reference.15"], ["coding"], "L2"),
-    _case("CI Workflow Change", {"执行模式": ["实现", "验证"], "风险": ["L3"], "治理": ["CI 变更"]}, GATED_L2_CORE + ["coding.reference.11"], ["coding"], "L3"),
+    _case("CI Workflow Change", {"执行模式": ["实现", "验证"], "风险": ["L3"], "治理": ["CI 变更"]}, GATED_L2_CORE + ["coding.reference.11", "coding.reference.28"], ["coding"], "L3"),
     _case("Issue Governance", {"执行模式": ["Git"], "风险": ["L2"], "意图": ["Issue/工单治理"]}, LIGHT_L2_CORE + ["coding.reference.18", "coding.reference.30"], ["coding"], "L2"),
     _case("PR Governance", {"执行模式": ["Git"], "风险": ["L2"], "意图": ["PR治理"]}, LIGHT_L2_CORE + ["coding.reference.18", "coding.reference.30"], ["coding"], "L2"),
     _case("Git Delivery", {"执行模式": ["Git"], "阶段": ["交付"], "风险": ["L2"], "意图": ["Git 交付"], "能力": ["Git"]}, GATED_L2_CORE + ["coding.reference.03", "coding.reference.11", "coding.reference.15", "coding.reference.18"], ["coding"], "L2"),
