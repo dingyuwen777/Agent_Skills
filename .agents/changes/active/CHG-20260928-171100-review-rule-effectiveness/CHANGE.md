@@ -57,11 +57,11 @@ data_changes: []
 
 ## 目标
 
-Reviewer 的探索过程不得直接暴露给作者：第一次发布 Findings 前，必须在同一 PR Head 上完成主审、风险/需求覆盖、同根投影闭环和一次独立遗漏扫描；只有内部 coverage pass 不再新增旧基线 blocker 后才一次性发布。作者返修后的 re-review 只审原 Findings、repair diff、直接相邻回归和 Acceptance；若发现 first-review escape，也必须先在 Reviewer 内部重新收敛，再最多发布一个 consolidated correction batch，不能逐条让作者参与 Reviewer 的探索循环。
+Reviewer 的探索过程不得直接暴露给作者。第一次发布 Findings 前，在同一冻结 Head 上执行固定、非递归的 Review Assembly：Coverage Map → 按风险深度选择主审/独立 blind reviewer/必要 specialist → Parent 单次 synthesis → 一次性发布。作者返修后的 re-review 只审原 Findings、repair diff、直接相邻回归和 Acceptance；若发现 first-review escape，只允许一次 fresh blind assembly 后输出 consolidated correction batch，不逐条、多轮让作者参与 Reviewer 的探索循环。
 
 ## 成功标准
 
-- [ ] AC1：First Review Publication Gate 固定内部三遍上限：Pass 1 主审；Pass 2 blind omission；仅当 Pass 2 新增旧 blocker 时允许 Pass 3 targeted closure/final verification。Pass 3 后仍新增旧 blocker → REVIEW_NOT_CONVERGED 并停止，不进入第 4+ 遍；收敛前不得向作者发布部分 Findings。
+- [ ] AC1：First Review Assembly Gate：Quick=主审+Coverage Map；Standard=主审+1 个 blind independent review；Deep/Systemic/跨域=主审+blind reviewer+必要 specialist，仍服从 active child budget=3/no nested delegation。各视角互不读取彼此 Finding，Parent 只允许一次 synthesis；synthesis 后不得递归开启新的 Full Review。
 - [ ] AC2：Second-pass Repair Verification：re-review 只覆盖原 Findings、repair diff、直接相邻回归与 Acceptance；若发现 first-review escape，先内部重新执行 Publication Gate 并最多输出一个 consolidated review-correction batch，不逐条、多轮把旧问题退给作者。
 - [ ] AC3：关键 hard rule 有真实 Task Route positive witness 与必要 negative over-routing 回归。
 - [ ] AC4：review-root-mechanism-projection 进入 HIGH_VALUE_CONVERGENCE_CASES。
@@ -97,7 +97,7 @@ Reviewer 的探索过程不得直接暴露给作者：第一次发布 Findings �
 
 ## 最小充分方案
 
-1. 明确 First Review Publication Gate 与 Second-pass Repair Verification，并给 Reviewer 内部收敛设置固定三遍上限；不允许无限内部循环。
+1. 明确 First Review Assembly Gate 与 Second-pass Repair Verification：固定 fan-out + 单次 synthesis，不允许 Reviewer 内部递归 Full Review。
 2. 给 delivery hard rule 增加治理机器 Contract 显式 dependency。
 3. 增加最小 hard-rule positive/negative reachability tests。
 4. 把 review-root-mechanism-projection 加入高价值 Outcome Eval registry。
@@ -115,7 +115,7 @@ Reviewer 的探索过程不得直接暴露给作者：第一次发布 Findings �
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | First Review Publication Gate、三遍内部预算与首轮完整 blocking Finding set | #323 / AC1 | not_satisfied | 待实现与验证 |
+| R1 | First Review Assembly Gate、固定 fan-out / 单次 synthesis 与首轮完整 blocking Finding set | #323 / AC1 | not_satisfied | 待实现与验证 |
 | R2 | Second-pass Repair Verification 与 first-review escape 内部纠错 | #323 / AC2 | not_satisfied | 待实现与验证 |
 | R3 | hard rule reachability 正反回归 | #323 / AC3 | not_satisfied | 待实现与验证 |
 | R4 | 高价值 registry 纳入 Review projection case | #323 / AC4 | not_satisfied | 待实现与验证 |
@@ -126,7 +126,7 @@ Reviewer 的探索过程不得直接暴露给作者：第一次发布 Findings �
 
 | 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
 | --- | --- | --- | --- |
-| Review Core/Reference | Publication Gate、blind omission pass、delta-scoped re-review | 防止把 Reviewer 探索过程变成作者返修循环 | R1-R2 / E1-E2 |
+| Review Core/Reference | Assembly Gate、independent blind review、single synthesis、delta-scoped re-review | 防止作者/Reviewer 双重循环 | R1-R2 / E1-E2 |
 | Delivery Reference metadata | 增加治理 Contract dependency | hard rule 可达 | R3 / E3 |
 | Review/routing tests | positive/negative route 与 re-review 回归 | 机器保护 | R1-R3 |
 | Outcome Eval registry/tests | 纳入 review-root-mechanism-projection | 行为回归入口 | R4 / E4 |
@@ -143,7 +143,7 @@ Reviewer 的探索过程不得直接暴露给作者：第一次发布 Findings �
 
 | 验证层 | 是否要求 | 范围 / 证据 |
 | --- | --- | --- |
-| 行为 / 单元 / 组件 | required | Publication Gate、blind omission pass、repair-delta re-review、Outcome Eval targeted tests |
+| 行为 / 单元 / 组件 | required | Review Assembly、blind independence、single synthesis、repair-delta re-review、Outcome Eval targeted tests |
 | 接口 / 契约 | required | routing dependency、Source/Runtime conformance、Stable IDs |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 无持久化或外部 Runtime 行为变化 |
 | 用户 / 工作流验收 | required | 真实 Task Route witness：Systemic Review 与 develop-and-deliver |
