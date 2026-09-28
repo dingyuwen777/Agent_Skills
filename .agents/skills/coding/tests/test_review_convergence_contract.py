@@ -217,6 +217,34 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             self.assertIn(marker, completion)
         self.assertIn("不是", completion)
 
+    def test_project_entry_and_review_host_prompt_keep_only_thin_convergence_invariant(self) -> None:
+        """最早项目入口和宿主提示应保护首轮批量发布/delta 复核，但详细方法仍归 canonical Review。"""
+        managed = (
+            SKILLS / "coding" / "assets" / "AGENTS.managed.md"
+        ).read_text(encoding="utf-8")
+        prompt = (
+            SKILLS / "review" / "agents" / "openai.yaml"
+        ).read_text(encoding="utf-8")
+
+        for text in (managed, prompt):
+            self.assertIn("Findings", text)
+            self.assertIn("repair diff", text)
+            self.assertIn("Acceptance", text)
+        self.assertIn("第一次代码审查", managed)
+        self.assertIn("一次性发布稳定 Findings", managed)
+        self.assertIn("do not publish partial findings", prompt)
+        self.assertIn("reviewed_head-to-repair_head diff", prompt)
+
+        for detailed in (
+            "Finding Admission Gate",
+            "FIRST_REVIEW_ESCAPE",
+            "STOP_REPAIR_LOOP",
+            "3 个 automatic repair rounds",
+        ):
+            with self.subTest(detailed=detailed):
+                self.assertNotIn(detailed, managed)
+                self.assertNotIn(detailed, prompt)
+
     def test_usage_tells_humans_review_repairs_only_blocking_current_scope(self) -> None:
         """最终用户说明必须避免把 Review 理解成无限优化循环。"""
         usage = (ROOT / "USAGE.md").read_text(encoding="utf-8")
