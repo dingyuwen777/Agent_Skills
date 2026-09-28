@@ -15,7 +15,6 @@ description: Agent_Skills 的唯一跨 Skill 控制面。每个任务先进入�
 
 Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或调度开发任务**，不维护任务队列/Worker，**不接管专业 Skill**，也不执行代码/设计/文档/测试/Git/CI/发布/部署；多 Skill 只声明并集、顺序与交接。
 
-<!-- runtime-project-contract:start -->
 ## 1. 项目事实与确定性执行边界
 
 先读目标项目及上级适用的 `AGENTS.md`、`CONTRIBUTING` 等规则，再按需读真实代码、Manifest/lock、Contract、Schema/Migration、配置、测试、CI、正式文档和设计事实。**项目自己的**事实优先；语言、Runtime、框架、数据库、Owner、API/ABI/CLI、Schema、Provider、部署、Design Token/业务字段不得猜，**不能单凭文件名推出 React、FastAPI、PostgreSQL**。
@@ -54,9 +53,6 @@ Router **不生成项目级执行计划**，不创建子 Agent，**不拆分或�
 
 `(Evidence+价值+去重) FOLLOW_UP_CANDIDATE → Persistence Authorization Gate → backlog+dedup → BACKLOG_ITEM → STOP`。不自动创建/执行/递归；无持久化授权即 STOP。`BACKLOG_ITEM` 当前任务不得继续执行；仅 `新 Requirement / 新 Task` 重建 facts/Scope/Auth/Risk/Evidence 后处理。
 
-- **Risk**：L1 / L2 / L3。
-
-<!-- runtime-project-contract:end -->
 
 ## 2. 正式 Skill Catalog
 
