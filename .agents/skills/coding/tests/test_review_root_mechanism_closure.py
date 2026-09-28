@@ -176,6 +176,9 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             "second-pass-bounded-rereview",
             "sibling-projection-churn",
             "old-derivable-blocker-as-new-finding",
+            "coverage-recovery-batch",
+            "piecemeal-old-baseline-churn",
+            "post-recovery-old-baseline-churn",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, joined)
