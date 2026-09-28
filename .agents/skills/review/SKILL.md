@@ -49,13 +49,7 @@ Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；
 
 ## Root-Mechanism Projection Closure Gate（首轮机制闭环）
 
-复合高风险机制的首个局部 Finding 不能直接代表机制闭环；先执行：
-
-```text
-Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission / Coverage Audit → Findings
-```
-
-Systemic 未知追加 `意图=机制完整性审查` 复用 Coding RCA；简单 Review 不升级。保持**机制内完整、任务外有界**。同一 Invariant 且首轮既有事实可推导的 re-review 新 blocker 记 **First-pass Coverage Miss**；新代码/Requirement/外部事实引入的不记。
+复合机制首个 Finding 前执行 `Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission / Coverage Audit → Findings`。Systemic unknown 追加 `意图=机制完整性审查` 复用 Coding RCA；简单 Review 不升级，保持**机制内完整、任务外有界**。同一 Invariant 且首轮事实可推导的后续 blocker 记 **First-pass Coverage Miss**；新代码/Requirement/外部事实引入的不记。
 
 ## 1. 规则事实源与集成边界
 

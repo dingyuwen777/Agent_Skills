@@ -179,7 +179,8 @@ Router/Core/Runtime/Bundle/routing identity/Project Payload 必须同源同版�
 - 触发：Code Review/Audit、独立 Review 或项目门禁；Figma/Docs“审查”不自动成为 Code Review。
 - 必须动作：读 [`.agents/skills/review/SKILL.md`](../review/SKILL.md)，独立重建要求并审 Findings/Evidence。
 - 不适用：无源码/PR/diff Review 或独立门禁。
-- 交接：Review Target/base/head/上游事实 → Review；Test Gap → Testing；复合机制需 Systemic RCA 时可追加 `意图=机制完整性审查`。
+- 交接：Review Target/base/head/上游事实 → Review；Test Gap → Testing。
+- 复杂机制需 Systemic RCA 时，Reviewer 追加 `意图=机制完整性审查`；简单 Review 不追加。
 - 返回：Finding → Coding；Regression → Testing；再 re-review。
 - 失败关闭：缺目标/关键事实→不宣称 Review 完成/可合并。
 
