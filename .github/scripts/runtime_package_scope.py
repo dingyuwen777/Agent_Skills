@@ -123,8 +123,15 @@ _GROUP_TEST_FILES: dict[str, tuple[str, ...]] = {
         "test_testing_skill.py",
     ),
     "review_skill": (
+        "test_cross_model_outcome_eval.py",
+        "test_hard_rule_reachability.py",
+        "test_review_convergence_contract.py",
+        "test_review_root_mechanism_closure.py",
         "test_review_skill.py",
         "test_review_test_adequacy_owner_reachability.py",
+    ),
+    "full_only": (
+        "test_source_runtime_context_conformance.py",
     ),
     "agent_eval": (
         "test_cross_model_outcome_eval.py",
