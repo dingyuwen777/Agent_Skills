@@ -47,11 +47,17 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
             },
         )
 
-    def test_implementation_route_loads_thin_workflow_health_check(self) -> None:
-        result = self._evaluate({"执行模式": ["实现"], "风险": ["L1"]})
-        self.assertIn("coding", result["命中Skill"])
-        self.assertIn("coding.reference.28", result["必需Reference"])
-        self.assertNotIn("coding.reference.20", result["必需Reference"])
+    def test_implementation_route_uses_core_cost_check_without_loading_full_ci_reference(self) -> None:
+        """普通实现由 Coding Core 做三问检查；只有真实 CI 变更才加载详细 ref27。"""
+        ordinary = self._evaluate({"执行模式": ["实现"], "风险": ["L1"]})
+        ci_change = self._evaluate(
+            {"执行模式": ["实现"], "风险": ["L2"], "治理": ["CI 变更"]}
+        )
+
+        self.assertIn("coding", ordinary["命中Skill"])
+        self.assertNotIn("coding.reference.28", ordinary["必需Reference"])
+        self.assertIn("coding.reference.28", ci_change["必需Reference"])
+        self.assertNotIn("coding.reference.20", ordinary["必需Reference"])
 
     def test_implementation_path_automatically_checks_test_workflow_action_cost(self) -> None:
         text = self._read(WORKFLOW_HEALTH)
