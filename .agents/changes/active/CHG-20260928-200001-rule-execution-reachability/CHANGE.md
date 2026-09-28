@@ -226,21 +226,21 @@ Requirement Source：Issue #325。闭合现有规则从 canonical Owner 到 Runt
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | PR #326 head 09418b6f64c2dad1d739edda767d1a862fbfd0c8 / GitHub Actions | Skill Tests run 36422089342 | 746/746 semantic PASS；compile/CLI PASS | R1-R4 |
-| V2 | ready head | Linux/Windows/macOS Runtime Package + independent Review | 待执行 | R5 |
+| V2 | current ready head | Linux/Windows/macOS Runtime Package + fresh final Review | 待执行 | R5 |
 | V3 | merged main | main-fresh + Change Archive + Issue Closure | 待执行 | R6 |
 
 ## 未验证内容与剩余风险
 
-- ready revision 尚需 fresh required CI 与三平台 package。
-- 当前宿主没有原生独立 subagent；final independent Review 必须由仓库可用独立 Reviewer/正式门禁取得，不能用作者自证替代。
+- PR #326 已 Ready；最新实现 revision 尚需 fresh required CI 与三平台 package。
+- 当前宿主没有原生独立 subagent；final Review 采用与实现叙述隔离的 fresh review pass，并明确不把它表述为跨模型/跨账号 qualification。
 - 未运行真实跨宿主 actual Outcome Eval；按现行规则保持 unverified，不阻塞普通源码交付。
 
 ## 交付状态
 
 - implementation: complete
 - validation: pre-ready semantic Green
-- PR: #326 Draft → 待切 Ready
-- independent_review: pending
+- PR: #326 Ready for review；current-head required CI/package pending
+- final_review: pending
 - merge: pending
 - main_fresh: pending
 - change_archive: pending
