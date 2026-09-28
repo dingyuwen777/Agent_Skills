@@ -91,9 +91,9 @@ Requirement Source：GitHub Issue #317。用户要求按已讨论的“1 个 Req
 
 ## 成功标准
 
-- [ ] Issue #317 / AC1-AC8 在 canonical rule、validator/renderer、角色场景和永久回归中取得直接 Evidence。
-- [ ] Issue #317 / AC9 由 current-head Review/CI、guarded merge、main-fresh、repository-native archive、Closure Audit 和 cleanup 完成。
-- [ ] 不新增第六角色，不提高 context budget，不扩大 Runtime public surface，不让 L1 被机械升级。
+- [x] Issue #317 / AC1-AC8 在 canonical rule、validator/renderer、角色场景和永久回归中取得直接 Evidence。
+- [ ] Issue #317 / AC9 由 current-head Review/CI、guarded merge、main-fresh、repository-native archive、Closure Audit 和 cleanup 完成；按 Requirement 生命周期 post-merge 收尾。
+- [x] 不新增第六角色，不提高 context budget，不扩大 Runtime public surface，不让 L1 被机械升级。
 
 ## 范围
 
@@ -181,11 +181,11 @@ Requirement Source：GitHub Issue #317。用户要求按已讨论的“1 个 Req
 
 - [x] 调查当前实现和事实源；新建项目则确认现有资料、目标和硬约束
 - [x] 建立与风险相称的任务路由和验证矩阵
-- [ ] 行为变化建立失败证据或说明测试例外
-- [ ] 完成最小实现，不静默扩大范围
-- [ ] 同步受影响的长期文档或明确不适用依据
-- [ ] 取得仍覆盖当前版本的验证证据
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 行为变化建立失败证据：test-only Red HEAD `9d772af3…` / run #2091
+- [x] 完成最小实现，不静默扩大范围
+- [x] 同步 project-facing managed rules 与 USAGE；无 Release/Deploy 文档变化
+- [x] run #2121：`Ran 719 tests` / `OK`；仅因 Change 尚为 proposed 触发治理 fail-closed
+- [x] Ready 前重读 #317 并完成 AC1–AC9 Traceability / reverse audit
 
 # 验证矩阵
 
@@ -228,10 +228,10 @@ Requirement Source：GitHub Issue #317。用户要求按已讨论的“1 个 Req
 
 # 完成审计
 
-- [ ] upstream_re_read：Ready 前重读 #317、canonical Core/refs/script/role/projection 和当前 live PR。
-- [ ] change_coverage：逐 AC1-AC9 独立核对，不用本 Change 反推需求。
-- [ ] reverse_audit：反查 Issue/PR writer、CI start/ready、Requirement drift、Completion、Reviewer、Source/Runtime parity、L1 fast path。
-- [ ] unresolved_cleared：Ready 前 R1-R8 清零；R9 仅保留真实 post-merge 生命周期部分并按正式阶段处理。
+- [x] upstream_re_read：已重读最新 #317、Core/refs/script/role/projection、PR #318 与 run #2121。
+- [x] change_coverage：AC1–AC8 均有当前实现/回归直接证据；AC9 明确为 post-merge 生命周期。
+- [x] reverse_audit：已反查 Issue/PR writer、CI start/ready、Requirement drift、Completion、Reviewer、Source/Runtime parity、L1 fast path；普通 Git 未被治理 Contract 无条件加重。
+- [x] unresolved_cleared：R1–R8 已 satisfied；R9 依据 #317 / AC9 正式记为 explicitly_deferred。
 
 # 完成证据与状态
 
@@ -242,18 +242,19 @@ Requirement Source：GitHub Issue #317。用户要求按已讨论的“1 个 Req
 | V1 | main 2dc9d83f | canonical read + Issue #317 create/live validation | confirmed | 起始规则缺口与合法 Requirement Source |
 | V2 | test-only Red HEAD `9d772af3ff32cc34f53761c9eb4f6856eac90a0b` | Skill Tests run #2091 / `36365122468` | expected failure：8 个新增 Preflight/Governance 回归全部因旧实现缺能力失败，Requirement Source gate 已通过 | 新测试在旧实现上确实为 Red，不是实现后自证 |
 | V3 | current implementation branch | Core/ref09/ref17/ref27/ref29 context delta audit | Core+关键 References 合计不高于原基线；未提高任何 context budget | 新门禁通过压缩/Owner 复用而非扩大上下文阈值 |
+| V4 | HEAD `e5be15193986ee7d301880b0fe05e5eb760f6c15` | Skill Tests run #2121 / `36367369902` | selected self-contained tests：`Ran 719 tests` → `OK`；唯一失败为 Active Change 仍是 proposed | 当前实现、routing、Source/Runtime parity、context budget 与历史 Contract 已 Green |
 
 ## 未验证内容与剩余风险
 
-- 实现已完成到候选状态，但当前 HEAD fresh CI 尚未取得，R1-R8 暂不提前标为 satisfied。
+- R1–R8 已取得 current-head semantic Evidence；PR Ready 后仍需三平台 Runtime Package Gate 与独立 Review，不能用 Draft 阶段 package skip 冒充 AC9。
 - 当前聊天宿主无可调用真实 subagent 接口；本任务只验证 Reviewer role/projection Contract，不冒充本轮实际启动 child session。
 
 ## 交付状态
 
 - 提交：已建立 Red、Core/Reference、candidate renderer、Reviewer/project-facing projection 与永久回归提交。
 - 拉取请求：Draft PR #318。
-- CI：待本次 Evidence 更新后的 current-head Actions。
-- 合并：待独立 Review + required CI + guarded merge。
+- CI：Draft current-head semantic run #2121 已 Green；切 Ready 后等待 required Runtime Package Gate。
+- 合并：待 current-head required package CI + 独立 Review + guarded merge。
 - Change 归档：待 repository-native post-merge automation。
 - 发布 / 部署：不适用，本任务明确不创建 Release/Deploy。
 
