@@ -30,6 +30,7 @@ HIGH_VALUE_CONVERGENCE_CASES = (
     "simple-fp",
     "cross-skill-finding",
     "unnecessary-clarification",
+    "review-root-mechanism-projection",
 )
 
 _CASE_FIELDS = {
