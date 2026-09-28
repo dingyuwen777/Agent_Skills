@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260928-090006-development-preflight-governance
 title: 开发开工门禁与治理写前校验闭环
 level: L3
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/317-development-preflight-governance
 created: 2026-09-28
@@ -158,15 +158,15 @@ Requirement Source：GitHub Issue #317。用户要求按已讨论的“1 个 Req
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 实质 Implementation 开工必做轻量 CI Cost/Evidence Check | #317 / AC1 | not_satisfied | 待 Coding Core/ref27/tests |
-| R2 | 新建 Issue/PR 使用 create-mode 写前校验；已有实例按 lifecycle 使用 create/live，失败禁止 writer，写后同检 | #317 / AC2 | not_satisfied | 待 Core/ref17/ref29/tests |
-| R3 | governance_contract 提供 canonical candidate preparation | #317 / AC3 | not_satisfied | 待 script/tests |
-| R4 | Reviewer 支持 preflight/completion，不新增第六角色 | #317 / AC4 | not_satisfied | 待 ref09/role/tests |
-| R5 | Requirement 实质变化先更新 Owner，仅影响项 stale | #317 / AC5 | not_satisfied | 待 Core/ref17/ref09/tests |
-| R6 | Completion reread 最新 Requirement 并按 AC→Evidence 阻止 unresolved Ready | #317 / AC6 | not_satisfied | 待 Core/ref17/Completion reachability/tests |
-| R7 | Source Mode reachability 与 Runtime parity 闭合 | #317 / AC7 | not_satisfied | 待 Core/routing/projection tests |
-| R8 | 永久回归覆盖关键正反例且不降低门禁 | #317 / AC8 | not_satisfied | 待 tests/current-head CI |
-| R9 | Review/CI/merge/main-fresh/archive/closure 全交付 | #317 / AC9 | not_satisfied | 待 Delivery |
+| R1 | 实质 Implementation 开工必做轻量 CI Cost/Evidence Check | #317 / AC1 | satisfied | Coding Core Development Preflight + ref27 Start/Ready Cost Check；run #2119 的 routing/context/CI governance 回归全部通过，未提高 context budget |
+| R2 | 新建 Issue/PR 使用 create-mode 写前校验；已有实例按 lifecycle 使用 create/live，失败禁止 writer，写后同检 | #317 / AC2 | satisfied | Core + ref17/ref29 Platform Write Hard Gate；本轮 #317/#318 均完成写前 validation、platform write、live reread；正反例回归 Green |
+| R3 | governance_contract 提供 canonical candidate preparation | #317 / AC3 | satisfied | governance_contract.py 新增 prepare_issue_candidate / prepare_pr_candidate 与 prepare-issue / prepare-pr；candidate→create validator 正反例 Green |
+| R4 | Reviewer 支持 preflight/completion，不新增第六角色 | #317 / AC4 | satisfied | multi-agent-roles 仍严格五角色；Reviewer 支持 Development Preflight / Completion，ref09 与 Host role projection 回归 Green |
+| R5 | Requirement 实质变化先更新 Owner，仅影响项 stale | #317 / AC5 | satisfied | Core Requirement Change Gate + decision_epoch/Freshness 既有 Contract；本轮 AC2/AC7 需求变化先更新 #317 后同步 Change，局部 stale 回归 Green |
+| R6 | Completion reread 最新 Requirement 并按 AC→Evidence 阻止 unresolved Ready | #317 / AC6 | satisfied | Core Completion Gate + ref10/ref17；Ready 前已重读 #317 并独立映射 AC1–AC8，unresolved 仅剩 post-merge AC9 |
+| R7 | Source Mode reachability 与 Runtime parity 闭合 | #317 / AC7 | satisfied | routing conformance / source-runtime exact-text / project-facing projection 全部 Green；普通 Git 路由保持轻量，治理写入才命中治理 Contract |
+| R8 | 永久回归覆盖关键正反例且不降低门禁 | #317 / AC8 | satisfied | Red run #2091 在旧实现上 8 tests expected fail；Green run #2119 719 tests OK；context budget 原阈值未提高、历史断言未删除 |
+| R9 | Review/CI/merge/main-fresh/archive/closure 全交付 | #317 / AC9 | explicitly_deferred | AC9 依赖 PR Ready 后 package CI、独立 Review、guarded merge、main-fresh、repository-native archive 与 Closure；按真实生命周期 post-merge 完成 |
 
 # 计划改动
 
