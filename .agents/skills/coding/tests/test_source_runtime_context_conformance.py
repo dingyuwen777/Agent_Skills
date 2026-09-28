@@ -132,7 +132,7 @@ class SourceRuntimeContextConformanceTest(unittest.TestCase):
 
 
     def test_runtime_router_is_derived_from_single_canonical_project_contract(self) -> None:
-        """Runtime Router 必须从 canonical 标记区确定性派生，不能维护第二份人工正文。"""
+        """Runtime Router 必须从 canonical Router 现有语义确定性抽取，不能维护第二份人工正文。"""
         source = (ROOT / ".agents/skills/router/SKILL.md").read_text(encoding="utf-8")
         projection_impl = (
             ROOT / "runtime/agent_skills_runtime/runtime_skill_projection.py"
@@ -141,10 +141,9 @@ class SourceRuntimeContextConformanceTest(unittest.TestCase):
         entry = next(item for item in payload["files"] if item["path"] == "router/SKILL.md")
         projected = decode_payload_file(entry).decode("utf-8")
 
-        self.assertEqual(source.count("<!-- runtime-project-contract:start -->"), 1)
-        self.assertEqual(source.count("<!-- runtime-project-contract:end -->"), 1)
         self.assertNotIn("_RUNTIME_ROUTER_BODY", projection_impl)
         self.assertIn("_project_runtime_router_contract", projection_impl)
+        self.assertIn("_RUNTIME_ROUTER_SECTION_ONE", projection_impl)
         for marker in (
             "Decision Authority Contract",
             "Fresh Evidence Contract",
@@ -154,8 +153,14 @@ class SourceRuntimeContextConformanceTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, source)
                 self.assertIn(marker, projected)
-        self.assertNotIn("runtime-project-contract:start", projected)
-        self.assertNotIn("runtime-project-contract:end", projected)
+        for mapping in (
+            "提 PR→`允许开发并提交PR`",
+            "合并主分支→`允许端到端交付`",
+            "审查后合并→`允许审查后交付`",
+        ):
+            with self.subTest(mapping=mapping):
+                self.assertIn(mapping, source)
+                self.assertIn(mapping, projected)
 
     def test_mcp_context_verifier_rejects_missing_changed_or_unfinished_context(self) -> None:
         """真实 smoke 校验器必须拒绝缺失、增项、顺序/字节变化及伪成功终态。"""
