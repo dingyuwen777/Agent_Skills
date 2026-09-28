@@ -98,14 +98,18 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, text)
 
-    def test_two_stage_review_reuses_systemic_rca_without_duplicate_owner(self) -> None:
-        """正式 Review 必须复用既有 Systemic RCA，而不是在 Review 复制第二套根因规则。"""
-        text = (
-            SKILLS / "coding" / "references" / "11_两阶段复核与完成前验证.md"
+    def test_review_reuses_systemic_rca_without_duplicate_owner(self) -> None:
+        """复杂 Review 必须链接既有 Systemic RCA，而不是复制其诊断正文。"""
+        review = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
         ).read_text(encoding="utf-8")
-        self.assertIn("机制完整性审查", text)
-        self.assertIn("22_根因调试.md", text)
-        self.assertIn("不得复制第二套", text)
+        rca = (
+            SKILLS / "coding" / "references" / "22_根因调试.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("22_根因调试.md", review)
+        self.assertIn("执行模式=诊断", review)
+        self.assertIn("Causal / Diagnostic Coverage Gate", rca)
+        self.assertNotIn("入口 / admission", review)
 
     def test_outcome_eval_covers_first_pass_projection_coverage(self) -> None:
         """Outcome Eval 必须能度量同根问题首轮覆盖，而不是只统计返修轮次。"""
