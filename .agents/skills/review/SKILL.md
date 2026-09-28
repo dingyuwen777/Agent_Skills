@@ -49,7 +49,7 @@ Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；
 
 ## First Review Assembly Gate（首次发布门禁）
 
-Findings 发给作者前先冻结 Review Target / Requirement / base-head 并建立 **Review Coverage Map**。Quick：主审 + Coverage Map；Standard：主审 + 1 个 **blind independent review**；Deep/Systemic/跨域：再按真实风险加入现有 Tester/Explorer/Researcher 等 specialist，仍服从 `active child budget=3`、`no nested delegation`。各视角只产生内部 draft findings、互不读取彼此 Finding；Parent 只做**一次 synthesis**：按 root mechanism / invariant 去重、用直接 Evidence 裁决冲突并关闭 Coverage Map。**synthesis 后不得递归开启新的 Full Review，也不得向作者发布部分 Findings**；只有聚合完成才一次性发布首轮 blocking Finding set。Systemic signal 先 route refresh 加载 RCA context；简单 Review 不被无条件升级。
+Findings 发给作者前先冻结 Review Target / Requirement / base-head 并建立 **Review Coverage Map**。Quick：主审 + Coverage Map；Standard：主审 + 1 个 **blind independent review**；Deep/Systemic/跨域：再按真实风险加入现有 Tester/Explorer/Researcher 等 specialist，仍服从 `active child budget=3`、`no nested delegation`。各视角只产生内部 draft findings、互不读取彼此 Finding；Parent 只做**一次 synthesis**：按 root mechanism / invariant 去重、用直接 Evidence 裁决冲突并关闭 Coverage Map。**synthesis 后不得递归开启新的 Full Review，也不得向作者发布部分 Findings**；只有聚合完成才一次性发布首轮 blocking Finding set。Systemic signal 先 route refresh 加载 RCA context，并按 **Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission / Coverage Audit** 闭环；冻结基线本可推导却未进入首轮 batch 的 blocker 记 **First-pass Coverage Miss**。简单 Review 不被无条件升级。
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
