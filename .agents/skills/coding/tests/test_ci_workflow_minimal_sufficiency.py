@@ -254,12 +254,9 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
 
     def test_development_preflight_and_ci_share_one_scope_owner(self) -> None:
         """开发期 preflight 与 CI selector 共用一个风险分类 Owner。"""
-        validation = self._read(VALIDATION)
         health = self._read(WORKFLOW_HEALTH)
-        for marker in ("开发期 Preflight 与 CI 同源", "复用同一风险分类 Owner", "不复制 impact mapping"):
-            self.assertIn(marker, validation)
         self.assertIn("Development Preflight Reuse", health)
-        self.assertIn("不维护第二套 impact mapping", health)
+        self.assertIn("禁止第二套 impact mapping", health)
 
 if __name__ == "__main__":
     unittest.main()

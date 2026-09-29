@@ -325,7 +325,7 @@ class DevelopmentPreflightGovernanceContractTest(unittest.TestCase):
         """已有 classifier 时，开发期计划与 CI 共用风险事实源。"""
         core = (CODING / "SKILL.md").read_text(encoding="utf-8")
         detail = (CODING / "references" / "27_CI_Workflow健康检查与Actions清理.md").read_text(encoding="utf-8")
-        for marker in ("changed-scope / risk classifier / selector", "复用同一分类 Owner"):
+        for marker in ("changed-scope / risk classifier / selector", "Development Preflight 复用其分类 Owner"):
             self.assertIn(marker, core)
         for marker in ("Development Preflight Reuse", "不维护第二套 impact mapping"):
             self.assertIn(marker, detail)

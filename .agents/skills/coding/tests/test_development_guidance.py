@@ -225,7 +225,7 @@ class DevelopmentGuidanceTest(unittest.TestCase):
     def test_commit_hygiene_keeps_process_noise_out_of_formal_history(self) -> None:
         """过程性状态默认不提交，同时保留有价值 checkpoint。"""
         delivery = self._read(".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md")
-        for marker in ("### Commit Hygiene", "可独立理解、可审查的 checkpoint", "临时 Workflow/CI", "debug", "formatter/generated 中间态", "暂移 Change/Requirement/config", "独立交付/Review/bisect/审计价值", "可复现 Red", "不为减少 commit 数重写已共享历史"):
+        for marker in ("### Commit Hygiene", "可独立审查/回滚/bisect/审计", "临时 Workflow/CI", "debug", "formatter/generated", "暂移 Change/Requirement/config", "可复现 Red", "不为减 commit 数重写已共享历史"):
             self.assertIn(marker, delivery)
 
 if __name__ == "__main__":

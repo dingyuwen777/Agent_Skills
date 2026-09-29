@@ -22,7 +22,7 @@
 
 ### Commit Hygiene
 
-正式 commit 应是可独立理解、可审查的 checkpoint。临时 Workflow/CI、debug、formatter/generated 中间态、为取 Red 暂移 Change/Requirement/config 等无独立交付/Review/bisect/审计价值的过程态默认不提交；可复现 Red、可回滚 Migration、审计 Evidence、独立纵向切片除外。提交前收敛格式化/generated/targeted validation；不为减少 commit 数重写已共享历史。
+正式 commit 只保存可独立审查/回滚/bisect/审计的 checkpoint；临时 Workflow/CI、debug、formatter/generated、为取 Red 暂移 Change/Requirement/config 等过程态默认不提交。可复现 Red、Migration、审计 Evidence、独立纵向切片可提交；不为减 commit 数重写已共享历史。
 ### Branch Name Resolution
 
 分支名属于普通可逆 Git 实施细节，按以下顺序自行解析：
