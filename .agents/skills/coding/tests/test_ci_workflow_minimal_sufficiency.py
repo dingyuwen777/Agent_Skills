@@ -256,7 +256,7 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         """开发期 preflight 与 CI selector 共用一个风险分类 Owner。"""
         validation = self._read(VALIDATION)
         health = self._read(WORKFLOW_HEALTH)
-        for marker in ("开发期 Preflight 复用同一 changed-scope 事实源", "风险分类 Owner 只能有一个", "不再为本地开发、AI Agent、PR CI 各维护一套独立 impact mapping"):
+        for marker in ("开发期 Preflight 与 CI 同源", "复用同一风险分类 Owner", "不复制 impact mapping"):
             self.assertIn(marker, validation)
         self.assertIn("Development Preflight Reuse", health)
         self.assertIn("不维护第二套 impact mapping", health)
