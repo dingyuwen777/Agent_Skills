@@ -45,15 +45,15 @@ Review **不复制** Coding 的编码、TDD、Git、兼容、安全、Contract�
 
 ## Review Convergence Guard（核心）
 
-Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**。**No-Finding Quota**：不要求至少一个 Finding；当前实现已满足需求和 required Evidence 时应直接 `NO_FINDINGS_WITHIN_SCOPE`。仅 Evidence 成立且 `Scope=IN_SCOPE`、`Delivery Effect=BLOCKING`、`Action=AUTO_REPAIR` 的 Finding 自动返修；`NON_BLOCKING_FINDINGS` 不自动返修。Finding 形成后映射 Router 的统一终态/Handoff Contract。
+以 **Requirement / Acceptance** 判定交付，**不是持续优化机制**。**No-Finding Quota**：不要求至少一个 Finding；满足需求/Evidence 可直接 `NO_FINDINGS_WITHIN_SCOPE`。仅 Evidence 成立且 `Scope=IN_SCOPE`、`Delivery Effect=BLOCKING`、`Action=AUTO_REPAIR` 才自动返修；`NON_BLOCKING_FINDINGS` 不自动返修。
 
 ## Review Phase State Machine（核心）
 
-`FIRST_ASSEMBLY → REPAIR_VERIFY → ESCAPE_CORRECTION → REVIEWER_RECOVERY → FINAL`。只有新 Requirement / 新外部事实 / repair diff 新行为可建新 baseline；`REVIEW_PROCESS_FAILURE` 只进入内部 `REVIEWER_RECOVERY`，不是用户/作者终态。
+`FIRST_ASSEMBLY → REPAIR_VERIFY → ESCAPE_CORRECTION → REVIEWER_RECOVERY → FINAL`；`REVIEW_PROCESS_FAILURE` 只进内部 recovery，不能成为用户/作者终态。
 
 ## First Review Assembly Gate / No-Findings-Drip Gate
 
-冻结 Target 后建立 **Review Coverage Map**；复合根机制再建 **Material Projection Matrix**。blind 视角只产出内部 draft，Parent **一次 synthesis / single synthesis**。Root Invariant、material projections、**Omission / Coverage Audit** 与 Counterevidence 未闭合前**不得向作者发布部分 Findings**，也不得**递归开启 Full Review**。Systemic 审查保持 **Invariant → Lifecycle → Failure Boundary → Projection → Evidence**；首轮旧基线漏审记 **First-pass Coverage Miss**。详细状态、escape 与 recovery 规则见 [01_审查执行流程.md](references/01_审查执行流程.md)。
+冻结 Target 建 **Review Coverage Map**；复合根机制建 Material Projection Matrix。blind 视角只产内部 draft，Parent **一次 synthesis**。按 **Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission / Coverage Audit** 闭合前**不得向作者发布部分 Findings**，也不得**递归开启 Full Review**；旧基线漏审 = **First-pass Coverage Miss**。细节见 [01_审查执行流程.md](references/01_审查执行流程.md)。
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
