@@ -217,8 +217,8 @@ Requirement Source：GitHub Issue #331。用户明确要求把 AIMA_UGC 的统�
 
 ## 交付状态
 
-- 提交：单一正式 checkpoint。
-- 拉取请求：待创建 Draft PR。
+- 提交：`a21c239f…` 起始实现 + bounded-context/内容守恒 Repair；最终实现 Head `549278cd825ef3ad70d8ab1f0c82b6019113ce09`。
+- 拉取请求：#332，Ready。
 - CI：`549278cd…` Agent Skills Gate / Runtime Package Gate / Linux-Windows-macOS package 全部 success；本 Evidence 回写属于 carrier-only 更新，merge 前仍按 latest Head required gate 复核。
 - 合并：Review PASS；待本 carrier-only commit 的 latest Head required checks。
 - Change 归档：待 repository-native automation。
