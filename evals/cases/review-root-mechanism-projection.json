@@ -2,7 +2,7 @@
   "协议": "Agent Skills Outcome Eval Case/v1",
   "用例标识": "review-root-mechanism-projection",
   "任务族": "Review/Testing",
-  "任务说明": "复杂 Review 在第一次向作者发布 Findings 前，对同一冻结 Review Target 执行固定、非递归 Review Assembly：Coverage Map + 风险匹配的 blind reviewer/specialist + Parent 单次 synthesis；blocking Finding 必须通过 Finding Admission Gate。作者收到一个稳定 Finding batch，统一修复后更新原 PR/MR 并一次 re-request review；第二次 Review 只审原 Findings、reviewed_head→repair_head delta、直接相邻回归与 Acceptance。first-review escape 只允许一次 fresh blind assembly 后合并纠错。",
+  "任务说明": "Review 是合并判定而不是找问题比赛：先恢复 Review Lineage，区分 FIRST_REVIEW / REPAIR_VERIFY / NEW_BASELINE。首审若 Requirement/Acceptance、required Evidence 与 material risks 均满足，可以 NO_FINDINGS_WITHIN_SCOPE 直接进入可合并判定；非阻塞 nit 不触发返修。存在 blocker 时首轮一次发布稳定 batch；作者 Repair Package 在外部 re-review 前必须 blind Repair Pre-review 同时检查 repair diff 与 frozen baseline closure。第二轮受 Baseline Closure Freeze / New-Finding Provenance Gate 约束，只验证 admitted Repair Package；Review/Repair process failure 都不能变成重复外部往返。",
   "必需结果": [
     "root-mechanism-projection-closure",
     "first-pass-coverage",
@@ -11,11 +11,27 @@
     "consolidated-correction-if-escape",
     "finding-admission-valid",
     "repair-batch-single-rerequest",
-    "delta-rereview"
+    "delta-rereview",
+    "no-findings-drip",
+    "material-projection-closure",
+    "reviewer-process-self-recovery",
+    "review-final-normal-terminal",
+    "baseline-closure-freeze",
+    "new-finding-provenance-gate",
+    "repair-package-pre-review-closure",
+    "rereview-admission-gate",
+    "baseline-closure-challenge-before-rerequest",
+    "review-lineage-detection",
+    "first-review-zero-finding-pass",
+    "nonblocking-does-not-trigger-repair",
+    "merge-decision-by-blockers-and-gates"
   ],
   "必需证据": [
     "invariant-projection-evidence",
-    "review-coverage-map-evidence"
+    "review-coverage-map-evidence",
+    "material-projection-matrix-evidence",
+    "reviewer-recovery-synthesis-evidence",
+    "repair-package-evidence"
   ],
   "禁止违规": [
     "sibling-projection-churn",
@@ -27,7 +43,20 @@
     "speculative-blocker-repair",
     "per-finding-rerequest-churn",
     "duplicate-pr-for-review-repair",
-    "recursive-review-assembly"
+    "recursive-review-assembly",
+    "escape-correction-partial-publication",
+    "review-process-failure-terminal",
+    "reviewer-recovery-recursive-full-review",
+    "false-pass-after-reviewer-recovery",
+    "unchanged-baseline-reopen",
+    "new-finding-without-provenance",
+    "rerequest-with-blocking-repair-package",
+    "repair-package-escape-drip",
+    "rerequest-without-baseline-closure-challenge",
+    "forced-finding",
+    "nit-driven-repair-loop",
+    "rereview-misdetected-as-first-review",
+    "finding-count-as-merge-gate"
   ],
   "上限": {
     "用户干预": 1

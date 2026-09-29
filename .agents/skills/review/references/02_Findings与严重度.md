@@ -8,7 +8,9 @@ Finding=`severity + Scope + Delivery Effect + Action`，四者正交。
 
 ## Finding Admission Gate
 
-发布 blocking Finding 前必须给稳定 **Finding ID**，并具备：可定位对象、可复现/可静态证明的**直接 Evidence**、触发条件、实际影响、四轴 classification、收口方向和验证方式。再做 **Counterevidence Check**：项目规则是否允许、上游是否刻意决定、调用链是否反证、现有测试/Evidence 是否已经覆盖；任一足以推翻当前解释就撤回或降为待验证。证据不足的内容不能进入 `AUTO_REPAIR`。同根 Finding 合并；重复意见去重；冲突修复意见先按 Contract/current revision/更直接 Evidence 裁决，未裁决前不得同时交给作者。
+只接收已通过 ref01 **No-Findings-Drip Gate** 的 synthesized Finding；**内部 draft 禁止发布**或进入 Repair Batch。
+
+blocking Finding 还必须有稳定 **Finding ID**、定位、直接 Evidence、触发条件、**实际影响**、四轴 classification、收口方向、**验证方式**，并做 **Counterevidence Check**（项目规则、上游决定、调用链、现有测试/Evidence）。证据不足不进 `AUTO_REPAIR`；同根合并、冲突先裁决。
 
 ## 1. severity
 
@@ -49,4 +51,4 @@ Scope / Delivery Effect / Action
 
 ## 6. 去重与结论
 
-同根因默认合并。任意 unresolved BLOCKING→`BLOCKED`；IN_SCOPE+BLOCKING+AUTO_REPAIR→`CHANGES_REQUIRED`；REQUIREMENT_CHANGE→`UPSTREAM_DECISION_REQUIRED`；仅 NON_BLOCKING→`NON_BLOCKING_FINDINGS`；无 Finding→`NO_FINDINGS_WITHIN_SCOPE`。状态不替代平台审批或授权。
+同根因默认合并。任意 unresolved BLOCKING→`BLOCKED`；IN_SCOPE+BLOCKING+AUTO_REPAIR→`CHANGES_REQUIRED`；REQUIREMENT_CHANGE→`UPSTREAM_DECISION_REQUIRED`；仅 NON_BLOCKING→`NON_BLOCKING_FINDINGS`；无 Finding→`NO_FINDINGS_WITHIN_SCOPE`。**NON_BLOCKING 不自动返修，也不阻塞合并**；纯风格/命名/可选重构等无实质影响 **nit** 默认不成 Finding，除非项目规则明确要求或用户明确要求优化。状态不替代平台审批或授权。

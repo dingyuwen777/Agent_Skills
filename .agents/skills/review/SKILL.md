@@ -45,11 +45,15 @@ Review **不复制** Coding 的编码、TDD、Git、兼容、安全、Contract�
 
 ## Review Convergence Guard（核心）
 
-Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；仅 Evidence 成立且 `Scope=IN_SCOPE`、`Delivery Effect=BLOCKING`、`Action=AUTO_REPAIR` 的 Finding 自动返修。`OUT_OF_SCOPE + BLOCKING` 可以阻塞当前交付，但不会因此自动扩大当前修复范围。Finding 形成后映射 Router 的 **统一终态 / Handoff Contract**。
+以 **Requirement / Acceptance** 判定交付，**不是持续优化机制**。**No-Finding Quota**：不要求至少一个 Finding；满足需求/Evidence 可直接 `NO_FINDINGS_WITHIN_SCOPE`。仅 Evidence 成立且 `Scope=IN_SCOPE`、`Delivery Effect=BLOCKING`、`Action=AUTO_REPAIR` 才自动返修；`NON_BLOCKING_FINDINGS` 不自动返修。
 
-## First Review Assembly Gate（首次发布门禁）
+## Review Phase State Machine（核心）
 
-冻结 Target/Requirement/base-head，建立 **Review Coverage Map**；Assembly 深度见 [04_审查深度选择.md](references/04_审查深度选择.md)。blind 视角同一 Head 独立审，Parent **一次 synthesis** 后发布，**不得向作者发布部分 Findings或递归开启 Full Review**。Systemic signal 先 route refresh，按 **Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission / Coverage Audit** 闭环；首轮漏掉旧基线可推导 blocker = **First-pass Coverage Miss**。
+`FIRST_ASSEMBLY → REPAIR_VERIFY → ESCAPE_CORRECTION → REVIEWER_RECOVERY → FINAL`；`REVIEW_PROCESS_FAILURE` 只进内部 recovery，不能成为用户/作者终态。
+
+## First Review Assembly Gate / No-Findings-Drip Gate
+
+冻结 Target 建 **Review Coverage Map**；复合根机制建 Material Projection Matrix。blind 视角只产内部 draft，Parent **一次 synthesis**。按 **Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission / Coverage Audit** 闭合前**不得向作者发布部分 Findings**，也不得**递归开启 Full Review**；旧基线漏审 = **First-pass Coverage Miss**。细节见 [01_审查执行流程.md](references/01_审查执行流程.md)。
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
@@ -110,7 +114,7 @@ Review 发现技术文档缺陷时：
 - 只读 Review：作为 Finding 报告；
 - 已授权修文档且存在 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)：按 Docs 的工作流处理，不由 Review 复制 Docs 写作规则；
 - Docs 发现实现问题后仍返回 Coding，不由 Review 越权直接改生产实现；
-- docs diff：targeted 反查已有 Owner/机器镜像/单文件 Growth/退出；相似或长度不判重；review-only 只报告。
+- docs diff：做 **Reverse Documentation Audit**，反查**已有 Owner**/机器镜像/**单文件 Growth**/退出；相似或长度不判重；**review-only 只报告**。
 
 ## 2. 三种工作模式
 

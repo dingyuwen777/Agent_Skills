@@ -122,6 +122,125 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, depth)
 
+    def test_review_phase_state_machine_blocks_finding_drip_and_self_recovers(self) -> None:
+        """Review 必须先闭包再发布，Reviewer 自身漏审只能内部自愈后给正常终态。"""
+        core = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
+        flow = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
+        ).read_text(encoding="utf-8")
+
+        for marker in (
+            "Review Phase State Machine",
+            "FIRST_ASSEMBLY",
+            "REPAIR_VERIFY",
+            "ESCAPE_CORRECTION",
+            "REVIEWER_RECOVERY",
+            "FINAL",
+            "No-Findings-Drip Gate",
+            "Material Projection Matrix",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, core + flow)
+
+        for marker in (
+            "escape budget=1",
+            "REVIEW_PROCESS_FAILURE",
+            "内部恢复状态",
+            "不得作为用户/作者终态",
+            "NO_FINDINGS_WITHIN_SCOPE",
+            "NON_BLOCKING_FINDINGS",
+            "CHANGES_REQUIRED",
+            "BLOCKED",
+            "UPSTREAM_DECISION_REQUIRED",
+            "CAPABILITY_BLOCKER",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
+    def test_review_lineage_detects_first_review_rereview_and_new_baseline(self) -> None:
+        """Review 开始前必须恢复 lineage，不能把第二轮误当第一次 Full Review。"""
+        flow = (SKILLS / "review" / "references" / "01_审查执行流程.md").read_text(encoding="utf-8")
+        for marker in (
+            "Review Lineage / Re-review Detection Gate",
+            "FIRST_REVIEW",
+            "REPAIR_VERIFY",
+            "NEW_BASELINE",
+            "agent-review-state:v1",
+            "reviewed_head",
+            "Requirement revision",
+            "Head 相同",
+            "复用 outcome",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
+    def test_first_review_can_pass_without_findings_and_nits_do_not_block(self) -> None:
+        """Review 是合并判定，不要求必须找问题；非阻塞 nit 不进入返修链。"""
+        core = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
+        findings = (SKILLS / "review" / "references" / "02_Findings与严重度.md").read_text(encoding="utf-8")
+        joined = core + findings
+        for marker in (
+            "No-Finding Quota",
+            "NO_FINDINGS_WITHIN_SCOPE",
+            "NON_BLOCKING_FINDINGS",
+            "不要求至少一个 Finding",
+            "不自动返修",
+            "不阻塞合并",
+            "nit",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, joined)
+
+    def test_merge_decision_uses_blockers_and_required_gates_not_finding_count(self) -> None:
+        """满足需求且无 blocker 时可合并；Finding 数量和可选优化不是门禁。"""
+        flow = (SKILLS / "review" / "references" / "01_审查执行流程.md").read_text(encoding="utf-8")
+        for marker in (
+            "Merge Decision Gate",
+            "unresolved BLOCKING",
+            "Acceptance",
+            "required gates",
+            "Finding 数量",
+            "可继续优化",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
+    def test_second_pass_freezes_unchanged_baseline_and_requires_new_finding_provenance(self) -> None:
+        """第二轮只能验证修复；未变旧基线不能重新成为正常新 Finding 来源。"""
+        flow = (SKILLS / "review" / "references" / "01_审查执行流程.md").read_text(encoding="utf-8")
+        for marker in (
+            "Baseline Closure Freeze",
+            "New-Finding Provenance Gate",
+            "REPAIR_DIFF",
+            "UNRESOLVED_FINDING",
+            "NEW_REQUIREMENT",
+            "NEW_EXTERNAL_FACT",
+            "BASE_DRIFT",
+            "UNCHANGED_BASELINE",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
+    def test_review_publication_requires_material_projection_closure(self) -> None:
+        """存在会改变结论的 material unknown 时，不能把内部 draft 当完整 Finding batch 发布。"""
+        flow = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
+        ).read_text(encoding="utf-8")
+        findings = (
+            SKILLS / "review" / "references" / "02_Findings与严重度.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "Root Invariant",
+            "Material Projection Matrix",
+            "material unknown",
+            "No-Findings-Drip Gate",
+            "single synthesis",
+            "内部 draft",
+            "禁止发布",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow + findings)
+
     def test_finding_admission_requires_actionable_evidence_before_repair(self) -> None:
         """只有有效、可执行的 blocker 才能进入作者 Repair Batch。"""
         findings = (
@@ -159,6 +278,13 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             "Finding ID",
             "reviewed_head",
             "repair_head",
+            "Repair Package Closure",
+            "Repair Pre-review",
+            "Baseline Closure Challenge",
+            "UNCHANGED_BASELINE",
+            "同一个 Repair Package",
+            "Re-review Admission Gate",
+            "REPAIR_PACKAGE_ESCAPE",
             "复用原 PR/MR",
             "一次 re-request review",
             "per-finding",
@@ -234,6 +360,8 @@ class ReviewConvergenceContractTest(unittest.TestCase):
         self.assertIn("整批发布 Findings", managed)
         self.assertIn("do not publish partial findings", prompt)
         self.assertIn("reviewed_head-to-repair_head diff", prompt)
+        self.assertIn("Reviewer 自身漏审不作为终态", managed)
+        self.assertIn("self-recover internally", prompt)
 
         for detailed in (
             "Finding Admission Gate",
@@ -255,6 +383,9 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             "超出当前范围",
             "停止机械返修",
             "重新诊断",
+            "Reviewer 自身漏审不是需要用户或作者处理的终态",
+            "用户不需要手工管理 Review phase",
+            "不会为了结束流程强行制造无阻塞结论",
         ):
             self.assertIn(marker, usage)
 
