@@ -92,6 +92,41 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
 
+    def test_escape_correction_closes_sibling_projections_before_publication(self) -> None:
+        """FIRST_REVIEW_ESCAPE 必须先完整纠偏再一次发布，不得继续按投影滴漏。"""
+        flow = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "ESCAPE_CORRECTION",
+            "escape budget=1",
+            "Material Projection Matrix",
+            "consolidated review-correction batch",
+            "不得立即发布单条",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
+    def test_reviewer_process_failure_self_recovers_to_normal_review_terminal(self) -> None:
+        """Reviewer 自身流程失败只能内部恢复，不能把失败状态甩给用户或作者。"""
+        flow = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "REVIEWER_RECOVERY",
+            "REVIEW_PROCESS_FAILURE",
+            "非终态",
+            "遗漏原因",
+            "剩余 material projections",
+            "single synthesis",
+            "PASS",
+            "CHANGES_REQUIRED",
+            "UPSTREAM_DECISION_REQUIRED",
+            "CAPABILITY_BLOCKED",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
     def test_reviewer_role_carries_publication_gate_to_host_subagent(self) -> None:
         """现有 Reviewer 角色必须继承首轮发布门禁，不新增专用 Agent。"""
         payload = json.loads(
@@ -185,6 +220,9 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             "partial-finding-publication",
             "old-baseline-finding-as-normal-second-pass",
             "piecemeal-review-correction",
+            "no-findings-drip",
+            "reviewer-process-self-recovery",
+            "review-process-failure-terminal",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, joined)
