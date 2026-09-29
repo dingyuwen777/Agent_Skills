@@ -147,10 +147,12 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             "REVIEW_PROCESS_FAILURE",
             "内部恢复状态",
             "不得作为用户/作者终态",
-            "PASS",
+            "NO_FINDINGS_WITHIN_SCOPE",
+            "NON_BLOCKING_FINDINGS",
             "CHANGES_REQUIRED",
+            "BLOCKED",
             "UPSTREAM_DECISION_REQUIRED",
-            "CAPABILITY_BLOCKED",
+            "CAPABILITY_BLOCKER",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
@@ -312,7 +314,7 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             "重新诊断",
             "Reviewer 自身漏审不是需要用户或作者处理的终态",
             "用户不需要手工管理 Review phase",
-            "不会为了结束流程强行 PASS",
+            "不会为了结束流程强行制造无阻塞结论",
         ):
             self.assertIn(marker, usage)
 
