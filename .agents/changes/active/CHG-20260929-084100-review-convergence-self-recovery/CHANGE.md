@@ -92,6 +92,8 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 6. Coding collaboration：Parent 只消费 consolidated published batch；Reviewer recovery 不产生 per-finding scheduling。
 7. tests + Outcome Eval：把失败模式变成永久机器保护。
 8. USAGE：维护者只需普通“审核/重新审核”指令，不需要手工管理 phase。
+9. Repair Package Closure：作者 re-request 前先完成 Finding→修改→Evidence、repair diff 自审、相邻回归、Acceptance 与独立 Repair Pre-review。
+10. Second-pass Closure：首轮生成 Baseline Closure Freeze；第二轮新增 Finding 通过 Provenance Gate，UNCHANGED_BASELINE 只触发 Reviewer 内部 recovery。
 
 # 需求追溯
 
@@ -106,6 +108,9 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 | R7 | permanent tests / Outcome Eval 覆盖 | #329 / AC7 | not_satisfied | pending |
 | R8 | USAGE 用户路径无需手工管理 phase | #329 / AC8 | not_satisfied | pending |
 | R9 | end-to-end delivery | #329 / AC9 | not_satisfied | pending |
+| R10 | Repair Package Closure / Re-review Admission Gate | #329 / AC10 | not_satisfied | pending |
+| R11 | Baseline Closure Freeze | #329 / AC11 | not_satisfied | pending |
+| R12 | New-Finding Provenance Gate | #329 / AC12 | not_satisfied | pending |
 
 1. Review Core：增加 phase/state 与 No-Findings-Drip 核心不可跳过约束。
 2. ref01：定义 phase transition、Material Projection Matrix、escape correction、reviewer recovery、final terminal。
