@@ -319,5 +319,19 @@ class DevelopmentPreflightGovernanceContractTest(unittest.TestCase):
             self.assertIn(marker, managed)
 
 
+def test_existing_scope_classifier_is_reused_by_development_preflight() -> None:
+    """已有 classifier 时，开发期计划必须与 CI 共用事实源而不是复制 impact mapping。"""
+    core = (CODING / "SKILL.md").read_text(encoding="utf-8")
+    detail = (CODING / "references" / "27_CI_Workflow健康检查与Actions清理.md").read_text(
+        encoding="utf-8"
+    )
+    for marker in (
+        "changed-scope / risk classifier / selector",
+        "不得复制第二套 impact mapping",
+    ):
+        assert marker in core
+    for marker in ("Development Preflight Reuse", "不维护第二套 impact mapping"):
+        assert marker in detail
+
 if __name__ == "__main__":
     unittest.main()
