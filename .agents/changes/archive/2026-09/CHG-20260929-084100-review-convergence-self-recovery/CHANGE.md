@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260929-084100-review-convergence-self-recovery
 title: Review 收敛与 Reviewer 自愈闭环
 level: L2
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/329-review-convergence-self-recovery
 created: 2026-09-29
