@@ -119,10 +119,12 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             "遗漏原因",
             "剩余 material projections",
             "single synthesis",
-            "PASS",
+            "NO_FINDINGS_WITHIN_SCOPE",
+            "NON_BLOCKING_FINDINGS",
             "CHANGES_REQUIRED",
+            "BLOCKED",
             "UPSTREAM_DECISION_REQUIRED",
-            "CAPABILITY_BLOCKED",
+            "CAPABILITY_BLOCKER",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
