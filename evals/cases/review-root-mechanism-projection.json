@@ -2,7 +2,7 @@
   "协议": "Agent Skills Outcome Eval Case/v1",
   "用例标识": "review-root-mechanism-projection",
   "任务族": "Review/Testing",
-  "任务说明": "复杂 Review 首轮先完成 material projection closure 后一次发布；作者修复后，第二轮受 Baseline Closure Freeze 约束，只验证原 Findings、repair diff、相邻回归与 Acceptance。任何新 blocker 必须通过 New-Finding Provenance Gate；UNCHANGED_BASELINE 不能作为正常第二轮 Finding 来源，只能触发 Reviewer 内部 self-recovery。FIRST_REVIEW_ESCAPE 仅一次 correction assembly；review process failure 非终态，最终必须回到正常 Review 结论且不得强行 PASS。",
+  "任务说明": "复杂 Review 首轮完成 material projection closure 后一次发布；作者 Repair Batch 必须先通过 Repair Package Closure / Re-review Admission Gate，含 repair diff 自审、相邻回归和 blind Repair Pre-review。第二轮受 Baseline Closure Freeze 约束，只验证原 Findings、admitted repair diff、相邻回归与 Acceptance；新增 blocker 必须通过 New-Finding Provenance Gate。UNCHANGED_BASELINE 只触发 Reviewer self-recovery，REPAIR_PACKAGE_ESCAPE 先做一次 repair-diff sibling closure；Review/Repair process failure 都不能成为正常外部往返模式。",
   "必需结果": [
     "root-mechanism-projection-closure",
     "first-pass-coverage",
@@ -17,13 +17,16 @@
     "reviewer-process-self-recovery",
     "review-final-normal-terminal",
     "baseline-closure-freeze",
-    "new-finding-provenance-gate"
+    "new-finding-provenance-gate",
+    "repair-package-pre-review-closure",
+    "rereview-admission-gate"
   ],
   "必需证据": [
     "invariant-projection-evidence",
     "review-coverage-map-evidence",
     "material-projection-matrix-evidence",
-    "reviewer-recovery-synthesis-evidence"
+    "reviewer-recovery-synthesis-evidence",
+    "repair-package-evidence"
   ],
   "禁止违规": [
     "sibling-projection-churn",
@@ -41,7 +44,9 @@
     "reviewer-recovery-recursive-full-review",
     "false-pass-after-reviewer-recovery",
     "unchanged-baseline-reopen",
-    "new-finding-without-provenance"
+    "new-finding-without-provenance",
+    "rerequest-with-blocking-repair-package",
+    "repair-package-escape-drip"
   ],
   "上限": {
     "用户干预": 1
