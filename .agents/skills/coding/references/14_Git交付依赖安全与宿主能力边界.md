@@ -22,19 +22,9 @@
 
 ### Commit Hygiene
 
-正式 Git commit 默认代表一个**可独立理解、可审查的实现 checkpoint**，不是把工作区每个过程状态都持久化为历史。
+正式 commit 应是**可独立理解、可审查的实现 checkpoint**。临时 Workflow / CI 文件、debug instrumentation、未收敛 formatter/generated artifact、为取 Red/差异而暂时移动/删除 Change/Requirement/config，以及其他没有独立交付、Review、bisect 或审计价值的过程态，默认不提交。
 
-以下过程性状态默认留在 working tree、临时目录或受控验证环境，不形成正式 commit：
-
-- 只为跑一次验证而新增、启用再删除的临时 Workflow / CI 文件；
-- debug instrumentation、临时日志、探针、一次性 fixture 或排障开关；
-- formatter / import-sort / generated artifact 尚未收敛的中间态；
-- 为取得 Red、生成物差异或绕开当前门禁而暂时移动/删除 Change、Requirement、配置或其他治理载体，再在下一提交恢复；
-- 其他没有独立交付、Review、bisect 或审计价值的“做一步就提交一步”状态。
-
-例外必须有真实价值：例如项目明确要求保存可复现的 Red checkpoint、迁移阶段需要独立可回滚 commit、外部审计要求持久 Evidence，或一个提交本身就是可单独 Review/回滚的完整纵向切片。此时可以提交，但要让提交信息和 diff 清楚表达该 checkpoint 的长期意义。
-
-提交前优先在工作区完成与当前 scope 相称的 formatter、generated sync、targeted validation 和清理；不要为了减少 commit 数而 squash/force-rewrite 已共享历史，也不要把多个独立 Requirement 强行塞进一个提交。
+有真实长期价值的可复现 Red checkpoint、可回滚 Migration、审计 Evidence 或独立纵向切片可以提交。提交前收敛 formatter/generated/targeted validation；不要为了减少 commit 数而 squash/force-rewrite 已共享历史。
 ### Branch Name Resolution
 
 分支名属于普通可逆 Git 实施细节，按以下顺序自行解析：

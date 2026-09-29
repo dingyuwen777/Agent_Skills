@@ -208,12 +208,12 @@ Requirement Source：GitHub Issue #331。用户明确要求把 AIMA_UGC 的统�
 | --- | --- | --- | --- | --- |
 | V1 | main 2c3dee9258c97f74b89b0e6ac98347c015432228 | canonical read + #331 live readback | confirmed | 合法 Requirement 与起始缺口 |
 | V2 | 当前实现提交 | exact diff/readback | 待 commit 后确认 | 规则只落既有 Owner |
-| V3 | PR current head | Skill Tests / Review | explicitly_deferred | current-head Evidence |
+| V3 | `a21c239f…` / Skill Tests | selected semantic tests | BLOCKED：763 tests 中 3 个 context-budget failure；另经 delta review 发现新增回归函数误落 TestCase 外未被 unittest 发现 | 触发单一 Repair Batch：压缩语义 + 恢复真实测试发现 |
 | V4 | merge 后 main | main-fresh + Archive + Closure | explicitly_deferred | 完整交付 |
 
 ## 未验证内容与剩余风险
 
-- current-head CI 与独立 Review 尚未发生，不能提前满足 AC4。
+- 首轮 current-head CI 已运行但因 context budget 超限失败；Repair 同时修复未被 unittest 发现的模块级回归函数。Repair 后仍需 current-head Green + 独立 Review。
 
 ## 交付状态
 

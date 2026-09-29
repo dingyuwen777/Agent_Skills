@@ -250,18 +250,16 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertNotIn("cache-path: .runtime-dist", workflow)
         self.assertNotIn("actions/cache", workflow)
 
-def test_development_preflight_and_ci_share_one_scope_owner() -> None:
-    """开发期 preflight 与 CI selector 必须复用同一风险分类 Owner。"""
-    validation = VALIDATION.read_text(encoding="utf-8")
-    health = WORKFLOW_HEALTH.read_text(encoding="utf-8")
-    for marker in (
-        "开发期 Preflight 复用同一 changed-scope 事实源",
-        "风险分类 Owner 只能有一个",
-        "不再为本地开发、AI Agent、PR CI 各维护一套独立 impact mapping",
-    ):
-        assert marker in validation
-    assert "Development Preflight Reuse" in health
-    assert "不维护第二套 impact mapping" in health
+
+
+    def test_development_preflight_and_ci_share_one_scope_owner(self) -> None:
+        """开发期 preflight 与 CI selector 共用一个风险分类 Owner。"""
+        validation = self._read(VALIDATION)
+        health = self._read(WORKFLOW_HEALTH)
+        for marker in ("开发期 Preflight 复用同一 changed-scope 事实源", "风险分类 Owner 只能有一个", "不再为本地开发、AI Agent、PR CI 各维护一套独立 impact mapping"):
+            self.assertIn(marker, validation)
+        self.assertIn("Development Preflight Reuse", health)
+        self.assertIn("不维护第二套 impact mapping", health)
 
 if __name__ == "__main__":
     unittest.main()

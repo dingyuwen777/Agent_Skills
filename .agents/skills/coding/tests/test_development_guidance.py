@@ -220,28 +220,13 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         self.assertIn("内容守恒优先于篇幅精简", skill)
 
 
-def test_commit_hygiene_keeps_process_noise_out_of_formal_history() -> None:
-    """过程性验证状态默认不提交，同时保留有价值 checkpoint 例外。"""
-    delivery = (
-        ROOT
-        / ".agents"
-        / "skills"
-        / "coding"
-        / "references"
-        / "14_Git交付依赖安全与宿主能力边界.md"
-    ).read_text(encoding="utf-8")
-    for marker in (
-        "### Commit Hygiene",
-        "可独立理解、可审查的实现 checkpoint",
-        "临时 Workflow / CI 文件",
-        "debug instrumentation",
-        "generated artifact 尚未收敛的中间态",
-        "暂时移动/删除 Change、Requirement、配置或其他治理载体",
-        "没有独立交付、Review、bisect 或审计价值",
-        "可复现的 Red checkpoint",
-        "不要为了减少 commit 数而 squash/force-rewrite 已共享历史",
-    ):
-        assert marker in delivery
+
+
+    def test_commit_hygiene_keeps_process_noise_out_of_formal_history(self) -> None:
+        """过程性状态默认不提交，同时保留有价值 checkpoint。"""
+        delivery = self._read(".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md")
+        for marker in ("### Commit Hygiene", "可独立理解、可审查的实现 checkpoint", "临时 Workflow / CI 文件", "debug instrumentation", "formatter/generated artifact", "移动/删除 Change/Requirement/config", "独立交付、Review、bisect 或审计价值", "可复现 Red checkpoint", "不要为了减少 commit 数而 squash/force-rewrite 已共享历史"):
+            self.assertIn(marker, delivery)
 
 if __name__ == "__main__":
     unittest.main()
