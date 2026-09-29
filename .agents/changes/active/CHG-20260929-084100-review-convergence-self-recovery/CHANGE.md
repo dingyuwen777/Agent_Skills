@@ -78,7 +78,7 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 | Finding 发布 | material projection closure 后 single synthesis 才发布 | #329 AC2 |
 | Escape | budget=1，先 correction assembly 再 consolidated batch | #329 AC3 |
 | Recovery terminal | 不能把 reviewer failure 甩给用户；回到普通 Review Final | #329 AC4/AC5 |
-| PASS | 不强行 PASS；真实 blocker 仍为 CHANGES_REQUIRED | #329 非目标/风险 |
+| PASS | 不强行制造无阻塞结论；真实 blocker 仍为 CHANGES_REQUIRED / BLOCKED | #329 非目标/风险 |
 | Quick Review | 保持最小充分，不因新状态机机械升级 Deep | #329 风险 |
 | Runtime | 不改 Task Route protocol / Stable ID / Agent 集合 | 当前 scope |
 
