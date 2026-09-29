@@ -94,6 +94,9 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 8. USAGE：维护者只需普通“审核/重新审核”指令，不需要手工管理 phase。
 9. Repair Package Closure：作者 re-request 前先完成 Finding→修改→Evidence、repair diff 自审、相邻回归、Acceptance 与独立 Repair Pre-review。
 10. Second-pass Closure：首轮生成 Baseline Closure Freeze；第二轮新增 Finding 通过 Provenance Gate，UNCHANGED_BASELINE 只触发 Reviewer 内部 recovery。
+11. Review Lineage：审查开始先判 FIRST_REVIEW / REPAIR_VERIFY / NEW_BASELINE，平台可写时附 agent-review-state:v1。
+12. Review Success：不设 Finding 配额；首审满足需求可零 Finding 通过，NON_BLOCKING/nit 不进入返修。
+13. Merge Decision：只看 unresolved BLOCKING、Acceptance 与 required gates，不看 Finding/建议数量。
 
 # 需求追溯
 
@@ -111,6 +114,9 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 | R10 | Repair Package Closure / Re-review Admission Gate + Baseline Closure Challenge | #329 / AC10 | not_satisfied | pending：blind Repair Pre-review 需同时挑战 repair diff 与 frozen baseline closure |
 | R11 | Baseline Closure Freeze | #329 / AC11 | satisfied | ref01 + second-pass baseline-freeze regression |
 | R12 | New-Finding Provenance Gate | #329 / AC12 | satisfied | ref01 provenance enum + unchanged-baseline rejection regression |
+| R13 | Review Lineage / Re-review Detection Gate | #329 / AC13 | pending | permanent regression + ref01/host/role implementation pending Green |
+| R14 | Review Success / No-Finding Quota | #329 / AC14 | pending | core/ref02/USAGE + permanent regression pending Green |
+| R15 | Merge Decision by blocker + required gates | #329 / AC15 | pending | ref01 Merge Decision Gate + regression pending Green |
 
 1. Review Core：增加 phase/state 与 No-Findings-Drip 核心不可跳过约束。
 2. ref01：定义 phase transition、Material Projection Matrix、escape correction、reviewer recovery、final terminal。
@@ -162,9 +168,9 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 # 完成审计
 
 - [x] upstream_re_read：已读取 #329、当前 Review/Coding canonical Owner、相关 tests/eval/USAGE。
-- [x] change_coverage：AC1–AC8、AC10–AC12 已映射当前实现与直接 Evidence；AC9 明确 deferred 到 post-merge lifecycle。
+- [ ] change_coverage：AC1–AC8、AC11–AC12 已闭环；AC10、AC13–AC15 正在完成最新 Red/Green；AC9 deferred 到 post-merge lifecycle。
 - [x] reverse_audit：已从“首轮 Review → 作者 Repair Package → 第二轮 Re-review → Reviewer escape/recovery → Final”反向检查 Finding 发布、作者 handoff、旧基线冻结和新 Finding 来源。
-- [x] unresolved_cleared：实现范围内无 unresolved；只剩 AC9 的 current-head delivery / post-merge lifecycle。
+- [ ] unresolved_cleared：AC10、AC13–AC15 latest-head Green 尚待确认；AC9 为 post-merge lifecycle。
 
 # 完成证据与状态
 
