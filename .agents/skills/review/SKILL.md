@@ -64,6 +64,8 @@ FIRST_ASSEMBLY
 ## No-Findings-Drip Gate（首次发布门禁）
 
 冻结 Target/Requirement/base-head，建立 **Review Coverage Map** 与需要时的 **Material Projection Matrix**；Assembly 深度见 [04_审查深度选择.md](references/04_审查深度选择.md)。blind 视角同一 Head 独立审，Parent 只做 **single synthesis** 后发布；在 Root Invariant、会改变当前结论/修复/Acceptance 的 material projections、Omission/Coverage Audit 与 Counterevidence 尚未闭合前，所有 Finding 都只是**内部 draft**，**禁止发布**给作者。Systemic signal 先 route refresh，按 **Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission / Coverage Audit** 闭环；首轮漏掉旧基线可推导 blocker = **First-pass Coverage Miss**。
+
+保留并强化 **First Review Assembly Gate**：blind 视角基于同一冻结 Head，Parent **一次 synthesis** 后才可对外；**不得向作者发布部分 Findings**，也不得在 synthesis 后**递归开启 Full Review**。
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
