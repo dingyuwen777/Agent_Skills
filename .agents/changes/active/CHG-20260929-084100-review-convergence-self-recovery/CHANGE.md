@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260929-084100-review-convergence-self-recovery
 title: Review 收敛与 Reviewer 自愈闭环
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/329-review-convergence-self-recovery
 created: 2026-09-29
@@ -111,12 +111,12 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 | R7 | permanent tests / Outcome Eval 覆盖 | #329 / AC7 | satisfied | convergence/root-mechanism tests + `review-root-mechanism-projection` case；760 tests Green |
 | R8 | USAGE 用户路径无需手工管理 phase | #329 / AC8 | satisfied | USAGE 14.2 + usage regression |
 | R9 | end-to-end delivery | #329 / AC9 | explicitly_deferred | current-head required CI/independent Review pending；merge/main-fresh/archive/closure/cleanup 属 post-merge lifecycle |
-| R10 | Repair Package Closure / Re-review Admission Gate + Baseline Closure Challenge | #329 / AC10 | not_satisfied | pending：blind Repair Pre-review 需同时挑战 repair diff 与 frozen baseline closure |
+| R10 | Repair Package Closure / Re-review Admission Gate + Baseline Closure Challenge | #329 / AC10 | satisfied | ref09 + repair package regression；blind Pre-review 同时挑战 repair diff 与 UNCHANGED_BASELINE |
 | R11 | Baseline Closure Freeze | #329 / AC11 | satisfied | ref01 + second-pass baseline-freeze regression |
 | R12 | New-Finding Provenance Gate | #329 / AC12 | satisfied | ref01 provenance enum + unchanged-baseline rejection regression |
-| R13 | Review Lineage / Re-review Detection Gate | #329 / AC13 | pending | permanent regression + ref01/host/role implementation pending Green |
-| R14 | Review Success / No-Finding Quota | #329 / AC14 | pending | core/ref02/USAGE + permanent regression pending Green |
-| R15 | Merge Decision by blocker + required gates | #329 / AC15 | pending | ref01 Merge Decision Gate + regression pending Green |
+| R13 | Review Lineage / Re-review Detection Gate | #329 / AC13 | satisfied | ref01 + host/Reviewer role + lineage regression |
+| R14 | Review Success / No-Finding Quota | #329 / AC14 | satisfied | Review Core/ref02/USAGE + zero-finding/nit regression |
+| R15 | Merge Decision by blocker + required gates | #329 / AC15 | satisfied | ref01 Merge Decision Gate + regression |
 
 1. Review Core：增加 phase/state 与 No-Findings-Drip 核心不可跳过约束。
 2. ref01：定义 phase transition、Material Projection Matrix、escape correction、reviewer recovery、final terminal。
@@ -168,13 +168,16 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 # 完成审计
 
 - [x] upstream_re_read：已读取 #329、当前 Review/Coding canonical Owner、相关 tests/eval/USAGE。
-- [ ] change_coverage：AC1–AC8、AC11–AC12 已闭环；AC10、AC13–AC15 正在完成最新 Red/Green；AC9 deferred 到 post-merge lifecycle。
+- [x] change_coverage：AC1–AC8、AC10–AC15 已映射当前实现与直接 Evidence；AC9 deferred 到 post-merge lifecycle。
 - [x] reverse_audit：已从“首轮 Review → 作者 Repair Package → 第二轮 Re-review → Reviewer escape/recovery → Final”反向检查 Finding 发布、作者 handoff、旧基线冻结和新 Finding 来源。
-- [ ] unresolved_cleared：AC10、AC13–AC15 latest-head Green 尚待确认；AC9 为 post-merge lifecycle。
+- [x] unresolved_cleared：实现范围内无 unresolved；AC9 为 post-merge lifecycle。
 
 # 完成证据与状态
 
 ## 当前证据
+
+- Latest semantic Green：head `86de1180e486a3e013460fd9e15a93e5eae2378c` / Skill Tests run `36509366765`，`Ran 763 tests`；Context budget regression 同轮通过，未提高预算。
+- 新增 AC10/AC13–AC15：Repair Pre-review Baseline Challenge、Review Lineage、No-Finding Quota、Merge Decision Gate 均有 permanent regression / Outcome Eval 保护。
 
 - Requirement Source：Issue #329；PR #330。
 - 行为 Red：Skill Tests run `36504602907` 在 Requirement Source Contract 修正后进入 semantic tests，88 tests 中 35 failures，直接暴露 Review phase/publication/recovery Contract 缺口；后续新增 baseline-freeze/provenance Red 也由 PR CI 证明。
@@ -192,8 +195,8 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 ## 交付状态
 
 - implementation: complete
-- validation: prior ready-head CI green；AC10 scope expanded by latest user requirement, new Red/Green pending
-- PR: #330 open / repair in_progress
+- validation: head `86de1180e486a3e013460fd9e15a93e5eae2378c` semantic suite Green；ready-head required CI pending
+- PR: #330 open / ready_for_review
 - independent_review: pending
 - merge: pending
 - main_fresh: pending
