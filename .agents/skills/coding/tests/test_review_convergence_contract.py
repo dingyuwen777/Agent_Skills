@@ -122,6 +122,59 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, depth)
 
+    def test_review_phase_state_machine_blocks_finding_drip_and_self_recovers(self) -> None:
+        """Review 必须先闭包再发布，Reviewer 自身漏审只能内部自愈后给正常终态。"""
+        core = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
+        flow = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
+        ).read_text(encoding="utf-8")
+
+        for marker in (
+            "Review Phase State Machine",
+            "FIRST_ASSEMBLY",
+            "REPAIR_VERIFY",
+            "ESCAPE_CORRECTION",
+            "REVIEWER_RECOVERY",
+            "FINAL",
+            "No-Findings-Drip Gate",
+            "Material Projection Matrix",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, core + flow)
+
+        for marker in (
+            "escape budget=1",
+            "REVIEW_PROCESS_FAILURE",
+            "内部恢复状态",
+            "不得作为用户/作者终态",
+            "PASS",
+            "CHANGES_REQUIRED",
+            "UPSTREAM_DECISION_REQUIRED",
+            "CAPABILITY_BLOCKED",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
+    def test_review_publication_requires_material_projection_closure(self) -> None:
+        """存在会改变结论的 material unknown 时，不能把内部 draft 当完整 Finding batch 发布。"""
+        flow = (
+            SKILLS / "review" / "references" / "01_审查执行流程.md"
+        ).read_text(encoding="utf-8")
+        findings = (
+            SKILLS / "review" / "references" / "02_Findings与严重度.md"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "Root Invariant",
+            "Material Projection Matrix",
+            "material unknown",
+            "No-Findings-Drip Gate",
+            "single synthesis",
+            "内部 draft",
+            "禁止发布",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow + findings)
+
     def test_finding_admission_requires_actionable_evidence_before_repair(self) -> None:
         """只有有效、可执行的 blocker 才能进入作者 Repair Batch。"""
         findings = (
@@ -234,6 +287,8 @@ class ReviewConvergenceContractTest(unittest.TestCase):
         self.assertIn("整批发布 Findings", managed)
         self.assertIn("do not publish partial findings", prompt)
         self.assertIn("reviewed_head-to-repair_head diff", prompt)
+        self.assertIn("Reviewer 自身漏审不作为终态", managed)
+        self.assertIn("self-recover internally", prompt)
 
         for detailed in (
             "Finding Admission Gate",
