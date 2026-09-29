@@ -10,19 +10,13 @@
 
 ### Git
 
-- 修改前检查 branch、worktree、未提交修改；
-- 不覆盖用户改动；
-- 禁止 `git reset --hard`、`git clean -fd`、强制推送、未授权共享历史重写；
-- 未经授权不创建分支、提交、推送、PR、合并、部署、删分支；
-- CI 失败、冲突、保护规则或结果未确认时不强行推进；
-- Git 提交信息必须中文；项目可增格式、前缀或工单号，不得覆盖中文要求；
-- 本地 Git 路径可用时，开工顺序：`最新目标分支 → 本地任务分支 → 本地 Change / 失败测试 / 最小治理提交 → 首个本地提交 → 首次 push 创建远程跟踪分支 → 早期 PR`；不得先创建远程空分支。仅有托管平台 API 时按下文语义等价路径执行，不把本地 clone/commit 当作远端写入的固定前置条件。
-- 既有本地实现接管：保留工作、不伪造历史；以当前 revision 按 Requirement Source 与现有 Change/Validation/Review/Git 门禁做到 PR Ready；可安全复现的 `base Red → current Green` 仅作事后回归证据，Issue/Change/测试仍按既有触发。
-- Merge/Rebase 冲突先恢复状态、双方 **Primary Requirement Source** / Issue / PR / Change / commit 与 hunk；逐 hunk 合并兼容意图，不按 `ours/theirs`；语义冲突回决策门禁，错误/危险操作可 `abort`；回归后 Git 授权不变。
+- 写前检查 branch/worktree/未提交内容并保护用户修改；禁 `reset --hard`、`clean -fd`、强推和未授权历史重写。
+- 未授权不创建/提交/push/PR/merge/deploy/删分支；CI、冲突、保护规则或结果未确认时不强推流程。
+- Commit message 必须中文；正式 commit 应有独立审查/回滚/bisect/审计价值。临时 CI/debug/formatter/generated、为取 Red 暂移治理文件等过程态默认不提交；可复现 Red、Migration、审计 Evidence、独立切片除外，不为减 commit 数重写共享历史。
+- 本地 Git 可用时按 `最新目标分支 → 本地任务分支 → Change/失败测试/最小治理提交 → 首个 commit → 首次 push 建远程跟踪分支 → 早期 PR`；禁止先建远程空分支。仅有托管 API 时走语义等价路径，不把 clone/commit 当远端写入固定前提。
+- 接管既有本地实现时保留工作、不伪造历史，按当前 revision 和既有 Requirement/Change/Validation/Review/Git 门禁做到目标状态；可安全复现的 `base Red → current Green` 仅作事后证据。
+- Merge/Rebase 冲突先恢复双方 Requirement/Issue/PR/Change/commit/hunk，逐 hunk 合并兼容意图，不机械选 ours/theirs；语义冲突回决策门禁，可安全 abort，回归后授权不变。
 
-### Commit Hygiene
-
-正式 commit 应有独立审查/回滚/bisect/审计价值；临时 CI/debug/formatter/generated、为取 Red 暂移治理文件等过程态默认不提交。可复现 Red、Migration、审计 Evidence、独立切片除外；不为减 commit 数重写共享历史。
 ### Branch Name Resolution
 
 分支名属于普通可逆 Git 实施细节，按以下顺序自行解析：

@@ -256,7 +256,7 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         """开发期 preflight 与 CI selector 共用一个风险分类 Owner。"""
         health = self._read(WORKFLOW_HEALTH)
         self.assertIn("Development Preflight Reuse", health)
-        self.assertIn("禁止第二套 impact mapping", health)
+        self.assertIn("禁双映射", health)
 
 if __name__ == "__main__":
     unittest.main()

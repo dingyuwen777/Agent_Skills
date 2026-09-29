@@ -202,7 +202,7 @@ python <skill>/scripts/coding.py status --root <repo> --json
 
 ### 4.6 分类 L1/L2/L3 并固化任务契约
 
-编码前建立最小任务契约：事实、目标/非目标、Acceptance、不变项、Owner、方案、Evidence、未知项；其他边界按需，见 [设计实施](references/05_设计实施与根因调试.md)。**Development Preflight Gate** 校准需求/治理/CI/交付：CI 只问 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**；已有 classifier/selector 时复用其分类 Owner（细则见 CI），无则不强造。命中 CI 成本/责任问题时读 [CI](references/27_CI_Workflow健康检查与Actions清理.md)，CI/Workflow 变更加 [CI Review](references/19_CI审查升级门禁.md)；Issue/PR **platform write** 前读 [Requirement](references/17_需求来源与PR追溯治理.md)+[Governance](references/29_治理资产机器Contract.md)并写前校验。
+编码前建立最小任务契约：事实、目标/非目标、Acceptance、不变项、Owner、方案、Evidence、未知项；其他边界按需，见 [设计实施](references/05_设计实施与根因调试.md)。**Development Preflight Gate** 校准需求/治理/CI/交付：CI 只问 **Broad Job / Duplicate Evidence / Duplicate Setup/Install/Build**；已有 selector 时复用，无则不强造。命中 CI 成本/责任问题时读 [CI](references/27_CI_Workflow健康检查与Actions清理.md)，CI/Workflow 变更加 [CI Review](references/19_CI审查升级门禁.md)；Issue/PR **platform write** 前读 [Requirement](references/17_需求来源与PR追溯治理.md)+[Governance](references/29_治理资产机器Contract.md)并写前校验。
 
 L1 可在工作说明内维护。L2 必须有**最小充分任务契约**，但可由本轮用户要求、PR body、Issue/工单、Spec/OpenSpec/RFC 或项目既有载体承载；只有跨 Owner/PR/会话、复杂依赖/阶段、正式审计、项目规则或 Completion Gate 等**持久治理价值**出现时才升级为独立持久施工契约。L3 必须有稳定持久契约并补方案比较、公共兼容、Migration/部署/回滚和安全/运维风险。项目 Overlay 可以更严格。
 
