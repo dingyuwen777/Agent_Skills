@@ -225,6 +225,8 @@ class ReviewRootMechanismClosureTest(unittest.TestCase):
             "no-findings-drip",
             "reviewer-process-self-recovery",
             "review-process-failure-terminal",
+            "unchanged-baseline-reopen",
+            "new-finding-without-provenance",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, joined)
