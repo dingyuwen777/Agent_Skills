@@ -168,6 +168,8 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             "agent-review-state:v1",
             "reviewed_head",
             "Requirement revision",
+            "Head 相同",
+            "复用 outcome",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
