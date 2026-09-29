@@ -157,6 +157,52 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
 
+    def test_review_lineage_detects_first_review_rereview_and_new_baseline(self) -> None:
+        """Review 开始前必须恢复 lineage，不能把第二轮误当第一次 Full Review。"""
+        flow = (SKILLS / "review" / "references" / "01_审查执行流程.md").read_text(encoding="utf-8")
+        for marker in (
+            "Review Lineage / Re-review Detection Gate",
+            "FIRST_REVIEW",
+            "REPAIR_VERIFY",
+            "NEW_BASELINE",
+            "agent-review-state:v1",
+            "reviewed_head",
+            "Requirement revision",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
+    def test_first_review_can_pass_without_findings_and_nits_do_not_block(self) -> None:
+        """Review 是合并判定，不要求必须找问题；非阻塞 nit 不进入返修链。"""
+        core = (SKILLS / "review" / "SKILL.md").read_text(encoding="utf-8")
+        findings = (SKILLS / "review" / "references" / "02_Findings与严重度.md").read_text(encoding="utf-8")
+        joined = core + findings
+        for marker in (
+            "No-Finding Quota",
+            "NO_FINDINGS_WITHIN_SCOPE",
+            "NON_BLOCKING_FINDINGS",
+            "不要求至少一个 Finding",
+            "不自动返修",
+            "不阻塞合并",
+            "nit",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, joined)
+
+    def test_merge_decision_uses_blockers_and_required_gates_not_finding_count(self) -> None:
+        """满足需求且无 blocker 时可合并；Finding 数量和可选优化不是门禁。"""
+        flow = (SKILLS / "review" / "references" / "01_审查执行流程.md").read_text(encoding="utf-8")
+        for marker in (
+            "Merge Decision Gate",
+            "unresolved BLOCKING",
+            "Acceptance",
+            "required gates",
+            "Finding 数量",
+            "可继续优化",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
     def test_second_pass_freezes_unchanged_baseline_and_requires_new_finding_provenance(self) -> None:
         """第二轮只能验证修复；未变旧基线不能重新成为正常新 Finding 来源。"""
         flow = (SKILLS / "review" / "references" / "01_审查执行流程.md").read_text(encoding="utf-8")
