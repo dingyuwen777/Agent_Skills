@@ -310,6 +310,9 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             "超出当前范围",
             "停止机械返修",
             "重新诊断",
+            "Reviewer 自身漏审不是需要用户或作者处理的终态",
+            "用户不需要手工管理 Review phase",
+            "不会为了结束流程强行 PASS",
         ):
             self.assertIn(marker, usage)
 
