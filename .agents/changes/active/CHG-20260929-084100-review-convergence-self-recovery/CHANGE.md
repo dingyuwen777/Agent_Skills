@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260929-084100-review-convergence-self-recovery
 title: Review 收敛与 Reviewer 自愈闭环
 level: L2
-status: in_progress
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/329-review-convergence-self-recovery
 created: 2026-09-29
@@ -99,18 +99,18 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 
 | ID | Requirement | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| R1 | Review phase state machine 单调推进 | #329 / AC1 | not_satisfied | pending |
-| R2 | No-Findings-Drip + Material Projection Matrix | #329 / AC2 | not_satisfied | pending |
-| R3 | FIRST_REVIEW_ESCAPE correction assembly + budget=1 | #329 / AC3 | not_satisfied | pending |
-| R4 | REVIEWER_RECOVERY 内部自愈、非终态 | #329 / AC4 | not_satisfied | pending |
-| R5 | recovery 后正常 Review terminal | #329 / AC5 | not_satisfied | pending |
-| R6 | author handoff 批量化、不递归 churn | #329 / AC6 | not_satisfied | pending |
-| R7 | permanent tests / Outcome Eval 覆盖 | #329 / AC7 | not_satisfied | pending |
-| R8 | USAGE 用户路径无需手工管理 phase | #329 / AC8 | not_satisfied | pending |
-| R9 | end-to-end delivery | #329 / AC9 | not_satisfied | pending |
-| R10 | Repair Package Closure / Re-review Admission Gate | #329 / AC10 | not_satisfied | pending |
-| R11 | Baseline Closure Freeze | #329 / AC11 | not_satisfied | pending |
-| R12 | New-Finding Provenance Gate | #329 / AC12 | not_satisfied | pending |
+| R1 | Review phase state machine 单调推进 | #329 / AC1 | satisfied | Review Core/ref01 + `test_review_phase_state_machine_blocks_finding_drip_and_self_recovers`；head `a2f9702` semantic suite Green |
+| R2 | No-Findings-Drip + Material Projection Matrix | #329 / AC2 | satisfied | Review Core/ref01/ref02 + publication closure regression |
+| R3 | FIRST_REVIEW_ESCAPE correction assembly + budget=1 | #329 / AC3 | satisfied | ref01 + `test_first_review_escape_uses_one_fresh_assembly` / sibling projection regression |
+| R4 | REVIEWER_RECOVERY 内部自愈、非终态 | #329 / AC4 | satisfied | ref01 + reviewer host/role projection + self-recovery regression |
+| R5 | recovery 后正常 Review terminal | #329 / AC5 | satisfied | ref01 复用既有 Review/Router terminals；未新增第二套状态 |
+| R6 | author handoff 批量化、不递归 churn | #329 / AC6 | satisfied | coding ref09 Repair Batch/Re-review Admission + existing-PR/single-rerequest regressions |
+| R7 | permanent tests / Outcome Eval 覆盖 | #329 / AC7 | satisfied | convergence/root-mechanism tests + `review-root-mechanism-projection` case；760 tests Green |
+| R8 | USAGE 用户路径无需手工管理 phase | #329 / AC8 | satisfied | USAGE 14.2 + usage regression |
+| R9 | end-to-end delivery | #329 / AC9 | explicitly_deferred | current-head required CI/independent Review pending；merge/main-fresh/archive/closure/cleanup 属 post-merge lifecycle |
+| R10 | Repair Package Closure / Re-review Admission Gate | #329 / AC10 | satisfied | coding ref09 + Repair Pre-review / REPAIR_PACKAGE_ESCAPE regressions |
+| R11 | Baseline Closure Freeze | #329 / AC11 | satisfied | ref01 + second-pass baseline-freeze regression |
+| R12 | New-Finding Provenance Gate | #329 / AC12 | satisfied | ref01 provenance enum + unchanged-baseline rejection regression |
 
 1. Review Core：增加 phase/state 与 No-Findings-Drip 核心不可跳过约束。
 2. ref01：定义 phase transition、Material Projection Matrix、escape correction、reviewer recovery、final terminal。
@@ -162,30 +162,33 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 # 完成审计
 
 - [x] upstream_re_read：已读取 #329、当前 Review/Coding canonical Owner、相关 tests/eval/USAGE。
-- [ ] change_coverage
-- [ ] reverse_audit
-- [ ] unresolved_cleared
+- [x] change_coverage：AC1–AC8、AC10–AC12 已映射当前实现与直接 Evidence；AC9 明确 deferred 到 post-merge lifecycle。
+- [x] reverse_audit：已从“首轮 Review → 作者 Repair Package → 第二轮 Re-review → Reviewer escape/recovery → Final”反向检查 Finding 发布、作者 handoff、旧基线冻结和新 Finding 来源。
+- [x] unresolved_cleared：实现范围内无 unresolved；只剩 AC9 的 current-head delivery / post-merge lifecycle。
 
 # 完成证据与状态
 
 ## 当前证据
 
-- Issue #329 已建立，PR #330 已创建。
-- Red permanent tests 与 Outcome Eval case 已先提交。
-- 第一次 PR CI run 36504499009 先因 Change 标题 Contract 不完整失败；该失败属于治理载体格式问题，不作为行为 Red Evidence。
-- 行为 Red 仍待修正 Change Contract 后由正式 CI 运行确认。
+- Requirement Source：Issue #329；PR #330。
+- 行为 Red：Skill Tests run `36504602907` 在 Requirement Source Contract 修正后进入 semantic tests，88 tests 中 35 failures，直接暴露 Review phase/publication/recovery Contract 缺口；后续新增 baseline-freeze/provenance Red 也由 PR CI 证明。
+- Green：head `a2f9702b8a38b9c274cafff55080bce50c8132d6` / Skill Tests run `36506701740`，selected self-contained suite `Ran 760 tests ... OK`；Context budget regression 同轮通过，review-only context delta +3877，未提高预算。
+- 该 run 唯一交付失败是 Active Change 当时仍为 `in_progress`；语义/Contract 测试无失败。
+- Source/Runtime project-facing Review Core、host prompt、Reviewer role projection、Repair Package/Re-review Admission、Outcome Eval case 均进入同一回归集。
+- 无 Runtime protocol / Stable ID / Agent 集合 / 依赖 / Schema/Migration / Deploy 变化。
 
 ## 未验证内容与剩余风险
 
-- canonical Review rules 尚未实现新 Contract。
-- current-head tests / CI / independent Review 尚未完成。
-- merge / main-fresh / archive / issue closure / branch cleanup 尚未完成。
+- ready revision 的 required CI / Runtime Package Gate 与独立 final Review 尚待执行。
+- guarded merge、main-fresh、repository-native Change Archive、Issue #329 Closure 与 branch cleanup 属后续交付生命周期。
+- 未运行真实跨宿主 actual Outcome Eval；因此不声明所有模型/宿主已实际 qualification，该项不属于本次普通源码交付 required gate。
 
 ## 交付状态
 
-- implementation: in_progress
-- validation: red_pending
-- PR: #330 open
+- implementation: complete
+- validation: pre-ready semantic suite green; ready-head required CI pending
+- PR: #330 open / ready_for_review
+- independent_review: pending
 - merge: pending
 - main_fresh: pending
 - archive: pending
