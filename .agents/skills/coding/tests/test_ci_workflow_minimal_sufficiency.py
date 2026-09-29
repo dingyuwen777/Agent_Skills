@@ -250,5 +250,13 @@ class CiWorkflowMinimalSufficiencyTest(unittest.TestCase):
         self.assertNotIn("cache-path: .runtime-dist", workflow)
         self.assertNotIn("actions/cache", workflow)
 
+
+
+    def test_development_preflight_and_ci_share_one_scope_owner(self) -> None:
+        """开发期 preflight 与 CI selector 共用一个风险分类 Owner。"""
+        health = self._read(WORKFLOW_HEALTH)
+        self.assertIn("Development Preflight Reuse", health)
+        self.assertIn("禁双映射", health)
+
 if __name__ == "__main__":
     unittest.main()

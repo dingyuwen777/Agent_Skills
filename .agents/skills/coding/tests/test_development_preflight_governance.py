@@ -319,5 +319,16 @@ class DevelopmentPreflightGovernanceContractTest(unittest.TestCase):
             self.assertIn(marker, managed)
 
 
+
+
+    def test_existing_scope_classifier_is_reused_by_development_preflight(self) -> None:
+        """已有 classifier 时，开发期计划与 CI 共用风险事实源。"""
+        core = (CODING / "SKILL.md").read_text(encoding="utf-8")
+        detail = (CODING / "references" / "27_CI_Workflow健康检查与Actions清理.md").read_text(encoding="utf-8")
+        for marker in ("已有 selector 复用",):
+            self.assertIn(marker, core)
+        for marker in ("Development Preflight Reuse", "禁双映射"):
+            self.assertIn(marker, detail)
+
 if __name__ == "__main__":
     unittest.main()
