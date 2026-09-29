@@ -2,7 +2,7 @@
   "协议": "Agent Skills Outcome Eval Case/v1",
   "用例标识": "review-root-mechanism-projection",
   "任务族": "Review/Testing",
-  "任务说明": "复杂 Review 首轮完成 material projection closure 后一次发布；作者 Repair Batch 必须先通过 Repair Package Closure / Re-review Admission Gate，含 repair diff 自审、相邻回归和 blind Repair Pre-review。第二轮受 Baseline Closure Freeze 约束，只验证原 Findings、admitted repair diff、相邻回归与 Acceptance；新增 blocker 必须通过 New-Finding Provenance Gate。UNCHANGED_BASELINE 只触发 Reviewer self-recovery，REPAIR_PACKAGE_ESCAPE 先做一次 repair-diff sibling closure；Review/Repair process failure 都不能成为正常外部往返模式。",
+  "任务说明": "复杂 Review 首轮完成 material projection closure 后一次发布；作者 Repair Batch 在外部 re-review 前必须通过 Repair Package Closure：blind Repair Pre-review 同时检查 repair diff 并执行 Baseline Closure Challenge，把 repair-diff 或 UNCHANGED_BASELINE blocker 都并入同一个 Repair Package 内部修完。第二轮受 Baseline Closure Freeze / New-Finding Provenance Gate 约束，只验证 admitted Repair Package；Review/Repair process failure 都不能变成重复外部往返。",
   "必需结果": [
     "root-mechanism-projection-closure",
     "first-pass-coverage",
@@ -19,7 +19,8 @@
     "baseline-closure-freeze",
     "new-finding-provenance-gate",
     "repair-package-pre-review-closure",
-    "rereview-admission-gate"
+    "rereview-admission-gate",
+    "baseline-closure-challenge-before-rerequest"
   ],
   "必需证据": [
     "invariant-projection-evidence",
@@ -46,7 +47,8 @@
     "unchanged-baseline-reopen",
     "new-finding-without-provenance",
     "rerequest-with-blocking-repair-package",
-    "repair-package-escape-drip"
+    "repair-package-escape-drip",
+    "rerequest-without-baseline-closure-challenge"
   ],
   "上限": {
     "用户干预": 1
