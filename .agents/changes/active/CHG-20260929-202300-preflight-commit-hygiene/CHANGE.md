@@ -151,7 +151,7 @@ Requirement Source：GitHub Issue #331。用户明确要求把 AIMA_UGC 的统�
 - [x] 使用永久规则回归，不制造伪业务 Red
 - [x] 完成最小实现
 - [x] canonical Owner 即长期规则，无额外 README
-- [ ] 取得 current-head CI/Review Evidence
+- [x] 取得 current-head CI/Review Evidence：`549278cd…` required gates 全绿，Review `NO_FINDINGS_WITHIN_SCOPE`
 - [x] 完成 pre-Ready 追溯与审计
 
 # 验证矩阵
@@ -207,20 +207,20 @@ Requirement Source：GitHub Issue #331。用户明确要求把 AIMA_UGC 的统�
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main 2c3dee9258c97f74b89b0e6ac98347c015432228 | canonical read + #331 live readback | confirmed | 合法 Requirement 与起始缺口 |
-| V2 | 当前实现提交 | exact diff/readback | 待 commit 后确认 | 规则只落既有 Owner |
-| V3 | `a21c239f…` / Skill Tests | selected semantic tests | BLOCKED：763 tests 中 3 个 context-budget failure；另经 delta review 发现新增回归函数误落 TestCase 外未被 unittest 发现 | 触发单一 Repair Batch：压缩语义 + 恢复真实测试发现 |
+| V2 | `549278cd825ef3ad70d8ab1f0c82b6019113ce09` | exact diff/readback + FIRST_ASSEMBLY Review | PASS / `NO_FINDINGS_WITHIN_SCOPE` | 规则只落既有 Owner，旧 Git 契约与项目 Overlay 边界保持 |
+| V3 | `549278cd825ef3ad70d8ab1f0c82b6019113ce09` / GitHub Actions | Agent Skills Gate + Runtime package matrix | PASS：Agent Skills Gate success；Runtime Linux/macOS/Windows Package success；Runtime Package Gate success | canonical 语义、context budget、Source/Runtime parity 与三平台 package Evidence 全部闭合 |
 | V4 | merge 后 main | main-fresh + Archive + Closure | explicitly_deferred | 完整交付 |
 
 ## 未验证内容与剩余风险
 
-- 首轮 current-head CI 已运行但因 context budget 超限失败；Repair 同时修复未被 unittest 发现的模块级回归函数。Repair 后仍需 current-head Green + 独立 Review。
+- 首轮 context-budget/测试发现问题已在同一 Repair lineage 收敛；`549278cd…` current-head required CI 与三平台 package Evidence 全绿，FIRST_ASSEMBLY/delta Review 未发现剩余 blocking Finding。
 
 ## 交付状态
 
 - 提交：单一正式 checkpoint。
 - 拉取请求：待创建 Draft PR。
-- CI：待 current-head Actions。
-- 合并：待 Review PASS + required checks。
+- CI：`549278cd…` Agent Skills Gate / Runtime Package Gate / Linux-Windows-macOS package 全部 success；本 Evidence 回写属于 carrier-only 更新，merge 前仍按 latest Head required gate 复核。
+- 合并：Review PASS；待本 carrier-only commit 的 latest Head required checks。
 - Change 归档：待 repository-native automation。
 - 发布 / 部署：不适用。
 
