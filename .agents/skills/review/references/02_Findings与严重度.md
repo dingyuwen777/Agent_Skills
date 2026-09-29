@@ -8,9 +8,9 @@ Finding=`severity + Scope + Delivery Effect + Action`，四者正交。
 
 ## Finding Admission Gate
 
-Finding Admission 只处理**已经通过 Review publication prerequisite 的 synthesized Finding**。首次/ESCAPE_CORRECTION 对外发布前，必须先通过 ref01 的 **No-Findings-Drip Gate**：Root Invariant、Material Projection Matrix、material unknown closure、Coverage/Omission Audit、Counterevidence 与 single synthesis 均完成。尚在探索中的**内部 draft**即使看起来是 blocker，也**禁止发布**给作者、禁止进入 Repair Batch。
+只接收已通过 ref01 **No-Findings-Drip Gate** 的 synthesized Finding；**内部 draft 禁止发布**或进入 Repair Batch。
 
-发布 blocking Finding 前还必须给稳定 **Finding ID**，并具备：可定位对象、可复现/可静态证明的**直接 Evidence**、触发条件、实际影响、四轴 classification、收口方向和验证方式。再做 **Counterevidence Check**：项目规则是否允许、上游是否刻意决定、调用链是否反证、现有测试/Evidence 是否已经覆盖；任一足以推翻当前解释就撤回或降为待验证。证据不足的内容不能进入 `AUTO_REPAIR`。同根 Finding 合并；重复意见去重；冲突修复意见先按 Contract/current revision/更直接 Evidence 裁决，未裁决前不得同时交给作者。
+blocking Finding 还必须有稳定 **Finding ID**、定位、直接 Evidence、触发/影响、四轴 classification、收口与验证，并做 **Counterevidence Check**（项目规则、上游决定、调用链、现有测试/Evidence）。证据不足不进 `AUTO_REPAIR`；同根合并、冲突先裁决。
 
 ## 1. severity
 
