@@ -2,7 +2,7 @@
   "协议": "Agent Skills Outcome Eval Case/v1",
   "用例标识": "review-root-mechanism-projection",
   "任务族": "Review/Testing",
-  "任务说明": "复杂 Review 首轮完成 material projection closure 后一次发布；作者 Repair Batch 在外部 re-review 前必须通过 Repair Package Closure：blind Repair Pre-review 同时检查 repair diff 并执行 Baseline Closure Challenge，把 repair-diff 或 UNCHANGED_BASELINE blocker 都并入同一个 Repair Package 内部修完。第二轮受 Baseline Closure Freeze / New-Finding Provenance Gate 约束，只验证 admitted Repair Package；Review/Repair process failure 都不能变成重复外部往返。",
+  "任务说明": "Review 是合并判定而不是找问题比赛：先恢复 Review Lineage，区分 FIRST_REVIEW / REPAIR_VERIFY / NEW_BASELINE。首审若 Requirement/Acceptance、required Evidence 与 material risks 均满足，可以 NO_FINDINGS_WITHIN_SCOPE 直接进入可合并判定；非阻塞 nit 不触发返修。存在 blocker 时首轮一次发布稳定 batch；作者 Repair Package 在外部 re-review 前必须 blind Repair Pre-review 同时检查 repair diff 与 frozen baseline closure。第二轮受 Baseline Closure Freeze / New-Finding Provenance Gate 约束，只验证 admitted Repair Package；Review/Repair process failure 都不能变成重复外部往返。",
   "必需结果": [
     "root-mechanism-projection-closure",
     "first-pass-coverage",
@@ -20,7 +20,11 @@
     "new-finding-provenance-gate",
     "repair-package-pre-review-closure",
     "rereview-admission-gate",
-    "baseline-closure-challenge-before-rerequest"
+    "baseline-closure-challenge-before-rerequest",
+    "review-lineage-detection",
+    "first-review-zero-finding-pass",
+    "nonblocking-does-not-trigger-repair",
+    "merge-decision-by-blockers-and-gates"
   ],
   "必需证据": [
     "invariant-projection-evidence",
@@ -48,7 +52,11 @@
     "new-finding-without-provenance",
     "rerequest-with-blocking-repair-package",
     "repair-package-escape-drip",
-    "rerequest-without-baseline-closure-challenge"
+    "rerequest-without-baseline-closure-challenge",
+    "forced-finding",
+    "nit-driven-repair-loop",
+    "rereview-misdetected-as-first-review",
+    "finding-count-as-merge-gate"
   ],
   "上限": {
     "用户干预": 1
