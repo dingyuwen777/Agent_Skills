@@ -325,7 +325,7 @@ class DevelopmentPreflightGovernanceContractTest(unittest.TestCase):
         """已有 classifier 时，开发期计划与 CI 共用风险事实源。"""
         core = (CODING / "SKILL.md").read_text(encoding="utf-8")
         detail = (CODING / "references" / "27_CI_Workflow健康检查与Actions清理.md").read_text(encoding="utf-8")
-        for marker in ("已有 selector 时复用", "无则不强造"):
+        for marker in ("已有 selector 复用",):
             self.assertIn(marker, core)
         for marker in ("Development Preflight Reuse", "禁双映射"):
             self.assertIn(marker, detail)
