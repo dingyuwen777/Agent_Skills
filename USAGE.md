@@ -745,7 +745,7 @@ Code Review 常用三种模式：**只审核**、**审核并合并**、**Review 
 
 如果发现复合高风险机制，在当前范围内先把同一根机制的主要失效路径审完整，再统一给 Findings。
 
-同一根机制的 Review 不应“发现一个就评论一个”。Reviewer 应先在内部完成会改变当前结论/修法/验收的主要投影闭包，再一次性发布稳定 Finding batch。返修后如果又从未变化的旧基线发现此前本可推导的漏审，Reviewer 先在内部完成有界自愈和统一 synthesis，再给正常 Review 结论；**Reviewer 自身漏审不是需要用户或作者处理的终态**。真实 blocker 仍存在时结论可以是 CHANGES_REQUIRED，不会为了结束流程强行 PASS。
+同一根机制的 Review 不应“发现一个就评论一个”。Reviewer 应先在内部完成会改变当前结论/修法/验收的主要投影闭包，再一次性发布稳定 Finding batch。返修后如果又从未变化的旧基线发现此前本可推导的漏审，Reviewer 先在内部完成有界自愈和统一 synthesis，再给正常 Review 结论；**Reviewer 自身漏审不是需要用户或作者处理的终态**。真实 blocker 仍存在时结论可以是 CHANGES_REQUIRED / BLOCKED，不会为了结束流程强行制造“无阻塞”结论。
 
 如果存在 blocking Finding：
 - 写入当前 PR Review；
