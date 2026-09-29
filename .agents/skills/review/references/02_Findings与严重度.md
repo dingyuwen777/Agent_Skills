@@ -10,7 +10,7 @@ Finding=`severity + Scope + Delivery Effect + Action`，四者正交。
 
 只接收已通过 ref01 **No-Findings-Drip Gate** 的 synthesized Finding；**内部 draft 禁止发布**或进入 Repair Batch。
 
-blocking Finding 还必须有稳定 **Finding ID**、定位、直接 Evidence、触发/影响、四轴 classification、收口与验证，并做 **Counterevidence Check**（项目规则、上游决定、调用链、现有测试/Evidence）。证据不足不进 `AUTO_REPAIR`；同根合并、冲突先裁决。
+blocking Finding 还必须有稳定 **Finding ID**、定位、直接 Evidence、触发条件、**实际影响**、四轴 classification、收口方向、**验证方式**，并做 **Counterevidence Check**（项目规则、上游决定、调用链、现有测试/Evidence）。证据不足不进 `AUTO_REPAIR`；同根合并、冲突先裁决。
 
 ## 1. severity
 
