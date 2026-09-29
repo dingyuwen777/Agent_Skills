@@ -49,23 +49,11 @@ Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；
 
 ## Review Phase State Machine（核心）
 
-同一冻结 Review Target 的 Review phase 只允许有界、单调推进：
+`FIRST_ASSEMBLY → REPAIR_VERIFY → ESCAPE_CORRECTION → REVIEWER_RECOVERY → FINAL`。只有新 Requirement / 新外部事实 / repair diff 新行为可建新 baseline；`REVIEW_PROCESS_FAILURE` 只进入内部 `REVIEWER_RECOVERY`，不是用户/作者终态。
 
-```text
-FIRST_ASSEMBLY
-→ REPAIR_VERIFY
-→ ESCAPE_CORRECTION（最多一次）
-→ REVIEWER_RECOVERY（仅内部、必要时）
-→ FINAL
-```
+## First Review Assembly Gate / No-Findings-Drip Gate
 
-只有 **新 Requirement / 新外部事实 / repair diff 新行为** 可以建立新的 Review baseline；Reviewer 自身漏审、冲突 draft、未关掉的 sibling projection 都不能借机重开无界 Full Review。`REVIEW_PROCESS_FAILURE` 只触发内部 `REVIEWER_RECOVERY`，不是用户/作者终态，也不能用来要求用户替 Reviewer 收敛审查。
-
-## No-Findings-Drip Gate（首次发布门禁）
-
-冻结 Target/Requirement/base-head，建立 **Review Coverage Map** 与需要时的 **Material Projection Matrix**；Assembly 深度见 [04_审查深度选择.md](references/04_审查深度选择.md)。blind 视角同一 Head 独立审，Parent 只做 **single synthesis** 后发布；在 Root Invariant、会改变当前结论/修复/Acceptance 的 material projections、Omission/Coverage Audit 与 Counterevidence 尚未闭合前，所有 Finding 都只是**内部 draft**，**禁止发布**给作者。Systemic signal 先 route refresh，按 **Invariant → Lifecycle → Failure Boundary → Projection → Evidence → Omission / Coverage Audit** 闭环；首轮漏掉旧基线可推导 blocker = **First-pass Coverage Miss**。
-
-保留并强化 **First Review Assembly Gate**：blind 视角基于同一冻结 Head，Parent **一次 synthesis** 后才可对外；**不得向作者发布部分 Findings**，也不得在 synthesis 后**递归开启 Full Review**。
+冻结 Target 后建立 **Review Coverage Map**；复合根机制再建 **Material Projection Matrix**。blind 视角只产出内部 draft，Parent **一次 synthesis / single synthesis**。Root Invariant、material projections、Omission/Coverage Audit 与 Counterevidence 未闭合前**不得向作者发布部分 Findings**，也不得**递归开启 Full Review**。详细状态、escape 与 recovery 规则见 [01_审查执行流程.md](references/01_审查执行流程.md)。
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
