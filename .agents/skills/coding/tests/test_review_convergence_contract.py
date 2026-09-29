@@ -157,6 +157,22 @@ class ReviewConvergenceContractTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, flow)
 
+    def test_second_pass_freezes_unchanged_baseline_and_requires_new_finding_provenance(self) -> None:
+        """第二轮只能验证修复；未变旧基线不能重新成为正常新 Finding 来源。"""
+        flow = (SKILLS / "review" / "references" / "01_审查执行流程.md").read_text(encoding="utf-8")
+        for marker in (
+            "Baseline Closure Freeze",
+            "New-Finding Provenance Gate",
+            "REPAIR_DIFF",
+            "UNRESOLVED_FINDING",
+            "NEW_REQUIREMENT",
+            "NEW_EXTERNAL_FACT",
+            "BASE_DRIFT",
+            "UNCHANGED_BASELINE",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, flow)
+
     def test_review_publication_requires_material_projection_closure(self) -> None:
         """存在会改变结论的 material unknown 时，不能把内部 draft 当完整 Finding batch 发布。"""
         flow = (
