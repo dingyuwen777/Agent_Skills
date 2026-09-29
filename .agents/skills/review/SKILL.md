@@ -53,7 +53,7 @@ Review 以 **Requirement / Acceptance** 为准，**不是持续优化机制**；
 
 ## First Review Assembly Gate / No-Findings-Drip Gate
 
-冻结 Target 后建立 **Review Coverage Map**；复合根机制再建 **Material Projection Matrix**。blind 视角只产出内部 draft，Parent **一次 synthesis / single synthesis**。Root Invariant、material projections、Omission/Coverage Audit 与 Counterevidence 未闭合前**不得向作者发布部分 Findings**，也不得**递归开启 Full Review**。详细状态、escape 与 recovery 规则见 [01_审查执行流程.md](references/01_审查执行流程.md)。
+冻结 Target 后建立 **Review Coverage Map**；复合根机制再建 **Material Projection Matrix**。blind 视角只产出内部 draft，Parent **一次 synthesis / single synthesis**。Root Invariant、material projections、**Omission / Coverage Audit** 与 Counterevidence 未闭合前**不得向作者发布部分 Findings**，也不得**递归开启 Full Review**。Systemic 审查保持 **Invariant → Lifecycle → Failure Boundary → Projection → Evidence**；首轮旧基线漏审记 **First-pass Coverage Miss**。详细状态、escape 与 recovery 规则见 [01_审查执行流程.md](references/01_审查执行流程.md)。
 ## 1. 规则事实源与集成边界
 
 ### 1.1 与 Coding Skill
@@ -114,7 +114,7 @@ Review 发现技术文档缺陷时：
 - 只读 Review：作为 Finding 报告；
 - 已授权修文档且存在 [`.agents/skills/docs/SKILL.md`](../docs/SKILL.md)：按 Docs 的工作流处理，不由 Review 复制 Docs 写作规则；
 - Docs 发现实现问题后仍返回 Coding，不由 Review 越权直接改生产实现；
-- docs diff：targeted 反查已有 Owner/机器镜像/单文件 Growth/退出；相似或长度不判重；review-only 只报告。
+- docs diff：做 **Reverse Documentation Audit**，反查**已有 Owner**/机器镜像/**单文件 Growth**/退出；相似或长度不判重；**review-only 只报告**。
 
 ## 2. 三种工作模式
 
