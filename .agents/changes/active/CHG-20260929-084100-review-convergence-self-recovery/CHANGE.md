@@ -38,11 +38,22 @@ data_changes: []
 
 Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly / FIRST_REVIEW_ESCAPE / Repair Batch 收敛链进一步硬化成显式 Review Phase State Machine，新增 No-Findings-Drip 发布门禁，并把 reviewer process failure 定义为内部、非终态的 self-recovery 状态。目标不是强行首轮零遗漏，而是把 Reviewer 的探索/纠偏留在内部，在对作者发布前完成有界闭包；即使 Reviewer 自己漏审，也先自愈再输出普通 Review 终态，不把流程失败本身甩给用户。
 
-# 背景与根因
+# 背景、现状与问题
 
 真实 PR Review 暴露：现有规则虽然已经有 assembly、delta re-review、one-shot FIRST_REVIEW_ESCAPE，但 Reviewer 仍可能在多轮外部 handoff 中逐个发现同一根因的 sibling projection。根因是“发布 Finding”仍缺少可测试的 closure prerequisite，而 escape budget 用尽后的 reviewer failure 还没有明确非终态 self-recovery。
 
-# 目标
+# 事实与证据
+
+| 证据编号 | 已确认事实 | 来源 / 定位 | 影响 |
+| --- | --- | --- | --- |
+| E1 | Review 已有 Assembly / Finding Admission / delta re-review / FIRST_REVIEW_ESCAPE | current Review Core/ref01/ref02/ref04 | 本次复用既有 Owner，不另建框架 |
+| E2 | 真实 PR Review 仍发生 sibling projection 滴漏 | Issue #329 用户路径事实 | 需要 publication/recovery hard contract |
+| E3 | 现有 permanent tests 尚未要求 reviewer failure 非终态 | review convergence/root mechanism tests | 新增 Red/Green 保护 |
+| E4 | Outcome Eval case 尚未覆盖 reviewer-process-failure terminalization | review-root-mechanism-projection | 扩展高价值负例 |
+
+# 目标、成功标准与非目标
+
+## 目标
 
 - 显式状态机：FIRST_ASSEMBLY → REPAIR_VERIFY → ESCAPE_CORRECTION → REVIEWER_RECOVERY → FINAL。
 - 首轮 Finding 发布前关闭 material projections，不 drip publication。
@@ -51,13 +62,36 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 - 最终只能输出真实 Review 终态；代码有 blocker 时仍可 CHANGES_REQUIRED，不能伪 PASS。
 - 保持 Quick Review 轻量，不引入递归 Full Review。
 
-# 非目标
+## 非目标
 
 - 不承诺理论上发现所有 Bug。
 - 不新增 Skill/Agent/Runtime 协议/后台服务。
 - 不扩大 review-only 的代码修改授权。
 - 不降低真实 blocker/CI/权限门禁。
 - 不把 recovery 变成无限内部循环。
+
+# 约束与意图决策
+
+| 决策 | 结论 | 依据 |
+| --- | --- | --- |
+| Review phase | 单调状态机，流程失败只进入内部 recovery | #329 AC1/AC4 |
+| Finding 发布 | material projection closure 后 single synthesis 才发布 | #329 AC2 |
+| Escape | budget=1，先 correction assembly 再 consolidated batch | #329 AC3 |
+| Recovery terminal | 不能把 reviewer failure 甩给用户；回到普通 Review Final | #329 AC4/AC5 |
+| PASS | 不强行 PASS；真实 blocker 仍为 CHANGES_REQUIRED | #329 非目标/风险 |
+| Quick Review | 保持最小充分，不因新状态机机械升级 Deep | #329 风险 |
+| Runtime | 不改 Task Route protocol / Stable ID / Agent 集合 | 当前 scope |
+
+# 修改方案与决策依据
+
+1. Review Core：增加 phase/state 与 No-Findings-Drip 核心不可跳过约束。
+2. ref01：定义 phase transition、Material Projection Matrix、escape correction、reviewer recovery、final terminal。
+3. ref02：Finding Admission 增加 publication prerequisite，禁止 internal draft 直接进入 author handoff。
+4. ref04：Assembly 关闭条件增加 material unknown / projection closure，不加重 Quick 无关范围。
+5. reviewer host / multi-agent role / managed entry：只投影最小“先闭包、失败自愈、再给稳定 Review 结果”语义，不复制细节。
+6. Coding collaboration：Parent 只消费 consolidated published batch；Reviewer recovery 不产生 per-finding scheduling。
+7. tests + Outcome Eval：把失败模式变成永久机器保护。
+8. USAGE：维护者只需普通“审核/重新审核”指令，不需要手工管理 phase。
 
 # 需求追溯
 
@@ -73,8 +107,6 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 | R8 | USAGE 用户路径无需手工管理 phase | #329 / AC8 | not_satisfied | pending |
 | R9 | end-to-end delivery | #329 / AC9 | not_satisfied | pending |
 
-# 修改方案
-
 1. Review Core：增加 phase/state 与 No-Findings-Drip 核心不可跳过约束。
 2. ref01：定义 phase transition、Material Projection Matrix、escape correction、reviewer recovery、final terminal。
 3. ref02：Finding Admission 增加 publication prerequisite，禁止 internal draft 直接进入 author handoff。
@@ -83,6 +115,17 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 6. Coding collaboration：明确 Parent 只消费 consolidated published batch，Reviewer recovery 不产生 per-finding repair scheduling。
 7. tests + Outcome Eval：把失败模式变成永久机器保护。
 8. USAGE：维护者只需普通“审核/重新审核”指令，不需要手工管理 phase。
+
+# 计划改动
+
+| 资产 | 计划变化 | 目的 |
+| --- | --- | --- |
+| Review Core + refs 01/02/04 | phase、publication、escape/recovery/final | 避免外部 Finding 滴漏 |
+| reviewer host / managed entry / role | 最小 self-recovery 不变量 | 保证宿主可达 |
+| Coding ref09 | consolidated published batch handoff | 不让 Parent 把内部 draft 变成 repair |
+| convergence/root tests | Red/Green hard contract | 防止规则退化 |
+| Outcome Eval case | reviewer failure self-recovery 负例 | 结果层保护 |
+| USAGE | 面向维护者说明 | 不要求用户手工管理 phase |
 
 # 验证矩阵
 
@@ -97,12 +140,19 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 | Build / Package / Runtime | required | 仓库 changed-scope required CI / Runtime package gate 按 classifier |
 | Docs / Governance | required | Issue #329、Change、PR、Review、main-fresh、Archive/Closure |
 
-# 风险与回滚
+# 风险、兼容性、迁移与回滚
 
 - 风险：Review 过重、隐藏内部无限循环、误解为必须 PASS。
 - 约束：material projection 只覆盖会改变结论/修复/Acceptance 的 sibling；recovery single synthesis；最终允许 CHANGES_REQUIRED。
+- 兼容：收紧 Review 行为，不改变 Task Route protocol / Stable ID。
 - Runtime/依赖/Schema/Migration/Deploy：无。
 - 回滚：revert 本 PR；无数据恢复。
+
+# 文档、依赖、部署与发布影响
+
+- USAGE：同步维护者 Review/返修用户路径。
+- Runtime/Project Payload：只随现有 Review Core/host projection 派生，不新增协议。
+- 依赖、Schema/Migration、配置、Deploy/Release：不适用。
 
 # 完成审计
 
@@ -110,3 +160,29 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 - [ ] change_coverage
 - [ ] reverse_audit
 - [ ] unresolved_cleared
+
+# 完成证据与状态
+
+## 当前证据
+
+- Issue #329 已建立，PR #330 已创建。
+- Red permanent tests 与 Outcome Eval case 已先提交。
+- 第一次 PR CI run 36504499009 先因 Change 标题 Contract 不完整失败；该失败属于治理载体格式问题，不作为行为 Red Evidence。
+- 行为 Red 仍待修正 Change Contract 后由正式 CI 运行确认。
+
+## 未验证内容与剩余风险
+
+- canonical Review rules 尚未实现新 Contract。
+- current-head tests / CI / independent Review 尚未完成。
+- merge / main-fresh / archive / issue closure / branch cleanup 尚未完成。
+
+## 交付状态
+
+- implementation: in_progress
+- validation: red_pending
+- PR: #330 open
+- merge: pending
+- main_fresh: pending
+- archive: pending
+- issue_closure: #329 open
+- cleanup: pending
