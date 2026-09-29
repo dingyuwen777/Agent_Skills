@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260929-202300-preflight-commit-hygiene
 title: 统一开发期Preflight与CommitHygiene规则
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/331-preflight-commit-hygiene
 created: 2026-09-29
