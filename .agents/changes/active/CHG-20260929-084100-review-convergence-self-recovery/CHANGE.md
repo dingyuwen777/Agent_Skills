@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20260929-084100-review-convergence-self-recovery
 title: Review 收敛与 Reviewer 自愈闭环
 level: L2
-status: ready_for_review
+status: in_progress
 owner: dingyuwen777
 branch: tech/329-review-convergence-self-recovery
 created: 2026-09-29
@@ -108,7 +108,7 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 | R7 | permanent tests / Outcome Eval 覆盖 | #329 / AC7 | satisfied | convergence/root-mechanism tests + `review-root-mechanism-projection` case；760 tests Green |
 | R8 | USAGE 用户路径无需手工管理 phase | #329 / AC8 | satisfied | USAGE 14.2 + usage regression |
 | R9 | end-to-end delivery | #329 / AC9 | explicitly_deferred | current-head required CI/independent Review pending；merge/main-fresh/archive/closure/cleanup 属 post-merge lifecycle |
-| R10 | Repair Package Closure / Re-review Admission Gate | #329 / AC10 | satisfied | coding ref09 + Repair Pre-review / REPAIR_PACKAGE_ESCAPE regressions |
+| R10 | Repair Package Closure / Re-review Admission Gate + Baseline Closure Challenge | #329 / AC10 | not_satisfied | pending：blind Repair Pre-review 需同时挑战 repair diff 与 frozen baseline closure |
 | R11 | Baseline Closure Freeze | #329 / AC11 | satisfied | ref01 + second-pass baseline-freeze regression |
 | R12 | New-Finding Provenance Gate | #329 / AC12 | satisfied | ref01 provenance enum + unchanged-baseline rejection regression |
 
@@ -186,8 +186,8 @@ Requirement Source 为 Issue #329。本 Change 把现有 First Review Assembly /
 ## 交付状态
 
 - implementation: complete
-- validation: pre-ready semantic suite green; ready-head required CI pending
-- PR: #330 open / ready_for_review
+- validation: prior ready-head CI green；AC10 scope expanded by latest user requirement, new Red/Green pending
+- PR: #330 open / repair in_progress
 - independent_review: pending
 - merge: pending
 - main_fresh: pending
