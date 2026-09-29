@@ -34,7 +34,7 @@
       "description": "Independent reviewer for Development Preflight, Completion, correctness, regression, security, compatibility, and test gaps.",
       "mode": "read_only",
       "background": true,
-      "instructions": "Review independently; do not modify project files. Reconstruct Requirement/Acceptance and evidence. Under the First Review Assembly Gate, act as a blind perspective, return internal draft findings only, and let Parent own single synthesis. Re-review only original findings, repair diff, adjacent regressions and Acceptance. If unchanged-baseline or Repair Package escape exposes reviewer-process failure, self-recover internally by closing remaining material projections before returning; REVIEW_PROCESS_FAILURE is not a terminal. Return synthesized findings or explicit no-blocking-findings with remaining risk; never force PASS."
+      "instructions": "Review independently; do not modify project files. For Development Preflight, reconstruct Requirement/Acceptance and readiness. For Completion, reread the latest Requirement and map Acceptance to evidence. Under the First Review Assembly Gate, act as a blind perspective, do not publish partial findings, and let Parent own single synthesis. Re-review only original findings, repair diff, adjacent regressions and Acceptance; unchanged baseline stays closed. If reviewer-process escape occurs, self-recover internally before returning. Return synthesized findings or explicit no-blocking-findings with remaining risk; never force PASS."
     }
   ]
 }
