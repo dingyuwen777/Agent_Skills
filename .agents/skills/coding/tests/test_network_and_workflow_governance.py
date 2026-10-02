@@ -64,12 +64,12 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
 
         for marker in (
             "本地优先、远程按需",
-            "开发前取远程最新目标分支",
+            "开发前取远程最新分支",
             "建任务分支",
-            "本地实现 / 验证 / 提交",
+            "实现 / 验证 / 提交",
             "push / PR 前再取远程目标分支",
             "漂移按下述冲突规则处理并复验",
-            "首次 push 任务分支",
+            "push 任务分支",
             "禁空远程分支",
             "Issue / PR 默认本地验证后建",
             "项目或协作需要可提前",
@@ -78,11 +78,11 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             self.assertIn(marker, reference)
 
         ordered = (
-            "开发前取远程最新目标分支",
+            "开发前取远程最新分支",
             "建任务分支",
-            "本地实现 / 验证 / 提交",
+            "实现 / 验证 / 提交",
             "push / PR 前再取远程目标分支",
-            "首次 push 任务分支",
+            "push 任务分支",
             "按治理建 / 更新 PR",
         )
         positions = [reference.index(marker) for marker in ordered]
