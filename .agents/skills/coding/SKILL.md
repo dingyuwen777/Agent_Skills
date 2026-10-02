@@ -164,24 +164,6 @@ CMakeLists.txt ≠ Linux-only
 
 Greenfield 也先核验仓库根、Git 状态、运行/交付环境和已确认约束。目标项目**首次接入** Agent_Skills、治理状态待校准或长期**治理事实**疑似漂移时，按 [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) + [12_目标项目安装与AGENTS_Bootstrap.md](references/12_目标项目安装与AGENTS_Bootstrap.md) 在**任何实质性生产代码修改之前**完成 `Project Governance Bootstrap`；写授权下校准 Overlay 并重读最终 `AGENTS.md` 后**继续原始研发任务**，只读授权下只做会话内调查并**继续原始只读任务**。普通后续任务没有长期治理变化时不重复全量校准。
 
-#### Repository Development Lifecycle Gate
-
-对**已有远程目标分支的 Git 仓库写任务**，除用户明确要求 offline/local-only 或项目确实没有 remote 外，固定执行：
-
-```text
-开发前获取远程最新目标分支
-→ Agent 自动创建 / 命名本地任务分支
-→ 本地实现
-→ 与风险相称的最小充分验证
-→ push / PR 前再次获取远程目标分支
-→ 有漂移则按项目既有 Git 策略集成；Agent 解决可判定冲突
-→ 只重跑因同步 / 冲突而失效的 Evidence
-→ push 当前任务分支
-→ 按 Requirement / PR 治理创建或更新 PR
-```
-
-这条链由 Agent 自行执行，不要求用户手工运行 Git 命令、选择分支名或解决普通冲突。开发前 remote freshness 经首选路径和等价能力调查仍无法确认时，不得把新任务建立在“最新主分支”假设上继续实质生产修改；pre-push freshness、冲突复验未闭环时不得 push、创建 / 更新 PR 或声明 PR Ready。本地能执行且属于 required Evidence 的验证应在 push 前完成；确实只能在远程环境执行的 required check 可由 PR CI 补齐，但不能用 CI 替代本地可执行的必要验证。只有业务语义、Acceptance、public Contract、Schema / 数据、安全或其他高影响冲突经有界调查仍无法判定时才进入用户 / Owner 决策。Git 细节与例外见 [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md)。
-
 ### 4.3 恢复项目和工具链事实
 
 按 [01_项目发现与可失效缓存.md](references/01_项目发现与可失效缓存.md) 与 [03_编程语言与工具链适配规则.md](references/03_编程语言与工具链适配规则.md) 确认任务相关的 README/Requirements/Architecture、入口目录、Manifest/Runtime/lock、Build/Test/CI、Config、Contract/Schema/Migration、调用链/数据流、错误处理、生成物、模块 Owner/public boundary 和相关历史变更。只读取任务相关内容。
@@ -329,7 +311,7 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 6. Git、依赖、安全、交付与宿主能力边界
 
-`Git/PR/Release/Delivery`、依赖变化、安全边界、最终交付报告或宿主能力降级命中时，必须读取 [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md)。原主文件中 Git、依赖、安全、最终报告和能力边界的详细规则已完整迁入该 reference；不能因为本节变短而把它们视为可选建议。
+`Git/PR/Release/Delivery`、依赖变化、安全边界、最终交付报告或宿主能力降级命中时，必须读取 [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md)。现有 remote 的 Git 写任务 Core 门禁：`开发前同步 target → AI 自动命名 / 建 task branch → 本地最小充分验证 → push / PR 前再同步 target → 漂移按 ref14 解决并复验 → push task branch → PR`；pre-push freshness / 复验未闭环不推进，普通冲突不问用户。详细 Git、授权和失败边界只由该 reference 承担。
 
 ## 7. 规则内容守恒与 Skill 维护
 

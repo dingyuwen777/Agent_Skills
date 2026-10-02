@@ -249,11 +249,12 @@ class DevelopmentGuidanceTest(unittest.TestCase):
                 self.assertIn(marker, usage)
 
         for marker in (
-            "Repository Development Lifecycle Gate",
-            "开发前获取远程最新目标分支",
-            "与风险相称的最小充分验证",
-            "push / PR 前再次获取远程目标分支",
-            "只重跑因同步 / 冲突而失效的 Evidence",
+            "现有 remote 的 Git 写任务 Core 门禁",
+            "开发前同步 target",
+            "本地最小充分验证",
+            "push / PR 前再同步 target",
+            "漂移按 ref14 解决并复验",
+            "普通冲突不问用户",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, core)
