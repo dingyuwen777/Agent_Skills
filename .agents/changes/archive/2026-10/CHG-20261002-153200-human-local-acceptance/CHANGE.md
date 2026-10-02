@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20261002-153200-human-local-acceptance
 title: 增加用户本地验收门禁并重构USAGE阅读路径
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: tech/335-human-local-acceptance-usage
 created: 2026-10-02
