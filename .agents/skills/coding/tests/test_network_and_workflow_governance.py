@@ -64,24 +64,24 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
 
         for marker in (
             "本地优先、远程按需",
-            "开发前取远程最新目标分支",
-            "按 Branch Name Resolution 自动建 / 命名任务分支",
-            "本地实现 / 最小充分验证 / 提交",
-            "push / PR 前再取远程目标分支",
-            "漂移按下述冲突规则处理并复验",
+            "开发前同步远程目标分支",
+            "自动任务分支",
+            "本地最小充分验证 / 提交",
+            "push / PR 前再同步目标分支",
+            "按下述冲突规则复验",
             "push 任务分支",
             "禁空远程分支",
-            "Issue / PR 默认本地验证后建",
-            "项目持久 Requirement / Change、远程 CI 或协作需要可提前",
+            "Issue / PR 默认验证后建",
+            "持久 Requirement 或远程 CI / 协作需要可提前",
             "direct push main",
         ):
             self.assertIn(marker, reference)
 
         ordered = (
-            "开发前取远程最新目标分支",
-            "按 Branch Name Resolution 自动建 / 命名任务分支",
-            "本地实现 / 最小充分验证 / 提交",
-            "push / PR 前再取远程目标分支",
+            "开发前同步远程目标分支",
+            "自动任务分支",
+            "本地最小充分验证 / 提交",
+            "push / PR 前再同步目标分支",
             "push 任务分支",
             "按治理建 / 更新 PR",
         )

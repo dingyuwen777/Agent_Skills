@@ -249,22 +249,23 @@ class DevelopmentGuidanceTest(unittest.TestCase):
                 self.assertIn(marker, usage)
 
         for marker in (
-            "Git 写任务 Core 顺序",
-            "开发前同步远程目标分支",
+            "Git 写任务硬顺序",
+            "开发前同步目标分支",
             "本地最小充分验证",
-            "push / PR 前再同步目标分支",
-            "冲突后复验",
-            "普通冲突由 Agent 自主处理",
+            "推送前再同步",
+            "冲突复验",
+            "普通冲突自主处理",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, core)
 
         for marker in (
             "本地优先、远程按需",
-            "按 Branch Name Resolution 自动建 / 命名任务分支",
-            "本地实现 / 最小充分验证 / 提交",
-            "漂移按下述冲突规则处理并复验",
-            "仅远程可执行项由 PR CI 补齐",
+            "开发前同步远程目标分支",
+            "自动任务分支",
+            "本地最小充分验证 / 提交",
+            "按下述冲突规则复验",
+            "Issue / PR 默认验证后建",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, delivery)
