@@ -477,6 +477,19 @@ Review 修复如果改变用户可观察行为并使原人工验收失效，先�
 
 这类指令表示完整交付，不等于允许 direct push main、强推、绕过 CI / Review 或跳过项目保护规则。
 
+### 5.6 Review 返修怎么收敛
+
+Review 的目标是判断当前 Requirement 是否满足，不是把当前 PR 无限优化。
+
+- 默认只修复阻塞当前目标、证据成立且属于当前范围的问题；
+- 非阻塞 Finding 可以记录，但不为了“更完美”反复修改当前 PR；
+- 超出当前范围的问题默认不自动变成当前任务，也不因为它存在就静默扩大需求；
+- 返修后重点复核原 Finding、本轮 repair diff 和直接相邻风险，不每轮重新 Full Review 没变化的旧基线；
+- 如果同一问题连续返修仍没有净收敛，应停止机械返修并重新诊断根因 / 方案，而不是继续“再改一次”；
+- 如果 re-review 从未变化旧基线发现首轮漏审，先由 Reviewer 内部完成剩余高价值投影和统一裁决。Reviewer 自身漏审不是需要用户或作者处理的终态；
+- 用户不需要手工管理 Review phase，也不需要替 Reviewer 决定“还要不要继续审”；
+- Reviewer 内部自愈后仍按真实 blocker 给结论，不会为了结束流程强行制造无阻塞结论。
+
 ---
 
 ## 6. 长任务与复杂任务
@@ -516,6 +529,18 @@ AI 可以在当前宿主支持且确有价值时自动使用多个 Agent，但�
 通常只有工作能够真正独立、并行或需要独立 Reviewer / Tester 时才值得拆分。用户不需要自己设计“前端 Agent / 后端 Agent / 测试 Agent”。
 
 如果当前宿主没有可用的多 Agent 能力，可以降级为单 Agent 继续实现；但项目真正要求的独立 Review / Testing 不会因此自动消失。
+
+多 Agent 还有几个固定边界：
+
+- 同时活动的子 Agent 默认不超过 3 个；
+- 子 Agent 基于旧 revision / 旧决定返回时标记为 STALE_RESULT，先重新验证再使用；
+- 同一 transient child 同类失败最多自动重试一次，再次失败进入 STOP_CHILD_RETRY，不无限重启；
+- Delegation Value 只决定“拆分值不值得”，Independence Requirement 单独决定“结论是否必须来自独立 Reviewer / Tester / Verifier”；即使降级单 Agent，也不能把 REQUIRED 独立门禁降掉；
+- 拆分阈值和并发预算以后应依据真实历史任务的耗时、返修、CI 重跑、用户干预等结果调整，不要继续凭感觉增加 Agent。
+
+如果开发、Testing 或 Review 发现当前范围之外的问题，不会直接创建新的长期任务。先经过 Follow-up Admission Gate：只有有证据、独立价值且不是重复事项时，才形成 FOLLOW_UP_CANDIDATE；要进一步写入长期 backlog 还需要持久化授权。授权通过后才成为 BACKLOG_ITEM，并在当前任务停止继续执行。BACKLOG_ITEM 以后必须作为新的 Requirement / Task 重新恢复事实、范围、权限和 Evidence。
+
+Follow-up 不会自动创建新的 Issue / Branch / PR，不会自动执行，也不会递归派生新的 Follow-up。
 
 ### 6.4 怎么判断任务真的完成
 
@@ -587,9 +612,17 @@ DeepSeek-Harness.cmd
 - 建议；
 - 暂时无法验证。
 
-先确定真正问题和关键机制，再给与当前项目实际相称的最小充分方案。
+先确认问题和必要根因，再给与当前项目实际相称的最小充分方案。
+如果需要立即降低风险，可以先给止血方案，但要明确止血不等于根治。
 不要为了显得完整给脱离现实的大而全设计。
 ~~~
+
+当用户问“还有没有遗漏”“全面系统排查”“是不是已经最好”这类完整性问题时，使用 Two-Pass Independent Analysis + Bounded Closure：
+
+1. 第一遍独立建模目标、约束、关键机制和主要失败模式，不让当前方案先限定答案；
+2. 第二遍再把这些必要条件映射到当前事实，检查覆盖、冲突、遗漏和绕过路径；
+3. 只继续调查那些不同答案会改变当前决策、主要方案、完成判定或重大风险的问题；
+4. 当继续调查不会改变当前决策、主要反例已经处理，或者没有新的 Material Information Gain 时停止，不递归寻找“反例的反例”。
 
 ### 7.6 查询当前最新资料
 
