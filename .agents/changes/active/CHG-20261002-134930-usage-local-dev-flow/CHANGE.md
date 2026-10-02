@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20261002-134930-usage-local-dev-flow
 title: 固化本地优先开发与远程交付生命周期
 level: L3
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: docs/333-usage-local-dev-flow
 created: 2026-10-02
@@ -80,15 +80,15 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 
 ## 成功标准
 
-- [ ] #333 / AC1：默认开发链明确为“远程最新 main → AI 本地任务分支 → 本地实现 / 验证 → push 前再次同步 main → task branch push → PR / CI / Review”，不把 direct push main 写成默认路径。
-- [ ] #333 / AC2：Issue / Requirement Source 与 PR 按项目治理和交付终点触发，不要求每个任务开工时机械创建。
-- [ ] #333 / AC3：需要早期远程 CI / 多人协作 / 项目持久 Requirement 时仍保留条件式提前创建能力。
-- [ ] #333 / AC4：分支创建与命名、Issue / PR 是否需要、标题、模板和 Requirement Source 关联由 Agent 自动处理。
-- [ ] #333 / AC5：开发前与 push / PR 前两个 main freshness checkpoint 可达；普通冲突由 AI 解决，真正语义冲突才升级 Owner。
-- [ ] #333 / AC6：Codex / Cursor / Claude / DeepSeek、30 秒任务、功能开发、Bug 修复、Git 协作和速查示例表达一致。
-- [ ] #333 / AC7：canonical Git Reference 与 USAGE 语义一致，并有最小永久回归防止倒退。
-- [ ] #333 / AC8：Coding Core 暴露 Repository Development Lifecycle Gate，确保实现 / Git 任务在专业 Reference 细节加载前也能看到两次 remote freshness、本地最小充分验证和冲突复验的硬流程。
-- [ ] #333 / AC9：不改变 Runtime public protocol、Issue / PR 模板结构、governance validator 或 CI workflow 行为。
+- [x] #333 / AC1：默认开发链明确为“远程最新 main → AI 本地任务分支 → 本地实现 / 验证 → push 前再次同步 main → task branch push → PR / CI / Review”，不把 direct push main 写成默认路径。
+- [x] #333 / AC2：Issue / Requirement Source 与 PR 按项目治理和交付终点触发，不要求每个任务开工时机械创建。
+- [x] #333 / AC3：需要早期远程 CI / 多人协作 / 项目持久 Requirement 时仍保留条件式提前创建能力。
+- [x] #333 / AC4：分支创建与命名、Issue / PR 是否需要、标题、模板和 Requirement Source 关联由 Agent 自动处理。
+- [x] #333 / AC5：开发前与 push / PR 前两个 main freshness checkpoint 可达；普通冲突由 AI 解决，真正语义冲突才升级 Owner。
+- [x] #333 / AC6：Codex / Cursor / Claude / DeepSeek、30 秒任务、功能开发、Bug 修复、Git 协作和速查示例表达一致。
+- [x] #333 / AC7：canonical Git Reference 与 USAGE 语义一致，并有最小永久回归防止倒退。
+- [x] #333 / AC8：Coding Core 暴露 Repository Development Lifecycle Gate，确保实现 / Git 任务在专业 Reference 细节加载前也能看到两次 remote freshness、本地最小充分验证和冲突复验的硬流程。
+- [x] #333 / AC9：不改变 Runtime public protocol、Issue / PR 模板结构、governance validator 或 CI workflow 行为。
 
 ## 范围
 
@@ -156,15 +156,15 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 本地研发闭环优先、不得默认 direct push main | #333 / AC1 | not_satisfied | 待本次 diff + validation |
-| R2 | Issue / PR 按治理触发 | #333 / AC2 | not_satisfied | 待本次 diff + validation |
-| R3 | 保留条件式早期治理 | #333 / AC3 | not_satisfied | 待本次 diff + validation |
-| R4 | Agent 自动处理分支/命名/模板 | #333 / AC4 | not_satisfied | 待本次 diff + validation |
-| R5 | 两个 main freshness + AI 冲突处理 | #333 / AC5 | not_satisfied | 待本次 diff + validation |
-| R6 | 自然语言示例一致 | #333 / AC6 | not_satisfied | 待本次 diff + semantic review |
-| R7 | canonical + regression 同步 | #333 / AC7 | not_satisfied | 待 targeted test / CI |
-| R8 | Coding Core 生命周期硬门禁 | #333 / AC8 | not_satisfied | 待 Core diff + regression |
-| R9 | 不改变模板 / validator / Runtime public protocol / CI workflow | #333 / AC9 | not_satisfied | 待 diff / CI audit |
+| R1 | 本地研发闭环优先、不得默认 direct push main | #333 / AC1 | satisfied | USAGE 主流程 + Git Core/Reference + run 2363 selected tests |
+| R2 | Issue / PR 按治理触发 | #333 / AC2 | satisfied | USAGE 第 4/14 节 + Git Reference 条件式治理 |
+| R3 | 保留条件式早期治理 | #333 / AC3 | satisfied | Git Reference 保留项目 / 远程 CI / 协作提前入口 |
+| R4 | Agent 自动处理分支/命名/模板 | #333 / AC4 | satisfied | USAGE 用户入口 + 既有 Branch Name Resolution / Governance Contract |
+| R5 | 两个 main freshness + AI 冲突处理 | #333 / AC5 | satisfied | USAGE 双 checkpoint + Git Core/Reference + Merge/Rebase 既有规则 |
+| R6 | 自然语言示例一致 | #333 / AC6 | satisfied | Codex/Cursor/Claude/DeepSeek、功能、Bug、速查 targeted 语义审计 |
+| R7 | canonical + regression 同步 | #333 / AC7 | satisfied | development/workflow regression + run 2363：767 tests OK |
+| R8 | Coding Core 生命周期硬门禁 | #333 / AC8 | satisfied | Coding Core 薄锚点 + development guidance regression |
+| R9 | 不改变模板 / validator / Runtime public protocol / CI workflow | #333 / AC9 | satisfied | main...branch diff 仅 6 个 scoped 文件；无模板/validator/Runtime protocol/Workflow diff |
 
 # 计划改动
 
@@ -179,9 +179,9 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 - [x] 建立与风险相称的任务路由和验证矩阵
 - [x] 纯治理语义使用现有回归，不制造业务 Red
 - [x] 形成最小实现方案
-- [ ] 同步受影响长期文档 / canonical rule
-- [ ] 取得当前 revision 新鲜验证
-- [ ] 完成需求追溯、完成审计和适用复核
+- [x] 同步受影响长期文档 / canonical rule
+- [x] 取得当前 revision 新鲜验证
+- [x] 完成需求追溯、完成审计和适用复核
 
 # 验证矩阵
 
@@ -227,7 +227,7 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 - [x] upstream_re_read：已重读 #333、AGENTS、Maintenance、ENTRY、Router、Coding、Mutation、Git、Docs。
 - [x] change_coverage：本 Change 覆盖当前 AC1-AC9。
 - [x] reverse_audit：未取消 Requirement / Review / CI / Branch Protection；未引入 direct push main；保留条件式早期治理。
-- [ ] unresolved_cleared：等待 targeted validation / current-head CI / Review。
+- [x] unresolved_cleared：R1-R9 已有 direct Evidence；正式独立 Review 与最终 current-head CI 属于 ready_for_review 后交付门禁。
 
 # 完成证据与状态
 
@@ -236,18 +236,18 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main 041c9b60aae0f566553002794eb5fde4ed614c7f | canonical Source read + #333 live readback | confirmed | 当前用户说明与 Git canonical 缺口存在 |
-| V2 | 当前任务分支 | targeted test + semantic review | pending | 待执行 |
-| V3 | PR current head | required CI + independent Review | pending | 待执行 |
+| V2 | `f36dbdcd9c46aecd83c7e0426dbf13aa63f7768d` / GitHub Actions run 2363 | selected maintained compile + CLI smoke + 767 self-contained tests + targeted semantic review | PASS：767 tests OK；Requirement Source / compile / smoke success | USAGE/Core/Git lifecycle、Release surface、路由上下文预算、回归与兼容门禁闭合 |
+| V3 | ready_for_review carrier update 后 current head | ready_check + required CI + independent Review | pending | 最终 PR Ready 门禁 |
 
 ## 未验证内容与剩余风险
 
-- 尚未取得 current-head CI 和独立 Review；当前 Change 保持 proposed。
+- 开发实现 revision `f36dbdcd…` 的 selected tests 已通过；本次仅回写 Change carrier。最终 current-head required CI 和独立 Review 尚未取得，因此尚不能声明 PR Ready / 可合并。
 
 ## 交付状态
 
-- 提交：待写入。
-- 拉取请求：待创建。
-- CI：待 PR current-head。
+- 提交：实现证据 revision `f36dbdcd9c46aecd83c7e0426dbf13aa63f7768d`；本次 Change 回写将形成 carrier-only commit。
+- 拉取请求：#334，已存在并持续更新同一 PR。
+- CI：run 2363 开发侧 selected tests 767/767 PASS；Change 由 proposed → ready_for_review 后需取得新的 current-head Ready/required CI。
 - 合并：未授权。
 - Change 归档：未合并前不适用。
 - 发布 / 部署：不适用。
