@@ -72,7 +72,7 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             "首次 push 任务分支",
             "禁空远程分支",
             "Issue / PR 默认本地验证后建",
-            "项目 / 远程 CI / 协作需要可提前",
+            "项目或协作需要可提前",
             "direct push main",
         ):
             self.assertIn(marker, reference)
