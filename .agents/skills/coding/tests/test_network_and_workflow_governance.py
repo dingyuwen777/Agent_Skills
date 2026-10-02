@@ -67,13 +67,13 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             "开发前获取远程最新目标分支",
             "按 Branch Name Resolution 建任务分支",
             "本地实现 / 验证 / 提交",
-            "push / PR 前再次获取目标分支",
+            "push / PR 前再取目标分支",
             "漂移按下述 Merge/Rebase 规则解决并复验",
             "首次 push 远程跟踪分支",
             "禁远程空分支",
             "Issue / PR 默认本地验证后创建",
             "项目要求持久 Requirement / Change 或远程 CI / 协作时可提前",
-            "默认 direct push main",
+            "direct push main",
         ):
             self.assertIn(marker, reference)
 
@@ -81,9 +81,9 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             "开发前获取远程最新目标分支",
             "按 Branch Name Resolution 建任务分支",
             "本地实现 / 验证 / 提交",
-            "push / PR 前再次获取目标分支",
+            "push / PR 前再取目标分支",
             "首次 push 远程跟踪分支",
-            "按 Requirement / PR 治理创建或更新 PR",
+            "按 Requirement / PR 治理创建 / 更新 PR",
         )
         positions = [reference.index(marker) for marker in ordered]
         self.assertEqual(positions, sorted(positions))
