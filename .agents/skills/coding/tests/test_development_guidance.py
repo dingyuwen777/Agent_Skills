@@ -264,7 +264,7 @@ class DevelopmentGuidanceTest(unittest.TestCase):
             "开发前同步远程目标分支",
             "自动任务分支",
             "本地最小充分验证 / 提交",
-            "按下述冲突规则复验",
+            "push / PR 前再同步并复验",
             "Issue / PR 默认验证后建",
         ):
             with self.subTest(marker=marker):
