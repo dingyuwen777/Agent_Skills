@@ -152,6 +152,13 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 | D4 USAGE 7 章 | E4 + Docs 原则 | 按读者任务而不是内部治理组织 |
 | D5 canonical 同步 | E1/E2/E5 | 防止“文档正确、Agent 仍自动 PR” |
 
+## 备选方案与取舍
+
+- **只改 USAGE，不改 canonical Delivery**：用户说明会要求等待本地验收，但 Agent 执行侧仍可能从 AI 技术验证直接进入 PR，形成文档/行为分叉，拒绝。
+- **只在 Prompt 中增加“先不要提 PR”**：依赖用户每次都记得写完整提示词，无法形成跨模型稳定默认行为，拒绝。
+- **所有任务一律强制用户本地验收**：纯内部治理、behavior-preserving 重构或没有本地用户入口的任务会被无意义阻塞，拒绝。
+- **采用方案**：Delivery Owner 定义 Human Local Acceptance Gate；用户可观察任务默认 PENDING，事实支持 N/A 或用户明确 waiver 时才跳过等待；USAGE 只解释用户怎么使用，不成为 Agent 执行规则源。
+
 # 需求追溯
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
