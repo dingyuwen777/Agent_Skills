@@ -237,16 +237,35 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         )
 
         for marker in (
-            "用户不需要手工管理 Git / GitHub 开发流程",
-            "main freshness checkpoint",
-            "开发前",
-            "push / PR 前",
-            "AI 按项目规则自动创建并命名本地任务分支",
-            "Issue / Requirement Source 和 PR",
-            "不要直接 push main",
+            "## 标准开发流程（AI 自动执行）",
+            "这是新增需求、Bug 修复和常规代码改造的默认开发顺序",
+            "开发前获取远程最新 main / 目标分支",
+            "AI 自动创建并命名本地任务分支",
+            "本地最小充分验证",
+            "准备 push / PR 前，再次获取远程最新 main / 目标分支",
+            "AI 自己解决普通代码冲突",
+            "自动生成正确的 Issue / PR 名称、模板和关联",
+            "只 push 当前任务分支，不直接 push main",
+            "PR Ready",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, usage)
+
+        ordered = (
+            "开发前获取远程最新 main / 目标分支",
+            "AI 自动创建并命名本地任务分支",
+            "在本地完成实现",
+            "本地最小充分验证",
+            "准备 push / PR 前，再次获取远程最新 main / 目标分支",
+            "AI 自己解决普通代码冲突",
+            "自动生成正确的 Issue / PR 名称、模板和关联",
+            "只 push 当前任务分支，不直接 push main",
+            "AI 创建或更新 PR",
+            "CI + Review",
+            "PR Ready",
+        )
+        positions = [usage.index(marker) for marker in ordered]
+        self.assertEqual(positions, sorted(positions))
 
         for marker in (
             "细则归该 reference，Core 变薄不降强度",

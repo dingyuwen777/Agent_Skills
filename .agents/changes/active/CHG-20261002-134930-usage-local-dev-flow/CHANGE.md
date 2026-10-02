@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20261002-134930-usage-local-dev-flow
 title: 固化本地优先开发与远程交付生命周期
 level: L3
-status: ready_for_review
+status: proposed
 owner: dingyuwen777
 branch: docs/333-usage-local-dev-flow
 created: 2026-10-02
@@ -89,6 +89,7 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 - [x] #333 / AC7：canonical Git Reference 与 USAGE 语义一致，并有最小永久回归防止倒退。
 - [x] #333 / AC8：Coding Core 暴露 Repository Development Lifecycle Gate，确保实现 / Git 任务在专业 Reference 细节加载前也能看到两次 remote freshness、本地最小充分验证和冲突复验的硬流程。
 - [x] #333 / AC9：不改变 Runtime public protocol、Issue / PR 模板结构、governance validator 或 CI workflow 行为。
+- [ ] #333 / AC10：`USAGE.md` 靠前有独立“标准开发流程（AI 自动执行）”章节，连续展示完整开发链路，用户不需要从多个章节拼接流程。
 
 ## 范围
 
@@ -164,7 +165,8 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 | R6 | 自然语言示例一致 | #333 / AC6 | satisfied | Codex/Cursor/Claude/DeepSeek、功能、Bug、速查 targeted 语义审计 |
 | R7 | canonical + regression 同步 | #333 / AC7 | satisfied | development/workflow regression + run 2363：767 tests OK |
 | R8 | Coding Core 生命周期硬门禁 | #333 / AC8 | satisfied | Coding Core 薄锚点 + development guidance regression |
-| R9 | 不改变模板 / validator / Runtime public protocol / CI workflow | #333 / AC9 | satisfied | main...branch diff 仅 6 个 scoped 文件；无模板/validator/Runtime protocol/Workflow diff |
+| R9 | 不改变模板 / validator / Runtime public protocol / CI workflow | #333 / AC9 | satisfied | 既有 scoped diff；无模板/validator/Runtime protocol/Workflow diff |
+| R10 | USAGE 靠前独立连续展示完整标准开发流程 | #333 / AC10 | not_satisfied | 新 Requirement；待 prominent flow + regression + current-head CI |
 
 # 计划改动
 
@@ -225,9 +227,9 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 # 完成审计
 
 - [x] upstream_re_read：已重读 #333、AGENTS、Maintenance、ENTRY、Router、Coding、Mutation、Git、Docs。
-- [x] change_coverage：本 Change 覆盖当前 AC1-AC9。
+- [x] change_coverage：本 Change 已纳入当前 AC1-AC10；AC10 待本轮实现与验证。
 - [x] reverse_audit：未取消 Requirement / Review / CI / Branch Protection；未引入 direct push main；保留条件式早期治理。
-- [x] unresolved_cleared：R1-R9 已有 direct Evidence；正式独立 Review 与最终 current-head CI 属于 ready_for_review 后交付门禁。
+- [ ] unresolved_cleared：R1-R9 既有 Evidence 仍有效；AC10 为本轮新 Requirement，待 prominent flow、回归和 current-head CI 闭环。
 
 # 完成证据与状态
 
@@ -237,17 +239,18 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 | --- | --- | --- | --- | --- |
 | V1 | main 041c9b60aae0f566553002794eb5fde4ed614c7f | canonical Source read + #333 live readback | confirmed | 当前用户说明与 Git canonical 缺口存在 |
 | V2 | `f36dbdcd9c46aecd83c7e0426dbf13aa63f7768d` / GitHub Actions run 2363 | selected maintained compile + CLI smoke + 767 self-contained tests + targeted semantic review | PASS：767 tests OK；Requirement Source / compile / smoke success | USAGE/Core/Git lifecycle、Release surface、路由上下文预算、回归与兼容门禁闭合 |
-| V3 | ready_for_review carrier update 后 current head | ready_check + required CI + independent Review | pending | 最终 PR Ready 门禁 |
+| V3 | `f2a7e7b50a07cc6a97780a7da81fefdadf1b4885` / GitHub Actions run 2365 | ready_check + required CI + Linux/Windows/macOS Runtime package | PASS | AC1-AC9 在该 revision 的交付门禁闭合 |
+| V4 | AC10 Requirement revision 后 current head | prominent USAGE flow regression + required CI | pending | 证明新增“靠前独立完整流程” Requirement |
 
 ## 未验证内容与剩余风险
 
-- 开发实现 revision `f36dbdcd…` 的 selected tests 已通过；本次仅回写 Change carrier。最终 current-head required CI 和独立 Review 尚未取得，因此尚不能声明 PR Ready / 可合并。
+- AC1-AC9 的 current-head required CI 已在 `f2a7e7b5…` / run 2365 通过；AC10 是后续新增 Requirement，必须在新的 current head 重新取得受影响文档/回归与 required CI。独立 Review 仍需在最终 Head 复核。
 
 ## 交付状态
 
 - 提交：实现证据 revision `f36dbdcd9c46aecd83c7e0426dbf13aa63f7768d`；本次 Change 回写将形成 carrier-only commit。
 - 拉取请求：#334，已存在并持续更新同一 PR。
-- CI：run 2363 开发侧 selected tests 767/767 PASS；Change 由 proposed → ready_for_review 后需取得新的 current-head Ready/required CI。
+- CI：run 2365 在 AC1-AC9 revision 全绿；AC10 新增后 Change 已回到 proposed，待新的 current-head required CI。
 - 合并：未授权。
 - Change 归档：未合并前不适用。
 - 发布 / 部署：不适用。
