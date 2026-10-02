@@ -13,20 +13,20 @@
 - 修改前检查 branch、worktree、未提交修改；不覆盖用户改动；禁 `git reset --hard`、`git clean -fd`、强推和未授权历史重写。
 - 未经授权不创建分支、提交、推送、PR、合并、部署、删分支；CI/冲突/保护/结果未确认不推进。
 - Git 提交信息必须中文；正式 commit 需有独立审查/回滚/bisect/审计价值；临时 CI/debug/formatter/generated、为取 Red 暂移治理文件默认不提交；可复现 Red/Migration/审计/独立切片除外；不为减 commit 数重写共享历史。
-- 本地 Git：**本地优先、远程按需**：开发前同步远程目标分支 → 自动任务分支 → 本地最小充分验证 / 提交 → push / PR 前再同步并复验 → push 任务分支 → PR；Issue / PR 默认验证后建，项目 / 远程 CI / 协作需要可提前；禁空远程分支、direct push main。
+- 本地 Git：**本地优先、远程按需**：开发前同步远程目标分支 → 自动任务分支 → 本地最小充分验证 / 提交 → **Human Local Acceptance Gate（适用时；PENDING 禁止首次 push / PR）** → Gate 允许继续后再做 push / PR 前目标分支 freshness / 复验 → push 任务分支 → PR；Issue / PR 默认验证后建；项目明确需要可提前，但不得用早期 PR 绕过 Human Gate；禁空远程分支、direct push main。
 - 既有本地实现接管：保留工作、不伪造历史；按当前 revision 与既有门禁推进；`base Red → current Green` 仅作证据。
 - Merge/Rebase 冲突先恢复双方 **Primary Requirement Source** / Issue / PR / Change / commit / hunk，逐 hunk 合并兼容意图，不按 `ours/theirs`；语义冲突回决策门禁，可 `abort`，回归后授权不变。
 
 ### Branch Name Resolution
 
-分支名属于普通可逆 Git 实施细节，按以下顺序自行解析：
+分支名是可逆 Git 实施细节，依次自行解析：
 
-1. **项目显式规则**：项目已规定 branch naming → 必须遵守；
-2. **稳定分支模式**：没有显式规则，但当前仓库存在稳定、无冲突的同类任务分支模式 → 跟随该模式；
-3. **Requirement / Issue**：存在稳定 Requirement/Issue ID 时，使用任务类型 + ID + 简短语义，例如 `fix/123-login-timeout`；
-4. 仍无项目模式时使用 `<type>/<short-task-slug>`，其中 type 从 `feature / fix / refactor / docs / test / tech` 选择最贴近当前主要任务的值，slug 使用简短、稳定、可读的小写连字符语义。
+1. **项目显式规则**；
+2. **稳定分支模式**：当前仓库稳定、无冲突的同类模式；
+3. **Requirement / Issue**：稳定 ID → 任务类型 + ID + 简短语义；
+4. fallback `<type>/<short-task-slug>`；type=`feature / fix / refactor / docs / test / tech`，slug=简短、稳定、可读的小写连字符。
 
-除非项目显式规则要求由人命名，或候选名称会触发真实外部 Contract/权限冲突，否则**不得向用户询问** branch name，也不得把多个分支名作为选择题。分支命名不提升 Git 授权；创建/推送/删除分支仍受当前 Effective Authorization 和项目门禁约束。
+除项目要求人命名或候选存在真实 Contract/权限冲突外，**不得向用户询问** branch name；命名不授予 Git 权限。
 
 ### Requested Action 与 Effective Authorization
 

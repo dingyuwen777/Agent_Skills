@@ -228,68 +228,110 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         for marker in ("正式 commit 需有独立审查/回滚/bisect/审计价值", "临时 CI/debug/formatter/generated", "为取 Red 暂移治理文件", "可复现 Red", "不为减 commit 数重写共享历史"):
             self.assertIn(marker, delivery)
 
-    def test_natural_language_dev_flow_keeps_local_first_and_two_main_freshness_checks(self) -> None:
-        """自然语言开发说明必须让 Agent 自动处理分支、main freshness、冲突和 GitHub 治理。"""
+    def test_natural_language_dev_flow_requires_human_local_acceptance_before_pr(self) -> None:
+        """默认用户可观察开发必须先 Local Ready / 用户验收，再进入首次 push / PR。"""
         core = self._read(".agents/skills/coding/SKILL.md")
         usage = self._read("USAGE.md")
-        delivery = self._read(
+        git_delivery = self._read(
             ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
         )
+        finalization = self._read(
+            ".agents/skills/coding/references/23_端到端交付与合并后收尾.md"
+        )
+        validation = self._read(
+            ".agents/skills/coding/references/07_通用验证与证据策略.md"
+        )
+        testing = self._read(".agents/skills/testing/SKILL.md")
 
         for marker in (
-            "## 标准开发流程（AI 自动执行）",
-            "这是新增需求、Bug 修复和常规代码改造的默认开发顺序",
-            "开发前获取远程最新 main / 目标分支",
-            "AI 自动创建并命名本地任务分支",
-            "本地最小充分验证",
-            "准备 push / PR 前，再次获取远程最新 main / 目标分支",
-            "AI 自己解决普通代码冲突",
-            "自动生成正确的 Issue / PR 名称、模板和关联",
-            "只 push 当前任务分支，不直接 push main",
-            "PR Ready",
+            "## 1. 快速开始",
+            "## 2. 一次正常开发任务怎么进行",
+            "## 3. 交付状态与终点",
+            "## 4. 常见任务指令",
+            "## 5. 用户 / AI 分工与 PR、Review 协作",
+            "## 6. 长任务与复杂任务",
+            "## 7. 其他使用场景",
+            "Local Ready for User Acceptance",
+            "等待我本地验收",
+            "本地验证通过，提交 PR",
+            "不要 push，也不要创建 PR",
+            "只 push 当前任务分支，不要直接 push main",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, usage)
 
-        standard_flow = usage.split("## 标准开发流程（AI 自动执行）", 1)[1].split("### 授权文件", 1)[0]
+        top_level = [
+            line for line in usage.splitlines()
+            if line.startswith("## ") and len(line) > 3 and line[3].isdigit()
+        ]
+        self.assertEqual(len(top_level), 7)
+        self.assertEqual(
+            top_level,
+            [
+                "## 1. 快速开始",
+                "## 2. 一次正常开发任务怎么进行",
+                "## 3. 交付状态与终点",
+                "## 4. 常见任务指令",
+                "## 5. 用户 / AI 分工与 PR、Review 协作",
+                "## 6. 长任务与复杂任务",
+                "## 7. 其他使用场景",
+            ],
+        )
+        self.assertNotIn("按本文", usage)
+        self.assertNotIn("## 18. 常用短指令速查", usage)
+        self.assertNotIn("## 14. Git 和团队协作", usage)
+        self.assertNotIn("## 标准开发流程（AI 自动执行）", usage)
+
+        flow = usage.split("## 2. 一次正常开发任务怎么进行", 1)[1].split(
+            "## 3. 交付状态与终点", 1
+        )[0]
         ordered = (
-            "开发前获取远程最新 main / 目标分支",
-            "AI 自动创建并命名本地任务分支",
-            "在本地完成实现",
-            "本地最小充分验证",
-            "准备 push / PR 前，再次获取远程最新 main / 目标分支",
-            "AI 自己解决普通代码冲突",
-            "自动生成正确的 Issue / PR 名称、模板和关联",
+            "AI 获取远程最新 main / 目标分支",
+            "AI 保护已有本地工作，自动创建并命名本地任务分支",
+            "本地实现",
+            "AI 完成与风险相称的技术验证",
+            "Local Ready for User Acceptance",
+            "用户本人本地验收",
+            "用户明确确认通过",
+            "AI push / PR 前再次获取远程最新 main / 目标分支",
             "只 push 当前任务分支，不直接 push main",
-            "AI 创建或更新 PR",
-            "CI + Review",
+            "创建或更新 PR",
+            "required CI",
             "PR Ready",
         )
-        positions = [standard_flow.index(marker) for marker in ordered]
+        positions = [flow.index(marker) for marker in ordered]
         self.assertEqual(positions, sorted(positions))
 
         for marker in (
-            "细则归该 reference，Core 变薄不降强度",
-            "同步 target",
-            "task branch",
-            "本地充分验证",
-            "push 前再同步",
-            "冲突复验",
-            "普通冲突自主",
+            "Human Local Acceptance Gate（适用时）",
+            "Local Ready for User Acceptance",
+            "PENDING",
+            "不得自动 push/PR",
         ):
-            with self.subTest(marker=marker):
-                self.assertIn(marker, core)
+            self.assertIn(marker, core)
 
         for marker in (
-            "本地优先、远程按需",
-            "开发前同步远程目标分支",
-            "自动任务分支",
-            "本地最小充分验证 / 提交",
-            "push / PR 前再同步并复验",
-            "Issue / PR 默认验证后建",
+            "PENDING",
+            "PASSED",
+            "NOT_APPLICABLE",
+            "USER_WAIVED",
+            "Agent **不得自行把 PENDING 提升为 PASSED**",
+            "PENDING 时首次 push / PR 必须停止",
+            "Local Ready for User Acceptance",
+            "push / PR 前重新核对目标分支 freshness",
         ):
-            with self.subTest(marker=marker):
-                self.assertIn(marker, delivery)
+            self.assertIn(marker, finalization)
+
+        for marker in (
+            "Human Local Acceptance Gate",
+            "PENDING 禁止首次 push / PR",
+            "push / PR 前目标分支 freshness",
+            "不得用早期 PR 绕过 Human Gate",
+        ):
+            self.assertIn(marker, git_delivery)
+
+        self.assertIn("不等于用户本人已经执行本地验收", validation)
+        self.assertIn("不能替用户本人生成 `PASSED`", testing)
 
 if __name__ == "__main__":
     unittest.main()

@@ -67,11 +67,13 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             "开发前同步远程目标分支",
             "自动任务分支",
             "本地最小充分验证 / 提交",
-            "push / PR 前再同步并复验",
+            "Human Local Acceptance Gate",
+            "PENDING 禁止首次 push / PR",
+            "Gate 允许继续后再做 push / PR 前目标分支 freshness",
             "push 任务分支 → PR",
             "禁空远程分支",
             "Issue / PR 默认验证后建",
-            "项目 / 远程 CI / 协作需要可提前",
+            "不得用早期 PR 绕过 Human Gate",
             "direct push main",
         ):
             self.assertIn(marker, reference)
@@ -80,7 +82,8 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             "开发前同步远程目标分支",
             "自动任务分支",
             "本地最小充分验证 / 提交",
-            "push / PR 前再同步并复验",
+            "Human Local Acceptance Gate",
+            "Gate 允许继续后再做 push / PR 前目标分支 freshness",
             "push 任务分支 → PR",
         )
         positions = [reference.index(marker) for marker in ordered]
@@ -122,6 +125,12 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             "不得报告整个任务完成",
             "blocked/incomplete",
             "不自动改变任务原本依据影响面判定的 L1/L2/L3",
+            "Human Local Acceptance Gate",
+            "PENDING",
+            "PASSED",
+            "NOT_APPLICABLE",
+            "USER_WAIVED",
+            "Local Ready for User Acceptance",
         ):
             self.assertIn(marker, finalization, f"端到端交付 Owner 缺少边界：{marker}")
 

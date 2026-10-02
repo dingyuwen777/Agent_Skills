@@ -145,6 +145,8 @@ Testing 先建立以下问题模型：
 
 不要先从内部 class/function 调用顺序生成所谓“用户测试”。
 
+**Testing 的 User / Workflow Acceptance 只证明其实际运行路径，不拥有 Human Gate，不能替用户本人生成 `PASSED`；是否等待由 Coding Delivery Gate 决定。**
+
 详细场景方法见 [02_用户场景黑盒与探索式测试.md](references/02_用户场景黑盒与探索式测试.md)。
 
 ## 5. 分层测试与证据
