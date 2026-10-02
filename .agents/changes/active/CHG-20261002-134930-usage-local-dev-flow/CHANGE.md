@@ -1,8 +1,8 @@
 ---
 schema: coding-change/v1
 id: CHG-20261002-134930-usage-local-dev-flow
-title: 统一本地优先开发与自然语言Git交付说明
-level: L2
+title: 固化本地优先开发与远程交付生命周期
+level: L3
 status: proposed
 owner: dingyuwen777
 branch: docs/333-usage-local-dev-flow
@@ -11,15 +11,19 @@ updated: 2026-10-02
 completion_gate: required
 depends_on: []
 affected_areas:
+  - coding-core
   - docs
   - git
   - governance
 affected_paths:
   - USAGE.md
+  - .agents/skills/coding/SKILL.md
   - .agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md
   - .agents/skills/coding/tests/test_development_guidance.py
+  - .agents/skills/coding/tests/test_network_and_workflow_governance.py
   - .agents/changes/active/CHG-20261002-134930-usage-local-dev-flow/CHANGE.md
 contracts:
+  - Repository Development Lifecycle Gate
   - Local Development First
   - Main Freshness Checkpoints
   - Agent-managed GitHub Governance
@@ -29,7 +33,7 @@ data_changes: []
 # 变更摘要
 
 - **要解决的问题**：`USAGE.md` 多处把“提交 PR”写成新增需求 / Bug 的默认开发尾部动作，用户难以形成“用自然语言描述真实任务，由 AI 自动完成 Git / GitHub 工程流程”的正确使用心智；canonical Git Reference 同时把“早期 PR”写成默认链路。
-- **拟议修改**：统一为“开发前同步远程 main → AI 自动创建/命名任务分支 → 本地实现和验证 → push/PR 前再次同步 main → AI 解决可判定冲突并重新验证 → 按治理自动处理 Requirement Source / Issue / PR → CI / Review / merge”的流程；用户只表达任务目标和交付终点。
+- **拟议修改**：把“开发前同步远程 main → AI 自动创建/命名任务分支 → 本地实现和最小充分验证 → push/PR 前再次同步 main → AI 解决可判定冲突并重新验证 → 按治理自动处理 Requirement Source / Issue / PR → CI / Review / merge”同时写入 USAGE、Coding Core 与 Git Reference；用户只表达任务目标和交付终点。
 - **预期结果**：新增需求、修缺陷、已有方案落地、已有本地改动和 Review 返修都可以通过自然语言驱动，用户无需手工执行 Git 命令或管理 Issue / PR 模板。
 
 # 背景、现状与问题
@@ -44,10 +48,11 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 - 第 4 节把 Review / PR 与本地实现混成一条主流程，没有表达开发前和 push 前两个 main freshness checkpoint。
 - 第 14 节虽要求独立任务分支，但没有明确用户无需管理分支名、Issue / PR 标题和模板。
 - canonical Git Reference 当前把“早期 PR”写成默认链路，与“本地研发闭环优先”目标冲突。
+- Coding Core 尚未直接暴露完整 Repository Development Lifecycle，部分模型可能在实际编码阶段还没有加载 Git Reference，从而漏掉 development freshness、pre-push freshness 或冲突后复验。
 
 ## 问题、根因或约束
 
-根因是用户说明与 canonical Git 行为都把 GitHub 治理对象写得过于前置，缺少“本地研发阶段 / 远程治理阶段”的职责分层，以及开发前 / push 前两个独立 freshness checkpoint。修正不能退化为 direct push main，也不能把普通 Git 冲突交给用户。
+根因是用户说明、Coding Core 与 canonical Git 行为没有共同拥有一条清晰、可达的 Repository Development Lifecycle：GitHub 治理对象被过于前置，同时缺少“本地研发阶段 / 远程治理阶段”的职责分层，以及开发前 / push 前两个独立 freshness checkpoint。修正不能退化为 direct push main，也不能把普通 Git 冲突交给用户。
 
 ## 不修改的后果
 
@@ -82,10 +87,13 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 - [ ] #333 / AC5：开发前与 push / PR 前两个 main freshness checkpoint 可达；普通冲突由 AI 解决，真正语义冲突才升级 Owner。
 - [ ] #333 / AC6：Codex / Cursor / Claude / DeepSeek、30 秒任务、功能开发、Bug 修复、Git 协作和速查示例表达一致。
 - [ ] #333 / AC7：canonical Git Reference 与 USAGE 语义一致，并有最小永久回归防止倒退。
+- [ ] #333 / AC8：Coding Core 暴露 Repository Development Lifecycle Gate，确保实现 / Git 任务在专业 Reference 细节加载前也能看到两次 remote freshness、本地最小充分验证和冲突复验的硬流程。
+- [ ] #333 / AC9：不改变 Runtime public protocol、Issue / PR 模板结构、governance validator 或 CI workflow 行为。
 
 ## 范围
 
 - `USAGE.md` 用户使用说明。
+- Coding Core 的 Repository Development Lifecycle Gate。
 - canonical Git delivery Reference 的本地 / 远程阶段语义。
 - 直接永久回归测试。
 
@@ -122,9 +130,10 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 1. 改 USAGE 总入口与各 Agent 示例，明确用户只说任务和交付终点。
 2. 重写“正常开发任务”与 Git 协作入口，形成两个阶段 + 两个 main freshness checkpoint。
 3. 更新新增需求、Bug、已有本地修改与速查自然语言示例。
-4. 在 canonical Git Reference 把“早期 PR”改为条件式，并固化 AI 自动分支 / 同步 / 冲突 / 治理职责。
-5. 在现有 development guidance 回归中增加最小语义 marker 检查。
-6. 运行 targeted test、PR current-head CI 与独立 Review；通过后再进入 Ready。
+4. 在 Coding Core 增加 Repository Development Lifecycle Gate，确保流程在实现任务早期直接可达。
+5. 在 canonical Git Reference 把“早期 PR”改为条件式，并保留自动分支 / 同步 / 冲突 / 治理细节。
+6. 在现有 development guidance / workflow governance 回归中增加最小语义检查。
+7. 运行 targeted test、PR current-head CI 与独立 Review；通过后再进入 Ready。
 
 ## 证据到决策
 
@@ -134,6 +143,14 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 | D2 双 freshness checkpoint | 用户明确要求 | 同时防止开工基线过期与开发期间 main 漂移 |
 | D3 条件式早期 PR | E2/E4 | 保留协作价值但不把 PR 前置成仪式 |
 | D4 同步 canonical Git Reference | E2 | 只改 USAGE 会导致文档与实际行为继续冲突 |
+| D5 Coding Core 保留薄硬门禁 | #333 / AC8 | 保证跨模型在进入实现阶段就能看到完整生命周期，不依赖后置 Git 细节加载 |
+
+## 备选方案与取舍
+
+- **只改 USAGE**：用户看得懂，但执行侧仍可能漏掉二次 remote freshness，拒绝。
+- **只改 Git Reference**：专业细节正确，但实现任务早期未必已经加载该 Reference，仍有可达性风险，拒绝。
+- **在 Coding Core 复制整套 Git 细则**：会扩大 Core context 并制造第二 Owner，拒绝。
+- **采用方案**：Core 只保留不可延迟生命周期和停止条件，Git Reference 保留详细 Git / 冲突 / 授权规则，USAGE 负责自然语言用户入口。
 
 # 需求追溯
 
@@ -146,14 +163,17 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 | R5 | 两个 main freshness + AI 冲突处理 | #333 / AC5 | not_satisfied | 待本次 diff + validation |
 | R6 | 自然语言示例一致 | #333 / AC6 | not_satisfied | 待本次 diff + semantic review |
 | R7 | canonical + regression 同步 | #333 / AC7 | not_satisfied | 待 targeted test / CI |
+| R8 | Coding Core 生命周期硬门禁 | #333 / AC8 | not_satisfied | 待 Core diff + regression |
+| R9 | 不改变模板 / validator / Runtime public protocol / CI workflow | #333 / AC9 | not_satisfied | 待 diff / CI audit |
 
 # 计划改动
 
 | 文件 / 模块 / 资产 | 计划修改 | 原因 | 对应要求 / 证据 |
 | --- | --- | --- | --- |
 | `USAGE.md` | 用户心智、主流程、自然语言示例 | 真实用户入口 | R1-R6 |
-| `.agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md` | local-first + freshness + conditional PR | canonical 行为 Owner | R1-R5/R7 |
-| `.agents/skills/coding/tests/test_development_guidance.py` | 最小规则回归 | 防止流程语义倒退 | R7 |
+| `.agents/skills/coding/SKILL.md` | Repository Development Lifecycle Gate | 实现任务早期硬门禁 | R1/R4/R5/R8 |
+| `.agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md` | local-first + freshness + conditional PR | canonical Git 细节 Owner | R1-R5/R7 |
+| Coding development/workflow tests | 最小规则回归 | 防止流程语义倒退 | R7-R9 |
 
 - [x] 调查当前实现和事实源
 - [x] 建立与风险相称的任务路由和验证矩阵
@@ -171,14 +191,14 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 | 接口 / 契约 | required | canonical Git rule 与 USAGE 内容守恒 / 一致性审计 |
 | 集成 / 持久化 / 运行依赖 | not_applicable | 无数据库、文件格式或外部运行依赖变化 |
 | 用户 / 工作流验收 | required | 新增需求 / Bug 自然语言示例 + 两 freshness checkpoint |
-| 跨组件关键路径 | not_applicable | 不改变 Runtime / Installer / route contract |
+| 跨组件关键路径 | required | Coding Core → Git Reference → USAGE / Runtime 现有投影路径的规则可达性与 required CI |
 | 外部依赖 / 供应方探测 | not_applicable | 无业务外部依赖 |
 | 构建 / 打包 / 运行 | required | 当前仓库 classifier / PR required CI 决定 |
 | 文档 / 治理 / 其他 | required | #333、Change、Docs targeted、Review、PR current-head Evidence |
 
 ## 验证计划
 
-- 目标测试：`python -m unittest .agents/skills/coding/tests/test_development_guidance.py` 或仓库现有等价 targeted 入口。
+- 目标测试：`test_development_guidance.py` + `test_network_and_workflow_governance.py` 的仓库现有 targeted 入口。
 - 人工语义审计：USAGE 的 Codex/Cursor/Claude/DeepSeek、30 秒、新功能、Bug、Git 协作、速查章节。
 - canonical 对照：Git Reference 的 Branch Name Resolution、Merge/Rebase、安全边界、Requested Outcome 不被削弱。
 - 就绪检查：仓库 `ready_check.py --require-active-ready`。
@@ -196,7 +216,7 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 
 # 文档、依赖、部署与发布影响
 
-- **长期文档**：根 `USAGE.md` 是最终用户说明 Owner；canonical Git 行为归 `.agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md`。
+- **长期文档**：根 `USAGE.md` 是最终用户说明 Owner；Coding Core 持有不可延迟 Repository Development Lifecycle；Git 细节归 `.agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md`。
 - **依赖 / Runtime**：无依赖、Runtime public protocol、Installer 变化。
 - **配置 / Secret**：不适用。
 - **部署 / Release**：不适用。
@@ -205,7 +225,7 @@ Requirement Source：GitHub Issue #333。用户明确希望 `USAGE.md` 描述正
 # 完成审计
 
 - [x] upstream_re_read：已重读 #333、AGENTS、Maintenance、ENTRY、Router、Coding、Mutation、Git、Docs。
-- [x] change_coverage：本 Change 覆盖当前 AC1-AC7。
+- [x] change_coverage：本 Change 覆盖当前 AC1-AC9。
 - [x] reverse_audit：未取消 Requirement / Review / CI / Branch Protection；未引入 direct push main；保留条件式早期治理。
 - [ ] unresolved_cleared：等待 targeted validation / current-head CI / Review。
 
