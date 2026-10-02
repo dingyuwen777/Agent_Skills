@@ -249,10 +249,10 @@ class DevelopmentGuidanceTest(unittest.TestCase):
                 self.assertIn(marker, usage)
 
         for marker in (
-            "Git 写任务硬顺序",
-            "开发前同步目标分支",
+            "Git 写任务",
+            "开发前同步 target",
             "本地最小充分验证",
-            "推送前再同步",
+            "push 前再同步 target",
             "冲突复验",
             "普通冲突自主处理",
         ):
