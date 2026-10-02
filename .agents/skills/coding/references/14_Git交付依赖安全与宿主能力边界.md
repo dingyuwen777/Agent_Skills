@@ -13,7 +13,11 @@
 - 修改前检查 branch、worktree、未提交修改；不覆盖用户改动；禁 `git reset --hard`、`git clean -fd`、强推和未授权历史重写。
 - 未经授权不创建分支、提交、推送、PR、合并、部署、删分支；CI/冲突/保护/结果未确认不推进。
 - Git 提交信息必须中文；正式 commit 需有独立审查/回滚/bisect/审计价值；临时 CI/debug/formatter/generated、为取 Red 暂移治理文件默认不提交；可复现 Red/Migration/审计/独立切片除外；不为减 commit 数重写共享历史。
-- 本地 Git：`最新目标分支 → 本地任务分支 → 本地 Change / 失败测试 / 最小治理提交 → 首个本地提交 → 首次 push 创建远程跟踪分支 → 早期 PR`；不得先创建远程空分支；仅托管 API 时等价执行。
+- 本地 Git 默认按“**本地研发闭环优先、远程治理按需触发**”执行：`获取远程最新目标分支 → 按 Branch Name Resolution 自动解析并创建本地任务分支 → 本地 Change / 失败证据 / 实现 → targeted validation + Docs Impact → 本地提交 → push 前再次获取远程目标分支 → 有漂移则按项目既有策略集成并解决可判定冲突 → 重新验证受影响范围 → 首次 push 创建远程跟踪分支 → 按治理与交付终点创建 / 更新 PR`；不得先创建远程空分支；仅托管 API 时等价执行。
+- **Development Freshness Checkpoint**：开发前必须先获取远程目标分支最新状态；不得因为本地 main“看起来最新”就跳过远程核验。保护现有未提交修改，不用 destructive reset / clean 制造干净基线。
+- **Pre-push Freshness Checkpoint**：准备首次 push、更新 PR 或声明 PR Ready 前再次获取远程目标分支。目标分支发生漂移时，先按项目既有 merge / rebase / merge queue / 等价策略恢复双方 Requirement、commit 与 hunk 意图；普通可判定冲突由 Agent 自行解决并重新验证受影响范围。只有业务语义、public Contract、Schema / 数据、安全或其他高影响冲突在有界调查后仍无法判定时才进入 Human Input Admission Gate。
+- 远程已共享任务分支不得为了同步目标分支默认强推或重写共享历史；未发布本地分支是否 rebase、已共享分支如何同步，都服从项目规则、授权与现有协作策略。
+- Issue / Requirement Source 与 PR 的创建时机服从项目治理和 Requested Outcome：默认先完成本地开发和必要验证；项目要求开发前持久 Requirement / Change 时自动提前建立或复用；远程 CI、多人协作或早期可见性确有价值时可在首个**可审查本地提交**后提前创建 Draft / logically-not-ready PR；否则不为了“走流程”机械创建早期 PR。分支名、Issue / PR 标题、模板字段和 Requirement Source 关联由 Agent 按当前项目规则自动生成和校验，不向用户索要普通 Git / GitHub 实施细节。
 - 既有本地实现接管：保留工作、不伪造历史；按当前 revision 与既有门禁推进；`base Red → current Green` 仅作证据。
 - Merge/Rebase 冲突先恢复双方 **Primary Requirement Source** / Issue / PR / Change / commit / hunk，逐 hunk 合并兼容意图，不按 `ours/theirs`；语义冲突回决策门禁，可 `abort`，回归后授权不变。
 

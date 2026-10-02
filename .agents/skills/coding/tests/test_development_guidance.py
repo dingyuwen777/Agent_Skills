@@ -228,5 +228,34 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         for marker in ("正式 commit 需有独立审查/回滚/bisect/审计价值", "临时 CI/debug/formatter/generated", "为取 Red 暂移治理文件", "可复现 Red", "不为减 commit 数重写共享历史"):
             self.assertIn(marker, delivery)
 
+    def test_natural_language_dev_flow_keeps_local_first_and_two_main_freshness_checks(self) -> None:
+        """自然语言开发说明必须让 Agent 自动处理分支、main freshness、冲突和 GitHub 治理。"""
+        usage = self._read("USAGE.md")
+        delivery = self._read(
+            ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
+        )
+
+        for marker in (
+            "用户不需要手工管理 Git / GitHub 开发流程",
+            "main freshness checkpoint",
+            "开发前",
+            "push / PR 前",
+            "AI 按项目规则自动创建并命名本地任务分支",
+            "Issue / Requirement Source 和 PR",
+            "不要直接 push main",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, usage)
+
+        for marker in (
+            "本地研发闭环优先、远程治理按需触发",
+            "Development Freshness Checkpoint",
+            "Pre-push Freshness Checkpoint",
+            "普通可判定冲突由 Agent 自行解决",
+            "分支名、Issue / PR 标题、模板字段和 Requirement Source 关联由 Agent",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, delivery)
+
 if __name__ == "__main__":
     unittest.main()
