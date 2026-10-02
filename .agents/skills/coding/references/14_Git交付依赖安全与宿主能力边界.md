@@ -13,7 +13,7 @@
 - 修改前检查 branch、worktree、未提交修改；不覆盖用户改动；禁 `git reset --hard`、`git clean -fd`、强推和未授权历史重写。
 - 未经授权不创建分支、提交、推送、PR、合并、部署、删分支；CI/冲突/保护/结果未确认不推进。
 - Git 提交信息必须中文；正式 commit 需有独立审查/回滚/bisect/审计价值；临时 CI/debug/formatter/generated、为取 Red 暂移治理文件默认不提交；可复现 Red/Migration/审计/独立切片除外；不为减 commit 数重写共享历史。
-- 本地 Git：**本地优先、远程按需**：开发前同步远程目标分支 → 自动任务分支 → 本地最小充分验证 / 提交 → **Human Local Acceptance Gate（适用时；PENDING 禁止首次 push / PR）** → Gate 允许继续后再做 push / PR 前目标分支 freshness 与受影响复验 → push 任务分支 → PR；Issue / PR 默认验证后建，项目持久 Requirement / 远程-only Evidence / 协作确有需要时可提前，但不得用早期 PR 绕过 Human Gate；禁空远程分支、direct push main。
+- 本地 Git：**本地优先、远程按需**：开发前同步远程目标分支 → 自动任务分支 → 本地最小充分验证 / 提交 → **Human Local Acceptance Gate（适用时；PENDING 禁止首次 push / PR）** → Gate 允许后做 push / PR 前目标分支 freshness 与复验 → push 任务分支 → PR；Issue / PR 默认验证后建；项目明确需要可提前，但不得用早期 PR 绕过 Human Gate；禁空远程分支、direct push main。
 - 既有本地实现接管：保留工作、不伪造历史；按当前 revision 与既有门禁推进；`base Red → current Green` 仅作证据。
 - Merge/Rebase 冲突先恢复双方 **Primary Requirement Source** / Issue / PR / Change / commit / hunk，逐 hunk 合并兼容意图，不按 `ours/theirs`；语义冲突回决策门禁，可 `abort`，回归后授权不变。
 

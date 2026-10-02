@@ -145,7 +145,7 @@ Testing 先建立以下问题模型：
 
 不要先从内部 class/function 调用顺序生成所谓“用户测试”。
 
-**Testing 的 User / Workflow Acceptance 只证明 Testing 实际运行的用户/调用者路径，不拥有 Human Local Acceptance Gate。** 即使真实 Browser/E2E 或人工测试执行者验证通过，也不能替用户本人生成 `PASSED`；Testing 只返回 Evidence，是否需要等待用户本地验收由 Coding Delivery Gate 按当前任务事实决定。
+**Testing 的 User / Workflow Acceptance 只证明其实际运行路径，不拥有 Human Gate，不能替用户本人生成 `PASSED`；是否等待由 Coding Delivery Gate 决定。**
 
 详细场景方法见 [02_用户场景黑盒与探索式测试.md](references/02_用户场景黑盒与探索式测试.md)。
 
