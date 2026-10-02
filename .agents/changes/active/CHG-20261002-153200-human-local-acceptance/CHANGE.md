@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20261002-153200-human-local-acceptance
 title: 增加用户本地验收门禁并重构USAGE阅读路径
 level: L3
-status: ready_for_review
+status: proposed
 owner: dingyuwen777
 branch: tech/335-human-local-acceptance-usage
 created: 2026-10-02
@@ -173,7 +173,7 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 | R8 | Prompt self-contained | #335 / AC8 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
 | R9 | 两步 Prompt + skip | #335 / AC9 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
 | R10 | 保留高价值场景 | #335 / AC10 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
-| R11 | 非目标保持 | #335 / AC11 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R11 | 非目标保持 | #335 / AC11 | repair_pending | A2 内容守恒复核发现 Branch Name fallback slug 的“简短、稳定、可读、小写连字符”约束被压缩遗漏；待恢复并回归 |
 | R12 | 端到端收尾 | #335 / AC12 | explicitly_deferred | merge 后 evidence |
 
 # 计划改动
@@ -243,7 +243,7 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 - [x] upstream_re_read：已重读 #335 上游决定、AGENTS、Maintenance、ENTRY、Router、Coding、Mutation、Delivery、Git、Validation、Review、Testing、Docs。
 - [x] change_coverage：R1-R12 已进入 Change；R12 等待 post-merge。
 - [x] reverse_audit：已保留 Host、功能/Bug、方案、Review、测试、Figma、文档、重构/升级、已有本地代码、长任务、Analysis/Research、License；完整生命周期只在 USAGE 第 2 节解释。
-- [x] unresolved_cleared：R1-R11 均已有直接 Evidence；A1 发现的 R6 阅读顺序问题已在 `2d981636…` 闭合。R12 仍仅依赖 merge 后收尾。
+- [ ] unresolved_cleared：A1 / R6 已闭合；A2 内容守恒复核发现 R11 的 Branch Name fallback slug 约束遗漏，恢复并验证后再 Ready。R12 仍依赖 merge 后收尾。
 
 # 完成证据与状态
 
@@ -255,6 +255,7 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 | V2 | `bd051cee447a8903dba5fdd45a8c5bd7eefdd5c8` / GitHub Actions run 2375 | Requirement Source + changed-scope + compile + CLI smoke + 767 self-contained tests + Ready Check | PASS；唯一失败是 Change 当时仍为 proposed | R1-R11 的实现、USAGE 内容守恒、Release surface、routing/context budget 与兼容回归闭合 |
 | V3 | `2b8ba7b393307bc16dedf24f8d893aaa61d27aac` / FIRST_ASSEMBLY A1 Review | #335 AC1-AC12 independent requirement rebuild | FINDING：AC6 阅读顺序未完全落地 | 用户 / AI 分工需移动到常见 Prompt 之后、PR/Review 之前 |
 | V4 | `2d981636c672a7af2e90f1072f897991fa2a96a5` / GitHub Actions run 2377 | 修复 AC6 后 Requirement Source + compile + CLI smoke + 767 tests + Ready Check | PASS；唯一失败是 Change 当时仍为 proposed | AC6 阅读顺序修复闭合，其他 R1-R11 未回归 |
+| V5 | `409b14bfa051c04f24df1d87663e49dfa02951a2` / A2 内容守恒复核 | Branch Name Resolution 与 main 语义对照 | FINDING：fallback slug 约束遗漏 | 恢复“简短、稳定、可读、小写连字符”并增加永久回归 |
 
 ## 未验证内容与剩余风险
 

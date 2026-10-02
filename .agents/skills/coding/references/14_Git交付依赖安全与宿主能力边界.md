@@ -19,14 +19,14 @@
 
 ### Branch Name Resolution
 
-分支名是普通可逆 Git 实施细节，按序自行解析：
+分支名是可逆 Git 实施细节，依次自行解析：
 
 1. **项目显式规则**；
-2. **稳定分支模式**（当前仓库稳定、无冲突的同类模式）；
-3. **Requirement / Issue**：有稳定 ID 时使用任务类型 + ID + 简短语义；
-4. fallback `<type>/<short-task-slug>`，type 从 `feature / fix / refactor / docs / test / tech` 选最贴近任务者。
+2. **稳定分支模式**：当前仓库稳定、无冲突的同类模式；
+3. **Requirement / Issue**：稳定 ID → 任务类型 + ID + 简短语义；
+4. fallback `<type>/<short-task-slug>`；type=`feature / fix / refactor / docs / test / tech`，slug=简短、稳定、可读的小写连字符。
 
-除项目明确要求人命名或候选存在真实 Contract/权限冲突外，**不得向用户询问** branch name；命名不授予创建/推送/删除权限。
+除项目要求人命名或候选存在真实 Contract/权限冲突外，**不得向用户询问** branch name；命名不授予 Git 权限。
 
 ### Requested Action 与 Effective Authorization
 

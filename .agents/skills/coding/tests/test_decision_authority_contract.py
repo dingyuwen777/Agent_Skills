@@ -77,6 +77,8 @@ class DecisionAuthorityContractTest(unittest.TestCase):
             "稳定分支模式",
             "Requirement / Issue",
             "<type>/<short-task-slug>",
+            "简短、稳定、可读",
+            "小写连字符",
             "feature / fix / refactor / docs / test / tech",
             "不得向用户询问",
         ):
