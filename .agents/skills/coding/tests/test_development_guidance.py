@@ -249,8 +249,7 @@ class DevelopmentGuidanceTest(unittest.TestCase):
 
         for marker in (
             "本地研发闭环优先、远程治理按需触发",
-            "解决可判定冲突并复验",
-            "分支 / Issue / PR 命名与模板由 Agent 自动处理",
+            "漂移按下述 Merge/Rebase 规则解决并复验",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, delivery)
