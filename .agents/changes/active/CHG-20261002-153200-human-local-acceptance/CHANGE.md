@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20261002-153200-human-local-acceptance
 title: 增加用户本地验收门禁并重构USAGE阅读路径
 level: L3
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/335-human-local-acceptance-usage
 created: 2026-10-02
@@ -168,7 +168,7 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 | R3 | 失败反馈循环 | #335 / AC3 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
 | R4 | PASSED 后 PR lifecycle | #335 / AC4 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
 | R5 | canonical Owner 一致 | #335 / AC5 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
-| R6 | USAGE 阅读顺序 | #335 / AC6 | repair_pending | A1 Review 发现用户 / AI 分工位于常见 Prompt 之前；待调整为 AC6 指定顺序并重新验证 |
+| R6 | USAGE 阅读顺序 | #335 / AC6 | satisfied | `2d981636…` / run 2377：7 章精确顺序回归 + 767 tests PASS |
 | R7 | USAGE 单一流程 Owner | #335 / AC7 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
 | R8 | Prompt self-contained | #335 / AC8 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
 | R9 | 两步 Prompt + skip | #335 / AC9 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
@@ -243,7 +243,7 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 - [x] upstream_re_read：已重读 #335 上游决定、AGENTS、Maintenance、ENTRY、Router、Coding、Mutation、Delivery、Git、Validation、Review、Testing、Docs。
 - [x] change_coverage：R1-R12 已进入 Change；R12 等待 post-merge。
 - [x] reverse_audit：已保留 Host、功能/Bug、方案、Review、测试、Figma、文档、重构/升级、已有本地代码、长任务、Analysis/Research、License；完整生命周期只在 USAGE 第 2 节解释。
-- [ ] unresolved_cleared：A1 Review 发现 R6 阅读顺序投影遗漏；修复并取得 current-head Evidence 后再恢复 Ready。R12 仍按生命周期延期。
+- [x] unresolved_cleared：R1-R11 均已有直接 Evidence；A1 发现的 R6 阅读顺序问题已在 `2d981636…` 闭合。R12 仍仅依赖 merge 后收尾。
 
 # 完成证据与状态
 
@@ -254,11 +254,12 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 | V1 | main 53bb9f8670182e26f312e0fa996b8caeaa41383f | canonical + USAGE + #335 read | confirmed | 当前 Human Gate 和信息架构缺口存在 |
 | V2 | `bd051cee447a8903dba5fdd45a8c5bd7eefdd5c8` / GitHub Actions run 2375 | Requirement Source + changed-scope + compile + CLI smoke + 767 self-contained tests + Ready Check | PASS；唯一失败是 Change 当时仍为 proposed | R1-R11 的实现、USAGE 内容守恒、Release surface、routing/context budget 与兼容回归闭合 |
 | V3 | `2b8ba7b393307bc16dedf24f8d893aaa61d27aac` / FIRST_ASSEMBLY A1 Review | #335 AC1-AC12 independent requirement rebuild | FINDING：AC6 阅读顺序未完全落地 | 用户 / AI 分工需移动到常见 Prompt 之后、PR/Review 之前 |
+| V4 | `2d981636c672a7af2e90f1072f897991fa2a96a5` / GitHub Actions run 2377 | 修复 AC6 后 Requirement Source + compile + CLI smoke + 767 tests + Ready Check | PASS；唯一失败是 Change 当时仍为 proposed | AC6 阅读顺序修复闭合，其他 R1-R11 未回归 |
 
 ## 未验证内容与剩余风险
 
 - run 2375 已证明 R1-R11 的 selected tests / Release surface / routing context budget / 内容守恒；本次仅回写 Change carrier 为 ready_for_review。
-- 最终 current-head required CI、正式 A1/A2 Review 与 merge gate 尚未取得。
+- AC6 修复 revision `2d981636…` 已通过 767 tests；本次仅回写 Change carrier 为 ready_for_review。最终 current-head required CI/package 与 FINAL Review 尚未取得。
 - 本任务自身 Human Local Acceptance = NOT_APPLICABLE：变更对象是治理规则与最终用户文档，无可由用户在本地运行的业务功能入口；该 N/A 不替代技术验证、Review 或 CI。
 - post-merge main-fresh / archive / Closure 在 merge 前不可能取得。
 
@@ -266,7 +267,7 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 
 - 分支：`tech/335-human-local-acceptance-usage`
 - PR：#336，当前 head `bd051cee447a8903dba5fdd45a8c5bd7eefdd5c8`。
-- CI：run 2375 selected tests / Ready Check PASS；Change ready_for_review carrier 更新后需取得新的 current-head required CI / packages。
+- CI：run 2377 在 AC6 修复后 767 tests / Ready Check PASS；本次 ready_for_review carrier 更新后需取得最终 current-head required CI / packages。
 - 合并：用户已授权最终合并 main，但必须等待实现、Review 和 required CI。
 - Change archive / Issue Closure / cleanup：merge 后执行。
 - Release / Deploy：不适用。
