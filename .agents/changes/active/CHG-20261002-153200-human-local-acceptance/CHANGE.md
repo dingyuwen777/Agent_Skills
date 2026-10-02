@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20261002-153200-human-local-acceptance
 title: 增加用户本地验收门禁并重构USAGE阅读路径
 level: L3
-status: ready_for_review
+status: proposed
 owner: dingyuwen777
 branch: tech/335-human-local-acceptance-usage
 created: 2026-10-02
@@ -168,7 +168,7 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 | R3 | 失败反馈循环 | #335 / AC3 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
 | R4 | PASSED 后 PR lifecycle | #335 / AC4 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
 | R5 | canonical Owner 一致 | #335 / AC5 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
-| R6 | USAGE 阅读顺序 | #335 / AC6 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R6 | USAGE 阅读顺序 | #335 / AC6 | repair_pending | A1 Review 发现用户 / AI 分工位于常见 Prompt 之前；待调整为 AC6 指定顺序并重新验证 |
 | R7 | USAGE 单一流程 Owner | #335 / AC7 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
 | R8 | Prompt self-contained | #335 / AC8 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
 | R9 | 两步 Prompt + skip | #335 / AC9 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
@@ -243,7 +243,7 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 - [x] upstream_re_read：已重读 #335 上游决定、AGENTS、Maintenance、ENTRY、Router、Coding、Mutation、Delivery、Git、Validation、Review、Testing、Docs。
 - [x] change_coverage：R1-R12 已进入 Change；R12 等待 post-merge。
 - [x] reverse_audit：已保留 Host、功能/Bug、方案、Review、测试、Figma、文档、重构/升级、已有本地代码、长任务、Analysis/Research、License；完整生命周期只在 USAGE 第 2 节解释。
-- [x] unresolved_cleared：R1-R11 已有 current-head direct Evidence；R12 仅依赖 merge 后 main-fresh / archive / Closure / cleanup，按生命周期明确延期。
+- [ ] unresolved_cleared：A1 Review 发现 R6 阅读顺序投影遗漏；修复并取得 current-head Evidence 后再恢复 Ready。R12 仍按生命周期延期。
 
 # 完成证据与状态
 
@@ -253,6 +253,7 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 | --- | --- | --- | --- | --- |
 | V1 | main 53bb9f8670182e26f312e0fa996b8caeaa41383f | canonical + USAGE + #335 read | confirmed | 当前 Human Gate 和信息架构缺口存在 |
 | V2 | `bd051cee447a8903dba5fdd45a8c5bd7eefdd5c8` / GitHub Actions run 2375 | Requirement Source + changed-scope + compile + CLI smoke + 767 self-contained tests + Ready Check | PASS；唯一失败是 Change 当时仍为 proposed | R1-R11 的实现、USAGE 内容守恒、Release surface、routing/context budget 与兼容回归闭合 |
+| V3 | `2b8ba7b393307bc16dedf24f8d893aaa61d27aac` / FIRST_ASSEMBLY A1 Review | #335 AC1-AC12 independent requirement rebuild | FINDING：AC6 阅读顺序未完全落地 | 用户 / AI 分工需移动到常见 Prompt 之后、PR/Review 之前 |
 
 ## 未验证内容与剩余风险
 

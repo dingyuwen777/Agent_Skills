@@ -246,9 +246,9 @@ class DevelopmentGuidanceTest(unittest.TestCase):
         for marker in (
             "## 1. 快速开始",
             "## 2. 一次正常开发任务怎么进行",
-            "## 3. 交付状态与用户 / AI 分工",
+            "## 3. 交付状态与终点",
             "## 4. 常见任务指令",
-            "## 5. PR、Review 与团队协作",
+            "## 5. 用户 / AI 分工与 PR、Review 协作",
             "## 6. 长任务与复杂任务",
             "## 7. 其他使用场景",
             "Local Ready for User Acceptance",
@@ -265,13 +265,25 @@ class DevelopmentGuidanceTest(unittest.TestCase):
             if line.startswith("## ") and len(line) > 3 and line[3].isdigit()
         ]
         self.assertEqual(len(top_level), 7)
+        self.assertEqual(
+            top_level,
+            [
+                "## 1. 快速开始",
+                "## 2. 一次正常开发任务怎么进行",
+                "## 3. 交付状态与终点",
+                "## 4. 常见任务指令",
+                "## 5. 用户 / AI 分工与 PR、Review 协作",
+                "## 6. 长任务与复杂任务",
+                "## 7. 其他使用场景",
+            ],
+        )
         self.assertNotIn("按本文", usage)
         self.assertNotIn("## 18. 常用短指令速查", usage)
         self.assertNotIn("## 14. Git 和团队协作", usage)
         self.assertNotIn("## 标准开发流程（AI 自动执行）", usage)
 
         flow = usage.split("## 2. 一次正常开发任务怎么进行", 1)[1].split(
-            "## 3. 交付状态与用户 / AI 分工", 1
+            "## 3. 交付状态与终点", 1
         )[0]
         ordered = (
             "AI 获取远程最新 main / 目标分支",
