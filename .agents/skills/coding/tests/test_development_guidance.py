@@ -248,7 +248,7 @@ class DevelopmentGuidanceTest(unittest.TestCase):
                 self.assertIn(marker, usage)
 
         for marker in (
-            "本地闭环优先、远程治理按需",
+            "本地优先、远程按需",
             "漂移按下述冲突规则处理并复验",
         ):
             with self.subTest(marker=marker):
