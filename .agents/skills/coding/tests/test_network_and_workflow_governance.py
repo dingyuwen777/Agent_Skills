@@ -56,28 +56,35 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
         self.assertIn("证据等级是否保持", reference)
         self.assertIn("Branch Protection / Ruleset", reference)
 
-    def test_git_delivery_starts_from_local_branch_before_remote_and_early_pr(self) -> None:
-        """需要 PR 的工作必须先在本地分支产生首个提交，再创建远程分支与早期 PR。"""
-        skill = self._read(".agents/skills/coding/SKILL.md")
+    def test_git_delivery_keeps_local_first_and_two_remote_freshness_checkpoints(self) -> None:
+        """Git 交付必须本地闭环优先，并在开发前与 push 前重新核对远程目标分支。"""
         reference = self._read(
             ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
         )
 
         for marker in (
-            "本地任务分支",
-            "首个本地提交",
-            "首次 push",
-            "远程跟踪分支",
-            "早期 PR",
-            "不得先创建远程空分支",
+            "本地优先、远程按需",
+            "开发前同步远程目标分支",
+            "自动任务分支",
+            "本地最小充分验证 / 提交",
+            "push / PR 前再同步并复验",
+            "push 任务分支 → PR",
+            "禁空远程分支",
+            "Issue / PR 默认验证后建",
+            "项目 / 远程 CI / 协作需要可提前",
+            "direct push main",
         ):
-            self.assertIn(marker, skill + reference, f"缺少本地分支优先门禁：{marker}")
+            self.assertIn(marker, reference)
 
-        expected_order = (
-            "最新目标分支 → 本地任务分支 → 本地 Change / 失败测试 / 最小治理提交 "
-            "→ 首个本地提交 → 首次 push 创建远程跟踪分支 → 早期 PR"
+        ordered = (
+            "开发前同步远程目标分支",
+            "自动任务分支",
+            "本地最小充分验证 / 提交",
+            "push / PR 前再同步并复验",
+            "push 任务分支 → PR",
         )
-        self.assertIn(expected_order, reference)
+        positions = [reference.index(marker) for marker in ordered]
+        self.assertEqual(positions, sorted(positions))
 
     def test_end_to_end_delivery_authorization_and_post_merge_finalization_are_explicit(self) -> None:
         """端到端交付授权必须进入动态路由，并保持高风险动作和 fork 分支权限边界。"""
