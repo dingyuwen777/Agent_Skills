@@ -10,7 +10,7 @@
 
 项目结构、代码位置、当前依赖、接口、数据结构、测试入口和 CI 等能够自行确认的信息，应由 AI 根据当前项目实际情况自行调查。
 
-**用户不需要手工管理 Git / GitHub 开发流程。** 任务需要进入 Git 阶段时，AI 应根据当前项目和 Agent_Skills 自动处理：
+**用户不需要手工管理 Git / GitHub 开发流程。** 任务需要进入 Git 阶段时，AI 应根据当前项目规则自动处理：
 
 - 开发前获取远程 `main` / 目标分支最新状态；
 - 按项目规则自动创建并命名本地任务分支；
@@ -262,7 +262,7 @@ Agent 会按三个简单门禁处理：
 
 一般情况下，普通开发者到 **PR Ready** 即可。
 
-到达这个终点所需的任务分支创建与命名、远程 main 同步、Requirement Source / Issue 的复用或创建、Issue / PR 标题与模板、push 和 PR 更新，都由 AI 按当前项目和 Agent_Skills 规则自动处理，不要求用户手工执行 Git 命令。
+到达这个终点所需的任务分支创建与命名、远程 main 同步、Requirement Source / Issue 的复用或创建、Issue / PR 标题与模板、push 和 PR 更新，都由 AI 按当前项目规则自动处理，不要求用户手工执行 Git 命令。
 
 后续的最终审核、合并主分支、Release、Deploy 或生产数据操作，应由拥有相应权限的人或正式流程完成。
 
@@ -931,7 +931,7 @@ Code Review 常用三种模式：**只审核**、**审核并合并**、**Review 
 
 ## 14. Git 和团队协作
 
-Git / GitHub 是 Agent_Skills 应自动处理的实施和交付细节。普通开发者不需要自己创建分支、起名字、拉取 main、解决普通冲突、写 Issue / PR 标题或套模板。
+Git / GitHub 是 AI 应按当前项目规则自动处理的实施和交付细节。普通开发者不需要自己创建分支、起名字、拉取 main、解决普通冲突、写 Issue / PR 标题或套模板。
 
 推荐直接用自然语言告诉 AI：
 
@@ -946,7 +946,7 @@ Git / GitHub 是 Agent_Skills 应自动处理的实施和交付细节。普通�
 只有真正无法判断的业务 / Contract / 数据 / 安全冲突才让我决定。
 
 交付终点：PR Ready。
-需要的 Requirement Source / Issue、Issue / PR 标题、模板、push 和 PR 都由你按 Agent_Skills 自动处理。
+需要的 Requirement Source / Issue、Issue / PR 标题、模板、push 和 PR 都由你按当前项目规则自动处理。
 不要直接 push main，也不要合并主分支。
 ```
 
@@ -959,7 +959,7 @@ Git / GitHub 是 Agent_Skills 应自动处理的实施和交付细节。普通�
 3. **冲突处理**：AI 先恢复双方 Requirement、commit 和 hunk 意图，再解决普通冲突，不能机械选 `ours` / `theirs`；
 4. **冲突后验证**：重新执行受基线漂移和冲突影响的测试、构建或文档检查，再允许 push；
 5. **共享分支保护**：不得为了同步 main 默认强推或重写已经共享的历史；
-6. **治理对象**：Issue / Requirement Source 和 PR 是否需要、何时创建、标题怎样命名、模板怎样填写，都由 Agent_Skills 根据当前项目治理和交付终点自动决定。
+6. **治理对象**：Issue / Requirement Source 和 PR 是否需要、何时创建、标题怎样命名、模板怎样填写，都由 AI 根据当前项目治理和交付终点自动决定。
 
 ### 14.1 PR Review 发现问题以后怎么继续
 
