@@ -251,6 +251,7 @@ class DevelopmentGuidanceTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, usage)
 
+        standard_flow = usage.split("## 标准开发流程（AI 自动执行）", 1)[1].split("### 授权文件", 1)[0]
         ordered = (
             "开发前获取远程最新 main / 目标分支",
             "AI 自动创建并命名本地任务分支",
@@ -264,7 +265,7 @@ class DevelopmentGuidanceTest(unittest.TestCase):
             "CI + Review",
             "PR Ready",
         )
-        positions = [usage.index(marker) for marker in ordered]
+        positions = [standard_flow.index(marker) for marker in ordered]
         self.assertEqual(positions, sorted(positions))
 
         for marker in (

@@ -350,7 +350,7 @@ AI 仍然应该遵守当前项目真实存在的：
 - **有两个不同的 main freshness checkpoint。** 开发前一次、push / PR 前一次；第二次发现目标分支漂移时，由 AI 集成最新目标分支、解决普通冲突并重新验证受影响范围。
 - **同步或解决冲突后不机械全量重跑。** 只让因基线变化、冲突或新事实而失效的 Evidence 重新取得；仍然新鲜且不受影响的证据可以复用。
 - **Issue / Requirement Source 和 PR 不是用户手工执行的开工仪式。** AI 根据项目治理自动决定是否需要、何时创建或复用，并自动处理名称、模板和关联。
-- **PR Ready 是普通开发默认终点。** 只有用户明确授权更远的交付终点，才继续 merge、main-fresh、Change Archive、Issue Closure 和分支清理。
+- **PR Ready 是普通开发默认终点。** 只有用户明确授权更远的交付终点，才继续 merge、main-fresh、合并后治理收尾、Issue Closure 和分支清理。
 
 普通代码冲突不应交给用户处理；只有真正的业务、public Contract、Schema / 数据、安全或其他高影响语义冲突在有界调查后仍无法判断时，才提请用户 / Owner 决策。
 
