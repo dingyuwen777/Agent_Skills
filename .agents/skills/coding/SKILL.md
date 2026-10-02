@@ -311,7 +311,7 @@ python <skill>/scripts/ready_check.py --root <repo> --require-active-ready
 
 ## 6. Git、依赖、安全、交付与宿主能力边界
 
-`Git/PR/Release/Delivery`、依赖变化、安全边界、最终交付报告或宿主能力降级命中时，必须读取 [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md)。现有 remote 的 Git 写任务 Core 门禁：`开发前同步 target → AI 自动命名 / 建 task branch → 本地最小充分验证 → push / PR 前再同步 target → 漂移按 ref14 解决并复验 → push task branch → PR`；pre-push freshness / 复验未闭环不推进，普通冲突不问用户。详细 Git、授权和失败边界只由该 reference 承担。
+`Git/PR/Release/Delivery`、依赖变化、安全边界、最终交付报告或宿主能力降级命中时，必须读取 [14_Git交付依赖安全与宿主能力边界.md](references/14_Git交付依赖安全与宿主能力边界.md)。Git 写任务 Core 顺序：`开发前同步远程目标分支 → 自动建 / 命名任务分支 → 本地最小充分验证 → push / PR 前再同步目标分支 → 冲突后复验 → push 任务分支 → PR`；二次同步 / 复验未闭环不推进，普通冲突由 Agent 自主处理；细节归该 reference。
 
 ## 7. 规则内容守恒与 Skill 维护
 
