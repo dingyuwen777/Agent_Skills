@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20261002-134930-usage-local-dev-flow
 title: 固化本地优先开发与远程交付生命周期
 level: L3
-status: ready_for_review
+status: done
 owner: dingyuwen777
 branch: docs/333-usage-local-dev-flow
 created: 2026-10-02
