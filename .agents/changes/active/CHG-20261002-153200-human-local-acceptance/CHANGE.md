@@ -3,7 +3,7 @@ schema: coding-change/v1
 id: CHG-20261002-153200-human-local-acceptance
 title: 增加用户本地验收门禁并重构USAGE阅读路径
 level: L3
-status: proposed
+status: ready_for_review
 owner: dingyuwen777
 branch: tech/335-human-local-acceptance-usage
 created: 2026-10-02
@@ -163,17 +163,17 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 默认 Local Ready / PENDING | #335 / AC1 | implemented_pending_validation | 待实现 |
-| R2 | 三态 + skip 边界 | #335 / AC2 | implemented_pending_validation | 待实现 |
-| R3 | 失败反馈循环 | #335 / AC3 | implemented_pending_validation | 待实现 |
-| R4 | PASSED 后 PR lifecycle | #335 / AC4 | implemented_pending_validation | 待实现 |
-| R5 | canonical Owner 一致 | #335 / AC5 | implemented_pending_validation | 待实现 |
-| R6 | USAGE 阅读顺序 | #335 / AC6 | implemented_pending_validation | 待重构 |
-| R7 | USAGE 单一流程 Owner | #335 / AC7 | implemented_pending_validation | 待重构 |
-| R8 | Prompt self-contained | #335 / AC8 | implemented_pending_validation | 待重构/回归 |
-| R9 | 两步 Prompt + skip | #335 / AC9 | implemented_pending_validation | 待实现 |
-| R10 | 保留高价值场景 | #335 / AC10 | implemented_pending_validation | 待内容守恒审计 |
-| R11 | 非目标保持 | #335 / AC11 | implemented_pending_validation | 待 diff/CI |
+| R1 | 默认 Local Ready / PENDING | #335 / AC1 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R2 | 三态 + skip 边界 | #335 / AC2 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R3 | 失败反馈循环 | #335 / AC3 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R4 | PASSED 后 PR lifecycle | #335 / AC4 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R5 | canonical Owner 一致 | #335 / AC5 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R6 | USAGE 阅读顺序 | #335 / AC6 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R7 | USAGE 单一流程 Owner | #335 / AC7 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R8 | Prompt self-contained | #335 / AC8 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R9 | 两步 Prompt + skip | #335 / AC9 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R10 | 保留高价值场景 | #335 / AC10 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
+| R11 | 非目标保持 | #335 / AC11 | satisfied | `bd051cee…` / run 2375：767 tests OK；USAGE / canonical / context budget / content-preservation regression PASS |
 | R12 | 端到端收尾 | #335 / AC12 | explicitly_deferred | merge 后 evidence |
 
 # 计划改动
@@ -243,7 +243,7 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 - [x] upstream_re_read：已重读 #335 上游决定、AGENTS、Maintenance、ENTRY、Router、Coding、Mutation、Delivery、Git、Validation、Review、Testing、Docs。
 - [x] change_coverage：R1-R12 已进入 Change；R12 等待 post-merge。
 - [x] reverse_audit：已保留 Host、功能/Bug、方案、Review、测试、Figma、文档、重构/升级、已有本地代码、长任务、Analysis/Research、License；完整生命周期只在 USAGE 第 2 节解释。
-- [ ] unresolved_cleared：R1-R11 待 direct Evidence；R12 按生命周期延期。
+- [x] unresolved_cleared：R1-R11 已有 current-head direct Evidence；R12 仅依赖 merge 后 main-fresh / archive / Closure / cleanup，按生命周期明确延期。
 
 # 完成证据与状态
 
@@ -252,18 +252,20 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 | 证据 | 版本 / 环境 | 命令 / 检查 | 结果 | 证明了什么 |
 | --- | --- | --- | --- | --- |
 | V1 | main 53bb9f8670182e26f312e0fa996b8caeaa41383f | canonical + USAGE + #335 read | confirmed | 当前 Human Gate 和信息架构缺口存在 |
+| V2 | `bd051cee447a8903dba5fdd45a8c5bd7eefdd5c8` / GitHub Actions run 2375 | Requirement Source + changed-scope + compile + CLI smoke + 767 self-contained tests + Ready Check | PASS；唯一失败是 Change 当时仍为 proposed | R1-R11 的实现、USAGE 内容守恒、Release surface、routing/context budget 与兼容回归闭合 |
 
 ## 未验证内容与剩余风险
 
-- Human Gate / USAGE 实现已完成，仍需 current-head tests、Release surface、context/routing budget、Review 与 required CI 证明没有语义倒退。
+- run 2375 已证明 R1-R11 的 selected tests / Release surface / routing context budget / 内容守恒；本次仅回写 Change carrier 为 ready_for_review。
+- 最终 current-head required CI、正式 A1/A2 Review 与 merge gate 尚未取得。
 - 本任务自身 Human Local Acceptance = NOT_APPLICABLE：变更对象是治理规则与最终用户文档，无可由用户在本地运行的业务功能入口；该 N/A 不替代技术验证、Review 或 CI。
 - post-merge main-fresh / archive / Closure 在 merge 前不可能取得。
 
 ## 交付状态
 
 - 分支：`tech/335-human-local-acceptance-usage`
-- PR：未创建；实现与永久回归已准备，待分支 readback / semantic audit 后进入 PR。
-- CI：未触发 current-head PR gate。
+- PR：#336，当前 head `bd051cee447a8903dba5fdd45a8c5bd7eefdd5c8`。
+- CI：run 2375 selected tests / Ready Check PASS；Change ready_for_review carrier 更新后需取得新的 current-head required CI / packages。
 - 合并：用户已授权最终合并 main，但必须等待实现、Review 和 required CI。
 - Change archive / Issue Closure / cleanup：merge 后执行。
 - Release / Deploy：不适用。
