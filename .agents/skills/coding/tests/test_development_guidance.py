@@ -249,12 +249,13 @@ class DevelopmentGuidanceTest(unittest.TestCase):
                 self.assertIn(marker, usage)
 
         for marker in (
-            "Git 写任务",
-            "开发前同步 target",
-            "本地最小充分验证",
-            "push 前再同步 target",
+            "细则归该 reference，Core 变薄不降强度",
+            "同步 target",
+            "task branch",
+            "本地充分验证",
+            "push 前再同步",
             "冲突复验",
-            "普通冲突自主处理",
+            "普通冲突自主",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, core)
