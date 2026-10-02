@@ -68,12 +68,11 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
             "Agent 自动建 / 命名本地任务分支",
             "本地实现 / 验证 / 提交",
             "push / PR 前再次获取目标分支",
-            "Development / Pre-push Freshness Checkpoint",
             "解决可判定冲突并复验",
             "首次 push 远程跟踪分支",
             "禁远程空分支",
             "默认 direct push main",
-            "分支名、Issue / PR 标题、模板 / 关联由 Agent 自动处理",
+            "分支 / Issue / PR 命名与模板由 Agent 自动处理",
         ):
             self.assertIn(marker, reference)
 

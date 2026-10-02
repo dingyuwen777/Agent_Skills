@@ -249,9 +249,8 @@ class DevelopmentGuidanceTest(unittest.TestCase):
 
         for marker in (
             "本地研发闭环优先、远程治理按需触发",
-            "Development / Pre-push Freshness Checkpoint",
             "解决可判定冲突并复验",
-            "分支名、Issue / PR 标题、模板 / 关联由 Agent 自动处理",
+            "分支 / Issue / PR 命名与模板由 Agent 自动处理",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, delivery)

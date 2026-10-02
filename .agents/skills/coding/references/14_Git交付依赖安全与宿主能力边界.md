@@ -13,8 +13,7 @@
 - 修改前检查 branch、worktree、未提交修改；不覆盖用户改动；禁 `git reset --hard`、`git clean -fd`、强推和未授权历史重写。
 - 未经授权不创建分支、提交、推送、PR、合并、部署、删分支；CI/冲突/保护/结果未确认不推进。
 - Git 提交信息必须中文；正式 commit 需有独立审查/回滚/bisect/审计价值；临时 CI/debug/formatter/generated、为取 Red 暂移治理文件默认不提交；可复现 Red/Migration/审计/独立切片除外；不为减 commit 数重写共享历史。
-- 本地 Git 默认“**本地研发闭环优先、远程治理按需触发**”：开发前获取远程最新目标分支 → Agent 自动建 / 命名本地任务分支 → 本地实现 / 验证 / 提交 → push / PR 前再次获取目标分支；漂移时按项目策略恢复 Requirement / commit / hunk 意图、解决可判定冲突并复验 → 首次 push 远程跟踪分支 → 按治理 / 授权创建或更新 PR。禁远程空分支、默认 direct push main、强推 / 重写共享历史。
-- **Development / Pre-push Freshness Checkpoint**：Issue / Requirement Source / PR 默认本地验证后创建；项目要求持久 Requirement / Change 或远程 CI / 协作需早期可见时可提前。分支名、Issue / PR 标题、模板 / 关联由 Agent 自动处理；只有业务、public Contract、Schema / 数据、安全语义无法判定时才问用户。
+- 本地 Git 按“**本地研发闭环优先、远程治理按需触发**”：`开发前获取远程最新目标分支 → Agent 自动建 / 命名本地任务分支 → 本地实现 / 验证 / 提交 → push / PR 前再次获取目标分支 → 漂移则按项目策略解决可判定冲突并复验 → 首次 push 远程跟踪分支 → 按治理 / 授权创建或更新 PR`。Issue / Requirement Source / PR 默认本地验证后创建；项目要求持久 Requirement / Change、远程 CI 或协作时可提前。分支 / Issue / PR 命名与模板由 Agent 自动处理；禁远程空分支、默认 direct push main、强推 / 重写共享历史；业务 / Contract / 数据 / 安全语义无法判定才问用户。
 - 既有本地实现接管：保留工作、不伪造历史；按当前 revision 与既有门禁推进；`base Red → current Green` 仅作证据。
 - Merge/Rebase 冲突先恢复双方 **Primary Requirement Source** / Issue / PR / Change / commit / hunk，逐 hunk 合并兼容意图，不按 `ours/theirs`；语义冲突回决策门禁，可 `abort`，回归后授权不变。
 
