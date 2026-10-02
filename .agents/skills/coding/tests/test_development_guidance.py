@@ -230,6 +230,7 @@ class DevelopmentGuidanceTest(unittest.TestCase):
 
     def test_natural_language_dev_flow_keeps_local_first_and_two_main_freshness_checks(self) -> None:
         """自然语言开发说明必须让 Agent 自动处理分支、main freshness、冲突和 GitHub 治理。"""
+        core = self._read(".agents/skills/coding/SKILL.md")
         usage = self._read("USAGE.md")
         delivery = self._read(
             ".agents/skills/coding/references/14_Git交付依赖安全与宿主能力边界.md"
@@ -248,8 +249,21 @@ class DevelopmentGuidanceTest(unittest.TestCase):
                 self.assertIn(marker, usage)
 
         for marker in (
+            "Repository Development Lifecycle Gate",
+            "开发前获取远程最新目标分支",
+            "与风险相称的最小充分验证",
+            "push / PR 前再次获取远程目标分支",
+            "只重跑因同步 / 冲突而失效的 Evidence",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, core)
+
+        for marker in (
             "本地优先、远程按需",
+            "按 Branch Name Resolution 自动建 / 命名任务分支",
+            "本地实现 / 最小充分验证 / 提交",
             "漂移按下述冲突规则处理并复验",
+            "仅远程可执行项由 PR CI 补齐",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, delivery)
