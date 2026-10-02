@@ -63,27 +63,27 @@ class NetworkAndWorkflowGovernanceTest(unittest.TestCase):
         )
 
         for marker in (
-            "本地研发闭环优先、远程治理按需触发",
-            "开发前获取远程最新目标分支",
+            "本地闭环优先、远程治理按需",
+            "开发前取远程最新目标分支",
             "按 Branch Name Resolution 建任务分支",
             "本地实现 / 验证 / 提交",
-            "push / PR 前再取目标分支",
-            "漂移按下述 Merge/Rebase 规则解决并复验",
-            "首次 push 远程跟踪分支",
-            "禁远程空分支",
+            "push / PR 前再取远程目标分支",
+            "漂移按下述冲突规则处理并复验",
+            "首次 push 任务分支",
+            "禁空远程分支",
             "Issue / PR 默认本地验证后创建",
-            "项目要求持久 Requirement / Change 或远程 CI / 协作时可提前",
+            "项目、远程 CI 或协作需要时可提前",
             "direct push main",
         ):
             self.assertIn(marker, reference)
 
         ordered = (
-            "开发前获取远程最新目标分支",
+            "开发前取远程最新目标分支",
             "按 Branch Name Resolution 建任务分支",
             "本地实现 / 验证 / 提交",
-            "push / PR 前再取目标分支",
-            "首次 push 远程跟踪分支",
-            "按 Requirement / PR 治理创建 / 更新 PR",
+            "push / PR 前再取远程目标分支",
+            "首次 push 任务分支",
+            "按治理建 / 更新 PR",
         )
         positions = [reference.index(marker) for marker in ordered]
         self.assertEqual(positions, sorted(positions))
