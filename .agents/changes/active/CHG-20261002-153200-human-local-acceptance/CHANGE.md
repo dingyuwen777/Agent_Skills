@@ -156,17 +156,17 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 
 | 编号 | 要求 | 来源 | 状态 | 证据 |
 | --- | --- | --- | --- | --- |
-| R1 | 默认 Local Ready / PENDING | #335 / AC1 | unresolved | 待实现 |
-| R2 | 三态 + skip 边界 | #335 / AC2 | unresolved | 待实现 |
-| R3 | 失败反馈循环 | #335 / AC3 | unresolved | 待实现 |
-| R4 | PASSED 后 PR lifecycle | #335 / AC4 | unresolved | 待实现 |
-| R5 | canonical Owner 一致 | #335 / AC5 | unresolved | 待实现 |
-| R6 | USAGE 阅读顺序 | #335 / AC6 | unresolved | 待重构 |
-| R7 | USAGE 单一流程 Owner | #335 / AC7 | unresolved | 待重构 |
-| R8 | Prompt self-contained | #335 / AC8 | unresolved | 待重构/回归 |
-| R9 | 两步 Prompt + skip | #335 / AC9 | unresolved | 待实现 |
-| R10 | 保留高价值场景 | #335 / AC10 | unresolved | 待内容守恒审计 |
-| R11 | 非目标保持 | #335 / AC11 | unresolved | 待 diff/CI |
+| R1 | 默认 Local Ready / PENDING | #335 / AC1 | implemented_pending_validation | 待实现 |
+| R2 | 三态 + skip 边界 | #335 / AC2 | implemented_pending_validation | 待实现 |
+| R3 | 失败反馈循环 | #335 / AC3 | implemented_pending_validation | 待实现 |
+| R4 | PASSED 后 PR lifecycle | #335 / AC4 | implemented_pending_validation | 待实现 |
+| R5 | canonical Owner 一致 | #335 / AC5 | implemented_pending_validation | 待实现 |
+| R6 | USAGE 阅读顺序 | #335 / AC6 | implemented_pending_validation | 待重构 |
+| R7 | USAGE 单一流程 Owner | #335 / AC7 | implemented_pending_validation | 待重构 |
+| R8 | Prompt self-contained | #335 / AC8 | implemented_pending_validation | 待重构/回归 |
+| R9 | 两步 Prompt + skip | #335 / AC9 | implemented_pending_validation | 待实现 |
+| R10 | 保留高价值场景 | #335 / AC10 | implemented_pending_validation | 待内容守恒审计 |
+| R11 | 非目标保持 | #335 / AC11 | implemented_pending_validation | 待 diff/CI |
 | R12 | 端到端收尾 | #335 / AC12 | explicitly_deferred | merge 后 evidence |
 
 # 计划改动
@@ -183,9 +183,9 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 
 - [x] 调查当前实现和事实源
 - [x] 建立 Requirement Source 与 L3 Change
-- [ ] 完成 canonical 实现
-- [ ] 完成 USAGE 信息架构重构
-- [ ] 完成永久回归
+- [x] 完成 canonical 实现
+- [x] 完成 USAGE 信息架构重构
+- [x] 完成永久回归
 - [ ] 取得 current revision 新鲜验证
 - [ ] 完成 A1/A2 Review
 - [ ] guarded merge 与 post-merge 收尾
@@ -235,7 +235,7 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 
 - [x] upstream_re_read：已重读 #335 上游决定、AGENTS、Maintenance、ENTRY、Router、Coding、Mutation、Delivery、Git、Validation、Review、Testing、Docs。
 - [x] change_coverage：R1-R12 已进入 Change；R12 等待 post-merge。
-- [ ] reverse_audit：待实现后反查有效场景、规则 Owner 与 USAGE 内容守恒。
+- [x] reverse_audit：已保留 Host、功能/Bug、方案、Review、测试、Figma、文档、重构/升级、已有本地代码、长任务、Analysis/Research、License；完整生命周期只在 USAGE 第 2 节解释。
 - [ ] unresolved_cleared：R1-R11 待 direct Evidence；R12 按生命周期延期。
 
 # 完成证据与状态
@@ -248,13 +248,14 @@ AI 仍可能在用户没有实际打开页面/运行程序/确认功能前自动
 
 ## 未验证内容与剩余风险
 
-- 实现尚未完成；Human Gate 的 N/A/skip 边界与 USAGE 内容守恒需由 current-head tests + Review 证明。
+- Human Gate / USAGE 实现已完成，仍需 current-head tests、Release surface、context/routing budget、Review 与 required CI 证明没有语义倒退。
+- 本任务自身 Human Local Acceptance = NOT_APPLICABLE：变更对象是治理规则与最终用户文档，无可由用户在本地运行的业务功能入口；该 N/A 不替代技术验证、Review 或 CI。
 - post-merge main-fresh / archive / Closure 在 merge 前不可能取得。
 
 ## 交付状态
 
 - 分支：`tech/335-human-local-acceptance-usage`
-- PR：未创建；遵守本次开发流程先完成实现/验证再进入远程 PR 治理。
+- PR：未创建；实现与永久回归已准备，待分支 readback / semantic audit 后进入 PR。
 - CI：未触发 current-head PR gate。
 - 合并：用户已授权最终合并 main，但必须等待实现、Review 和 required CI。
 - Change archive / Issue Closure / cleanup：merge 后执行。
